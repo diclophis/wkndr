@@ -1,6 +1,6 @@
 # wkndr
 
-git+ops authenticated journal deployment controller development pipeline kubernetes utility testing
+A choose your own adventure git+ops authenticated journaled deployment controller development pipeline kubernetes utility test service
 
 # wkndr provision
 
@@ -51,3 +51,5 @@ installs wkndr as a deployment
 # wkndr sh
 
 exec into deployement for debugging interactive tty
+
+# wkndr gitch
