@@ -44,6 +44,8 @@ dispatches job pods based on configured testing strategy, defaults to yaml
 
 # wkndr deploy
 
+_requires_ `$PATH/helm` to be present
+
 installs wkndr as a deployment
 
 # wkndr sh

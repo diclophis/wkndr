@@ -17,8 +17,23 @@ class Wkndr < Thor
   end
 
   desc "dev", ""
-  def dev
-    # parse Procfile
+  option "prepare", :type => :boolean, :default => false
+  option "only-prepare", :type => :boolean, :default => false
+  def dev(procfile = "Procfile")
+    execute_procfile(ENV['PWD'], "Prepfile") if (options["prepare"] || options["only-prepare"])
+    execute_procfile(ENV['PWD'], procfile) unless options["only-prepare"]
+  end
+
+  desc "deploy", ""
+  def deploy
+    #true
+    #kubectl run \
+    #  -it --image=trusty-rails-dev:latest \
+    #  --image-pull-policy=IfNotPresent \
+    #  --rm=false --attach=false --quiet=true recv -- \
+    #  bash -c "mkdir -p /tmp/inbound && cd /tmp/inbound && git init && sleep infinity"
+    helm_deploy = %w{helm upgrade --install wkndr ./chart}
+    execute_simple(:blocking, build_dockerfile, options)
   end
 
   private
@@ -41,5 +56,20 @@ class Wkndr < Thor
         o, e, s = Open3.capture3(*cmd, options)
         return exit_proc.call(o, e, s, true)
     end
+  end
+
+  def execute_procfile(working_directory, procfile = "Procfile")
+    Dir.chdir(working_directory)
+
+    pipeline_commands = File.readlines(procfile).collect { |line|
+      process_type, process_cmd = line.split(":", 2)
+      process_type.strip!
+      process_cmd.strip!
+      [process_type, process_cmd, nil]
+    }
+
+    puts pipeline_commands.inspect
+
+    #execute_commands(pipeline_commands)
   end
 end
