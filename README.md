@@ -8,10 +8,6 @@ _requires_ `$PATH/docker` and working `/var/lib/docker.sock`
 
 build `wkndr:latest` from current version of utility
 
-# wkndr dev
-
-runs `Procfile` ... after running `Prepfile` inside of a kubernetes pod
-
 # wkndr changelog
 
 appends to development journal
@@ -29,6 +25,10 @@ current local branch will be stored into bare repo
 event hooks are dispatched
 
 a tar ball of the checkout of the current local branch will be created
+
+# wkndr dev
+
+runs `Procfile` ... after running `Prepfile` inside of a kubernetes pod
 
 # wkndr continuous
 
