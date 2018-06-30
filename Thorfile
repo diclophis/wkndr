@@ -3,6 +3,8 @@
 require 'open3'
 require 'rubygems'
 require 'thor'
+require 'date'
+require 'tempfile'
 
 #ln -fs $(pwd)/Thorfile /usr/local/bin/wkndr
 
@@ -36,16 +38,22 @@ class Wkndr < Thor
   end
 
   desc "push", ""
-  def push
-    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+  def push(origin = nil)
+    if origin
+      name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
 
-    git_push_cmd = []
-    git_push_cmd += ["kubectl", "exec", name_of_wkndr_pod]
-    git_push_cmd += ["-i"]
-    git_push_cmd += ["--"]
-    git_push_cmd += ["git", "receive-pack", "/var/tmp/workspace.git"]
-    options = {}
-    execute_simple(:blocking, git_push_cmd, options)
+      git_push_cmd = []
+      git_push_cmd += ["kubectl", "exec", name_of_wkndr_pod]
+      git_push_cmd += ["-i"]
+      git_push_cmd += ["--"]
+      git_push_cmd += ["git", "receive-pack", "/var/tmp/workspace.git"]
+
+      #options = {:close_others => true, :stdin_data => "cheese"}
+
+      system(*git_push_cmd, options)
+    else
+      system("git", "push", "wkndr", "master", "--exec=wkndr push")
+    end
   end
 
   desc "deploy", ""
