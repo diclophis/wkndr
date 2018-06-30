@@ -57,3 +57,4 @@ RUN git init --bare /var/tmp/workspace.git
 RUN mv /var/tmp/workspace.git/hooks/post-update.sample /var/tmp/workspace.git/hooks/post-update && chmod +x /var/tmp/workspace.git/hooks/post-update
 
 COPY init.sh /bin/init.sh
+COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
