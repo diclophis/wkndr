@@ -17,6 +17,10 @@ class Wkndr < Thor
   def provision
     build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
     options = {}
+
+    #pipeline = ["docker", build_dockerfile, nil]
+    #execute_commands(pipeline)
+
     execute_simple(:blocking, build_dockerfile, options)
 
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=wkndr:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
