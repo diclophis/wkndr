@@ -5,20 +5,17 @@ require 'rubygems'
 require 'thor'
 require 'date'
 require 'tempfile'
-
-#ln -fs $(pwd)/Thorfile /usr/local/bin/wkndr
+require 'pty'
+require 'io/console'
 
 THORFILE = (File.realdirpath(__FILE__))
-TOOL = File.basename(Dir.pwd)
-
-#git archive --format=tar --prefix=junk/ HEAD > /var/tmp/version.tar
-# run wkndr:latest init
-# exec
+WKNDIR = File.basename(Dir.pwd)
+TOOL = "wkndr"
 
 class Wkndr < Thor
   desc "provision", ""
   def provision
-    build_dockerfile = ["docker", "build", "-t", TOOL + ":latest", "."]
+    build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
     options = {}
     execute_simple(:blocking, build_dockerfile, options)
 
@@ -42,23 +39,48 @@ class Wkndr < Thor
     execute_procfile(ENV['PWD'], procfile) unless options["only-prepare"]
   end
 
+  desc "receive-pack", ""
+  def receive_pack(origin)
+    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+
+    git_push_cmd = []
+    git_push_cmd += ["kubectl", "exec", name_of_wkndr_pod]
+    git_push_cmd += ["-i"]
+    git_push_cmd += ["--"]
+    git_push_cmd += ["git", "receive-pack", "/var/tmp/workspace.git"]
+
+    system(*git_push_cmd, options)
+  end
+
   desc "push", ""
-  def push(origin = nil)
-    if origin
-      name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+  def push
+    system("git", "push", "-f", "wkndr", "master", "--exec=wkndr receive-pack")
 
-      git_push_cmd = []
-      git_push_cmd += ["kubectl", "exec", name_of_wkndr_pod]
-      git_push_cmd += ["-i"]
-      git_push_cmd += ["--"]
-      git_push_cmd += ["git", "receive-pack", "/var/tmp/workspace.git"]
+#       kubectl_get_job = "kubectl get job -o yaml #{job_name}"
+#       output, errors, ok = execute_simple(:blocking, kubectl_get_job)
+#       first_job = YAML.load(output)
+#       succeeded = first_job.dig("status", "succeeded")
+#       failed = first_job.dig("status", "failed")
+#       halted = (((succeeded || 0) > 0) || ((failed || 0) > 0))
+# 
+# status:
+#   initContainerStatuses:
+#   containerStatuses:
+#   - containerID: docker://2759df144dc92bdffdbf469d0dd2a3f3d7aa7afb043f1e299c474f2353d62fe3
+#     image: gcr.io/kaniko-project/executor:latest
+#     imageID: docker-pullable://gcr.io/kaniko-project/executor@sha256:501056bf52f3a96f151ccbeb028715330d5d5aa6647e7572ce6c6c55f91ab374
+#     lastState: {}
+#     name: kaniko-wkndr
+#     ready: false
+#     restartCount: 0
+#     state:
+#       terminated:
+#         containerID: docker://2759df144dc92bdffdbf469d0dd2a3f3d7aa7afb043f1e299c474f2353d62fe3
+#         exitCode: 0
+#         finishedAt: 2018-06-30T09:20:49Z
+#         reason: Completed
+#         startedAt: 2018-06-30T09:18:01Z
 
-      #options = {:close_others => true, :stdin_data => "cheese"}
-
-      system(*git_push_cmd, options)
-    else
-      system("git", "push", "-f", "wkndr", "master", "--exec=wkndr push")
-    end
   end
 
   desc "deploy", ""
@@ -91,12 +113,6 @@ class Wkndr < Thor
       new_entry_tmp.write(opening_line_template)
       new_entry_tmp.rewind
 
-      #form = Dialog::Editbox.new do |m|
-      #  m.text "Details of change"
-      #  m.value new_entry_tmp.path
-      #end
-
-      #res = form.show!
       if system("vi #{new_entry_tmp.path}")
         new_entry = File.read(new_entry_tmp.path).split("\n").collect { |l| l.strip }
 
@@ -133,22 +149,180 @@ class Wkndr < Thor
       when :blocking
         o, e, s = Open3.capture3(*cmd, options)
         return exit_proc.call(o, e, s, true)
+
+      when :async
+        r, w, pid = PTY.spawn(*cmd, options)
+        r.sync = true
+        w.sync = true
+        if $stdin.tty?
+          w.winsize = [*$stdin.winsize, 0, 0]
+        end
+        d = Thread.new {
+          begin
+            done_pid, done_status = Process.waitpid2(pid)
+            done_status
+          rescue Errno::ECHILD => e
+            nil
+          end
+        }
+        d[:pid] = pid
+        return [w, r, d, false]
+
     end
   end
 
   def execute_procfile(working_directory, procfile = "Procfile")
-    Dir.chdir(working_directory)
+    time_started = Time.now
+    chunk = 1024
+    select_timeout = 1
+    exiting = false
+    exit_grace_counter = 0
+    term_threshold = 3
+    kill_threshold = term_threshold + 5 #NOTE: timing controls exit status
+    total_kill_count = kill_threshold + 7
+    select_timeout = 1.0
+    needs_winsize_update = false
+    trapped = false
+    ljustp_padding = 0
+    self_reader, self_write = IO.pipe
+
+    trap 'INT' do
+      self_write.write_nonblock("\0")
+
+      if exiting && exit_grace_counter < kill_threshold
+        exit_grace_counter += 1
+      end
+      exiting = true
+      trapped = true
+      select_timeout = 0.1
+    end
+
+    trap 'WINCH' do
+      needs_winsize_update = true
+    end
+
+    Dir.chdir(working_directory || Dir.mktmpdir)
 
     pipeline_commands = File.readlines(procfile).collect { |line|
-      process_type, process_cmd = line.split(":", 2)
-      process_type.strip!
+      process_name, process_cmd = line.split(":", 2)
+      process_name.strip!
       process_cmd.strip!
-      [process_type, process_cmd, nil]
+      process_options = {}
+
+      if process_name.length > ljustp_padding
+        ljustp_padding = process_name.length
+      end
+
+      process_stdin, process_stdout, process_waiter = execute_simple(:async, process_cmd, process_options)
+      {
+        :process_name => process_name,
+        :process_cmd => process_cmd,
+        :process_env => {},
+        :process_options => process_options,
+        :process_stdin => process_stdin,
+        :process_stdout => process_stdout,
+        :process_waiter => process_waiter
+      }
     }
 
-    puts pipeline_commands.inspect
+    ljustp_padding += 1 #NOTE: for readability
 
-    #execute_commands(pipeline_commands)
+    process_stdouts = pipeline_commands.collect { |pipeline_command| pipeline_command[:process_stdout] }
+    process_stdouts += [self_reader]
+
+    detected_exited = []
+
+    until pipeline_commands.all? { |pipeline_command| !pipeline_command[:process_waiter].alive? }
+      if exiting
+        $stdout.write(" ... trying to exit gracefully, please wait #{exit_grace_counter} / #{total_kill_count}")
+        $stdout.write($/)
+        exit_grace_counter += 1
+
+        pipeline_commands.each do |pipeline_command|
+          process_name = pipeline_command[:process_name]
+          pid = pipeline_command[:process_waiter][:pid]
+
+          unless detected_exited.include?(pid)
+            begin
+              resolution = :SIGINT
+
+              if exit_grace_counter > kill_threshold
+                resolution = :SIGKILL
+                Process.kill('KILL', pid)
+              end
+
+              if exit_grace_counter > term_threshold
+                resolution = :SIGTERM
+                Process.kill('TERM', pid)
+              end
+
+              Process.kill('INT', pid)
+
+              $stdout.write("#{process_name} signaled... #{resolution}")
+              $stdout.write($/)
+            rescue Errno::EPERM, Errno::ECHILD, Errno::ESRCH => e
+              detected_exited << pid
+            end
+          end
+        end
+      end
+
+      ready_for_reading, _w, _e = IO.select(process_stdouts, nil, nil, select_timeout)
+
+      self_reader.read_nonblock(chunk) rescue nil
+
+      ready_for_reading && pipeline_commands.each { |pipeline_command|
+        process_name = pipeline_command[:process_name]
+        stdout = pipeline_command[:process_stdout]
+
+        begin
+          if ready_for_reading.include?(stdout)
+            stdout_chunk = stdout.read_nonblock(chunk)
+            should_newline = !stdout_chunk.end_with?($/)
+
+            $stdout.write(process_name.ljust(ljustp_padding) + "OUT: ")
+            $stdout.write(stdout_chunk)
+            $stdout.write($/) if should_newline
+          end
+        rescue EOFError => e
+          process_stdouts.delete(stdout)
+        rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR=> e
+          nil
+        end
+      }
+
+      pipeline_commands.each { |pipeline_command|
+        pid = pipeline_command[:process_waiter][:pid]
+        process_name = pipeline_command[:process_name]
+        process_waiter = pipeline_command[:process_waiter]
+
+        unless process_waiter.alive? || detected_exited.include?(pid)
+          detected_exited << pid
+          process_result = process_waiter.value
+
+          #$stdout.write("#{process_name} exited... #{process_result.success?}")
+          #$stdout.write($/)
+        end
+      }
+    end
+
+    trap 'INT', 'DEFAULT'
+    trap 'WINCH', 'DEFAULT'
+
+    pipeline_commands.each { |pipeline_command|
+      process_name = pipeline_command[:process_name]
+      process_waiter = pipeline_command[:process_waiter]
+      process_result = process_waiter.value
+
+      #$stdout.write("#{process_name} trapped ... #{process_result.success?}")
+      #$stdout.write($/)
+    }
+
+    # ensure nothing is left around
+    Process.wait rescue Errno::ECHILD
+
+    $stdout.write(" ... exiting")
+    $stdout.write($/)
   end
 end
 
@@ -156,7 +330,6 @@ executing_as = File.basename($0)
 
 case executing_as
   when "thor"
-    # default mode
 
   when TOOL, "Thorfile"
     Wkndr.start(ARGV)

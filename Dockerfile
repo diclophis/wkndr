@@ -56,7 +56,6 @@ RUN git init --bare /var/tmp/workspace.git
 
 RUN mv /var/tmp/workspace.git/hooks/post-update.sample /var/tmp/workspace.git/hooks/post-update && chmod +x /var/tmp/workspace.git/hooks/post-update
 
-COPY init.sh /bin/init.sh
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
 
 #RUN openssl dhparam -out /etc/openvpn/dh2048.pem 2048
@@ -105,3 +104,7 @@ RUN openssl ca -in /etc/ssl/private/registry.wkndr.csr \
     -extensions for_server_req
 
 RUN openssl x509 -in /etc/ssl/private/registry.wkndr.pem -outform DER -out /etc/ssl/private/registry.wkndr.crt 
+
+RUN mkdir -p /usr/lib/wkndr
+COPY Thorfile /usr/bin/wkndr
+COPY Procfile.init /usr/lib/wkndr/Procfile.init

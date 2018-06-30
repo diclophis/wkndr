@@ -56,7 +56,7 @@ spec:
         ports:
         - containerPort: 8080
         - containerPort: 5000
-        command: ["/bin/init.sh"]
+        command: ["/usr/bin/wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
         env:
         #- name: HOME
         #  value: "/var/tmp/workspace.git"
