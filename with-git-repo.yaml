@@ -13,16 +13,20 @@ spec:
     args: [
             "--dockerfile", "Dockerfile",
             "--destination", "10.1.0.38:5000/wkndr:kaniko-latest",
-            "-c", "/var/tmp/git/workspace",
-            "--insecure-skip-tls-verify"
+            "-c", "/var/tmp/git/workspace"
           ]
     volumeMounts:
     - mountPath: /var/tmp/git
       name: git-volume
+    - mountPath: /kaniko/ssl/certs
+      name: ca-certificates
   restartPolicy: Never
   volumes:
   - name: git-volume
     gitRepo:
       repository: "http://10.1.0.38:8080/workspace.git"
       revision: "master"
+  - configMap:
+      name: ca-certificates
+    name: ca-certificates
 ...
