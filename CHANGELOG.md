@@ -1,3 +1,9 @@
+# [1.4.0] - 2018-06-29 - mavenlink
+
+Add
+
+#######
+
 # [1.3.0] - 2018-06-29 - mavenlink
 
 Add ability to `wkndr push`... NOTE: `git push --exec=` args have to absorb an extra argument for the name of the remote

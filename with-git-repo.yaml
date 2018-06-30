@@ -18,6 +18,6 @@ spec:
   volumes:
   - name: git-volume
     gitRepo:
-      repository: "http://192.168.1.2:8080/foo/bar.git"
-      revision: "abc123"
+      repository: "http://10.1.0.15:8080/workspace.git"
+      revision: "master"
 ...
