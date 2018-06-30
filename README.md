@@ -4,7 +4,7 @@ A choose your own adventure git+ops authenticated journaled deployment controlle
 
 # safety instructions
 
-do not expose wkndr services publicly unless you have thoroughly understood the risk.
+do not expose or use wkndr unless you have thoroughly understood the risk.
 
 # wkndr provision
 

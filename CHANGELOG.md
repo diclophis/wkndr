@@ -1,3 +1,10 @@
+# [1.5.0] - 2018-06-30 - mavenlink
+
+This will build itself using kaniko by bootstrapping a git repo in a pod
+then using that git repo as the root volume mount for a kaniko build.
+
+#######
+
 # [1.4.0] - 2018-06-29 - mavenlink
 
 Add working apache2 dir perms
