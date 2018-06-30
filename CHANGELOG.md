@@ -1,6 +1,6 @@
 # [1.4.0] - 2018-06-29 - mavenlink
 
-Add
+Add working apache2 dir perms
 
 #######
 

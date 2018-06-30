@@ -5,16 +5,21 @@ metadata:
   name: kaniko-wkndr
 spec:
   containers:
+  #- image: wkndr:latest
+  #  command: ["sleep", "infinity"]
   - image: gcr.io/kaniko-project/executor:latest
+    imagePullPolicy: IfNotPresent
     name: kaniko-wkndr
     args: [
-            "--dockerfile", "/var/tmp/git/Dockerfile",
+            "--dockerfile", "Dockerfile",
             "--tarPath", "/var/tmp/out",
-            "-c", "/var/tmp/git"
+            "--destination", "wkndr/wkndr:kaniko-latest",
+            "-c", "/var/tmp/git/workspace"
           ]
     volumeMounts:
     - mountPath: /var/tmp/git
       name: git-volume
+  restartPolicy: Never
   volumes:
   - name: git-volume
     gitRepo:
