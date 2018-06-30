@@ -52,7 +52,7 @@ class Wkndr < Thor
 
       system(*git_push_cmd, options)
     else
-      system("git", "push", "wkndr", "master", "--exec=wkndr push")
+      system("git", "push", "-f", "wkndr", "master", "--exec=wkndr push")
     end
   end
 
