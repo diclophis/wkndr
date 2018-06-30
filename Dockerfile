@@ -12,6 +12,7 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y \
       locales ruby2.5 rake git \
       apache2 apache2-utils \
+      docker-registry \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen --purge en_US.UTF-8 && /bin/echo -e  "LANG=$LANG\nLANGUAGE=$LANGUAGE\n" | tee /etc/default/locale \
@@ -52,3 +53,7 @@ RUN chmod 640 /etc/apache2/webdav.password
 RUN echo "Listen 8080" | tee /etc/apache2/ports.conf
 
 RUN git init --bare /var/tmp/workspace.git
+
+RUN mv /var/tmp/workspace.git/hooks/post-update.sample /var/tmp/workspace.git/hooks/post-update && chmod +x /var/tmp/workspace.git/hooks/post-update
+
+COPY init.sh /bin/init.sh

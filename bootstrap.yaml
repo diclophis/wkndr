@@ -9,6 +9,10 @@ spec:
     protocol: TCP
   selector:
     name: "wkndr-app"
+  - port: 5000
+    protocol: TCP
+  selector:
+    name: "wkndr-app"
 ...
 ---
 apiVersion: extensions/v1beta1
@@ -51,27 +55,8 @@ spec:
         #  mountPath: {{ print "/home/app/current/config/run.d/" . }}
         ports:
         - containerPort: 8080
-        #readinessProbe:
-        #  httpGet:
-        #    port: 8080
-        #    path: "/status"
-        #    scheme: HTTP
-        #    httpHeaders:
-        #    - name: X-Forwarded-Proto
-        #      value: https
-        #  successThreshold: 1
-        #livenessProbe:
-        #  httpGet:
-        #    port: 8080
-        #    path: "/status"
-        #    scheme: HTTP
-        #    httpHeaders:
-        #    - name: X-Forwarded-Proto
-        #      value: https
-        command:
-         - "apache2"
-         - "-D"
-         - "FOREGROUND"
+        - containerPort: 5000
+        command: /bin/init.sh
         env:
         #- name: HOME
         #  value: "/var/tmp/workspace.git"
