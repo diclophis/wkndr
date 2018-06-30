@@ -18,10 +18,15 @@ TOOL = File.basename(Dir.pwd)
 class Wkndr < Thor
   desc "provision", ""
   def provision
-    #dockerfile = "Dockerfile"
     build_dockerfile = ["docker", "build", "-t", TOOL + ":latest", "."]
-    options = {} #:stdin_data => File.read(dockerfile)}
+    options = {}
     execute_simple(:blocking, build_dockerfile, options)
+
+    dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=wkndr:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
+    system("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
+    system("#{dump_ca} /usr/local/share/ca-certificates/ca.wkndr.crt > ca.wkndr.crt")
+    system("kubectl delete configmap ca-certificates")
+    system("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.wkndr.crt")
   end
 
   desc "continous", ""
