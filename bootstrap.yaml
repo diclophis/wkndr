@@ -6,10 +6,10 @@ metadata:
 spec:
   ports:
   - port: 8080
+    name: apache2
     protocol: TCP
-  selector:
-    name: "wkndr-app"
   - port: 5000
+    name: docker-registry
     protocol: TCP
   selector:
     name: "wkndr-app"
@@ -56,7 +56,7 @@ spec:
         ports:
         - containerPort: 8080
         - containerPort: 5000
-        command: /bin/init.sh
+        command: ["/bin/init.sh"]
         env:
         #- name: HOME
         #  value: "/var/tmp/workspace.git"
