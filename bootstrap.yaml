@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "wkndr-app"
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    name: "wkndr-app"
+...
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wkndr-app
+  labels:
+    app: wkndr-app
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: wkndr-app
+      annotations:
+    spec:
+      #serviceAccountName: rutty
+      volumes:
+      #- name: {{ print . "-config-volume" }}
+      #  configMap:
+      #    name: {{ print . "-ok-go-config" }}
+      containers:
+      - name: wkndr-app
+        image: wkndr:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 500m
+          limits:
+            memory: 1000Mi
+            cpu: 2000m
+        volumeMounts:
+        #- name: {{ print . "-config-volume" }}
+        #  mountPath: {{ print "/home/app/current/config/run.d/" . }}
+        ports:
+        - containerPort: 8080
+        #readinessProbe:
+        #  httpGet:
+        #    port: 8080
+        #    path: "/status"
+        #    scheme: HTTP
+        #    httpHeaders:
+        #    - name: X-Forwarded-Proto
+        #      value: https
+        #  successThreshold: 1
+        #livenessProbe:
+        #  httpGet:
+        #    port: 8080
+        #    path: "/status"
+        #    scheme: HTTP
+        #    httpHeaders:
+        #    - name: X-Forwarded-Proto
+        #      value: https
+        command:
+         - "apache2"
+         - "-D"
+         - "FOREGROUND"
+        env:
+        #- name: HOME
+        #  value: "/var/tmp/workspace.git"

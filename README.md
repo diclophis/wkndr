@@ -2,6 +2,10 @@
 
 A choose your own adventure git+ops authenticated journaled deployment controller development pipeline kubernetes utility test service
 
+# safety instructions
+
+do not expose wkndr services publicly unless you have thoroughly understood the risk.
+
 # wkndr provision
 
 _requires_ `$PATH/docker` and working `/var/lib/docker.sock`

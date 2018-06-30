@@ -1,13 +1,24 @@
 #!/usr/bin/env ruby
 
 require 'open3'
+require 'rubygems'
+require 'thor'
+
+#ln -fs $(pwd)/Thorfile /usr/local/bin/wkndr
+
+THORFILE = (File.realdirpath(__FILE__))
+TOOL = File.basename(Dir.pwd)
+
+#git archive --format=tar --prefix=junk/ HEAD > /var/tmp/version.tar
+# run wkndr:latest init
+# exec
 
 class Wkndr < Thor
   desc "provision", ""
   def provision
-    dockerfile = "Dockerfile"
-    build_dockerfile = %w{docker build -t wkndr:latest -}
-    options = {:stdin_data => File.read(dockerfile)}
+    #dockerfile = "Dockerfile"
+    build_dockerfile = ["docker", "build", "-t", TOOL + ":latest", "."]
+    options = {} #:stdin_data => File.read(dockerfile)}
     execute_simple(:blocking, build_dockerfile, options)
   end
 
@@ -22,6 +33,19 @@ class Wkndr < Thor
   def dev(procfile = "Procfile")
     execute_procfile(ENV['PWD'], "Prepfile") if (options["prepare"] || options["only-prepare"])
     execute_procfile(ENV['PWD'], procfile) unless options["only-prepare"]
+  end
+
+  desc "push", ""
+  def push
+    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+
+    git_push_cmd = []
+    git_push_cmd += ["kubectl", "exec", name_of_wkndr_pod]
+    git_push_cmd += ["-i"]
+    git_push_cmd += ["--"]
+    git_push_cmd += ["git", "receive-pack", "/var/tmp/workspace.git"]
+    options = {}
+    execute_simple(:blocking, git_push_cmd, options)
   end
 
   desc "deploy", ""
@@ -82,8 +106,10 @@ class Wkndr < Thor
       $stdout.write(stdout)
       $stderr.write(stderr)
       if !wait_thr_value.success? && exit_or_not
-        $stderr.write(cmd.inspect + "\n")
+        $stderr.write(cmd.join(" "))
+        $stderr.write($/)
         $stderr.write("FAILED!!!")
+        $stderr.write($/)
         exit 1
       else
         return  stdout, stderr, wait_thr_value.success?
@@ -111,4 +137,14 @@ class Wkndr < Thor
 
     #execute_commands(pipeline_commands)
   end
+end
+
+executing_as = File.basename($0)
+
+case executing_as
+  when "thor"
+    # default mode
+
+  when TOOL, "Thorfile"
+    Wkndr.start(ARGV)
 end
