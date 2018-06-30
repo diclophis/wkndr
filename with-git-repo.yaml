@@ -12,8 +12,9 @@ spec:
     name: kaniko-wkndr
     args: [
             "--dockerfile", "Dockerfile",
-            "--destination", "10.1.0.28:5000/wkndr:kaniko-latest",
-            "-c", "/var/tmp/git/workspace"
+            "--destination", "10.1.0.38:5000/wkndr:kaniko-latest",
+            "-c", "/var/tmp/git/workspace",
+            "--insecure-skip-tls-verify"
           ]
     volumeMounts:
     - mountPath: /var/tmp/git
@@ -22,6 +23,6 @@ spec:
   volumes:
   - name: git-volume
     gitRepo:
-      repository: "http://10.1.0.28:8080/workspace.git"
+      repository: "http://10.1.0.38:8080/workspace.git"
       revision: "master"
 ...
