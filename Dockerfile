@@ -58,3 +58,50 @@ RUN mv /var/tmp/workspace.git/hooks/post-update.sample /var/tmp/workspace.git/ho
 
 COPY init.sh /bin/init.sh
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
+
+#RUN openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+
+RUN mkdir -p /etc/openvpn/tmp \
+             /etc/ssl/CA \
+             /etc/ssl/private \
+             /etc/ssl/private/newcerts \
+
+RUN chown root /etc/ssl/private && chmod 0700 /etc/ssl/private
+
+RUN echo "01" | tee /etc/ssl/CA/serial | tee /etc/ssl/CA/crlnumber
+RUN touch /etc/ssl/CA/index.txt
+
+COPY openssl.conf /etc/ssl/private/openssl.conf
+
+RUN openssl req -config /etc/ssl/private/openssl.conf -new -x509 \
+    -keyout /etc/ssl/private/cakey.pem \
+    -out /usr/local/share/ca-certificates/ca.wkndr.crt \
+    -days 365 -subj "/C=US/ST=Oregon/L=Portland/O=WKNDRCA" -passout pass:01234567890123456789 \
+    -extensions for_ca_req
+
+RUN openssl ca -gencrl -extensions v3_req \
+    -keyfile /etc/ssl/private/cakey.pem \
+    -cert /usr/local/share/ca-certificates/ca.wkndr.crt \
+    -out /etc/ssl/CA/ca.wkndr.crl \
+    -config /etc/ssl/private/openssl.conf \
+    -passin pass:01234567890123456789 \
+    -policy policy_anything -batch
+
+RUN update-ca-certificates --fresh
+
+RUN openssl genrsa -out /etc/ssl/private/registry.wkndr.key 2048 && chmod 600 /etc/ssl/private/registry.wkndr.key
+
+RUN openssl req -new -out /etc/ssl/private/registry.wkndr.csr \
+    -key /etc/ssl/private/registry.wkndr.key \
+    -config /etc/ssl/private/openssl.conf \
+    -extensions for_server_req \
+    -subj "/C=US/ST=Oregon/L=Portland/O=WKNDR-SERVER/CN=WKNDR"
+
+RUN openssl ca -in /etc/ssl/private/registry.wkndr.csr \
+    -out /etc/ssl/private/registry.wkndr.pem \
+    -config /etc/ssl/private/openssl.conf \
+    -policy policy_anything \
+    -batch -passin pass:01234567890123456789 \
+    -extensions for_server_req
+
+RUN openssl x509 -in /etc/ssl/private/registry.wkndr.pem -outform DER -out /etc/ssl/private/registry.wkndr.crt 

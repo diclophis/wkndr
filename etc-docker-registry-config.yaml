@@ -13,11 +13,11 @@ storage:
 http:
   addr: :5000
   tls:
-    certificate: /path/to/x509/public
-    key: /path/to/x509/private
-    clientcas:
-      - /path/to/ca.pem
-      - /path/to/another/ca.pem 
+    certificate: /etc/ssl/private/registry.wkndr.pem
+    key: /etc/ssl/private/registry.wkndr.key
+    #clientcas:
+    #  - /path/to/ca.pem
+    #  - /path/to/another/ca.pem 
   headers:
     X-Content-Type-Options: [nosniff]
 health:
