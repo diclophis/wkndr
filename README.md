@@ -8,6 +8,12 @@ _requires_ `$PATH/docker` and working `/var/lib/docker.sock`
 
 build `wkndr:latest` from current version of utility
 
+# wkndr deploy
+
+_requires_ `$PATH/helm` to be present
+
+installs wkndr as a deployment
+
 # wkndr changelog
 
 appends to development journal
@@ -41,12 +47,6 @@ manages authentication
 # wkndr test
 
 dispatches job pods based on configured testing strategy, defaults to yaml
-
-# wkndr deploy
-
-_requires_ `$PATH/helm` to be present
-
-installs wkndr as a deployment
 
 # wkndr sh
 
