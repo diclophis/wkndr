@@ -84,3 +84,7 @@ openssl ca -in /etc/ssl/private/registry.wkndr.csr \
            -extensions for_server_req
 
 openssl x509 -in /etc/ssl/private/registry.wkndr.pem -outform DER -out /etc/ssl/private/registry.wkndr.crt 
+
+curl -fsSL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.9.3/bin/linux/amd64/kubectl && \
+     echo "81eb30e62a12d6e0527a6a3c2a9501b56d65777bf66684739b16a0afe826c8f8  /usr/local/bin/kubectl" | sha256sum -c && \
+     chmod +x /usr/local/bin/kubectl
