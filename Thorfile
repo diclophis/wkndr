@@ -25,7 +25,7 @@ class Wkndr < Thor
     version_count = existing_entries.count { |l| l.include?(version_delim) }
 
     today = Date.today.to_s
-    username = ENV["USER"] || "ac"
+    username = IO.popen("git config user.name").read.strip || ENV["USER"] || "ac"
     template_args = [today, username]
     opening_line_template = "# [1.#{version_count + 1}.0] - %s - %s\n\n\n\n#{version_delim}\n" % template_args
 
@@ -65,16 +65,6 @@ class Wkndr < Thor
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
     options = {:stdin_data => WKNDR_RUN}
     execute_simple(:blocking, deploy_wkndr_app, options)
-
-    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
-
-    git_init_cmd = [
-                     "kubectl", "exec", name_of_wkndr_pod,
-                     "-i",
-                     "--",
-                     "git", "init", "--bare", "/var/tmp/workspace.git"
-                   ]
-    systemx(*git_init_cmd)
   end
 
   desc "continous", ""
@@ -108,6 +98,16 @@ class Wkndr < Thor
 
   desc "push", ""
   def push
+    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+
+    git_init_cmd = [
+                     "kubectl", "exec", name_of_wkndr_pod,
+                     "-i",
+                     "--",
+                     "git", "init", "--bare", "/var/tmp/workspace.git"
+                   ]
+    systemx(*git_init_cmd)
+
     systemx("git", "push", "-f", "wkndr", "HEAD", "--exec=wkndr receive-pack")
 
 #       kubectl_get_job = "kubectl get job -o yaml #{job_name}"

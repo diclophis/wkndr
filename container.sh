@@ -21,15 +21,15 @@ gem install --no-document thor
 gem list
 
 a2enmod dav dav_fs headers rewrite
-a2dissite 000-default
+
+#a2dissite 000-default
+#a2ensite vhosts
 
 mkdir -p /var/run/apache2; chown www-data /var/run/apache2
 mkdir -p /usr/local/apache; chown www-data /usr/local/apache
 mkdir -p /var/lock/apache2; chown www-data /var/lock/apache2
 mkdir -p /var/log/apache2; chown www-data /var/log/apache2
 mkdir -p /var/tmp; chown www-data /var/tmp
-
-a2ensite vhosts
 
 htpasswd -cb /etc/apache2/webdav.password guest guest
 chown root:www-data /etc/apache2/webdav.password

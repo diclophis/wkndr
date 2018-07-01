@@ -15,13 +15,15 @@ ENV APACHE_RUN_DIR /var/run/apache2
 
 USER root
 
-COPY vhosts.conf /etc/apache2/sites-available/vhosts.conf
+#TODO: build openssl certs on client-side
 COPY openssl.conf /etc/ssl/private/openssl.conf
-COPY git-repo-template /usr/share/git-core/templates
+
 COPY container.sh /var/tmp/container.sh
 
 RUN /var/tmp/container.sh
 
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
+COPY git-repo-template /usr/share/git-core/templates
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
 COPY Thorfile /usr/bin/wkndr
 COPY Procfile.init /usr/lib/wkndr/Procfile.init

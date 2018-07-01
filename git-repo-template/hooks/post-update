@@ -8,5 +8,10 @@
 set -e
 set -x
 
-echo post-update...
+echo post-update... $1 $2 $3
+
+git update-server-info
+
+wkndr kaniko
+
 echo ... post-update

@@ -8,10 +8,6 @@
 set -e
 set -x
 
-echo update ...
-
-git update-server-info
-
-wkndr kaniko
+echo update ... $1 $2 $3
 
 echo ... update
