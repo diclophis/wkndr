@@ -19,7 +19,7 @@ class Wkndr < Thor
   def changelog(changelog = "CHANGELOG.md")
     Dir.chdir(ENV['PWD'])
 
-    existing_entries = File.exists?(changelog) ? File.read("CHANGELOG.md").split("\n").collect { |l| l.strip } : []
+    existing_entries = File.exists?(changelog) ? File.read(changelog).split("\n").collect { |l| l.strip } : []
 
     version_delim = "#######"
     version_count = existing_entries.count { |l| l.include?(version_delim) }
@@ -29,7 +29,7 @@ class Wkndr < Thor
     template_args = [today, username]
     opening_line_template = "# [1.#{version_count + 1}.0] - %s - %s\n\n\n\n#{version_delim}\n" % template_args
 
-    Tempfile.create("changelog") do |new_entry_tmp|
+    Tempfile.create(changelog) do |new_entry_tmp|
       new_entry_tmp.write(opening_line_template)
       new_entry_tmp.rewind
 
@@ -46,6 +46,9 @@ class Wkndr < Thor
         end
       end
     end
+
+    systemx("git", "add", changelog)
+    systemx("git", "commit", "--allow-empty", "-m", "updates in #{changelog}")
   end
 
   desc "build", ""
@@ -65,6 +68,13 @@ class Wkndr < Thor
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
     options = {:stdin_data => WKNDR_RUN}
     execute_simple(:blocking, deploy_wkndr_app, options)
+  end
+
+  desc "sh", ""
+  def sh
+    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+
+    exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
   end
 
   desc "continous", ""
@@ -92,8 +102,21 @@ class Wkndr < Thor
                    ]
 
     systemx(*git_push_cmd)
+  end
 
-    exit(1)
+  #git pull upload-pack HEAD --upload-pack=wkndr
+  desc "upload-pack", ""
+  def upload_pack
+    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+
+    git_pull_cmd = [
+                     "kubectl", "exec", name_of_wkndr_pod,
+                     "-i",
+                     "--",
+                     "git", "upload-pack", "/var/tmp/workspace.git"
+                   ]
+
+    systemx(*git_pull_cmd)
   end
 
   desc "push", ""
@@ -210,7 +233,7 @@ HEREDOC
                        #"--generator", "deployment/v1beta1",
                        #"--generator", "job/v1",
                        #"--dry-run",
-                       #"--rm", "true",
+                       "--rm", "true",
                        "--overrides", kaniko_run_spec.to_json
                      ]
 
