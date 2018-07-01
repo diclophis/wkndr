@@ -63,6 +63,10 @@ class Wkndr < Thor
     system("#{dump_ca} /usr/local/share/ca-certificates/ca.wkndr.crt > ca.wkndr.crt")
     system("kubectl delete configmap ca-certificates")
     system("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.wkndr.crt")
+
+    deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
+    options = {:stdin_data => WKNDR_RUN}
+    execute_simple(:blocking, deploy_wkndr_app, options)
   end
 
   desc "continous", ""
@@ -344,6 +348,59 @@ class Wkndr < Thor
     $stdout.write($/)
   end
 end
+
+WKNDR_RUN=<<-HEREDOC
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "wkndr-app"
+spec:
+  ports:
+  - port: 8080
+    name: apache2
+    protocol: TCP
+  - port: 5000
+    name: docker-registry
+    protocol: TCP
+  selector:
+    name: "wkndr-app"
+...
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wkndr-app
+  labels:
+    app: wkndr-app
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: wkndr-app
+    spec:
+      containers:
+      - name: wkndr-app
+        image: wkndr:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 500m
+          limits:
+            memory: 1000Mi
+            cpu: 2000m
+        ports:
+        - containerPort: 8080
+        - containerPort: 5000
+        command: ["/usr/bin/wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
+HEREDOC
 
 KANIKO_RUN=<<-HEREDOC
 ---
