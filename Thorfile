@@ -48,16 +48,14 @@ class Wkndr < Thor
     end
   end
 
+  desc "build", ""
+  def build
+    build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
+    system(*build_dockerfile)
+  end
+
   desc "provision", ""
   def provision
-    build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
-    options = {}
-
-    #pipeline = ["docker", build_dockerfile, nil]
-    #execute_commands(pipeline)
-
-    execute_simple(:blocking, build_dockerfile, options)
-
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=wkndr:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
     system("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
     system("#{dump_ca} /usr/local/share/ca-certificates/ca.wkndr.crt > ca.wkndr.crt")
@@ -131,17 +129,18 @@ class Wkndr < Thor
     version = IO.popen("git rev-parse --verify HEAD").read.strip
 
     kaniko_run_spec = YAML.load(KANIKO_RUN)
-puts kaniko_run_spec
-exit 1
 
     kaniko_run_cmd = [
                        "kubectl", "run",
                        "kaniko",
                        "--attach", "true",
                        "--image", "gcr.io/kaniko-project/executor:latest",
+                       #"--restart", "Never",
+                       #"--rm", "true",
                        "--overrides", kaniko_run_spec.to_json
                      ]
-    system(*kaniko_run_cmd)
+
+    system(*kaniko_run_cmd) || exit(1)
   end
 
   #desc "deploy", ""
