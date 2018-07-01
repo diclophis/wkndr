@@ -124,6 +124,63 @@ class Wkndr < Thor
 
   end
 
+KANIKO_RUN=<<-HEREDOC
+---
+#apiVersion: extensions/v1beta1
+#apiVersion: batch/v1
+#apiVersion: run-pod/v1
+#apiVersion: job/v1
+apiVersion: v1
+#spec:
+#  template:
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+spec:
+  #restartPolicy: Never
+  #completions: 1
+  #backoffLimit: 1
+  initContainers:
+    - name: git-clone
+      image: wkndr:latest
+      imagePullPolicy: IfNotPresent
+      args:
+        - git
+        - clone
+        - --single-branch
+        - --
+        - http://wkndr-app:8080/workspace.git
+        - /var/tmp/git/workspace # Put it in the volume
+      securityContext:
+        runAsUser: 1
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+      volumeMounts:
+        - mountPath: /var/tmp/git
+          name: git-repo
+  containers:
+  - image: gcr.io/kaniko-project/executor:latest
+    imagePullPolicy: IfNotPresent
+    name: kaniko-wkndr
+    args: [
+            "--dockerfile", "Dockerfile",
+            "--destination", "wkndr-app:5000/wkndr:kaniko-latest",
+            "-c", "/var/tmp/git/workspace"
+          ]
+    volumeMounts:
+    - mountPath: /var/tmp/git
+      name: git-repo
+    - mountPath: /kaniko/ssl/certs
+      name: ca-certificates
+  volumes:
+  - name: git-repo
+    emptyDir: {}
+  - configMap:
+      name: ca-certificates
+    name: ca-certificates
+...
+HEREDOC
+
   desc "kaniko", ""
   def kaniko
     version = IO.popen("git rev-parse --verify HEAD").read.strip
@@ -135,7 +192,11 @@ class Wkndr < Thor
                        "kaniko",
                        "--attach", "true",
                        "--image", "gcr.io/kaniko-project/executor:latest",
-                       #"--restart", "Never",
+                       "--restart", "Never",
+                       "--generator", "run-pod/v1",
+                       #"--generator", "deployment/v1beta1",
+                       #"--generator", "job/v1",
+                       #"--dry-run",
                        #"--rm", "true",
                        "--overrides", kaniko_run_spec.to_json
                      ]
@@ -404,56 +465,6 @@ spec:
         - containerPort: 8080
         - containerPort: 5000
         command: ["/usr/bin/wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
-HEREDOC
-
-KANIKO_RUN=<<-HEREDOC
----
-apiVersion: extensions/v1beta1
-spec:
-  template:
-    metadata:
-      annotations:
-        seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
-    spec:
-      initContainers:
-        - name: git-clone
-          image: wkndr:latest
-          imagePullPolicy: IfNotPresent
-          args:
-            - git
-            - clone
-            - --single-branch
-            - --
-            - http://wkndr-app:8080/workspace.git
-            - /var/tmp/git/workspace # Put it in the volume
-          securityContext:
-            runAsUser: 1
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-          volumeMounts:
-            - mountPath: /var/tmp/git
-              name: git-repo
-      containers:
-      - image: gcr.io/kaniko-project/executor:latest
-        imagePullPolicy: IfNotPresent
-        name: kaniko-wkndr
-        args: [
-                "--dockerfile", "Dockerfile",
-                "--destination", "wkndr-app:5000/wkndr:kaniko-latest",
-                "-c", "/var/tmp/git/workspace"
-              ]
-        volumeMounts:
-        - mountPath: /var/tmp/git
-          name: git-repo
-        - mountPath: /kaniko/ssl/certs
-          name: ca-certificates
-      volumes:
-      - name: git-repo
-        emptyDir: {}
-      - configMap:
-          name: ca-certificates
-        name: ca-certificates
-...
 HEREDOC
 
 executing_as = File.basename($0)
