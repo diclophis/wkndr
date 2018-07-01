@@ -128,7 +128,12 @@ class Wkndr < Thor
 
   desc "kaniko", ""
   def kaniko
+    version = IO.popen("git rev-parse --verify HEAD").read.strip
+
     kaniko_run_spec = YAML.load(KANIKO_RUN)
+puts kaniko_run_spec
+exit 1
+
     kaniko_run_cmd = [
                        "kubectl", "run",
                        "kaniko",
@@ -413,7 +418,7 @@ spec:
     spec:
       initContainers:
         - name: git-clone
-          image: wkndr:latest # Any image with git will do
+          image: wkndr:latest
           imagePullPolicy: IfNotPresent
           args:
             - git
@@ -423,7 +428,7 @@ spec:
             - http://wkndr-app:8080/workspace.git
             - /var/tmp/git/workspace # Put it in the volume
           securityContext:
-            runAsUser: 1 # Any non-root user will do. Match to the workload.
+            runAsUser: 1
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
           volumeMounts:
