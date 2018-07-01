@@ -9,6 +9,7 @@ apt-get update \
        locales ruby2.5 rake git \
        apache2 apache2-utils \
        docker-registry \
+       curl \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 locale-gen --purge en_US.UTF-8 && /bin/echo -e  "LANG=$LANG\nLANGUAGE=$LANGUAGE\n" | tee /etc/default/locale \
