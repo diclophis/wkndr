@@ -1,110 +1,27 @@
 FROM ubuntu:bionic-20180526
 
-ENV DEBIAN_FRONTEND noninteractive
 ENV LC_ALL C.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-USER root
-
-RUN apt-get update \
-    && apt-get upgrade --no-install-recommends -y \
-    && apt-get install --no-install-recommends -y \
-      locales ruby2.5 rake git \
-      apache2 apache2-utils \
-      docker-registry \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-RUN locale-gen --purge en_US.UTF-8 && /bin/echo -e  "LANG=$LANG\nLANGUAGE=$LANGUAGE\n" | tee /etc/default/locale \
-    && locale-gen $LANGUAGE \
-    && dpkg-reconfigure locales
-
-RUN gem update --no-document --system
-RUN gem install --no-document thor
-RUN gem list
-
-RUN a2enmod dav dav_fs headers rewrite
-RUN a2dissite 000-default
+ENV DEBIAN_FRONTEND noninteractive
 
 ENV APACHE_RUN_USER www-data
 ENV APACHE_RUN_GROUP www-data
-
 ENV APACHE_LOG_DIR /var/log/apache2
 ENV APACHE_PID_FILE /var/run/apache2.pid
 ENV APACHE_LOCK_DIR /var/lock/apache2
 ENV APACHE_RUN_DIR /var/run/apache2
 
-RUN mkdir -p /var/run/apache2; chown www-data /var/run/apache2
-RUN mkdir -p /usr/local/apache; chown www-data /usr/local/apache
-RUN mkdir -p /var/lock/apache2; chown www-data /var/lock/apache2
-RUN mkdir -p /var/log/apache2; chown www-data /var/log/apache2
-RUN mkdir -p /var/tmp; chown www-data /var/tmp
-
-#ADD index.html /var/www/html/index.html
+USER root
 
 COPY vhosts.conf /etc/apache2/sites-available/vhosts.conf
+COPY openssl.conf /etc/ssl/private/openssl.conf
+COPY git-repo-template /usr/share/git-core/templates
+COPY container.sh /var/tmp/container.sh
 
-RUN a2ensite vhosts
-
-RUN htpasswd -cb /etc/apache2/webdav.password guest guest
-RUN chown root:www-data /etc/apache2/webdav.password
-RUN chmod 640 /etc/apache2/webdav.password
-
-RUN echo "Listen 8080" | tee /etc/apache2/ports.conf
-
-RUN git init --bare /var/tmp/workspace.git
-
-RUN mv /var/tmp/workspace.git/hooks/post-update.sample /var/tmp/workspace.git/hooks/post-update && chmod +x /var/tmp/workspace.git/hooks/post-update
+RUN /var/tmp/container.sh
 
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
-
-#RUN openssl dhparam -out /etc/openvpn/dh2048.pem 2048
-
-RUN mkdir -p /etc/openvpn/tmp \
-             /etc/ssl/CA \
-             /etc/ssl/private \
-             /etc/ssl/private/newcerts \
-
-RUN chown root /etc/ssl/private && chmod 0700 /etc/ssl/private
-
-RUN echo "01" | tee /etc/ssl/CA/serial | tee /etc/ssl/CA/crlnumber
-RUN touch /etc/ssl/CA/index.txt
-
-COPY openssl.conf /etc/ssl/private/openssl.conf
-
-RUN openssl req -config /etc/ssl/private/openssl.conf -new -x509 \
-    -keyout /etc/ssl/private/cakey.pem \
-    -out /usr/local/share/ca-certificates/ca.wkndr.crt \
-    -days 365 -subj "/C=US/ST=Oregon/L=Portland/O=WKNDRCA" -passout pass:01234567890123456789 \
-    -extensions for_ca_req
-
-RUN openssl ca -gencrl -extensions v3_req \
-    -keyfile /etc/ssl/private/cakey.pem \
-    -cert /usr/local/share/ca-certificates/ca.wkndr.crt \
-    -out /etc/ssl/CA/ca.wkndr.crl \
-    -config /etc/ssl/private/openssl.conf \
-    -passin pass:01234567890123456789 \
-    -policy policy_anything -batch
-
-RUN update-ca-certificates --fresh
-
-RUN openssl genrsa -out /etc/ssl/private/registry.wkndr.key 2048 && chmod 600 /etc/ssl/private/registry.wkndr.key
-
-RUN openssl req -new -out /etc/ssl/private/registry.wkndr.csr \
-    -key /etc/ssl/private/registry.wkndr.key \
-    -config /etc/ssl/private/openssl.conf \
-    -extensions for_server_req \
-    -subj "/C=US/ST=Oregon/L=Portland/O=WKNDR-SERVER/CN=WKNDR"
-
-RUN openssl ca -in /etc/ssl/private/registry.wkndr.csr \
-    -out /etc/ssl/private/registry.wkndr.pem \
-    -config /etc/ssl/private/openssl.conf \
-    -policy policy_anything \
-    -batch -passin pass:01234567890123456789 \
-    -extensions for_server_req
-
-RUN openssl x509 -in /etc/ssl/private/registry.wkndr.pem -outform DER -out /etc/ssl/private/registry.wkndr.crt 
-
-RUN mkdir -p /usr/lib/wkndr
 COPY Thorfile /usr/bin/wkndr
 COPY Procfile.init /usr/lib/wkndr/Procfile.init
