@@ -12,4 +12,6 @@ echo processing...
 
 git update-server-info
 
+wkndr kaniko
+
 echo finished...

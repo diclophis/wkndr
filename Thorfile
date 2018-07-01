@@ -7,12 +7,47 @@ require 'date'
 require 'tempfile'
 require 'pty'
 require 'io/console'
+require 'yaml'
+require 'json'
 
 THORFILE = (File.realdirpath(__FILE__))
 WKNDIR = File.basename(Dir.pwd)
 TOOL = "wkndr"
 
 class Wkndr < Thor
+  desc "changelog [CHANGELOG]", "appends changelog item to CHANGELOG.md"
+  def changelog(changelog = "CHANGELOG.md")
+    Dir.chdir(ENV['PWD'])
+
+    existing_entries = File.exists?(changelog) ? File.read("CHANGELOG.md").split("\n").collect { |l| l.strip } : []
+
+    version_delim = "#######"
+    version_count = existing_entries.count { |l| l.include?(version_delim) }
+
+    today = Date.today.to_s
+    username = ENV["USER"] || "ac"
+    template_args = [today, username]
+    opening_line_template = "# [1.#{version_count + 1}.0] - %s - %s\n\n\n\n#{version_delim}\n" % template_args
+
+    Tempfile.create("changelog") do |new_entry_tmp|
+      new_entry_tmp.write(opening_line_template)
+      new_entry_tmp.rewind
+
+      if system("vi #{new_entry_tmp.path}")
+        new_entry = File.read(new_entry_tmp.path).split("\n").collect { |l| l.strip }
+
+        if new_entry.length > 0
+          new_entry << ""
+
+          existing_entries.unshift(*new_entry)
+          existing_entries << ""
+
+          File.write(changelog, existing_entries.join("\n"))
+        end
+      end
+    end
+  end
+
   desc "provision", ""
   def provision
     build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
@@ -87,50 +122,30 @@ class Wkndr < Thor
 
   end
 
-  desc "deploy", ""
-  def deploy
-    #true
-    #kubectl run \
-    #  -it --image=trusty-rails-dev:latest \
-    #  --image-pull-policy=IfNotPresent \
-    #  --rm=false --attach=false --quiet=true recv -- \
-    #  bash -c "mkdir -p /tmp/inbound && cd /tmp/inbound && git init && sleep infinity"
-    helm_deploy = %w{helm upgrade --install wkndr ./chart}
-    execute_simple(:blocking, build_dockerfile, options)
+  desc "kaniko", ""
+  def kaniko
+    kaniko_run_spec = YAML.load(KANIKO_RUN)
+    kaniko_run_cmd = [
+                       "kubectl", "run",
+                       "kaniko",
+                       "--attach", "true",
+                       "--image", "gcr.io/kaniko-project/executor:latest",
+                       "--overrides", kaniko_run_spec.to_json
+                     ]
+    system(*kaniko_run_cmd)
   end
 
-  desc "changelog [CHANGELOG]", "appends changelog item to CHANGELOG.md"
-  def changelog(changelog = "CHANGELOG.md")
-    Dir.chdir(ENV['PWD'])
-
-    existing_entries = File.exists?(changelog) ? File.read("CHANGELOG.md").split("\n").collect { |l| l.strip } : []
-
-    version_delim = "#######"
-    version_count = existing_entries.count { |l| l.include?(version_delim) }
-
-    today = Date.today.to_s
-    username = ENV["USER"] || "ac"
-    template_args = [today, username]
-    opening_line_template = "# [1.#{version_count + 1}.0] - %s - %s\n\n\n\n#{version_delim}\n" % template_args
-
-    Tempfile.create("changelog") do |new_entry_tmp|
-      new_entry_tmp.write(opening_line_template)
-      new_entry_tmp.rewind
-
-      if system("vi #{new_entry_tmp.path}")
-        new_entry = File.read(new_entry_tmp.path).split("\n").collect { |l| l.strip }
-
-        if new_entry.length > 0
-          new_entry << ""
-
-          existing_entries.unshift(*new_entry)
-          existing_entries << ""
-
-          File.write(changelog, existing_entries.join("\n"))
-        end
-      end
-    end
-  end
+  #desc "deploy", ""
+  #def deploy
+  #  #true
+  #  #kubectl run \
+  #  #  -it --image=trusty-rails-dev:latest \
+  #  #  --image-pull-policy=IfNotPresent \
+  #  #  --rm=false --attach=false --quiet=true recv -- \
+  #  #  bash -c "mkdir -p /tmp/inbound && cd /tmp/inbound && git init && sleep infinity"
+  #  helm_deploy = %w{helm upgrade --install wkndr ./chart}
+  #  execute_simple(:blocking, build_dockerfile, options)
+  #end
 
   private
 
@@ -329,6 +344,56 @@ class Wkndr < Thor
     $stdout.write($/)
   end
 end
+
+KANIKO_RUN=<<-HEREDOC
+---
+apiVersion: extensions/v1beta1
+spec:
+  template:
+    metadata:
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+    spec:
+      initContainers:
+        - name: git-clone
+          image: wkndr:latest # Any image with git will do
+          imagePullPolicy: IfNotPresent
+          args:
+            - git
+            - clone
+            - --single-branch
+            - --
+            - http://wkndr-app:8080/workspace.git
+            - /var/tmp/git/workspace # Put it in the volume
+          securityContext:
+            runAsUser: 1 # Any non-root user will do. Match to the workload.
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - mountPath: /var/tmp/git
+              name: git-repo
+      containers:
+      - image: gcr.io/kaniko-project/executor:latest
+        imagePullPolicy: IfNotPresent
+        name: kaniko-wkndr
+        args: [
+                "--dockerfile", "Dockerfile",
+                "--destination", "wkndr-app:5000/wkndr:kaniko-latest",
+                "-c", "/var/tmp/git/workspace"
+              ]
+        volumeMounts:
+        - mountPath: /var/tmp/git
+          name: git-repo
+        - mountPath: /kaniko/ssl/certs
+          name: ca-certificates
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+      - configMap:
+          name: ca-certificates
+        name: ca-certificates
+...
+HEREDOC
 
 executing_as = File.basename($0)
 
