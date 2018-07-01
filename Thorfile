@@ -33,7 +33,7 @@ class Wkndr < Thor
       new_entry_tmp.write(opening_line_template)
       new_entry_tmp.rewind
 
-      if system("vi #{new_entry_tmp.path}")
+      if system("vi", new_entry_tmp.path)
         new_entry = File.read(new_entry_tmp.path).split("\n").collect { |l| l.strip }
 
         if new_entry.length > 0
@@ -51,20 +51,30 @@ class Wkndr < Thor
   desc "build", ""
   def build
     build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
-    system(*build_dockerfile)
+    systemx(*build_dockerfile)
   end
 
   desc "provision", ""
   def provision
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=wkndr:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
-    system("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
-    system("#{dump_ca} /usr/local/share/ca-certificates/ca.wkndr.crt > ca.wkndr.crt")
-    system("kubectl delete configmap ca-certificates")
-    system("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.wkndr.crt")
+    systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
+    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.wkndr.crt > ca.wkndr.crt")
+    systemx("kubectl delete configmap ca-certificates")
+    systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.wkndr.crt")
 
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
     options = {:stdin_data => WKNDR_RUN}
     execute_simple(:blocking, deploy_wkndr_app, options)
+
+    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+
+    git_init_cmd = [
+                     "kubectl", "exec", name_of_wkndr_pod,
+                     "-i",
+                     "--",
+                     "git", "init", "--bare", "/var/tmp/workspace.git"
+                   ]
+    systemx(*git_init_cmd)
   end
 
   desc "continous", ""
@@ -84,18 +94,21 @@ class Wkndr < Thor
   def receive_pack(origin)
     name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
 
-    git_push_cmd = []
-    git_push_cmd += ["kubectl", "exec", name_of_wkndr_pod]
-    git_push_cmd += ["-i"]
-    git_push_cmd += ["--"]
-    git_push_cmd += ["git", "receive-pack", "/var/tmp/workspace.git"]
+    git_push_cmd = [
+                     "kubectl", "exec", name_of_wkndr_pod,
+                     "-i",
+                     "--",
+                     "git", "receive-pack", "/var/tmp/workspace.git"
+                   ]
 
-    system(*git_push_cmd, options)
+    systemx(*git_push_cmd)
+
+    exit(1)
   end
 
   desc "push", ""
   def push
-    system("git", "push", "-f", "wkndr", "master", "--exec=wkndr receive-pack")
+    systemx("git", "push", "-f", "wkndr", "HEAD", "--exec=wkndr receive-pack")
 
 #       kubectl_get_job = "kubectl get job -o yaml #{job_name}"
 #       output, errors, ok = execute_simple(:blocking, kubectl_get_job)
@@ -201,7 +214,7 @@ HEREDOC
                        "--overrides", kaniko_run_spec.to_json
                      ]
 
-    system(*kaniko_run_cmd) || exit(1)
+    systemx(*kaniko_run_cmd)
   end
 
   #desc "deploy", ""
@@ -411,6 +424,10 @@ HEREDOC
 
     $stdout.write(" ... exiting")
     $stdout.write($/)
+  end
+
+  def systemx(*args)
+   system(*args) || exit(1)
   end
 end
 

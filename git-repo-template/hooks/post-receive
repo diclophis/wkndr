@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+set -x
+
+echo post-receive ...
+
+while read oldrev newrev ref
+do
+  #if [[ $ref = refs/heads/master ]];
+  #if [[ $ref = refs/heads/sandbox ]];
+  echo $oldrev $newrev $ref
+done
+
+echo ... post-receive

@@ -37,8 +37,6 @@ chmod 640 /etc/apache2/webdav.password
 
 echo "Listen 8080" | tee /etc/apache2/ports.conf
 
-git init --bare /var/tmp/workspace.git
-
 mkdir -p /etc/openvpn/tmp \
          /etc/ssl/CA \
          /etc/ssl/private \
