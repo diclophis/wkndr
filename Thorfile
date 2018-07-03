@@ -81,6 +81,20 @@ spec:
     name: "wkndr-app"
 ...
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "wkndr-app-node"
+spec:
+  type: NodePort
+  ports:
+  - port: 5000
+    name: docker-registry-node
+    protocol: TCP
+  selector:
+    name: "wkndr-app"
+...
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
