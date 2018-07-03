@@ -534,7 +534,10 @@ HEREDOC
   end
 
   def systemx(*args)
-   system(*args) || exit(1)
+    unless system(*args)
+      puts "!!!!!! #{args} faild !!!!!"
+      exit(1)
+    end
   end
 
   def name_of_wkndr_pod
