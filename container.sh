@@ -46,6 +46,7 @@ chown root /etc/ssl/private && chmod 0700 /etc/ssl/private
 
 echo "01" | tee /etc/ssl/CA/serial | tee /etc/ssl/CA/crlnumber
 touch /etc/ssl/CA/index.txt
+touch /etc/ssl/CA/index.txt.attr
 
 openssl req -config /etc/ssl/private/openssl.conf -new -x509 \
             -keyout /etc/ssl/private/cakey.pem \
