@@ -63,7 +63,15 @@ class Wkndr < Thor
     systemx(*tag_dockerfile)
   end
 
-WKNDR_RUN=<<-HEREDOC
+  desc "provision", ""
+  def provision
+    #TODO: proper tag release support
+    version = "latest"
+    if (APP == WKNDR)
+      version = IO.popen("git rev-parse --verify HEAD").read.strip
+    end
+
+    wkndr_run=<<-HEREDOC
 ---
 apiVersion: v1
 kind: Service
@@ -89,6 +97,7 @@ spec:
   type: NodePort
   ports:
   - port: 5000
+    nodePort: 31500
     name: docker-registry-node
     protocol: TCP
   selector:
@@ -115,7 +124,7 @@ spec:
     spec:
       containers:
       - name: wkndr-app
-        image: WKNDR_LATEST
+        image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -130,25 +139,14 @@ spec:
         command: ["wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
 HEREDOC
 
-  desc "provision", ""
-  def provision
-    #TODO: proper tag release support
-    version = "latest"
-    if (APP == WKNDR)
-      version = IO.popen("git rev-parse --verify HEAD").read.strip
-    end
-
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
     systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
     systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > ca.#{WKNDR}.crt")
     system("kubectl delete configmap ca-certificates")
     systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.#{WKNDR}.crt")
 
-    #TODO: fix hax?
-    WKNDR_RUN.gsub!("WKNDR_LATEST", "#{WKNDR}:#{version}")
-
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
-    options = {:stdin_data => WKNDR_RUN}
+    options = {:stdin_data => wkndr_run}
     execute_simple(:blocking, deploy_wkndr_app, options)
   end
 
@@ -182,7 +180,6 @@ HEREDOC
     systemx(*git_push_cmd)
   end
 
-  #git pull upload-pack HEAD --upload-pack=wkndr
   desc "upload-pack", ""
   def upload_pack
     git_pull_cmd = [
@@ -196,8 +193,9 @@ HEREDOC
   end
 
   desc "push", ""
-  def push
-    branch = IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
+  option "test", :type => :boolean, :default => false
+  def push(branch = nil)
+    branch ||= IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
 
     git_init_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
@@ -205,44 +203,24 @@ HEREDOC
                      "--",
                      "git", "init", "--bare", "/var/tmp/#{APP}"
                    ]
+
     systemx(*git_init_cmd)
 
-    systemx("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    if options["test"]
+      branch = ("test")
 
-#       kubectl_get_job = "kubectl get job -o yaml #{job_name}"
-#       output, errors, ok = execute_simple(:blocking, kubectl_get_job)
-#       first_job = YAML.load(output)
-#       succeeded = first_job.dig("status", "succeeded")
-#       failed = first_job.dig("status", "failed")
-#       halted = (((succeeded || 0) > 0) || ((failed || 0) > 0))
-# 
-# status:
-#   initContainerStatuses:
-#   containerStatuses:
-#   - containerID: docker://2759df144dc92bdffdbf469d0dd2a3f3d7aa7afb043f1e299c474f2353d62fe3
-#     image: gcr.io/kaniko-project/executor:latest
-#     imageID: docker-pullable://gcr.io/kaniko-project/executor@sha256:501056bf52f3a96f151ccbeb028715330d5d5aa6647e7572ce6c6c55f91ab374
-#     lastState: {}
-#     name: kaniko-wkndr
-#     ready: false
-#     restartCount: 0
-#     state:
-#       terminated:
-#         containerID: docker://2759df144dc92bdffdbf469d0dd2a3f3d7aa7afb043f1e299c474f2353d62fe3
-#         exitCode: 0
-#         finishedAt: 2018-06-30T09:20:49Z
-#         reason: Completed
-#         startedAt: 2018-06-30T09:18:01Z
+      systemx("git", "tag", "-f", branch)
+    end
 
+    systemx("git", "push", "--tags", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
   end
 
 
   desc "kaniko", ""
   def kaniko(branch = nil)
     branch ||= IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
-    #version = IO.popen("git rev-parse --verify HEAD").read.strip
 
-kaniko_run=<<-HEREDOC
+    kaniko_run=<<-HEREDOC
 ---
 apiVersion: v1
 metadata:
