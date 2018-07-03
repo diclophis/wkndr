@@ -9,6 +9,7 @@ require 'pty'
 require 'io/console'
 require 'yaml'
 require 'json'
+require 'expect'
 
 THORFILE = (File.realdirpath(__FILE__))
 WKNDR = "wkndr"
@@ -126,8 +127,6 @@ HEREDOC
 
   desc "sh", ""
   def sh
-    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
-
     exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
   end
 
@@ -146,8 +145,6 @@ HEREDOC
 
   desc "receive-pack", ""
   def receive_pack(origin)
-    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
-
     git_push_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
@@ -161,8 +158,6 @@ HEREDOC
   #git pull upload-pack HEAD --upload-pack=wkndr
   desc "upload-pack", ""
   def upload_pack
-    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
-
     git_pull_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
@@ -175,8 +170,6 @@ HEREDOC
 
   desc "push", ""
   def push
-    name_of_wkndr_pod = IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
-
     git_init_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
@@ -303,6 +296,23 @@ HEREDOC
   #  helm_deploy = %w{helm upgrade --install wkndr ./chart}
   #  execute_simple(:blocking, build_dockerfile, options)
   #end
+
+  #TODO: --in-vivo split
+  desc "repositories", ""
+  def repositories
+    catalog_json = fetch_from_registry("v2/_catalog")
+    catalog = JSON.load(catalog_json)
+
+    puts catalog["repositories"]
+  end
+
+  desc "tags", ""
+  def tags
+    catalog_json = fetch_from_registry("v2/#{APP}/tags/list")
+    catalog = JSON.load(catalog_json)
+
+    puts catalog["tags"]
+  end
 
   private
 
@@ -503,6 +513,41 @@ HEREDOC
 
   def systemx(*args)
    system(*args) || exit(1)
+  end
+
+  def name_of_wkndr_pod
+    IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+  end
+
+  def fetch_from_registry(path)
+    ssl_cert_file = "ca.wkndr.crt"
+
+    kubectl_port_forward_cmd = [
+                                 "kubectl",
+                                 "port-forward",
+                                 name_of_wkndr_pod,
+                                 "5000"
+                               ]
+
+    options = {}
+    process_stdin, process_stdout, process_waiter = execute_simple(:async, kubectl_port_forward_cmd, options)
+
+    process_stdout.expect("-> 5000")
+
+    curl_cmd = [
+                         "curl",
+                         "-s",
+                         "--cacert",
+                         ssl_cert_file,
+                         "--resolve",
+                         "wkndr-app:5000:127.0.0.1",
+                         "https://wkndr-app:5000/#{path}"
+                       ]
+
+    result = IO.popen(curl_cmd).read.strip
+    process_waiter.kill
+    process_waiter.join
+    result
   end
 end
 

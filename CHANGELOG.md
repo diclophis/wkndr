@@ -1,3 +1,9 @@
+# [1.10.0] - 2018-07-02 - Jon Bardin
+
+add tools to fetch in-vivo image repos and tags
+
+#######
+
 # [1.9.0] - 2018-07-02 - Jon Bardin
 
 add better variable names
