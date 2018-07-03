@@ -251,7 +251,7 @@ spec:
   containers:
   - image: gcr.io/kaniko-project/executor:latest
     imagePullPolicy: IfNotPresent
-    name: kaniko-wkndr
+    name: kaniko-#{APP}
     args: [
             "--dockerfile", "Dockerfile",
             "--destination", "wkndr-app:5000/#{APP}:kaniko-latest",
@@ -279,15 +279,13 @@ HEREDOC
 
     kaniko_run_cmd = [
                        "kubectl", "run",
-                       "kaniko",
+                       "kaniko-#{APP}",
                        "--attach", "true",
                        "--image", "gcr.io/kaniko-project/executor:latest",
                        "--restart", "Never",
                        "--generator", "run-pod/v1",
-                       #"--generator", "deployment/v1beta1",
-                       #"--generator", "job/v1",
-                       #"--dry-run",
                        "--rm", "true",
+                       "--quiet", "true",
                        "--overrides", kaniko_run_spec.to_json
                      ]
 
