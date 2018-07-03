@@ -54,7 +54,12 @@ class Wkndr < Thor
 
   desc "build", ""
   def build
-    build_dockerfile = ["docker", "build", "-t", APP + ":latest", "."]
+    version = IO.popen("git rev-parse --verify HEAD").read.strip
+
+    build_dockerfile = ["docker", "build", "-t", APP + ":" + version, "."]
+    systemx(*build_dockerfile)
+
+    tag_dockerfile = ["docker", "tag", APP + ":" + version, APP + ":latest"]
     systemx(*build_dockerfile)
   end
 
@@ -96,7 +101,7 @@ spec:
     spec:
       containers:
       - name: wkndr-app
-        image: #{WKNDR}:latest
+        image: WKNDR_LATEST
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -111,14 +116,22 @@ spec:
         command: ["wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
 HEREDOC
 
-
   desc "provision", ""
   def provision
+    #TODO: proper tag release support
+    version = "latest"
+    if (APP == WKNDR)
+      version = IO.popen("git rev-parse --verify HEAD").read.strip
+    end
+
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
     systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
     systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > ca.#{WKNDR}.crt")
     systemx("kubectl delete configmap ca-certificates")
     systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.#{WKNDR}.crt")
+
+    #TODO: fix hax?
+    WKNDR_RUN.gsub!("WKNDR_LATEST", "#{WKNDR}:#{version}")
 
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
     options = {:stdin_data => WKNDR_RUN}
