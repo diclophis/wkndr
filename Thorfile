@@ -183,6 +183,8 @@ HEREDOC
 
   desc "push", ""
   def push
+    branch = IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
+
     git_init_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
@@ -191,7 +193,7 @@ HEREDOC
                    ]
     systemx(*git_init_cmd)
 
-    systemx("git", "push", "-f", "wkndr", "HEAD", "--exec=wkndr receive-pack")
+    systemx("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
 #       kubectl_get_job = "kubectl get job -o yaml #{job_name}"
 #       output, errors, ok = execute_simple(:blocking, kubectl_get_job)
@@ -223,8 +225,8 @@ HEREDOC
 
   desc "kaniko", ""
   def kaniko
-    branch = IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
-    version = IO.popen("git rev-parse --verify HEAD").read.strip
+    #branch = IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
+    #version = IO.popen("git rev-parse --verify HEAD").read.strip
 
 kaniko_run=<<-HEREDOC
 ---
@@ -247,13 +249,9 @@ spec:
       image: wkndr:latest
       imagePullPolicy: IfNotPresent
       args:
-        - git
-        - clone
-        - --single-branch
-        - --branch
-        - #{branch}
-        - http://wkndr-app:8080/#{APP}
-        - /var/tmp/git/#{APP} # Put it in the volume
+        - bash
+        - -c
+        - git clone http://wkndr-app:8080/#{APP} /var/tmp/git/#{APP}
       securityContext:
         runAsUser: 1
         allowPrivilegeEscalation: false
