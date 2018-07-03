@@ -220,7 +220,13 @@ HEREDOC
 
   end
 
-KANIKO_RUN=<<-HEREDOC
+
+  desc "kaniko", ""
+  def kaniko
+    branch = IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
+    version = IO.popen("git rev-parse --verify HEAD").read.strip
+
+kaniko_run=<<-HEREDOC
 ---
 #apiVersion: extensions/v1beta1
 #apiVersion: batch/v1
@@ -244,7 +250,8 @@ spec:
         - git
         - clone
         - --single-branch
-        - --
+        - --branch
+        - #{branch}
         - http://wkndr-app:8080/#{APP}
         - /var/tmp/git/#{APP} # Put it in the volume
       securityContext:
@@ -276,12 +283,7 @@ spec:
     name: ca-certificates
 ...
 HEREDOC
-
-  desc "kaniko", ""
-  def kaniko
-    version = IO.popen("git rev-parse --verify HEAD").read.strip
-
-    kaniko_run_spec = YAML.load(KANIKO_RUN)
+    kaniko_run_spec = YAML.load(kaniko_run)
 
     kaniko_run_cmd = [
                        "kubectl", "run",
