@@ -11,9 +11,18 @@ set -x
 echo post-update... "${1}"
 
 #git checkout "${1}"
-git symbolic-ref HEAD "${1}"
-git update-server-info
 
-wkndr kaniko "${1}"
+if git show-ref "${1}"
+then
+  git symbolic-ref HEAD "${1}"
+  git update-server-info
+
+  if [ "refs/tags/wkndr/test" = "${1}" ];
+  then
+    echo wkndr test
+  else
+    wkndr kaniko "${1}"
+  fi
+fi
 
 echo ... post-update

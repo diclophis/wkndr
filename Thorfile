@@ -206,13 +206,16 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
+    systemx("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+
     if options["test"]
-      branch = ("test")
+      #branch = ("test")
 
-      systemx("git", "tag", "-f", branch)
+      systemx("git", "tag", "-f", "wkndr/test")
+    
+      system("git", "push", "-f", "wkndr", ":wkndr/test", "--exec=wkndr receive-pack")
+      systemx("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
     end
-
-    systemx("git", "push", "--tags", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
   end
 
 
