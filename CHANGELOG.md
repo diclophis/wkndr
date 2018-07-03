@@ -1,3 +1,9 @@
+# [1.9.0] - 2018-07-02 - Jon Bardin
+
+add better variable names
+
+#######
+
 # [1.8.0] - 2018-07-02 - Jon Bardin
 
 update readme

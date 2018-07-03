@@ -11,8 +11,8 @@ require 'yaml'
 require 'json'
 
 THORFILE = (File.realdirpath(__FILE__))
-WKNDIR = File.basename(Dir.pwd)
-TOOL = "wkndr"
+WKNDR = "wkndr"
+APP = File.basename(Dir.pwd)
 
 class Wkndr < Thor
   desc "changelog [CHANGELOG]", "appends changelog item to CHANGELOG.md"
@@ -53,17 +53,71 @@ class Wkndr < Thor
 
   desc "build", ""
   def build
-    build_dockerfile = ["docker", "build", "-t", WKNDIR + ":latest", "."]
+    build_dockerfile = ["docker", "build", "-t", APP + ":latest", "."]
     systemx(*build_dockerfile)
   end
 
+WKNDR_RUN=<<-HEREDOC
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "wkndr-app"
+spec:
+  ports:
+  - port: 8080
+    name: apache2
+    protocol: TCP
+  - port: 5000
+    name: docker-registry
+    protocol: TCP
+  selector:
+    name: "wkndr-app"
+...
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wkndr-app
+  labels:
+    app: wkndr-app
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: wkndr-app
+    spec:
+      containers:
+      - name: wkndr-app
+        image: #{WKNDR}:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 500m
+          limits:
+            memory: 1000Mi
+            cpu: 2000m
+        ports:
+        - containerPort: 8080
+        - containerPort: 5000
+        command: ["wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
+HEREDOC
+
+
   desc "provision", ""
   def provision
-    dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=wkndr:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
+    dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
     systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
-    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.wkndr.crt > ca.wkndr.crt")
+    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > ca.#{WKNDR}.crt")
     systemx("kubectl delete configmap ca-certificates")
-    systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.wkndr.crt")
+    systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.#{WKNDR}.crt")
 
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
     options = {:stdin_data => WKNDR_RUN}
@@ -98,7 +152,7 @@ class Wkndr < Thor
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
                      "--",
-                     "git", "receive-pack", "/var/tmp/workspace.git"
+                     "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
     systemx(*git_push_cmd)
@@ -113,7 +167,7 @@ class Wkndr < Thor
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
                      "--",
-                     "git", "upload-pack", "/var/tmp/workspace.git"
+                     "git", "upload-pack", "/var/tmp/#{APP}"
                    ]
 
     systemx(*git_pull_cmd)
@@ -127,7 +181,7 @@ class Wkndr < Thor
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
                      "--",
-                     "git", "init", "--bare", "/var/tmp/workspace.git"
+                     "git", "init", "--bare", "/var/tmp/#{APP}"
                    ]
     systemx(*git_init_cmd)
 
@@ -185,8 +239,8 @@ spec:
         - clone
         - --single-branch
         - --
-        - http://wkndr-app:8080/workspace.git
-        - /var/tmp/git/workspace # Put it in the volume
+        - http://wkndr-app:8080/#{APP}
+        - /var/tmp/git/#{APP} # Put it in the volume
       securityContext:
         runAsUser: 1
         allowPrivilegeEscalation: false
@@ -200,8 +254,8 @@ spec:
     name: kaniko-wkndr
     args: [
             "--dockerfile", "Dockerfile",
-            "--destination", "wkndr-app:5000/wkndr:kaniko-latest",
-            "-c", "/var/tmp/git/workspace"
+            "--destination", "wkndr-app:5000/#{APP}:kaniko-latest",
+            "-c", "/var/tmp/git/#{APP}"
           ]
     volumeMounts:
     - mountPath: /var/tmp/git
@@ -454,64 +508,11 @@ HEREDOC
   end
 end
 
-WKNDR_RUN=<<-HEREDOC
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: "wkndr-app"
-spec:
-  ports:
-  - port: 8080
-    name: apache2
-    protocol: TCP
-  - port: 5000
-    name: docker-registry
-    protocol: TCP
-  selector:
-    name: "wkndr-app"
-...
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: wkndr-app
-  labels:
-    app: wkndr-app
-spec:
-  revisionHistoryLimit: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        name: wkndr-app
-    spec:
-      containers:
-      - name: wkndr-app
-        image: wkndr:latest
-        imagePullPolicy: IfNotPresent
-        resources:
-          requests:
-            memory: 500Mi
-            cpu: 500m
-          limits:
-            memory: 1000Mi
-            cpu: 2000m
-        ports:
-        - containerPort: 8080
-        - containerPort: 5000
-        command: ["/usr/bin/wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
-HEREDOC
-
 executing_as = File.basename($0)
 
 case executing_as
   when "thor"
 
-  when TOOL, "Thorfile"
+  when WKNDR, "Thorfile"
     Wkndr.start(ARGV)
 end

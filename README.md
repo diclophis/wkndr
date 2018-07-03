@@ -2,9 +2,9 @@
 
 A choose your own adventure git+ops authenticated journaled deployment controller development pipeline kubernetes utility test service
 
-`wkndr` uses the basename of the current "working directory" as the name of the primary "context" of work aka `$WKNDR`.
+`wkndr` uses the basename of the current "working directory" as the name of the primary "context" of work aka `$APP`.
 
-There are also the notion of the `wkndr` deployment itself, known as `$TOOL`
+There are also the notion of the `wkndr` deployment "itself", known as `$WKNDR`
 
 # safety instructions
 
@@ -20,7 +20,7 @@ Useful for creating notes, or making blank commits for pushing into a git+ops pi
 
 _requires_ `$PATH/docker` and access to a working `/var/lib/docker.sock`
 
-build `$WKNDR:latest` using the `Dockerfile` from the HEAD version of the current working directory's git repo.
+build `$APP:latest` using the `Dockerfile` from the HEAD version of the current working directory's git repo.
 
 # wkndr provision
 
@@ -30,7 +30,7 @@ installs `$TOOL` as a deployment.
 
 # wkndr sh
 
-exec into `$TOOL` deployement for debugging interactive tty
+exec into `$WKNDR` deployement for debugging interactive tty
 
 # wkndr push
 
