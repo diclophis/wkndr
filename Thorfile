@@ -60,7 +60,7 @@ class Wkndr < Thor
     systemx(*build_dockerfile)
 
     tag_dockerfile = ["docker", "tag", APP + ":" + version, APP + ":latest"]
-    systemx(*build_dockerfile)
+    systemx(*tag_dockerfile)
   end
 
 WKNDR_RUN=<<-HEREDOC
@@ -138,10 +138,10 @@ HEREDOC
       version = IO.popen("git rev-parse --verify HEAD").read.strip
     end
 
-    dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:latest --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
+    dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
     systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
     systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > ca.#{WKNDR}.crt")
-    systemx("kubectl delete configmap ca-certificates")
+    system("kubectl delete configmap ca-certificates")
     systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.#{WKNDR}.crt")
 
     #TODO: fix hax?
