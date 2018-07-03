@@ -224,19 +224,13 @@ HEREDOC
 
 
   desc "kaniko", ""
-  def kaniko
-    #branch = IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
+  def kaniko(branch = nil)
+    branch ||= IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
     #version = IO.popen("git rev-parse --verify HEAD").read.strip
 
 kaniko_run=<<-HEREDOC
 ---
-#apiVersion: extensions/v1beta1
-#apiVersion: batch/v1
-#apiVersion: run-pod/v1
-#apiVersion: job/v1
 apiVersion: v1
-#spec:
-#  template:
 metadata:
   annotations:
     seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
@@ -251,7 +245,7 @@ spec:
       args:
         - bash
         - -c
-        - git clone http://wkndr-app:8080/#{APP} /var/tmp/git/#{APP}
+        - git clone http://wkndr-app:8080/#{APP} /var/tmp/git/#{APP} && cd /var/tmp/git/#{APP}
       securityContext:
         runAsUser: 1
         allowPrivilegeEscalation: false
@@ -260,12 +254,13 @@ spec:
         - mountPath: /var/tmp/git
           name: git-repo
   containers:
-  - image: gcr.io/kaniko-project/executor:latest
+  - image: gcr.io/kaniko-project/executor:81f520812c84c7ba020ff0537cf4295917f37d77
     imagePullPolicy: IfNotPresent
     name: kaniko-#{APP}
     args: [
             "--dockerfile", "Dockerfile",
             "--destination", "wkndr-app:5000/#{APP}:kaniko-latest",
+            "--verbosity", "info",
             "-c", "/var/tmp/git/#{APP}"
           ]
     volumeMounts:
