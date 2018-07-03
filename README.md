@@ -57,3 +57,10 @@ dispatches job pods based on configured testing strategy, defaults to yaml
 exec into deployement for debugging interactive tty
 
 # wkndr gitch
+
+# notes
+
+* https://github.com/FiloSottile/mkcert
+* https://www.atlassian.com/git/tutorials/setting-up-a-repository/git-init
+* https://github.com/GoogleContainerTools/kaniko
+* https://github.com/erikhuda/thor
