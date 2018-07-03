@@ -73,7 +73,7 @@ openssl req -new  \
             -key /etc/ssl/private/registry.wkndr.key \
             -config /etc/ssl/private/openssl.conf \
             -extensions for_server_req \
-            -subj "/C=US/ST=Oregon/L=Portland/O=WKNDR-SERVER/CN=WKNDR"
+            -subj "/C=US/ST=Oregon/L=Portland/O=WKNDR-SERVER/CN=wkndr-app"
 
 openssl ca -in /etc/ssl/private/registry.wkndr.csr \
            -out /etc/ssl/private/registry.wkndr.pem \
