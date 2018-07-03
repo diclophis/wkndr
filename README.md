@@ -2,25 +2,35 @@
 
 A choose your own adventure git+ops authenticated journaled deployment controller development pipeline kubernetes utility test service
 
+`wkndr` uses the basename of the current "working directory" as the name of the primary "context" of work aka `$WKNDR`.
+
+There are also the notion of the `wkndr` deployment itself, known as `$TOOL`
+
 # safety instructions
 
 do not expose or use wkndr unless you have thoroughly understood the risk.
 
-# wkndr provision
-
-_requires_ `$PATH/docker` and working `/var/lib/docker.sock`
-
-build `wkndr:latest` from current version of utility
-
-# wkndr deploy
-
-_requires_ `$PATH/helm` to be present
-
-installs wkndr as a deployment
-
 # wkndr changelog
 
-appends to development journal
+appends to development journal CHANGELOG.md by default.
+
+Useful for creating notes, or making blank commits for pushing into a git+ops pipeline
+
+# wkndr build
+
+_requires_ `$PATH/docker` and access to a working `/var/lib/docker.sock`
+
+build `$WKNDR:latest` using the `Dockerfile` from the HEAD version of the current working directory's git repo.
+
+# wkndr provision
+
+_requires_ `$PATH/kubectl` to be present, with a valid `kubeconfig` context set
+
+installs `$TOOL` as a deployment.
+
+# wkndr sh
+
+exec into `$TOOL` deployement for debugging interactive tty
 
 # wkndr push
 
@@ -34,27 +44,23 @@ current local branch will be stored into bare repo
 
 event hooks are dispatched
 
-a tar ball of the checkout of the current local branch will be created
+by default builds `Dockerfile` from a gitRepo volumeMount
 
 # wkndr dev
 
-runs `Procfile` ... after running `Prepfile` inside of a kubernetes pod
+runs `Procfile` ... after optionally running `Prepfile`
 
 # wkndr continuous
 
-internal process for looping
+TBD: internal process for looping
 
 # wkndr key
 
-manages authentication
+TBD: manages authentication
 
 # wkndr test
 
-dispatches job pods based on configured testing strategy, defaults to yaml
-
-# wkndr sh
-
-exec into deployement for debugging interactive tty
+TBD: dispatches job pods based on configured testing strategy, defaults to yaml
 
 # wkndr gitch
 

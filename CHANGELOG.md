@@ -1,3 +1,9 @@
+# [1.8.0] - 2018-07-02 - Jon Bardin
+
+update readme
+
+#######
+
 # [1.7.0] - 2018-07-01 - Jon Bardin
 
 
