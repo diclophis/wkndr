@@ -10,6 +10,8 @@ require 'io/console'
 require 'yaml'
 require 'json'
 require 'expect'
+require 'uri'
+require 'securerandom'
 
 THORFILE = (File.realdirpath(__FILE__))
 WKNDR = "wkndr"
@@ -317,7 +319,295 @@ HEREDOC
     puts catalog["tags"]
   end
 
+  desc "test", ""
+  def test(version=nil)
+    #system("devops apt-cache")
+    #apt_cache_service_fetch = "kubectl get service nginx-apt-proxy-service -o json | jq -r '.spec.clusterIP'"
+    #puts apt_cache_service_fetch if options["verbose"]
+    #http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
+
+    ## get to git checkout... phase 2) inject into container
+    #Dir.chdir(ENV['PWD'])
+
+    version = IO.popen("git rev-parse --verify HEAD").read.strip #TODO
+
+    puts "you are in #{Dir.pwd} building #{version}"
+
+    #project_name = File.basename(Dir.pwd)
+    #docker_for_mac_ssh = "docker run -i --privileged --pid=host debian nsenter -t 1 -m -u -n -i"
+    #ssh_mkdir_tmpfs = ("#{docker_for_mac_ssh} -- mkdir -p /var/tmp/#{project_name}/full-sync/current /var/tmp/#{project_name}/bundle")
+    #execute_simple(:blocking, ssh_mkdir_tmpfs)
+
+    ##TODO: use git to transfer???
+    #rsync_git_repo = ("tar -zc --exclude '*/.bundle' - . | #{docker_for_mac_ssh} -- tar -zx -C /var/tmp/#{project_name}/full-sync/current")
+    #execute_simple(:blocking, rsync_git_repo)
+
+    ## TODO: merge inference vs. configured steps...
+    circle_yaml = YAML.load(File.read(".circleci/config.yml").gsub("{{ .Environment.CIRCLE_SHA1 }}", version).gsub("$CIRCLE_SHA1", version))
+    #raise unless (circle_yaml["version"] == 2) && (circle_yaml["workflows"]["version"] == 2)
+
+    all_job_keys = circle_yaml["jobs"].keys
+    first_job = all_job_keys.first
+
+    deps = {}
+    completed = {}
+    first_time_through = true
+
+    build_job = lambda { |job_to_build|
+      completed[job_to_build] = {}
+      begin
+        #case job_to_build
+        #  when "package_container", "bootstrap", "build"
+						execute_ci(version, circle_yaml, job_to_build)
+            #puts [APP, version, circle_yaml, job_to_build]
+            #["true"]
+        #else
+        #  puts "skipping #{job_to_build}"
+        #  return "skip", "", "true\n\nexit 0", "/usr/bin/true"
+        #end
+      rescue Interrupt => _e
+        []
+      end
+    }
+
+    find_ready_jobs = lambda {
+      circle_yaml["workflows"].each do |workflow_key, workflow|
+        next if workflow_key == "version"
+
+        workflow["jobs"].each do |job_and_reqs|
+          if job_and_reqs.is_a?(String)
+            deps[job_and_reqs] = []
+          else
+            first_key = job_and_reqs.keys.first
+            deps[first_key] = job_and_reqs[first_key]["requires"]
+          end
+        end
+      end
+
+      jobs_with_zero_req = []
+      deps.each do |job, reqs|
+        if reqs.all? { |req| completed[req] }
+          jobs_with_zero_req << job
+        end
+      end
+
+      commands_for_job = []
+      jobs_with_zero_req.reject { |req| completed[req] }.each do |job|
+        foo_job_tasks = build_job.call(job)
+        commands_for_job << foo_job_tasks
+      end
+
+      first_time_through = false
+      if commands_for_job.compact.length > 0
+        commands_for_job
+      else
+        nil
+      end
+    }
+
+    while found_jobs = find_ready_jobs.call
+      commands_to_pipeline = found_jobs
+
+      puts commands_to_pipeline
+    end
+  end
+
   private
+
+  def execute_ci(version, circle_yaml, job_to_bootstrap)
+    build_tmp_dir = "/var/tmp" # TODO: Dir.mktmpdir ???!!!
+
+    job = circle_yaml["jobs"][job_to_bootstrap]
+
+    raise "unknown job #{job_to_bootstrap}" unless job
+
+    clean_name = (APP + "-" + job_to_bootstrap + "-" + version).gsub(/[^\.a-z0-9]/, "-")[0..34]
+
+    circle_env = {
+      "CI" => "true",
+      "CIRCLE_NODE_INDEX" => "0",
+      "CIRCLE_NODE_TOTAL" => "1",
+      "CIRCLE_SHA1" => version,
+      "RACK_ENV" => "test",
+      "RAILS_ENV" => "test",
+      "CIRCLE_ARTIFACTS" => build_tmp_dir,
+      "CIRCLE_TEST_REPORTS" => build_tmp_dir,
+      "SSH_ASKPASS" => "false",
+      "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
+      "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+      #TODO: "HTTP_PROXY_HOST" => "#{proxy_service_ip}:80" 
+    }
+    
+    if job_env = job["environment"]
+      circle_env.merge!(job["environment"])
+    end
+
+    steps = job["steps"]
+
+    #TODO: refactor image url parsing
+    docker_image_url = URI.parse("http://local/#{job["docker"][0]["image"]}")
+    repo = docker_image_url.host
+    image_and_tag = File.basename(docker_image_url.path)
+
+    run_name = clean_name
+    run_image = image_and_tag
+    build_id = SecureRandom.uuid
+
+    job_deployment_manifest = {
+      "apiVersion" => "batch/v1",
+      "kind" => "Job",
+      "metadata" => {
+        "generateName" => run_name + "-",
+        "annotations" => {},
+        "labels" => {}
+      },
+      "spec" => {
+        "backoffLimit" => 1,
+        "template" => {
+          "metadata" => {
+            "generateName" => run_name + "-",
+            "annotations" => {
+              "provision.v1.rutty/bash" => "bash",
+              "ops.v1.rutty/delete-job" => "kubectl delete job --selector app=#{run_name}",
+              "ops.v1.rutty/logs" => "kubectl logs -f {{ POD_NAME }}",
+              "ops.v1.rutty/version" => "kubectl version"
+            },
+            "labels" => {
+              "app" => run_name,
+              "build-id" => build_id
+            }
+          }
+        }
+      }
+    }
+
+    deployment_manifest = job_deployment_manifest
+
+		build_tmp_dir = "/var/tmp"
+		build_manifest_dir = File.join(build_tmp_dir, run_name, version)
+		run_shell_path = File.join(build_manifest_dir, "init.sh")
+		run_shell = run_shell_path
+
+    container_specs = {
+      "spec" => {
+        "terminationGracePeriodSeconds" => 1,
+        "securityContext" => {
+          "fsGroup" => 20
+        },
+        "restartPolicy" => "Never",
+        "containers" => [
+          {
+            "name" => run_name,
+            "image" => run_image,
+            "imagePullPolicy" => "IfNotPresent",
+            "securityContext" => {
+            },
+            "args" => [
+              "bash", "-e", "-x", "-o", "pipefail", run_shell
+            ],
+            "volumeMounts" => [
+              {
+                "mountPath" => "/var/run/docker.sock",
+                "name" => "dood"
+              },
+              {
+                "mountPath" => run_shell,
+                "name" => "shell"
+              },
+              {
+                "mountPath" => "/home/app", # /home/app/current is auto-checkout from gitRepo volume
+                "name" => "repo"
+              },
+              {
+                "mountPath" => "/home/app/.ssh", # /home/app/current is auto-checkout from gitRepo volume
+                "name" => "kube-safe-ssh-key"
+              },
+              {
+                "mountPath" => "/home/app/current/vendor/bundle",
+                "name" => "bundle"
+              }
+            ],
+            "env" => circle_env.collect { |k,v| {"name" => k, "value" => v } }
+          }
+        ],
+        "volumes" => [
+          {
+            "name" => "dood",
+            "hostPath" => {
+              "path" => "/var/run/docker.sock"
+            }
+          },
+          {
+            "name" => "shell",
+            "hostPath" => {
+              "path" => run_shell
+            }
+          },
+          #{
+          #  "name" => "kube-safe-ssh-key",
+          #  "nfs" => {
+          #    "path" => "/Users/user/.kube-data/ssh",
+          #    "server" => "docker.for.mac.host.internal"
+          #  }
+          #},
+          #{
+          #  "name" => "bundle",
+          #  "hostPath" => {
+          #    "path" => "/var/tmp/#{project_name}/bundle"
+          #  }
+          #},
+          {
+            "name" => "bundle",
+            "nfs" => {
+              "path" => "/Users/user/.kube-data/user-gems",
+              "server" => "docker.for.mac.host.internal"
+            }
+          },
+          {
+            "name" => "repo",
+            "gitRepo" => {
+              "repository" => "/var/tmp/#{APP}/full-sync/current",
+              "revision" => version
+            }
+          }
+          #{
+          #  "name" => "repo",
+          #  "nfs" => {
+          #    "path" => "/Users/user/workspace/user",
+          #    "server" => "docker.for.mac.host.internal"
+          #  }
+          #},
+        ]
+      }
+    }
+
+    deployment_manifest["spec"]["template"].merge!(container_specs)
+
+    pro_fd = StringIO.new
+    flow_desc = "#{job_to_bootstrap}"
+
+    steps.each_with_index do |step, step_index|
+      if step == "checkout"
+        next
+      end
+
+      if run = step["run"]
+        name = run["name"]
+
+        pro_fd.write(run["command"])
+
+        next
+      end
+    end
+
+    pro_fd.rewind
+    pro_fd_script = pro_fd.read
+
+    return clean_name, deployment_manifest.to_yaml, pro_fd_script + "\n\nexit 0", run_shell
+  rescue Interrupt => _e
+    puts _e.inspect
+    nil
+  end
 
   def execute_simple(mode, cmd, options)
     exit_proc = lambda { |stdout, stderr, wait_thr_value, exit_or_not|
