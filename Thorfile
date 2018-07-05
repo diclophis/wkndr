@@ -764,6 +764,7 @@ HEREDOC
       end
 
       ready_for_reading, _w, _e = IO.select(process_stdouts + process_stderrs, nil, nil, select_timeout)
+      $stdout.flush
 
       self_reader.read_nonblock(chunk) rescue nil
 
