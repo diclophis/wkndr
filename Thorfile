@@ -237,6 +237,10 @@ HEREDOC
   def kaniko(branch = nil)
     branch ||= IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
 
+    apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
+    http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
+    puts http_proxy_service_ip
+
     kaniko_run=<<-HEREDOC
 ---
 apiVersion: v1
@@ -272,6 +276,9 @@ spec:
             "--verbosity", "info",
             "-c", "/var/tmp/git/#{APP}"
           ]
+    envs:
+    - name: HTTP_PROXY_HOST
+      value: #{http_proxy_service_ip}:8111
     volumeMounts:
     - mountPath: /var/tmp/git
       name: git-repo
