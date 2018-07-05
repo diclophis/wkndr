@@ -342,18 +342,17 @@ HEREDOC
 
     deps = {}
     completed = {}
+    started_commands = []
     first_time_through = true
 
     build_job = lambda { |job_to_build|
       begin
-        puts job_to_build
         execute_ci(version, circle_yaml, job_to_build)
       rescue Interrupt => _e
         []
       end
     }
 
-    started_commands = []
     find_ready_jobs = lambda {
       circle_yaml["workflows"].each do |workflow_key, workflow|
         next if workflow_key == "version"
@@ -369,22 +368,17 @@ HEREDOC
       end
 
       jobs_with_zero_req = []
+
       deps.each do |job, reqs|
         if reqs.all? { |req| completed[req] }
           jobs_with_zero_req << job
         end
       end
 
-      commands_for_job = []
-      new_work = jobs_with_zero_req.reject { |req| completed[req] }.each do |job|
-        #unless started_commands.include?(job)
-        #  foo_job_tasks = build_job.call(job)
-        #  commands_for_job << foo_job_tasks
-        #end
-      end
+      jobs_with_zero_req.reject! { |req| completed[req] }
 
-      if new_work.compact.length > 0
-        new_work
+      if jobs_with_zero_req.compact.length > 0
+        jobs_with_zero_req
       else
         nil
       end
@@ -397,6 +391,7 @@ HEREDOC
         unless started_commands.include?(fjob)
           started_commands << fjob
           foo_job_tasks = build_job.call(fjob)
+          foo_job_tasks[1][0].close
           remapped << foo_job_tasks
         end
       }
@@ -404,24 +399,18 @@ HEREDOC
       all_cmds += remapped
 
       all_cmds.each { |fjob, cmds|
-        #process_stdin, process_stdout, process_waiter = execute_simple(:async, process_cmd, process_options)
-
-        #stdin, stdout, stderr, wait_thr
         process_waiter = cmds[3]
         exit_stdout = cmds[4]
 
         unless completed[fjob]
           unless process_waiter.alive?
             puts [fjob, process_waiter[:pid]].inspect
-            #stdout, stderr, wait_thr_value, exit_or_not
             exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
             puts "finished #{fjob}"
             completed[fjob] = {}
           end
         end
       }
-
-      Thread.pass
     end
   end
 
@@ -465,35 +454,6 @@ HEREDOC
     run_name = clean_name
     run_image = image_and_tag
     build_id = SecureRandom.uuid
-
-    #job_deployment_manifest = {
-    #  "apiVersion" => "batch/v1",
-    #  "kind" => "Job",
-    #  "metadata" => {
-    #    "generateName" => run_name + "-",
-    #    "annotations" => {},
-    #    "labels" => {}
-    #  },
-    #  "spec" => {
-    #    "backoffLimit" => 1,
-    #    "template" => {
-    #      "metadata" => {
-    #        "generateName" => run_name + "-",
-    #        "annotations" => {
-    #          "provision.v1.rutty/bash" => "bash",
-    #          "ops.v1.rutty/delete-job" => "kubectl delete job --selector app=#{run_name}",
-    #          "ops.v1.rutty/logs" => "kubectl logs -f {{ POD_NAME }}",
-    #          "ops.v1.rutty/version" => "kubectl version"
-    #        },
-    #        "labels" => {
-    #          "app" => run_name,
-    #          "build-id" => build_id
-    #        }
-    #      }
-    #    }
-    #  }
-    #}
-    #deployment_manifest = job_deployment_manifest
 
 		build_tmp_dir = "/var/tmp"
 		build_manifest_dir = File.join(build_tmp_dir, run_name, version)
@@ -548,7 +508,7 @@ HEREDOC
               },
               {
                 "mountPath" => build_manifest_dir,
-                "name" => "pro-fd-config-volume"
+                "name" => "fd-config-volume"
               },
               {
                 "mountPath" => "/home/app", # /home/app/current is auto-checkout from gitRepo volume
@@ -566,9 +526,9 @@ HEREDOC
             }
           },
           {
-            "name" => "pro-fd-config-volume",
+            "name" => "fd-config-volume",
             "configMap" => {
-              "name" => "pro-fd"
+              "name" => "fd-#{run_name}"
             }
           },
           {
@@ -578,8 +538,6 @@ HEREDOC
         ]
       }
     }
-
-    #deployment_manifest["spec"]["template"].merge!(container_specs)
 
     pro_fd = StringIO.new
     flow_desc = "#{job_to_bootstrap}"
@@ -604,7 +562,7 @@ HEREDOC
       "apiVersion" => "v1",
       "kind" => "ConfigMap",
       "metadata" => {
-        "name" => "pro-fd"
+        "name" => "fd-#{run_name}"
       },
       "data" => {
         "init.sh" => pro_fd_script
