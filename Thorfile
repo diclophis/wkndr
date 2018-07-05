@@ -459,7 +459,7 @@ HEREDOC
       "CIRCLE_TEST_REPORTS" => build_tmp_dir,
       "SSH_ASKPASS" => "false",
       "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
-      "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+      "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
       "HTTP_PROXY_HOST" => "wkndr-app:8111" 
     }
 
