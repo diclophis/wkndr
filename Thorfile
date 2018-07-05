@@ -385,9 +385,13 @@ HEREDOC
     }
 
     all_cmds = []
-    while found_jobs = find_ready_jobs.call
+
+    loop do
+      found_jobs = find_ready_jobs.call
+
       remapped = []
-      found_jobs.each { |fjob|
+
+      found_jobs && found_jobs.each { |fjob|
         unless started_commands.include?(fjob)
           started_commands << fjob
           foo_job_tasks = build_job.call(fjob)
@@ -398,24 +402,34 @@ HEREDOC
 
       all_cmds += remapped
 
-      process_fds = all_cmds.collect { |fjob, cmds| [cmds[0], cmds[1]] }.flatten
+      process_fds = all_cmds.collect { |fjob, cmds| cmds[3].join(1.0); [cmds[1], cmds[2]] }.flatten
 
-      _r, _w, _e = IO.select(process_fds, nil, nil, 1.0)
+      _r, _w, _e = IO.select(process_fds, nil, process_fds, 1.0)
 
-      all_cmds.each { |fjob, cmds|
-        process_waiter = cmds[3]
-        exit_stdout = cmds[4]
+      exited_this_loop = false
 
-        unless completed[fjob]
-          unless process_waiter.alive?
-            puts [fjob, process_waiter[:pid]].inspect
-            exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
-            puts "finished #{fjob}"
-            completed[fjob] = {}
+      if _r || _e
+        all_cmds.each do |fjob, cmds|
+          process_waiter = cmds[3]
+          exit_stdout = cmds[4]
+
+          unless completed[fjob]
+            unless process_waiter.alive?
+              completed[fjob] = {}
+              exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
+            end
           end
         end
-      }
+      end
+
+      break unless found_jobs
     end
+
+    Process.wait rescue Errno::ECHILD
+
+    all_ok = all_cmds.all? { |fjob, cmds| !cmds[3].alive? && cmds[3].value.success? }
+
+    puts all_ok
   end
 
   private
@@ -515,7 +529,7 @@ HEREDOC
                 "name" => "fd-config-volume"
               },
               {
-                "mountPath" => "/home/app", # /home/app/current is auto-checkout from gitRepo volume
+                "mountPath" => "/home/app",
                 "name" => "git-repo"
               }
             ],
@@ -554,13 +568,13 @@ HEREDOC
       if run = step["run"]
         name = run["name"]
         pro_fd.write(run["command"])
+
         next
       end
     end
 
+    pro_fd.write("\n\nexit 0;")
     pro_fd.rewind
-    pro_fd_script = pro_fd.read
-    pro_fd_script += "\n\nexit 0;"
 
     configmap_manifest = {
       "apiVersion" => "v1",
@@ -569,7 +583,7 @@ HEREDOC
         "name" => "fd-#{run_name}"
       },
       "data" => {
-        "init.sh" => pro_fd_script
+        "init.sh" => pro_fd.read
       }
     }
 
@@ -577,19 +591,17 @@ HEREDOC
     apply_configmap_options = {:stdin_data => configmap_manifest.to_yaml}
     execute_simple(:blocking, apply_configmap, apply_configmap_options)
 
-    #return clean_name, deployment_manifest.to_yaml(:canonical => true) + configmap_manifest.to_yaml(:canonical => true)
-
     ci_run_cmd = [
-                       "kubectl", "run",
-                       run_name,
-                       "--attach", "true",
-                       "--image", run_image,
-                       "--restart", "Never",
-                       "--generator", "run-pod/v1",
-                       "--rm", "true",
-                       "--quiet", "true",
-                       "--overrides", container_specs.to_json
-                     ]
+                   "kubectl", "run",
+                   run_name,
+                   "--attach", "true",
+                   "--image", run_image,
+                   "--restart", "Never",
+                   "--generator", "run-pod/v1",
+                   "--rm", "true",
+                   "--quiet", "true",
+                   "--overrides", container_specs.to_json
+                 ]
 
     return job_to_bootstrap, execute_simple(:async, ci_run_cmd, {})
   rescue Interrupt => _e
@@ -618,6 +630,7 @@ HEREDOC
         return exit_proc.call(o, e, s, true)
 
       when :async
+        #NOTE: support tty?
         #r, w, pid = PTY.spawn(*cmd, options)
         #r.sync = true
         #w.sync = true
@@ -681,7 +694,6 @@ HEREDOC
         ljustp_padding = process_name.length
       end
 
-      #stdin, stdout, stderr, wait_thr
       process_stdin, process_stdout, process_stderr, process_waiter = execute_simple(:async, process_cmd, process_options)
       {
         :process_name => process_name,
