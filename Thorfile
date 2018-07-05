@@ -335,6 +335,11 @@ HEREDOC
 
   desc "test", ""
   def test(version=nil)
+    apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
+    #puts apt_cache_service_fetch # if options["verbose"]
+    http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
+    puts http_proxy_service_ip
+
     version = IO.popen("git rev-parse --verify HEAD").read.strip #TODO
 
     puts "you are in #{Dir.pwd} building #{version}"
@@ -352,7 +357,7 @@ HEREDOC
 
     build_job = lambda { |job_to_build|
       begin
-        execute_ci(version, circle_yaml, job_to_build)
+        execute_ci(version, circle_yaml, job_to_build, http_proxy_service_ip)
       rescue Interrupt => _e
         []
       end
@@ -439,7 +444,7 @@ HEREDOC
 
   private
 
-  def execute_ci(version, circle_yaml, job_to_bootstrap)
+  def execute_ci(version, circle_yaml, job_to_bootstrap, http_proxy_service_ip)
     build_tmp_dir = "/var/tmp" # TODO: Dir.mktmpdir ???!!!
 
     job = circle_yaml["jobs"][job_to_bootstrap]
@@ -460,7 +465,7 @@ HEREDOC
       "SSH_ASKPASS" => "false",
       "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
       "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
-      "HTTP_PROXY_HOST" => "wkndr-app:8111" 
+      "HTTP_PROXY_HOST" => "#{http_proxy_service_ip}:8111"
     }
 
     if job_env = job["environment"]
