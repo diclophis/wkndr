@@ -22,7 +22,7 @@ then
     wkndr kaniko "${1}"
   elif [ "refs/tags/wkndr/test" = "${1}" ];
   then
-    echo wkndr test
+    wkndr test
   else
     echo ...
   fi
