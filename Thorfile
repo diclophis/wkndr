@@ -343,8 +343,7 @@ HEREDOC
     build_job = lambda { |job_to_build|
       begin
         puts job_to_build
-        #execute_ci
-        return job_to_build, execute_simple(:async, ["echo running #{job_to_build} && sleep 5"], {})
+        execute_ci(version, circle_yaml, job_to_build)
       rescue Interrupt => _e
         []
       end
@@ -463,35 +462,34 @@ HEREDOC
     run_image = image_and_tag
     build_id = SecureRandom.uuid
 
-    job_deployment_manifest = {
-      "apiVersion" => "batch/v1",
-      "kind" => "Job",
-      "metadata" => {
-        "generateName" => run_name + "-",
-        "annotations" => {},
-        "labels" => {}
-      },
-      "spec" => {
-        "backoffLimit" => 1,
-        "template" => {
-          "metadata" => {
-            "generateName" => run_name + "-",
-            "annotations" => {
-              "provision.v1.rutty/bash" => "bash",
-              "ops.v1.rutty/delete-job" => "kubectl delete job --selector app=#{run_name}",
-              "ops.v1.rutty/logs" => "kubectl logs -f {{ POD_NAME }}",
-              "ops.v1.rutty/version" => "kubectl version"
-            },
-            "labels" => {
-              "app" => run_name,
-              "build-id" => build_id
-            }
-          }
-        }
-      }
-    }
-
-    deployment_manifest = job_deployment_manifest
+    #job_deployment_manifest = {
+    #  "apiVersion" => "batch/v1",
+    #  "kind" => "Job",
+    #  "metadata" => {
+    #    "generateName" => run_name + "-",
+    #    "annotations" => {},
+    #    "labels" => {}
+    #  },
+    #  "spec" => {
+    #    "backoffLimit" => 1,
+    #    "template" => {
+    #      "metadata" => {
+    #        "generateName" => run_name + "-",
+    #        "annotations" => {
+    #          "provision.v1.rutty/bash" => "bash",
+    #          "ops.v1.rutty/delete-job" => "kubectl delete job --selector app=#{run_name}",
+    #          "ops.v1.rutty/logs" => "kubectl logs -f {{ POD_NAME }}",
+    #          "ops.v1.rutty/version" => "kubectl version"
+    #        },
+    #        "labels" => {
+    #          "app" => run_name,
+    #          "build-id" => build_id
+    #        }
+    #      }
+    #    }
+    #  }
+    #}
+    #deployment_manifest = job_deployment_manifest
 
 		build_tmp_dir = "/var/tmp"
 		build_manifest_dir = File.join(build_tmp_dir, run_name, version)
@@ -499,13 +497,13 @@ HEREDOC
 		run_shell = run_shell_path
 
     container_specs = {
+      "apiVersion" => "v1",
       "spec" => {
         "terminationGracePeriodSeconds" => 1,
         "securityContext" => {
           "fsGroup" => 20
         },
         "restartPolicy" => "Never",
-
 				"initContainers" => [
           {
             "name" => "git-clone",
@@ -532,7 +530,7 @@ HEREDOC
         "containers" => [
           {
             "name" => run_name,
-            "image" => run_image,
+            #"image" => run_image,
             "imagePullPolicy" => "IfNotPresent",
             "securityContext" => {
             },
@@ -577,7 +575,7 @@ HEREDOC
       }
     }
 
-    deployment_manifest["spec"]["template"].merge!(container_specs)
+    #deployment_manifest["spec"]["template"].merge!(container_specs)
 
     pro_fd = StringIO.new
     flow_desc = "#{job_to_bootstrap}"
@@ -605,11 +603,29 @@ HEREDOC
         "name" => "pro-fd"
       },
       "data" => {
-        "init.sh": pro_fd_script
+        "init.sh" => pro_fd_script
       }
     }
 
+    apply_configmap = ["kubectl", "apply", "-f", "-"]
+    apply_configmap_options = {:stdin_data => configmap_manifest.to_yaml}
+    execute_simple(:blocking, apply_configmap, apply_configmap_options)
+
     #return clean_name, deployment_manifest.to_yaml(:canonical => true) + configmap_manifest.to_yaml(:canonical => true)
+
+    ci_run_cmd = [
+                       "kubectl", "run",
+                       "ci-#{APP}",
+                       "--attach", "true",
+                       "--image", "wkndr:latest",
+                       "--restart", "Never",
+                       "--generator", "run-pod/v1",
+                       "--rm", "true",
+                       "--quiet", "true",
+                       "--overrides", container_specs.to_json
+                     ]
+
+    return job_to_bootstrap, execute_simple(:async, ci_run_cmd, {})
   rescue Interrupt => _e
     puts _e.inspect
     nil
