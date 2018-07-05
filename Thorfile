@@ -344,7 +344,7 @@ HEREDOC
       begin
         puts job_to_build
         #execute_ci
-        return job_to_build, execute_simple(:async, ["curl -s -v https://google.com"], {})
+        return job_to_build, execute_simple(:async, ["echo running #{job_to_build} && sleep 5"], {})
       rescue Interrupt => _e
         []
       end
@@ -411,7 +411,7 @@ HEREDOC
           unless process_waiter.alive?
             puts [fjob, process_waiter[:pid]].inspect
             #stdout, stderr, wait_thr_value, exit_or_not
-            exit_stdout.call(cmds[1].readlines, "", process_waiter.value, true)
+            exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
             puts "finished #{fjob}"
             completed[fjob] = {}
           end
