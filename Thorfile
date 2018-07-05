@@ -199,6 +199,7 @@ HEREDOC
 
   desc "push", ""
   option "test", :type => :boolean, :default => false
+  option "build", :type => :boolean, :default => false
   def push(branch = nil)
     branch ||= IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
 
@@ -214,12 +215,15 @@ HEREDOC
     systemx("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
-      #branch = ("test")
-
       systemx("git", "tag", "-f", "wkndr/test")
-    
       system("git", "push", "-f", "wkndr", ":wkndr/test", "--exec=wkndr receive-pack")
       systemx("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
+    end
+
+    if options["build"]
+      systemx("git", "tag", "-f", "wkndr/build")
+      system("git", "push", "-f", "wkndr", ":wkndr/build", "--exec=wkndr receive-pack")
+      systemx("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
     end
   end
 
@@ -530,7 +534,7 @@ HEREDOC
         "containers" => [
           {
             "name" => run_name,
-            #"image" => run_image,
+            "image" => run_image,
             "imagePullPolicy" => "IfNotPresent",
             "securityContext" => {
             },
@@ -615,9 +619,9 @@ HEREDOC
 
     ci_run_cmd = [
                        "kubectl", "run",
-                       "ci-#{APP}",
+                       run_name,
                        "--attach", "true",
-                       "--image", "wkndr:latest",
+                       "--image", run_image,
                        "--restart", "Never",
                        "--generator", "run-pod/v1",
                        "--rm", "true",

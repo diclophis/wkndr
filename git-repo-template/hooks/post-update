@@ -17,11 +17,14 @@ then
   git symbolic-ref HEAD "${1}"
   git update-server-info
 
-  if [ "refs/tags/wkndr/test" = "${1}" ];
+  if [ "refs/tags/wkndr/build" = "${1}" ];
+  then
+    wkndr kaniko "${1}"
+  elif [ "refs/tags/wkndr/test" = "${1}" ];
   then
     echo wkndr test
   else
-    wkndr kaniko "${1}"
+    echo ...
   fi
 fi
 
