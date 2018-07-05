@@ -84,6 +84,9 @@ metadata:
   name: "wkndr-app"
 spec:
   ports:
+  - port: 8111
+    name: nginx-apt-proxy
+    protocol: TCP
   - port: 8080
     name: apache2
     protocol: TCP
@@ -139,6 +142,7 @@ spec:
             memory: 1000Mi
             cpu: 2000m
         ports:
+        - containerPort: 8111
         - containerPort: 8080
         - containerPort: 5000
         command: ["wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
@@ -208,6 +212,7 @@ HEREDOC
                      "-i",
                      "--",
                      "git", "init", "--bare", "/var/tmp/#{APP}"
+                     #"git", "init", "/var/tmp/#{APP}"
                    ]
 
     systemx(*git_init_cmd)
@@ -455,7 +460,7 @@ HEREDOC
       "SSH_ASKPASS" => "false",
       "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
       "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
-      #TODO: "HTTP_PROXY_HOST" => "#{proxy_service_ip}:80" 
+      "HTTP_PROXY_HOST" => "wkndr-app:8111" 
     }
 
     if job_env = job["environment"]
@@ -830,7 +835,7 @@ HEREDOC
 
   def systemx(*args)
     unless system(*args)
-      puts "!!!!!! #{args} faild !!!!!"
+      puts "!!!!!! #{args} failed !!!!!"
       exit(1)
     end
   end

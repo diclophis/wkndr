@@ -23,6 +23,7 @@ COPY container.sh /var/tmp/container.sh
 RUN /var/tmp/container.sh
 
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
+COPY nginx-apt-proxy.conf /etc/nginx/conf.d
 COPY git-repo-template /usr/share/git-core/templates
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
 COPY Thorfile /usr/bin/wkndr

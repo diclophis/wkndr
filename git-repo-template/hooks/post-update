@@ -22,7 +22,13 @@ then
     wkndr kaniko "${1}"
   elif [ "refs/tags/wkndr/test" = "${1}" ];
   then
+    TMPCHECKOUT=$(mktemp -d)/$(basename $(pwd))
+    git clone -l . ${TMPCHECKOUT}
+    cd ${TMPCHECKOUT}
+    rm -Rf ${TMPCHECKOUT}
+    unset GIT_DIR
     wkndr test
+    export GIT_DIR="."
   else
     echo ...
   fi
