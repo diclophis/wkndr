@@ -516,7 +516,7 @@ HEREDOC
 						"args" => [
 							"bash",
 							"-c",
-							"git clone http://wkndr-app:8080/#{APP} /home/app/#{APP}"
+							"git clone http://wkndr-app:8080/#{APP} /home/app/#{APP} && ln -sf /home/app/#{APP} /home/app/current"
             ],
 						"securityContext" => {
 							"runAsUser" => 1,
