@@ -13,6 +13,9 @@ require 'expect'
 require 'uri'
 require 'securerandom'
 
+#$stdin.sync = true
+#$stdout.sync = true
+
 THORFILE = (File.realdirpath(__FILE__))
 WKNDR = "wkndr"
 APP = File.basename(Dir.pwd)
@@ -316,7 +319,9 @@ HEREDOC
     catalog_json = fetch_from_registry("v2/#{APP}/tags/list")
     catalog = JSON.load(catalog_json)
 
-    puts catalog["tags"]
+    if catalog
+      puts catalog["tags"]
+    end
   end
 
   desc "test", ""
@@ -398,8 +403,9 @@ HEREDOC
       all_cmds.each { |fjob, cmds|
         #process_stdin, process_stdout, process_waiter = execute_simple(:async, process_cmd, process_options)
 
-        process_waiter = cmds[2]
-        exit_stdout = cmds[3]
+        #stdin, stdout, stderr, wait_thr
+        process_waiter = cmds[3]
+        exit_stdout = cmds[4]
 
         unless completed[fjob]
           unless process_waiter.alive?
@@ -546,14 +552,6 @@ HEREDOC
                 "mountPath" => "/home/app", # /home/app/current is auto-checkout from gitRepo volume
                 "name" => "git-repo"
               }
-              #{
-              #  "mountPath" => "/home/app/.ssh", # /home/app/current is auto-checkout from gitRepo volume
-              #  "name" => "kube-safe-ssh-key"
-              #},
-              #{
-              #  "mountPath" => "/home/app/current/vendor/bundle",
-              #  "name" => "bundle"
-              #}
             ],
             "env" => circle_env.collect { |k,v| {"name" => k, "value" => v } }
           }
@@ -565,32 +563,6 @@ HEREDOC
               "path" => "/var/run/docker.sock"
             }
           },
-          #{
-          #  "name" => "shell",
-          #  "hostPath" => {
-          #    "path" => run_shell
-          #  }
-          #},
-          #{
-          #  "name" => "kube-safe-ssh-key",
-          #  "nfs" => {
-          #    "path" => "/Users/user/.kube-data/ssh",
-          #    "server" => "docker.for.mac.host.internal"
-          #  }
-          #},
-          #{
-          #  "name" => "bundle",
-          #  "hostPath" => {
-          #    "path" => "/var/tmp/#{project_name}/bundle"
-          #  }
-          #},
-          #{
-          #  "name" => "bundle",
-          #  "nfs" => {
-          #    "path" => "/Users/user/.kube-data/user-gems",
-          #    "server" => "docker.for.mac.host.internal"
-          #  }
-          #},
           {
             "name" => "pro-fd-config-volume",
             "configMap" => {
@@ -600,18 +572,7 @@ HEREDOC
           {
             "name" => "git-repo",
             "emptyDir" => {}
-            #"gitRepo" => {
-            #  "repository" => "/var/tmp/#{APP}/full-sync/current",
-            #  "revision" => version
-            #}
           }
-          #{
-          #  "name" => "repo",
-          #  "nfs" => {
-          #    "path" => "/Users/user/workspace/user",
-          #    "server" => "docker.for.mac.host.internal"
-          #  }
-          #},
         ]
       }
     }
@@ -628,9 +589,7 @@ HEREDOC
 
       if run = step["run"]
         name = run["name"]
-
         pro_fd.write(run["command"])
-
         next
       end
     end
@@ -677,22 +636,23 @@ HEREDOC
         return exit_proc.call(o, e, s, true)
 
       when :async
-        r, w, pid = PTY.spawn(*cmd, options)
-        r.sync = true
-        w.sync = true
-        if $stdin.tty?
-          w.winsize = [*$stdin.winsize, 0, 0]
-        end
-        d = Thread.new {
-          begin
-            done_pid, done_status = Process.waitpid2(pid)
-            done_status
-          rescue Errno::ECHILD => e
-            nil
-          end
-        }
-        d[:pid] = pid
-        return [w, r, d, exit_proc]
+        #r, w, pid = PTY.spawn(*cmd, options)
+        #r.sync = true
+        #w.sync = true
+        #if $stdin.tty?
+        #  w.winsize = [*$stdin.winsize, 0, 0]
+        #end
+        #d = Thread.new {
+        #  begin
+        #    done_pid, done_status = Process.waitpid2(pid)
+        #    done_status
+        #  rescue Errno::ECHILD => e
+        #    nil
+        #  end
+        #}
+        #d[:pid] = pid
+        stdin, stdout, stderr, wait_thr = Open3.popen3(*cmd, options)
+        return [stdin, stdout, stderr, wait_thr, exit_proc]
 
     end
   end
@@ -739,7 +699,8 @@ HEREDOC
         ljustp_padding = process_name.length
       end
 
-      process_stdin, process_stdout, process_waiter = execute_simple(:async, process_cmd, process_options)
+      #stdin, stdout, stderr, wait_thr
+      process_stdin, process_stdout, process_stderr, process_waiter = execute_simple(:async, process_cmd, process_options)
       {
         :process_name => process_name,
         :process_cmd => process_cmd,
@@ -747,6 +708,7 @@ HEREDOC
         :process_options => process_options,
         :process_stdin => process_stdin,
         :process_stdout => process_stdout,
+        :process_stderr => process_stderr,
         :process_waiter => process_waiter
       }
     }
@@ -756,13 +718,17 @@ HEREDOC
     process_stdouts = pipeline_commands.collect { |pipeline_command| pipeline_command[:process_stdout] }
     process_stdouts += [self_reader]
 
+    process_stderrs = pipeline_commands.collect { |pipeline_command| pipeline_command[:process_stderr] }
+    process_stderrs += [self_reader]
+
     detected_exited = []
 
     until pipeline_commands.all? { |pipeline_command| !pipeline_command[:process_waiter].alive? }
       if exiting
+        exit_grace_counter += 1
+
         $stdout.write(" ... trying to exit gracefully, please wait #{exit_grace_counter} / #{total_kill_count}")
         $stdout.write($/)
-        exit_grace_counter += 1
 
         pipeline_commands.each do |pipeline_command|
           process_name = pipeline_command[:process_name]
@@ -784,8 +750,8 @@ HEREDOC
 
               Process.kill('INT', pid)
 
-              $stdout.write("#{process_name} signaled... #{resolution}")
-              $stdout.write($/)
+              #$stdout.write("#{process_name} signaled... #{resolution}")
+              #$stdout.write($/)
             rescue Errno::EPERM, Errno::ECHILD, Errno::ESRCH => e
               detected_exited << pid
             end
@@ -793,13 +759,14 @@ HEREDOC
         end
       end
 
-      ready_for_reading, _w, _e = IO.select(process_stdouts, nil, nil, select_timeout)
+      ready_for_reading, _w, _e = IO.select(process_stdouts + process_stderrs, nil, nil, select_timeout)
 
       self_reader.read_nonblock(chunk) rescue nil
 
       ready_for_reading && pipeline_commands.each { |pipeline_command|
         process_name = pipeline_command[:process_name]
         stdout = pipeline_command[:process_stdout]
+        stderr = pipeline_command[:process_stderr]
 
         begin
           if ready_for_reading.include?(stdout)
@@ -810,8 +777,24 @@ HEREDOC
             $stdout.write(stdout_chunk)
             $stdout.write($/) if should_newline
           end
+
         rescue EOFError => e
           process_stdouts.delete(stdout)
+        rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR=> e
+          nil
+        end
+
+        begin
+          if ready_for_reading.include?(stderr)
+            stderr_chunk = stderr.read_nonblock(chunk)
+            should_newline = !stderr_chunk.end_with?($/)
+
+            $stdout.write(process_name.ljust(ljustp_padding) + "ERR: ")
+            $stdout.write(stderr_chunk)
+            $stdout.write($/) if should_newline
+          end
+        rescue EOFError => e
+          process_stderrs.delete(stderr)
         rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR=> e
           nil
         end
@@ -826,8 +809,8 @@ HEREDOC
           detected_exited << pid
           process_result = process_waiter.value
 
-          #$stdout.write("#{process_name} exited... #{process_result.success?}")
-          #$stdout.write($/)
+          $stdout.write("#{process_name} exited... #{process_result.success?}")
+          $stdout.write($/)
         end
       }
     end
@@ -873,7 +856,7 @@ HEREDOC
                                ]
 
     options = {}
-    process_stdin, process_stdout, process_waiter = execute_simple(:async, kubectl_port_forward_cmd, options)
+    process_stdin, process_stdout, process_stderr, process_waiter = execute_simple(:async, kubectl_port_forward_cmd, options)
 
     process_stdout.expect("-> 5000")
 
