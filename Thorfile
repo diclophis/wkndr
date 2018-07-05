@@ -358,7 +358,9 @@ HEREDOC
       begin
         #case job_to_build
         #  when "package_container", "bootstrap", "build"
-						execute_ci(version, circle_yaml, job_to_build)
+						#execute_ci(version, circle_yaml, job_to_build)
+            #puts job_to_build
+            #sleep 10
             #puts [APP, version, circle_yaml, job_to_build]
             #["true"]
         #else
@@ -437,7 +439,7 @@ HEREDOC
       "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
       #TODO: "HTTP_PROXY_HOST" => "#{proxy_service_ip}:80" 
     }
-    
+
     if job_env = job["environment"]
       circle_env.merge!(job["environment"])
     end
@@ -495,6 +497,30 @@ HEREDOC
           "fsGroup" => 20
         },
         "restartPolicy" => "Never",
+
+				"initContainers" => [
+          {
+            "name" => "git-clone",
+						"image" => "wkndr:latest",
+						"imagePullPolicy" => "IfNotPresent",
+						"args" => [
+							"bash",
+							"-c",
+							"git clone http://wkndr-app:8080/#{APP} /home/app/#{APP}"
+            ],
+						"securityContext" => {
+							"runAsUser" => 1,
+							"allowPrivilegeEscalation" => false,
+							"readOnlyRootFilesystem" => true
+            },
+						"volumeMounts" => [
+              {
+							  "mountPath" => "/home/app",
+								"name" => "git-repo"
+              }
+            ]
+          }
+        ],
         "containers" => [
           {
             "name" => run_name,
@@ -511,21 +537,21 @@ HEREDOC
                 "name" => "dood"
               },
               {
-                "mountPath" => run_shell,
-                "name" => "shell"
+                "mountPath" => build_manifest_dir,
+                "name" => "pro-fd-config-volume"
               },
               {
                 "mountPath" => "/home/app", # /home/app/current is auto-checkout from gitRepo volume
-                "name" => "repo"
-              },
-              {
-                "mountPath" => "/home/app/.ssh", # /home/app/current is auto-checkout from gitRepo volume
-                "name" => "kube-safe-ssh-key"
-              },
-              {
-                "mountPath" => "/home/app/current/vendor/bundle",
-                "name" => "bundle"
+                "name" => "git-repo"
               }
+              #{
+              #  "mountPath" => "/home/app/.ssh", # /home/app/current is auto-checkout from gitRepo volume
+              #  "name" => "kube-safe-ssh-key"
+              #},
+              #{
+              #  "mountPath" => "/home/app/current/vendor/bundle",
+              #  "name" => "bundle"
+              #}
             ],
             "env" => circle_env.collect { |k,v| {"name" => k, "value" => v } }
           }
@@ -537,12 +563,12 @@ HEREDOC
               "path" => "/var/run/docker.sock"
             }
           },
-          {
-            "name" => "shell",
-            "hostPath" => {
-              "path" => run_shell
-            }
-          },
+          #{
+          #  "name" => "shell",
+          #  "hostPath" => {
+          #    "path" => run_shell
+          #  }
+          #},
           #{
           #  "name" => "kube-safe-ssh-key",
           #  "nfs" => {
@@ -556,19 +582,26 @@ HEREDOC
           #    "path" => "/var/tmp/#{project_name}/bundle"
           #  }
           #},
+          #{
+          #  "name" => "bundle",
+          #  "nfs" => {
+          #    "path" => "/Users/user/.kube-data/user-gems",
+          #    "server" => "docker.for.mac.host.internal"
+          #  }
+          #},
           {
-            "name" => "bundle",
-            "nfs" => {
-              "path" => "/Users/user/.kube-data/user-gems",
-              "server" => "docker.for.mac.host.internal"
+            "name" => "pro-fd-config-volume",
+            "configMap" => {
+              "name" => "pro-fd"
             }
           },
           {
-            "name" => "repo",
-            "gitRepo" => {
-              "repository" => "/var/tmp/#{APP}/full-sync/current",
-              "revision" => version
-            }
+            "name" => "git-repo",
+            "emptyDir" => {}
+            #"gitRepo" => {
+            #  "repository" => "/var/tmp/#{APP}/full-sync/current",
+            #  "revision" => version
+            #}
           }
           #{
           #  "name" => "repo",
@@ -602,8 +635,20 @@ HEREDOC
 
     pro_fd.rewind
     pro_fd_script = pro_fd.read
+    pro_fd_script += "\n\nexit 0;"
 
-    return clean_name, deployment_manifest.to_yaml, pro_fd_script + "\n\nexit 0", run_shell
+    configmap_manifest = {
+      "apiVersion" => "v1",
+      "kind" => "ConfigMap",
+      "metadata" => {
+        "name" => "pro-fd"
+      },
+      "data" => {
+        "init.sh": pro_fd_script
+      }
+    }
+
+    #return clean_name, deployment_manifest.to_yaml(:canonical => true) + configmap_manifest.to_yaml(:canonical => true)
   rescue Interrupt => _e
     puts _e.inspect
     nil
