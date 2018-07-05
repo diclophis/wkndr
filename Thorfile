@@ -398,6 +398,10 @@ HEREDOC
 
       all_cmds += remapped
 
+      process_fds = all_cmds.collect { |fjob, cmds| [cmds[0], cmds[1]] }.flatten
+
+      _r, _w, _e = IO.select(process_fds, nil, nil, 1.0)
+
       all_cmds.each { |fjob, cmds|
         process_waiter = cmds[3]
         exit_stdout = cmds[4]

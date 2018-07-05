@@ -50,6 +50,10 @@ by default builds `Dockerfile` from a gitRepo volumeMount
 
 runs `Procfile` ... after optionally running `Prepfile`
 
+# wkndr test
+
+dispatches job pods based on configured testing strategy, defaults to .circle/config.yml
+
 # wkndr continuous
 
 TBD: internal process for looping
@@ -57,10 +61,6 @@ TBD: internal process for looping
 # wkndr key
 
 TBD: manages authentication
-
-# wkndr test
-
-TBD: dispatches job pods based on configured testing strategy, defaults to yaml
 
 # wkndr gitch
 
