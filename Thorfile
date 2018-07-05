@@ -321,30 +321,12 @@ HEREDOC
 
   desc "test", ""
   def test(version=nil)
-    #system("devops apt-cache")
-    #apt_cache_service_fetch = "kubectl get service nginx-apt-proxy-service -o json | jq -r '.spec.clusterIP'"
-    #puts apt_cache_service_fetch if options["verbose"]
-    #http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
-
-    ## get to git checkout... phase 2) inject into container
-    #Dir.chdir(ENV['PWD'])
-
     version = IO.popen("git rev-parse --verify HEAD").read.strip #TODO
 
     puts "you are in #{Dir.pwd} building #{version}"
 
-    #project_name = File.basename(Dir.pwd)
-    #docker_for_mac_ssh = "docker run -i --privileged --pid=host debian nsenter -t 1 -m -u -n -i"
-    #ssh_mkdir_tmpfs = ("#{docker_for_mac_ssh} -- mkdir -p /var/tmp/#{project_name}/full-sync/current /var/tmp/#{project_name}/bundle")
-    #execute_simple(:blocking, ssh_mkdir_tmpfs)
-
-    ##TODO: use git to transfer???
-    #rsync_git_repo = ("tar -zc --exclude '*/.bundle' - . | #{docker_for_mac_ssh} -- tar -zx -C /var/tmp/#{project_name}/full-sync/current")
-    #execute_simple(:blocking, rsync_git_repo)
-
     ## TODO: merge inference vs. configured steps...
     circle_yaml = YAML.load(File.read(".circleci/config.yml").gsub("{{ .Environment.CIRCLE_SHA1 }}", version).gsub("$CIRCLE_SHA1", version))
-    #raise unless (circle_yaml["version"] == 2) && (circle_yaml["workflows"]["version"] == 2)
 
     all_job_keys = circle_yaml["jobs"].keys
     first_job = all_job_keys.first
@@ -354,24 +336,16 @@ HEREDOC
     first_time_through = true
 
     build_job = lambda { |job_to_build|
-      completed[job_to_build] = {}
       begin
-        #case job_to_build
-        #  when "package_container", "bootstrap", "build"
-						#execute_ci(version, circle_yaml, job_to_build)
-            #puts job_to_build
-            #sleep 10
-            #puts [APP, version, circle_yaml, job_to_build]
-            #["true"]
-        #else
-        #  puts "skipping #{job_to_build}"
-        #  return "skip", "", "true\n\nexit 0", "/usr/bin/true"
-        #end
+        puts job_to_build
+        #execute_ci
+        return job_to_build, execute_simple(:async, ["curl -s -v https://google.com"], {})
       rescue Interrupt => _e
         []
       end
     }
 
+    started_commands = []
     find_ready_jobs = lambda {
       circle_yaml["workflows"].each do |workflow_key, workflow|
         next if workflow_key == "version"
@@ -394,23 +368,51 @@ HEREDOC
       end
 
       commands_for_job = []
-      jobs_with_zero_req.reject { |req| completed[req] }.each do |job|
-        foo_job_tasks = build_job.call(job)
-        commands_for_job << foo_job_tasks
+      new_work = jobs_with_zero_req.reject { |req| completed[req] }.each do |job|
+        #unless started_commands.include?(job)
+        #  foo_job_tasks = build_job.call(job)
+        #  commands_for_job << foo_job_tasks
+        #end
       end
 
-      first_time_through = false
-      if commands_for_job.compact.length > 0
-        commands_for_job
+      if new_work.compact.length > 0
+        new_work
       else
         nil
       end
     }
 
+    all_cmds = []
     while found_jobs = find_ready_jobs.call
-      commands_to_pipeline = found_jobs
+      remapped = []
+      found_jobs.each { |fjob|
+        unless started_commands.include?(fjob)
+          started_commands << fjob
+          foo_job_tasks = build_job.call(fjob)
+          remapped << foo_job_tasks
+        end
+      }
 
-      puts commands_to_pipeline
+      all_cmds += remapped
+
+      all_cmds.each { |fjob, cmds|
+        #process_stdin, process_stdout, process_waiter = execute_simple(:async, process_cmd, process_options)
+
+        process_waiter = cmds[2]
+        exit_stdout = cmds[3]
+
+        unless completed[fjob]
+          unless process_waiter.alive?
+            puts [fjob, process_waiter[:pid]].inspect
+            #stdout, stderr, wait_thr_value, exit_or_not
+            exit_stdout.call(cmds[1].readlines, "", process_waiter.value, true)
+            puts "finished #{fjob}"
+            completed[fjob] = {}
+          end
+        end
+      }
+
+      Thread.pass
     end
   end
 
@@ -690,7 +692,7 @@ HEREDOC
           end
         }
         d[:pid] = pid
-        return [w, r, d, false]
+        return [w, r, d, exit_proc]
 
     end
   end
