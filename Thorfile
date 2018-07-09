@@ -419,22 +419,22 @@ HEREDOC
 
       all_cmds += remapped
 
-      process_fds = all_cmds.collect { |fjob, cmds| cmds[3].join(1.0); [cmds[1], cmds[2]] }.flatten
+      process_fds = all_cmds.collect { |fjob, cmds| cmds[3].join(0.1); [cmds[1], cmds[2]] }.flatten
 
-      _r, _w, _e = IO.select(process_fds, nil, process_fds, 1.0)
+      _r, _w, _e = IO.select(process_fds, nil, process_fds, 0.1)
 
       exited_this_loop = false
 
-      if _r || _e
-        all_cmds.each do |fjob, cmds|
-          process_waiter = cmds[3]
-          exit_stdout = cmds[4]
+      all_cmds.each do |fjob, cmds|
+        process_waiter = cmds[3]
+        exit_stdout = cmds[4]
 
-          unless completed[fjob]
-            unless process_waiter.alive?
-              completed[fjob] = {}
-              exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
-            end
+        unless completed[fjob]
+          if process_waiter.alive?
+            process_waiter.join(0.1)
+          else
+            completed[fjob] = {}
+            exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
           end
         end
       end
