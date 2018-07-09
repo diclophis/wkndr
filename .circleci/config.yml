@@ -29,5 +29,8 @@ jobs:
             pwd
             whoami
 
+            trap "echo INT" SIGINT
+            trap "echo TERM" SIGTERM
+
             sleep 30 &
             sleep 15

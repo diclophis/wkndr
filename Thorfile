@@ -406,7 +406,7 @@ HEREDOC
 
     loop do
       if exiting
-        all_cmds.collect { |fjob, cmds| puts cmds[3].pid; Process.kill('INT', cmds[3].pid) }
+        all_cmds.collect { |fjob, podn, cmds| puts cmds[3].pid; systemx("kubectl exec -i #{podn} -- kill -9 1") }
 
         break
       end
@@ -419,20 +419,20 @@ HEREDOC
         unless started_commands.include?(fjob)
           started_commands << fjob
           foo_job_tasks = build_job.call(fjob)
-          foo_job_tasks[1][0].close
+          #foo_job_tasks[1][0].close
           remapped << foo_job_tasks
         end
       }
 
       all_cmds += remapped
 
-      process_fds = all_cmds.collect { |fjob, cmds| puts cmds[3].pid; cmds[3].join(0.1); [cmds[1], cmds[2]] }.flatten
+      process_fds = all_cmds.collect { |fjob, podn, cmds| puts cmds[3].pid; cmds[3].join(0.1); [cmds[1], cmds[2]] }.flatten
 
       _r, _w, _e = IO.select(process_fds, nil, process_fds, 0.1)
 
       exited_this_loop = false
 
-      all_cmds.each do |fjob, cmds|
+      all_cmds.each do |fjob, podn, cmds|
         process_waiter = cmds[3]
         exit_stdout = cmds[4]
 
@@ -451,7 +451,9 @@ HEREDOC
 
     Process.wait rescue Errno::ECHILD
 
-    all_ok = all_cmds.all? { |fjob, cmds| !cmds[3].alive? && cmds[3].value.success? }
+    all_ok = all_cmds.all? { |fjob, pod, cmds| !cmds[3].alive? && cmds[3].value.success? }
+
+    puts "..."
 
     puts all_ok
   end
@@ -541,7 +543,7 @@ HEREDOC
             "securityContext" => {
             },
             "args" => [
-              "bash", "-e", "-x", "-o", "pipefail", run_shell
+              "bash", "-i", "-e", "-x", "-o", "pipefail", run_shell
             ],
             "volumeMounts" => [
               {
@@ -597,7 +599,7 @@ HEREDOC
       end
     end
 
-    pro_fd.write("\n\nwait && exit 0;")
+    #pro_fd.write("\n\nwait && exit 0;")
     pro_fd.rewind
 
     configmap_manifest = {
@@ -628,7 +630,7 @@ HEREDOC
                    "--overrides", container_specs.to_json
                  ]
 
-    return job_to_bootstrap, execute_simple(:async, ci_run_cmd, {})
+    return job_to_bootstrap, run_name, execute_simple(:async, ci_run_cmd, {})
   rescue Interrupt => _e
     puts _e.inspect
     nil
@@ -698,6 +700,7 @@ HEREDOC
       if exiting && exit_grace_counter < kill_threshold
         exit_grace_counter += 1
       end
+
       exiting = true
       trapped = true
       select_timeout = 0.1
