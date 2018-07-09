@@ -25,12 +25,12 @@ jobs:
           command: |
             set -e
             env
-            cd $CIRCLE_WORKING_DIRECTORY
+            cd #$CIRCLE_WORKING_DIRECTORY
             pwd
             whoami
 
             trap "echo INT" SIGINT
             trap "echo TERM" SIGTERM
 
-            sleep 30 &
-            sleep 15
+            sleep 5 &
+            sleep 2

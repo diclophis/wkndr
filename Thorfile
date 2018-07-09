@@ -405,12 +405,6 @@ HEREDOC
     end
 
     loop do
-      if exiting
-        all_cmds.collect { |fjob, podn, cmds| puts cmds[3].pid; systemx("kubectl exec -i #{podn} -- kill -9 1") }
-
-        break
-      end
-
       found_jobs = find_ready_jobs.call
 
       remapped = []
@@ -426,11 +420,13 @@ HEREDOC
 
       all_cmds += remapped
 
-      process_fds = all_cmds.collect { |fjob, podn, cmds| puts cmds[3].pid; cmds[3].join(0.1); [cmds[1], cmds[2]] }.flatten
+      process_fds = all_cmds.collect { |fjob, podn, cmds| [cmds[1], cmds[2]] }.flatten
 
       _r, _w, _e = IO.select(process_fds, nil, process_fds, 0.1)
 
       exited_this_loop = false
+
+      all_exited = true
 
       all_cmds.each do |fjob, podn, cmds|
         process_waiter = cmds[3]
@@ -438,22 +434,36 @@ HEREDOC
 
         unless completed[fjob]
           if process_waiter.alive?
+            all_exited = false
             process_waiter.join(0.1)
           else
             completed[fjob] = {}
-            exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, true)
+            exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, false)
           end
         end
+      end
+
+      if exiting
+        all_cmds.collect { |fjob, podn, cmds| systemx("kubectl delete pod/#{podn}") }
+
+        break if all_exited
       end
 
       break unless found_jobs
     end
 
+    trap 'INT', 'DEFAULT'
+
     Process.wait rescue Errno::ECHILD
 
-    all_ok = all_cmds.all? { |fjob, pod, cmds| !cmds[3].alive? && cmds[3].value.success? }
+    all_ok = all_cmds.all? { |fjob, podn, cmds| !cmds[3].alive? && cmds[3].value.success? }
 
-    puts "..."
+    while (all_cmds.any? { |fjob, podn, cmds|
+      execute_simple(:silent, ["kubectl", "get", "pod/#{podn}"], {})
+    }) do
+      $stdout.write(".")
+      sleep 1
+    end
 
     puts all_ok
   end
@@ -507,11 +517,11 @@ HEREDOC
     container_specs = {
       "apiVersion" => "v1",
       "spec" => {
-        "terminationGracePeriodSeconds" => 1,
-        "securityContext" => {
-          "fsGroup" => 20
-        },
-        "restartPolicy" => "Never",
+        #"terminationGracePeriodSeconds" => 1,
+        #"securityContext" => {
+        #  "fsGroup" => 20
+        #},
+        #"restartPolicy" => "Never",
 				"initContainers" => [
           {
             "name" => "git-clone",
@@ -540,10 +550,10 @@ HEREDOC
             "name" => run_name,
             "image" => run_image,
             "imagePullPolicy" => "IfNotPresent",
-            "securityContext" => {
-            },
+            #"securityContext" => {
+            #},
             "args" => [
-              "bash", "-i", "-e", "-x", "-o", "pipefail", run_shell
+              "bash", "-e", "-x", "-o", "pipefail", run_shell
             ],
             "volumeMounts" => [
               {
@@ -625,7 +635,6 @@ HEREDOC
                    "--restart", "Never",
                    "--generator", "run-pod/v1",
                    "--rm", "true",
-                   "-i",
                    "--quiet", "true",
                    "--overrides", container_specs.to_json
                  ]
@@ -640,18 +649,24 @@ HEREDOC
     exit_proc = lambda { |stdout, stderr, wait_thr_value, exit_or_not|
       $stdout.write(stdout)
       $stderr.write(stderr)
-      if !wait_thr_value.success? && exit_or_not
+      if !wait_thr_value.success?
         $stderr.write(cmd.join(" "))
         $stderr.write($/)
         $stderr.write("FAILED!!!")
         $stderr.write($/)
-        exit 1
+        if exit_or_not
+          exit 1
+        end
       else
         return  stdout, stderr, wait_thr_value.success?
       end
     }
 
     case mode
+      when :silent
+        o, e, s = Open3.capture3(*cmd, options)
+        return s.success?
+
       when :blocking
         o, e, s = Open3.capture3(*cmd, options)
         return exit_proc.call(o, e, s, true)
