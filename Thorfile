@@ -186,7 +186,7 @@ HEREDOC
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
-    systemx(*git_push_cmd)
+    exec(*git_push_cmd)
   end
 
   desc "upload-pack", ""
@@ -198,7 +198,7 @@ HEREDOC
                      "git", "upload-pack", "/var/tmp/#{APP}"
                    ]
 
-    systemx(*git_pull_cmd)
+    exec(*git_pull_cmd)
   end
 
   desc "push", ""
@@ -222,13 +222,13 @@ HEREDOC
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
       system("git", "push", "-f", "wkndr", ":wkndr/test", "--exec=wkndr receive-pack")
-      systemx("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
+      exec("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
     end
 
     if options["build"]
       systemx("git", "tag", "-f", "wkndr/build")
       system("git", "push", "-f", "wkndr", ":wkndr/build", "--exec=wkndr receive-pack")
-      systemx("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
+      exec("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
     end
   end
 
@@ -345,10 +345,11 @@ HEREDOC
     apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
     #puts apt_cache_service_fetch # if options["verbose"]
     http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
+    Process.wait rescue Errno::ECHILD
     puts http_proxy_service_ip
 
     version = IO.popen("git rev-parse --verify HEAD").read.strip #TODO
-
+    Process.wait rescue Errno::ECHILD
     puts "you are in #{Dir.pwd} building #{version}"
 
     ## TODO: merge inference vs. configured steps...

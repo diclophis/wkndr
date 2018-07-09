@@ -32,5 +32,4 @@ jobs:
             trap "echo INT" SIGINT
             trap "echo TERM" SIGTERM
 
-            sleep 120 &
-            sleep 60
+            sleep 120

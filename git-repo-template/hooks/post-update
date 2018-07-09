@@ -8,6 +8,8 @@
 set -e
 set -x
 
+trap 'kill -INT $(jobs -lp) 2>/dev/null || true' EXIT
+
 echo post-update... "${1}"
 
 #git checkout "${1}"
