@@ -714,10 +714,13 @@ w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
 
 #        #NOTE: support tty?
 
-#$stdin.sync = true
-#$stdout.sync = false
-#r.sync = false
-#w.sync = true
+$stdin.sync = true
+$stdout.sync = true
+$stderr.sync = true
+
+r.sync = true
+w.sync = true
+e.sync = true
 
 #
 #        write, read = IO.pipe
@@ -746,7 +749,7 @@ w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
 
           $stderr.write(".")
 
-          ra, wa, er = IO.select([$stdin, r, e].reject(&:closed?), [$stdout, $stderr, w].reject(&:closed?), [r, w].reject(&:closed?), 10.0)
+          ra, wa, er = IO.select([$stdin, r, e].reject(&:closed?), [$stdout, $stderr, w].reject(&:closed?), [r, w, e].reject(&:closed?), 10.0)
 
           if ra && ra.include?(e)
             $stderr.write("A-")
@@ -788,7 +791,7 @@ w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
             rescue EOFError
             #, Errno::EIO
               stdin_ok = true
-              $stdin.close
+              #$stdin.close
               #w.close
             end
           end
@@ -802,11 +805,14 @@ w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
 
             begin
               w.write(all_stdin.read)
-              w.close
               #$stdin.close
             rescue Errno::EIO => e
               $stderr.write(e)
             end
+          end
+
+          if stdin_ok
+            w.close unless w.closed?
           end
 
           if ra && ra.include?(r)
@@ -818,7 +824,7 @@ w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
               #$stdout.write(r.read)
               #r.read_nonblock(1024)
               all_stdout.write(r.read_nonblock(1024))
-            rescue EOFError, Errno::EIO
+            rescue EOFError
               stdout_ok = true
             end
           end
@@ -838,7 +844,15 @@ w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
             end
           end
 
-          break unless f.alive? && !r.closed? # ((stdin_ok) || (r.closed?) || (w.closed?) || (e.closed?))
+          #break unless f.alive? && !r.closed? # ((stdin_ok) || (r.closed?) || (w.closed?) || (e.closed?))
+
+          if stdout_ok
+            r.close unless r.closed?
+          end
+
+          f.join(0.1)
+
+          break if r.closed? #unless f.alive?
         end
 
 #Thread.abort_on_exception = true
