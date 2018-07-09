@@ -183,7 +183,7 @@ HEREDOC
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
                      "--",
-                     "nohup", "git", "receive-pack", "/var/tmp/#{APP}"
+                     "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
     systemx(*git_push_cmd)
@@ -195,7 +195,7 @@ HEREDOC
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
                      "--",
-                     "nohup", "git", "upload-pack", "/var/tmp/#{APP}"
+                     "git", "upload-pack", "/var/tmp/#{APP}"
                    ]
 
     systemx(*git_pull_cmd)
