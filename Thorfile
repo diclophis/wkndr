@@ -363,11 +363,7 @@ HEREDOC
     first_time_through = true
 
     build_job = lambda { |job_to_build|
-      begin
-        execute_ci(version, circle_yaml, job_to_build, http_proxy_service_ip)
-      rescue Interrupt => _e
-        []
-      end
+      execute_ci(version, circle_yaml, job_to_build, http_proxy_service_ip)
     }
 
     find_ready_jobs = lambda {
@@ -402,8 +398,19 @@ HEREDOC
     }
 
     all_cmds = []
+    exiting = false
+
+    trap 'INT' do
+      exiting = true
+    end
 
     loop do
+      if exiting
+        all_cmds.collect { |fjob, cmds| puts cmds[3].pid; Process.kill('INT', cmds[3].pid) }
+
+        break
+      end
+
       found_jobs = find_ready_jobs.call
 
       remapped = []
@@ -419,7 +426,7 @@ HEREDOC
 
       all_cmds += remapped
 
-      process_fds = all_cmds.collect { |fjob, cmds| cmds[3].join(0.1); [cmds[1], cmds[2]] }.flatten
+      process_fds = all_cmds.collect { |fjob, cmds| puts cmds[3].pid; cmds[3].join(0.1); [cmds[1], cmds[2]] }.flatten
 
       _r, _w, _e = IO.select(process_fds, nil, process_fds, 0.1)
 
@@ -590,7 +597,7 @@ HEREDOC
       end
     end
 
-    pro_fd.write("\n\nexit 0;")
+    pro_fd.write("\n\nwait && exit 0;")
     pro_fd.rewind
 
     configmap_manifest = {
@@ -616,6 +623,7 @@ HEREDOC
                    "--restart", "Never",
                    "--generator", "run-pod/v1",
                    "--rm", "true",
+                   "-i",
                    "--quiet", "true",
                    "--overrides", container_specs.to_json
                  ]
