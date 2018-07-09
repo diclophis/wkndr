@@ -181,24 +181,28 @@ HEREDOC
   def receive_pack(origin)
     git_push_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i",
+                     "-i", "-t",
                      "--",
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
-    exec(*git_push_cmd)
+    #exec(*git_push_cmd)
+
+    execute_simple(:synctty, git_push_cmd, {})
   end
 
   desc "upload-pack", ""
   def upload_pack
     git_pull_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i",
+                     "-i", "-t",
                      "--",
                      "git", "upload-pack", "/var/tmp/#{APP}"
                    ]
 
-    exec(*git_pull_cmd)
+    #exec(*git_pull_cmd)
+
+    execute_simple(:synctty, git_pull_cmd, {})
   end
 
   desc "push", ""
@@ -691,6 +695,100 @@ HEREDOC
         #d[:pid] = pid
         stdin, stdout, stderr, wait_thr = Open3.popen3(*cmd, options)
         return [stdin, stdout, stderr, wait_thr, exit_proc]
+
+      when :synctty
+
+#master, slave = PTY.open
+
+#read, write = IO.pipe
+#read2, write2 = IO.pipe
+
+r, w, pid = PTY.spawn(*cmd)
+
+#IO.select([r], [w], [r, w], 1)
+
+#read.close     # we dont need the read
+#slave.close    # or the slave
+
+
+#        #NOTE: support tty?
+
+#$stdin.sync = true
+#$stdout.sync = true
+#r.sync = true
+#w.sync = true
+
+#
+#        write, read = IO.pipe
+#
+#        r, w, pid = PTY.spawn(*cmd, options.merge({:in => read, :out => $stdout}))
+#        
+#        #r.sync = true
+#        #w.sync = true
+#
+#        if $stdin.tty?
+#          w.winsize = [*$stdin.winsize, 0, 0]
+#        end
+
+        stdin_ok = false
+        stdout_ok = false
+
+        while true
+          ra, wa, er = IO.select([$stdin, r], [$stdout, w], [r, w], 1.0)
+
+          break if er && er.length > 0 && (er.include?($stdin) || er.include?(r))
+
+          if ra && ra.include?($stdin) && wa && wa.include?(w)
+            begin
+              #w.write_nonblock($stdin.read_nonblock(1024))
+            rescue EOFError, Errno::EIO
+              stdin_ok = true
+            end
+          end
+
+          if wa && wa.include?($stdout) && ra && ra.include?(r)
+            begin
+              #$stdout.write_nonblock(r.read_nonblock(1024))
+            rescue EOFError, Errno::EIO
+              stdout_ok = true
+            end
+          end
+        end
+
+#Thread.abort_on_exception = true
+#
+#        c = Thread.new {
+#          until r.eof?
+#            $stdout.write(r.read)
+#          end
+#        }
+#
+#        d = Thread.new {
+#          until $stdin.eof?
+#            w.write($stdin.read)
+#          end
+#        }
+#
+        f = Thread.new {
+          begin
+            done_pid, done_status = Process.waitpid2(pid)
+            done_status
+          rescue Errno::ECHILD => e
+            nil
+          end
+        }
+
+##        #d[:pid] = pid
+##        #f[:pid] = pid
+##
+#        c.join
+#        #d.join
+        f.join
+##
+##        #return d.success?
+##        #sleep 60
+##
+        return true
 
     end
   end
