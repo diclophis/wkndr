@@ -186,7 +186,8 @@ HEREDOC
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
-    #exec(*git_push_cmd)
+    #master, slave = PTY.open
+    #exec(*git_push_cmd, :in => slave, :out => $stdout, :close_others => true)
 
     execute_simple(:synctty, git_push_cmd, {})
   end
@@ -703,7 +704,7 @@ HEREDOC
 #read, write = IO.pipe
 #read2, write2 = IO.pipe
 
-r, w, pid = PTY.spawn(*cmd)
+w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
 
 #IO.select([r], [w], [r, w], 1)
 
@@ -714,8 +715,8 @@ r, w, pid = PTY.spawn(*cmd)
 #        #NOTE: support tty?
 
 #$stdin.sync = true
-#$stdout.sync = true
-#r.sync = true
+#$stdout.sync = false
+#r.sync = false
 #w.sync = true
 
 #
@@ -731,28 +732,113 @@ r, w, pid = PTY.spawn(*cmd)
 #        end
 
         stdin_ok = false
+        stderr_ok = false
         stdout_ok = false
+        flushed = false
+        outputted = false
 
         while true
-          ra, wa, er = IO.select([$stdin, r], [$stdout, w], [r, w], 1.0)
+          sleep 1
 
-          break if er && er.length > 0 && (er.include?($stdin) || er.include?(r))
+          all_stdin = StringIO.new
+          all_stdout = StringIO.new
+          all_stderr = StringIO.new
 
-          if ra && ra.include?($stdin) && wa && wa.include?(w)
+          $stderr.write(".")
+
+          ra, wa, er = IO.select([$stdin, r, e].reject(&:closed?), [$stdout, $stderr, w].reject(&:closed?), [r, w].reject(&:closed?), 10.0)
+
+          if ra && ra.include?(e)
+            $stderr.write("A-")
+
             begin
-              #w.write_nonblock($stdin.read_nonblock(1024))
-            rescue EOFError, Errno::EIO
-              stdin_ok = true
+              #$stdin.read_nonblock(1024)
+              #w.write_nonblock($stdin.read_nonblock(1))
+              #w.write($stdin.read_nonblock(1024))
+              all_stderr.write(e.read_nonblock(1024))
+            rescue EOFError
+            #, Errno::EIO
+              stderr_ok = true
+              #e.close
             end
           end
 
-          if wa && wa.include?($stdout) && ra && ra.include?(r)
+          if wa && wa.include?($stderr)
+          #  #flushed = true
+
+            $stderr.write("B-")
+
+            all_stderr.rewind
+
             begin
-              #$stdout.write_nonblock(r.read_nonblock(1024))
+              $stderr.write(all_stderr.read)
+            rescue Errno::EIO => e
+              $stderr.write(e)
+            end
+          end
+
+          if ra && ra.include?($stdin)
+            $stderr.write("C-")
+
+            begin
+              #$stdin.read_nonblock(1024)
+              #w.write_nonblock($stdin.read_nonblock(1))
+              #w.write($stdin.read_nonblock(1024))
+              all_stdin.write($stdin.read_nonblock(1024))
+            rescue EOFError
+            #, Errno::EIO
+              stdin_ok = true
+              $stdin.close
+              #w.close
+            end
+          end
+
+          if wa && wa.include?(w)
+            #flushed = true
+
+            $stderr.write("D-")
+
+            all_stdin.rewind
+
+            begin
+              w.write(all_stdin.read)
+              w.close
+              #$stdin.close
+            rescue Errno::EIO => e
+              $stderr.write(e)
+            end
+          end
+
+          if ra && ra.include?(r)
+            #$stderr.write("C-")
+
+            begin
+              #r.read_nonblock(1024)
+              #$stdout.write_nonblock(r.read_nonblock(1))
+              #$stdout.write(r.read)
+              #r.read_nonblock(1024)
+              all_stdout.write(r.read_nonblock(1024))
             rescue EOFError, Errno::EIO
               stdout_ok = true
             end
           end
+
+          if wa && wa.include?($stdout)
+            #$stderr.write("D-")
+
+            #outputted = true
+
+            all_stdout.rewind
+
+            begin
+              $stdout.write(all_stdout.read)
+              #r.close
+            rescue Errno::EIO => e
+              $stderr.write(e)
+            end
+          end
+
+          break unless f.alive? && !r.closed? # ((stdin_ok) || (r.closed?) || (w.closed?) || (e.closed?))
         end
 
 #Thread.abort_on_exception = true
@@ -769,14 +855,14 @@ r, w, pid = PTY.spawn(*cmd)
 #          end
 #        }
 #
-        f = Thread.new {
-          begin
-            done_pid, done_status = Process.waitpid2(pid)
-            done_status
-          rescue Errno::ECHILD => e
-            nil
-          end
-        }
+        #f = Thread.new {
+        #  begin
+        #    done_pid, done_status = Process.waitpid2(pid)
+        #    done_status
+        #  rescue Errno::ECHILD => e
+        #    nil
+        #  end
+        #}
 
 ##        #d[:pid] = pid
 ##        #f[:pid] = pid
