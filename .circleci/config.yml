@@ -28,3 +28,6 @@ jobs:
             cd $CIRCLE_WORKING_DIRECTORY
             pwd
             whoami
+
+            sleep 60 &
+            sleep 10
