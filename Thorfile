@@ -188,8 +188,134 @@ HEREDOC
 
     #master, slave = PTY.open
     #exec(*git_push_cmd, :in => slave, :out => $stdout, :close_others => true)
+    ##exec(*git_push_cmd)
 
-    execute_simple(:synctty, git_push_cmd, {})
+#fd = IO.sysopen("/dev/tty", "w")
+#a = IO.new(fd, "w")
+
+#STDIN.sync
+
+#$stderr.puts "Hello"
+#a.puts "World"
+
+    master, slave = PTY.open
+    master2, slave2 = PTY.open
+
+    read, write = IO.pipe
+    r, w, pid = PTY.spawn(*git_push_cmd, :in => read, :err=>slave2)
+
+    #read.close     # we dont need the read
+    #slave.close    # or the slave
+    #$stderr.puts STDIN.bytes_available
+
+    #$stdout.sync = true
+    $stderr.sync = true
+    #$stdin.sync = true
+    
+    #$stdin.echo = false if $stdin.tty?
+    #$stdout.echo = false if $stdout.tty?
+    #$stderr.echo = false if $stderr.tty?
+
+    r.echo = false
+    w.echo = false
+
+    Thread.abort_on_exception = true
+
+    halted = nil
+
+    d = Thread.new {
+      $stderr.write("d")
+
+      begin
+        done_pid, done_status = Process.waitpid2(pid)
+        halted = done_status
+      rescue Errno::ECHILD => e
+        nil
+      end
+
+      $stderr.write("D")
+    }
+
+    a = Thread.new {
+      while true
+        #$stderr.puts [:a, IO.copy_stream($stdin, write)].inspect
+        #IO.copy_stream($stdin, w)
+        $stderr.write("a#{$stdin.closed?}")
+
+        begin
+          read_stdin = $stdin.read_nonblock(10240)
+          $stderr.write([$stdin.closed?, read_stdin].inspect)
+          write.write(read_stdin)
+          write.flush
+        rescue Errno::EIO => e
+        rescue EOFError => e
+        rescue IO::EAGAINWaitReadable => e
+          #break
+          IO.select([$stdin], nil, nil, 1.0)
+        end
+
+        #break if $stdin.closed?
+
+        sleep 0.1
+      end
+
+      $stderr.write("A")
+    }
+    b = Thread.new {
+      while true
+        #$stdout.puts [:b, IO.copy_stream(master, STDOUT)].inspect
+        #IO.copy_stream(r, STDOUT)
+        $stderr.write("b")
+
+        begin
+          $stdout.write(r.read_nonblock(10240))
+        rescue Errno::EIO => e
+        rescue EOFError => e
+        rescue IO::EAGAINWaitReadable => e
+          #break
+          #IO.select([r])
+        end
+
+        #STDOUT.write(r.readpartial(1))
+        #$stderr.puts "wtf"
+        #break if r.eof?
+
+        sleep 0.1
+      end
+
+      $stderr.write("B")
+    }
+    c = Thread.new {
+      while true
+        $stderr.write("c")
+
+        begin
+          $stderr.write(master2.read_nonblock(10240))
+        rescue Errno::EIO => e
+        rescue EOFError => e
+        rescue IO::EAGAINWaitReadable => e
+          #break
+          #IO.select([master2])
+        end
+
+        if halted
+          break if r.eof?
+        end
+
+        sleep 0.1
+
+        #break if halted
+      end
+
+      $stderr.write("C")
+    }
+
+    #a.join; #b.join; c.join;
+
+    d.join
+    c.join
+
+    #execute_simple(:synctty, git_push_cmd, {})
   end
 
   desc "upload-pack", ""
@@ -222,7 +348,7 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    systemx("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -745,12 +871,12 @@ e.sync = true
           all_stdout = StringIO.new
           all_stderr = StringIO.new
 
-          $stderr.write(".")
+          #$stderr.write(".")
 
           ra, wa, er = IO.select([$stdin, r, e].reject(&:closed?), [$stdout, $stderr, w].reject(&:closed?), [r, w, e].reject(&:closed?), 10.0)
 
           if ra && ra.include?(e)
-            $stderr.write("A-")
+            #$stderr.write("A-")
 
             begin
               #$stdin.read_nonblock(1024)
@@ -767,7 +893,7 @@ e.sync = true
           if wa && wa.include?($stderr)
           #  #flushed = true
 
-            $stderr.write("B-")
+            #$stderr.write("B-")
 
             all_stderr.rewind
 
@@ -779,7 +905,7 @@ e.sync = true
           end
 
           if ra && ra.include?($stdin)
-            $stderr.write("C-")
+            #$stderr.write("C-")
 
             begin
               #$stdin.read_nonblock(1024)
@@ -797,7 +923,7 @@ e.sync = true
           if wa && wa.include?(w)
             #flushed = true
 
-            $stderr.write("D-")
+            #$stderr.write("D-")
 
             all_stdin.rewind
 
