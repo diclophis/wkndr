@@ -699,12 +699,12 @@ HEREDOC
 
       when :synctty
 
-#master, slave = PTY.open
+master, slave = PTY.open
 
 #read, write = IO.pipe
 #read2, write2 = IO.pipe
 
-w, r, e, f = Open3.popen3(*cmd) #PTY.spawn(*cmd, :close_others => false)
+w, r, e, f = Open3.popen3(*cmd, :in => master) #PTY.spawn(*cmd, :close_others => false)
 
 #IO.select([r], [w], [r, w], 1)
 
@@ -741,8 +741,6 @@ e.sync = true
         outputted = false
 
         while true
-          sleep 1
-
           all_stdin = StringIO.new
           all_stdout = StringIO.new
           all_stderr = StringIO.new
