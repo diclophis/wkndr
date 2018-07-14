@@ -180,15 +180,16 @@ HEREDOC
   desc "receive-pack", ""
   def receive_pack(origin)
     git_push_cmd = [
-                     "kubectl", "exec", name_of_wkndr_pod,
+                     "script", "bar", "kubectl", "exec", name_of_wkndr_pod,
                      "-i", "-t",
                      "--",
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
+    #system(*git_push_cmd)
+
 #    #master, slave = PTY.open
 #    #exec(*git_push_cmd, :in => slave, :out => $stdout, :close_others => true)
-#    ##exec(*git_push_cmd)
 #
 ##fd = IO.sysopen("/dev/tty", "w")
 ##a = IO.new(fd, "w")
@@ -350,7 +351,7 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    exec("script", "foo", "git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -827,26 +828,32 @@ HEREDOC
 
       when :synctty
 
-#read, w = IO.pipe
-##read.raw!
-#w.binmode
-#read.binmode
-
-e, errw = IO.pipe
-r, w2, pid = PTY.spawn(*cmd, options.merge({:in => read, :err => errw}))
-f = Thread.new {
-  begin
-    done_pid, done_status = Process.waitpid2(pid)
-    done_status
-  rescue Errno::ECHILD => e
-    nil
-  end
-}
+##read, w = IO.pipe
+###read.raw!
+##w.binmode
+##read.binmode
+#
+#fd = IO.sysopen "/dev/tty", "w"
+#w = IO.new(fd, "w")
+#$stdin.binmode
+#
+#e, errw = IO.pipe
+#r, w2, pid = PTY.spawn(*cmd, options.merge({:in => $stdin, :err => errw}))
+#f = Thread.new {
+#  begin
+#    done_pid, done_status = Process.waitpid2(pid)
+#    done_status
+#  rescue Errno::ECHILD => e
+#    nil
+#  end
+#}
+##$stdin.close
+#
 
 #master, slave = PTY.open
 #w, r, e, f = Open3.popen3(*cmd, :in => master) #PTY.spawn(*cmd, :close_others => false)
 
-#w, r, e, f = Open3.popen3(*cmd)
+w, r, e, f = Open3.popen3(*cmd)
 
 $stdin.sync = true
 $stdout.sync = true
@@ -932,7 +939,6 @@ e.sync = true
             #flushed = true
 
             #$stderr.write("D-")
-
 
             begin
               all_stdin.rewind
