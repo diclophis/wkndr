@@ -359,7 +359,9 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
+    #execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
+
+    system("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -843,12 +845,12 @@ master, slave = PTY.open
 o, ow = IO.pipe
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => master, :err => $stderr}))
 
-$stdin.sync = true
-master.sync = true
-slave.sync = true
-$stdout.sync = true
-o.sync = true
-ow.sync = true
+#$stdin.sync = true
+#master.sync = true
+#slave.sync = true
+#$stdout.sync = true
+#o.sync = true
+#ow.sync = true
 
 #$stdout.binmode
 #master.raw!
@@ -867,6 +869,8 @@ ow.sync = true
 #    nil
 #  end
 #}
+
+done_status = nil
 
 loop do
   #$stderr.write(".")
@@ -911,31 +915,34 @@ loop do
   end
 
   all_stdin.rewind
-  $stderr.write("foundin(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n")
+  $stderr.write("in(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n")
 
   all_stdout.rewind
-  $stderr.write("foundout(#{cmd[0]}): #{all_stdout.read.chars.inspect}\n")
-
-  all_stdout.rewind
-  $stdout.write(all_stdout.read)
+  $stderr.write("out(#{cmd[0]}): #{all_stdout.read.chars.inspect}\n")
 
   all_stdin.rewind
-  slave.write(all_stdin.read)
+  slave.write(all_stdin.read) if all_stdin.length > 0
+  slave.flush
+
+  all_stdout.rewind
+  $stdout.write(all_stdout.read) if all_stdout.length > 0
+  $stdout.flush
 
   #$stderr.write(":#{master.closed?}")
-
   #break if $stdin.closed?
 
   begin
     done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
-    done_status
+    break if done_status
   rescue Errno::ECHILD => e
     #$stderr.write(e.inspect)
     break
   end
 
-  sleep 0.01
+  sleep 1
 end
+
+exit(done_status.success?)
 
 #$stderr.write("X")
 
