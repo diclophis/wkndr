@@ -359,9 +359,9 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    #execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
+    execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
 
-    system("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    #system("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -845,9 +845,9 @@ master, slave = PTY.open
 #slave.echo = false
 
 #NOTE: interesting...
-if $stdin.tty?
-  $stdin.echo = false
-end
+#if $stdin.tty?
+#  $stdin.echo = false
+#end
 
 #fd = IO.sysopen "/dev/tty", "r+"
 #slave = IO.new(fd, "r+")
@@ -994,9 +994,9 @@ loop do
   #sleep 1
 end
 
-if $stdin.tty?
-  $stdin.echo = true
-end
+#if $stdin.tty?
+#  $stdin.echo = true
+#end
 
 exit(done_status.success? || false)
 
