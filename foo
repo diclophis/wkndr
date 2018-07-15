@@ -1,5 +1,0 @@
-Script started on Fri Jul 13 23:06:53 2018
-command: git push -f wkndr master --exec=wkndr receive-pack
-fatal: protocol error: bad line length character: fals
-
-Script done on Fri Jul 13 23:06:54 2018

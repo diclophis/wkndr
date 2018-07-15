@@ -1,2 +1,0 @@
-Script started on Fri Jul 13 23:10:09 2018
-command: kubectl exec wkndr-app-678f5cdc68-xl7rh -i -t -- git receive-pack /var/tmp/wkndr
