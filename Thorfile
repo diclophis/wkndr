@@ -180,13 +180,18 @@ HEREDOC
   desc "receive-pack", ""
   def receive_pack(origin)
     git_push_cmd = [
-                     "script", "bar", "kubectl", "exec", name_of_wkndr_pod,
+                     "kubectl", "exec", name_of_wkndr_pod,
                      "-i", "-t",
                      "--",
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
+    #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
+
+    git_push_cmd = ["ruby", "-e", "puts $stdin.read_nonblock(3).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts 1; $stdout.flush; puts $stdin.tty?.inspect"]
+
     #system(*git_push_cmd)
+    #exit 1
 
 #    #master, slave = PTY.open
 #    #exec(*git_push_cmd, :in => slave, :out => $stdout, :close_others => true)
@@ -351,7 +356,7 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    exec("script", "foo", "git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -833,35 +838,47 @@ HEREDOC
 ##w.binmode
 ##read.binmode
 #
-#fd = IO.sysopen "/dev/tty", "w"
-#w = IO.new(fd, "w")
+
+#fd = IO.sysopen "/dev/tty", "r+"
+#w = IO.new(fd, "r+")
+
+master, w = PTY.open
+
+#w.winsize = 20, 80, 0, 0
+#w.winsize
+
 #$stdin.binmode
-#
-#e, errw = IO.pipe
-#r, w2, pid = PTY.spawn(*cmd, options.merge({:in => $stdin, :err => errw}))
-#f = Thread.new {
-#  begin
-#    done_pid, done_status = Process.waitpid2(pid)
-#    done_status
-#  rescue Errno::ECHILD => e
-#    nil
-#  end
-#}
-##$stdin.close
-#
+#w = $stdin
+#$stderr.write($stdin.winsize.inspect)
+
+e, errw = IO.pipe
+r, w2, pid = PTY.spawn(*cmd, options.merge({:err => errw}))
+
+#w = w2
+
+f = Thread.new {
+  begin
+    done_pid, done_status = Process.waitpid2(pid)
+    done_status
+  rescue Errno::ECHILD => e
+    nil
+  end
+}
 
 #master, slave = PTY.open
 #w, r, e, f = Open3.popen3(*cmd, :in => master) #PTY.spawn(*cmd, :close_others => false)
 
-w, r, e, f = Open3.popen3(*cmd)
+#w, r, e, f = Open3.popen3(*cmd)
 
 $stdin.sync = true
 $stdout.sync = true
 $stderr.sync = true
-
 r.sync = true
 w.sync = true
+w2.sync = true
 e.sync = true
+
+$stderr.puts([r, w2, w, e].inspect)
 
 #
 #        write, read = IO.pipe
@@ -881,6 +898,7 @@ e.sync = true
         flushed = false
         outputted = false
 
+
         while true
           all_stdin = StringIO.new
           all_stdout = StringIO.new
@@ -888,7 +906,10 @@ e.sync = true
 
           #$stderr.write(".")
 
-          ra, wa, er = IO.select([$stdin, r, e].reject(&:closed?), [$stdout, $stderr, w].reject(&:closed?), [r, w, e].reject(&:closed?), 10.0)
+          ra, wa, er = IO.select([$stdin, r, e, w].reject(&:closed?), [$stdout, $stderr, w].reject(&:closed?), [r, w, e].reject(&:closed?), 10.0)
+
+$stderr.puts([ra, wa, er].inspect)
+sleep 1
 
           if ra && ra.include?(e)
             #$stderr.write("A-")
@@ -905,6 +926,23 @@ e.sync = true
             end
           end
 
+          if ra && ra.include?(w)
+            #$stderr.write("A-")
+
+            begin
+              #$stdin.read_nonblock(1024)
+              #w.write_nonblock($stdin.read_nonblock(1))
+              #w.write($stdin.read_nonblock(1024))
+              #all_stderr.write(e.read_nonblock(1024))
+              fippp = w.read_nonblock(1024)
+              $stderr.write(fippp)
+            rescue EOFError, IO::EAGAINWaitReadable => err
+            #, Errno::EIO
+              #stderr_ok = true
+              #e.close
+            end
+          end
+
           if wa && wa.include?($stderr)
           #  #flushed = true
 
@@ -915,7 +953,7 @@ e.sync = true
             begin
               $stderr.write(all_stderr.read)
             rescue Errno::EIO => e
-              $stderr.write(e)
+              #$stderr.write(e)
             end
           end
 
@@ -926,10 +964,16 @@ e.sync = true
               #$stdin.read_nonblock(1024)
               #w.write_nonblock($stdin.read_nonblock(1))
               #w.write($stdin.read_nonblock(1024))
-              all_stdin.write($stdin.read_nonblock(1024))
+              all_stdin.write($stdin.read_nonblock(1))
             rescue EOFError
+              $stderr.write("!!!!!!")
+              #w2.flush
+              w2.close
+              w.close
+              $stdin.close
+            rescue IO::EAGAINWaitReadable => err
             #, Errno::EIO
-              stdin_ok = true
+              #stdin_ok = true
               #$stdin.close
               #w.close
             end
@@ -941,59 +985,68 @@ e.sync = true
             #$stderr.write("D-")
 
             begin
-              all_stdin.rewind
-              $stderr.write(all_stdin.read.chars.inspect)
+              #all_stdin.rewind
+              #if all_stdin.length > 0
+              #  $stderr.write(all_stdin.read.chars.inspect)
+              #end
 
               all_stdin.rewind
               w.write(all_stdin.read)
               #$stdin.close
-            rescue Errno::EIO => e
-              $stderr.write(e)
+            rescue Errno::EIO => err
+              $stderr.write(err)
             end
           end
 
-          if stdin_ok
-            w.close unless w.closed?
-          end
+          #if stdin_ok
+          #  w.close unless w.closed?
+          #end
 
           if ra && ra.include?(r)
-            #$stderr.write("C-")
+            $stderr.write("C-")
 
             begin
               #r.read_nonblock(1024)
               #$stdout.write_nonblock(r.read_nonblock(1))
               #$stdout.write(r.read)
               #r.read_nonblock(1024)
-              all_stdout.write(r.read_nonblock(1024))
-            rescue EOFError
-              stdout_ok = true
+              gots_stdout = r.read_nonblock(1)
+              $stderr.write("OUT: #{gots_stdout.inspect}")
+              all_stdout.write(gots_stdout)
+            rescue EOFError => err
+              #stdout_ok = true
+              $stderr.write("err #{err}")
             end
+
+            $stderr.write("wtf")
           end
 
           if wa && wa.include?($stdout)
-            #$stderr.write("D-")
+            $stderr.write("D-")
 
             #outputted = true
 
             all_stdout.rewind
 
             begin
-              $stdout.write(all_stdout.read)
+              #$stdout.write(all_stdout.read)
+              #$stdout.flush
+              #w.write(all_stdout.read)
               #r.close
-            rescue Errno::EIO => e
+            rescue IOError, Errno::EIO => err
               $stderr.write(e)
             end
           end
 
           #break unless f.alive? && !r.closed? # ((stdin_ok) || (r.closed?) || (w.closed?) || (e.closed?))
 
-          if stdout_ok
-            r.close unless r.closed?
-          end
+          #if stdout_ok
+          #  r.close unless r.closed?
+          #end
 
           f.join(0.1)
 
-          break if r.closed? #unless f.alive?
+          #break if r.closed? #unless f.alive?
         end
 
 #Thread.abort_on_exception = true
