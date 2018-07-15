@@ -839,11 +839,24 @@ HEREDOC
       when :synctty
 
 master, slave = PTY.open
-#master.winsize = 20, 80, 0, 0
 
-#e, errw = IO.pipe
+#master.winsize = 20, 80, 0, 0
+#master.echo = false
+#slave.echo = false
+
+#NOTE: interesting...
+if $stdin.tty?
+  $stdin.echo = false
+end
+
+#fd = IO.sysopen "/dev/tty", "r+"
+#slave = IO.new(fd, "r+")
+
+e, errw = IO.pipe
 o, ow = IO.pipe
-pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => master, :err => $stderr}))
+
+pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => master, :err => errw}))
+#pid = spawn(*cmd, options.merge({:in => slave}))
 
 #$stdin.sync = true
 #master.sync = true
@@ -871,14 +884,21 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => m
 #}
 
 done_status = nil
+exiting = false
+flush_count = 0
+flushing = false
+chunk = 65544
 
 loop do
   #$stderr.write(".")
 
   all_stdin = StringIO.new
   all_stdout = StringIO.new
+  all_stderr = StringIO.new
 
-  ra, wa, er = IO.select([$stdin, o].reject(&:closed?), [], [], 1.0)
+  ra, wa, er = IO.select([$stdin, o, e].reject(&:closed?), [], [], 0.1)
+
+  #$stderr.write(er.inspect)
 
   if ra && ra.include?($stdin)
     #$stderr.write("C-")
@@ -887,7 +907,7 @@ loop do
       #$stdin.read_nonblock(1024)
       #w.write_nonblock($stdin.read_nonblock(1))
       #w.write($stdin.read_nonblock(1024))
-      all_stdin.write($stdin.read_nonblock(1024))
+      all_stdin.write($stdin.read_nonblock(chunk))
     rescue EOFError
       #$stderr.write("!!!!!!")
       #w2.flush
@@ -907,42 +927,78 @@ loop do
     #$stderr.write("0-")
 
     begin
-      outp = o.read_nonblock(1024)
+      outp = o.read_nonblock(chunk)
       all_stdout.write(outp)
     rescue IO::EAGAINWaitReadable => err
       #$stderr.write("ogain")
     end
   end
 
-  all_stdin.rewind
-  $stderr.write("in(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n")
+  if ra && ra.include?(e)
+    #$stderr.write("A-")
+
+    begin
+      errp = e.read_nonblock(chunk)
+      all_stderr.write(errp)
+    rescue IO::EAGAINWaitReadable => err
+    end
+  end
+
+  #all_stdin.rewind
+  #$stderr.write("in(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n")
 
   all_stdout.rewind
-  $stderr.write("out(#{cmd[0]}): #{all_stdout.read.chars.inspect}\n")
+  #$stderr.write("out(#{cmd[0]}): #{all_stdout.read.chars.inspect}\n") if all_stdout.length > 0
+
+  all_stderr.rewind
+  #$stderr.write("err(#{cmd[0]}): #{all_stderr.read.chars.inspect}\n") if all_stderr.length > 0
 
   all_stdin.rewind
   slave.write(all_stdin.read) if all_stdin.length > 0
-  slave.flush
+  #slave.ioflush
 
   all_stdout.rewind
   $stdout.write(all_stdout.read) if all_stdout.length > 0
-  $stdout.flush
+  #$stdout.ioflush
 
-  #$stderr.write(":#{master.closed?}")
-  #break if $stdin.closed?
+  all_stderr.rewind
+  $stderr.write(all_stderr.read) if all_stderr.length > 0
+  #$stderr.ioflush
+
+  #$stderr.write("clsd?:#{master.closed?}")
+  #$stderr.write("clsd?:#{slave.closed?}")
+  #$stderr.write("clsd?:#{$stdin.eof?}")
+  #$stderr.write("clsd?:#{$stdout.closed?}")
+
+  #break 
+  #if $stdin.eof? || exiting
+  #  exiting = true
+  #  #Process.kill('INT', pid) rescue Errno::ECHILD
+  #end
 
   begin
     done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
-    break if done_status
-  rescue Errno::ECHILD => e
+    if done_status
+      flushing = true
+    end
+  rescue Errno::ECHILD => err
     #$stderr.write(e.inspect)
-    break
+    flushing = true
   end
 
-  sleep 1
+  if flushing
+    flush_count += 1
+    break if flush_count > 5
+  end
+
+  #sleep 1
 end
 
-exit(done_status.success?)
+if $stdin.tty?
+  $stdin.echo = true
+end
+
+exit(done_status.success? || false)
 
 #$stderr.write("X")
 
