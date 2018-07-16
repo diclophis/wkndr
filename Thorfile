@@ -716,12 +716,10 @@ if $stdin.tty?
 #  $stdin.echo = false
   recv_stdin = $stdin
   reads_stdin = $stdin
-  #$stdin.winsize = 22, 100, 0, 0
 else
   pty_io, pty_file = PTY.open
   recv_stdin = pty_file
   reads_stdin = pty_io
-  #pty_io.winsize = 22, 100, 0, 0
 end
 #end
 
@@ -736,6 +734,7 @@ o, ow = IO.pipe
 
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 #pid = spawn(*cmd, options.merge({:in => slave}))
+
 
 #recv_stdin.binmode
 #reads_stdin.binmode
@@ -772,21 +771,22 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 
 #puts 
 
-#f = Thread.new {
-#  begin
-#    done_pid, done_status = Process.waitpid2(pid)
-#    done_status
-#  rescue Errno::ECHILD => e
-#    nil
-#  end
-#}
+f = Thread.new {
+  begin
+    done_pid, done_status = Process.waitpid2(pid)
+    done_status
+  rescue Errno::ECHILD => e
+    nil
+  end
+}
 
 done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 65520
+chunk = 1024
 slowness = 0.001
+stdin_eof = false
 
 full_debug = false
 
@@ -799,121 +799,186 @@ stdin_io.set_encoding('ASCII-8BIT')
 recv_stdin.binmode
 recv_stdin.set_encoding('ASCII-8BIT')
 
-loop do
-  $stderr.write(".") if full_debug
+Thread.abort_on_exception = true
 
-  ra, wa, er = IO.select([stdin_io, o, e].reject(&:closed?), [], [], slowness)
-
-  if !$stdin.closed?
-    if $stdin.tty?
-    else
-      if ra && ra.include?(stdin_io)
-        #$stderr.write("C-")
-
-        begin
-          all_stdin = (stdin_io.read_nonblock(chunk))
-
-          if all_stdin
-            if !$stdin.closed? && $stdin.tty?
-            else
-              recv_stdin.write(all_stdin) if all_stdin.length > 0
-              recv_stdin.ioflush
-            end
-          end
-        rescue EOFError
-        rescue IO::EAGAINWaitReadable => err
-        end
+in_t = Thread.new {
+  recv_stdin.winsize = 22, 100, 0, 0
+  $stderr.write(recv_stdin.winsize.inspect)
+  if !recv_stdin.tty?
+    #last_in = IO.copy_stream(stdin_io, recv_stdin)
+    while true
+      begin
+        recv_stdin.write(stdin_io.read(chunk))
+      rescue EOFError
       end
     end
+  else
+    recv_stdin.eof?
   end
+}
 
-  $stderr.write("!") if full_debug
+out_t = Thread.new {
+  last_err = IO.copy_stream(o, $stdout)
+}
 
-  if ra && ra.include?(o)
-    begin
-      all_stdout = (o.read_nonblock(chunk))
+err_t = Thread.new {
+  last_err = IO.copy_stream(e, $stderr)
+}
 
-      if all_stdout
-        $stdout.write(all_stdout) if all_stdout.length > 0
-        $stdout.flush
-      end
-    rescue IO::EAGAINWaitReadable => err
-    end
-  end
+in_t.join
+#out_t.join
+#err_t.join
+f.join
 
-  $stderr.write("@") if full_debug
-
-  if ra && ra.include?(e)
-    begin
-      all_stderr = (e.read_nonblock(chunk))
-
-      if all_stderr
-        $stderr.write(all_stderr) if all_stderr.length > 0
-        $stderr.flush
-      end
-    rescue IO::EAGAINWaitReadable => err
-    end
-  end
-
-  $stderr.write("#") if full_debug
-
-  #all_stdout.gsub!("\r\n0000", "\r0000")
-  #all_stdout.gsub!("\r\n0000", "\n0000")
-  #all_stdin.gsub!("\r", "")
-  #all_stderr.gsub!("\r", "")
-
-  #$stderr.puts("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
-  #$stderr.puts("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
-  #$stderr.puts("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
-
-  #$stderr.write("clsd?:#{master.closed?}")
-  #$stderr.write("clsd?:#{slave.closed?}")
-  #$stderr.write("clsd?:#{$stdin.eof?}")
-  #$stderr.write("clsd?:#{$stdout.closed?}")
-
-  #break 
-
-  $stderr.write("^") if full_debug
-
-  begin
-    done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
-    if done_status
-      flushing = true
-    end
-  rescue Errno::ECHILD => err
-    #$stderr.write(e.inspect)
-    flushing = true
-  end
-
-  $stderr.write("&") if full_debug
-
-  if flushing
-    flush_count += 1
-    break if flush_count > 5
-  end
-
-  $stderr.write("*") if full_debug
-
-  if !$stdin.closed?
-    if $stdin.tty?
-    else
-      #if $stdin.eof?
-      #  $stderr.write("|")
-      #  $stdin.close
-      #  reads_stdin.close
-      #  pty_file.close
-      #  flushing = true
-      #  #all_stdin.write("\cd")
-      #  #exiting = true
-      #  #Process.kill('INT', pid) rescue Errno::ECHILD
-      #end
-    end
-  end
-
-  $stderr.write("(") if full_debug
-
-  sleep slowness
-end
+#last_in = 0
+#last_out = 0
+#last_err = 0
+#loop do
+#  $stderr.write(".") if full_debug
+#
+#  ra, wa, er = IO.select([stdin_io, o, e].reject(&:closed?), [], [], slowness)
+#
+#  if ra && ra.include?(stdin_io)
+#    last_in = IO.copy_stream(stdin_io, recv_stdin, 1, last_in)
+#  end
+#
+#  #if ra && ra.include?(o)
+#  #  last_out = IO.copy_stream(o, $stdout)
+#  #end
+#
+#  if ra && ra.include?(e)
+#    last_err = IO.copy_stream(e, $stderr, 1, last_err)
+#  end
+#
+#  #if !$stdin.closed?
+#  #  if $stdin.tty?
+#  #  else
+#  #    if ra && ra.include?(stdin_io)
+#  #      #$stderr.write("C-")
+#
+#  #      begin
+#  #        all_stdin = (stdin_io.read_nonblock(chunk))
+#
+#  #        if all_stdin
+#  #          if !$stdin.closed? && $stdin.tty?
+#  #          else
+#  #            recv_stdin.write(all_stdin) if all_stdin.length > 0
+#  #            #recv_stdin.flush
+#  #          end
+#  #        end
+#  #      rescue EOFError
+#  #        stdin_eof = true
+#  #      rescue IO::EAGAINWaitReadable => err
+#  #      end
+#  #    end
+#  #  end
+#  #end
+#
+#  #$stderr.write("!") if full_debug
+#
+#  #if ra && ra.include?(o)
+#  #  begin
+#  #    all_stdout = (o.read_nonblock(chunk))
+#  #    if all_stdout
+#  #      $stdout.write(all_stdout) if all_stdout.length > 0
+#  #      $stdout.flush
+#  #    end
+#  #  rescue IO::EAGAINWaitReadable => err
+#  #  end
+#  #end
+#
+#  #$stderr.write("@") if full_debug
+#
+#  #if ra && ra.include?(e)
+#  #  begin
+#  #    all_stderr = (e.read_nonblock(chunk))
+#
+#  #    if all_stderr
+#  #      $stderr.write(all_stderr) if all_stderr.length > 0
+#  #      $stderr.flush
+#  #    end
+#  #  rescue IO::EAGAINWaitReadable => err
+#  #  end
+#  #end
+#
+#  #$stderr.write("#") if full_debug
+#  #all_stdout.gsub!("\r\n0000", "\r0000")
+#  #all_stdout.gsub!("\r\n0000", "\n0000")
+#  #all_stdin.gsub!("\r", "")
+#  #all_stderr.gsub!("\r", "")
+#  #$stderr.puts("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
+#  #$stderr.puts("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
+#  #$stderr.puts("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
+#  #$stderr.write("clsd?:#{master.closed?}")
+#  #$stderr.write("clsd?:#{slave.closed?}")
+#  #$stderr.write("clsd?:#{$stdin.eof?}")
+#  #$stderr.write("clsd?:#{$stdout.closed?}")
+#
+#  $stderr.write("^") if full_debug
+#
+#  begin
+#    done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
+#    if done_status
+#      flushing = true
+#    end
+#  rescue Errno::ECHILD => err
+#    #$stderr.write(e.inspect)
+#    flushing = true
+#  end
+#
+#  $stderr.write("&") if full_debug
+#
+#  if stdin_eof && !recv_stdin.closed?
+#    recv_stdin.flush
+#    recv_stdin.close
+#  end
+#
+#  if flushing
+#    $stderr.write(".")
+#
+#    #if !recv_stdin.closed?
+#    #  recv_stdin.flush
+#    #end
+#    
+#    flush_count += 1
+#
+#    break if flush_count > (60.0 / slowness)
+#  end
+#
+#  $stderr.write("*") if full_debug
+#
+#  if !$stdin.closed?
+#    if $stdin.tty?
+#    else
+#      #if stdin_eof
+#      #  #$stderr.write("|")
+#
+#      #  if $stdin.eof? && !recv_stdin.closed?
+#      #    recv_stdin.flush
+#      #    recv_stdin.close
+#      #  end
+#
+#      #  begin
+#      #    Process.waitpid2(pid)
+#      #  rescue Errno::ECHILD
+#      #    break
+#      #  end
+#
+#      ##  $stdin.close
+#      ##  reads_stdin.close
+#      ##  pty_file.close
+#      ##  flushing = true
+#      ##  #all_stdin.write("\cd")
+#      ##  #exiting = true
+#      ##  #Process.kill('INT', pid) rescue Errno::ECHILD
+#      #end
+#    end
+#  end
+#
+#  $stderr.write("(") if full_debug
+#
+#  sleep slowness
+#end
 
 #if $stdin.tty?
 #  $stdin.echo = true

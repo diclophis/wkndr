@@ -14,6 +14,7 @@ apt-get update \
        nginx \
        jq \
        strace \
+       htop \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 locale-gen --purge en_US.UTF-8 && /bin/echo -e  "LANG=$LANG\nLANGUAGE=$LANGUAGE\n" | tee /etc/default/locale \
