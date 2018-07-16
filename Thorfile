@@ -735,7 +735,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #ow.binmode
 #errw.binmode
 
-#recv_stdin.raw!
+recv_stdin.raw!
 #reads_stdin.raw!
 #recv_stdin.raw!
 #$stdout.raw! if $stdout.tty?
@@ -811,6 +811,8 @@ in_t.join
 #out_t.join
 #err_t.join
 f.join
+
+exit(f.value.success?)
 
 #last_in = 0
 #last_out = 0
