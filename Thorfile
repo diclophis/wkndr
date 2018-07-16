@@ -237,13 +237,13 @@ HEREDOC
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
       system("git", "push", "-f", "wkndr", ":wkndr/test", "--exec=wkndr receive-pack")
-      exec("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
+      system("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
     end
 
     if options["build"]
       systemx("git", "tag", "-f", "wkndr/build")
       system("git", "push", "-f", "wkndr", ":wkndr/build", "--exec=wkndr receive-pack")
-      exec("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
+      system("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
     end
   end
 
@@ -735,7 +735,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #ow.binmode
 #errw.binmode
 
-recv_stdin.raw!
+#recv_stdin.raw!
 #reads_stdin.raw!
 #recv_stdin.raw!
 #$stdout.raw! if $stdout.tty?
@@ -788,8 +788,13 @@ in_t = Thread.new {
   if !stdin_io.tty?
     #last_in = IO.copy_stream(stdin_io, recv_stdin)
     while true
+
       begin
-        recv_stdin.write(stdin_io.readpartial(chunk))
+        readin = stdin_io.read_nonblock(chunk)
+        $stderr.write("in(#{cmd[0]}): #{readin.chars.inspect}")
+        recv_stdin.write(readin)
+        recv_stdin.flush
+      rescue IO::EAGAINWaitReadable
       rescue EOFError
         break
       end
@@ -800,7 +805,18 @@ in_t = Thread.new {
 }
 
 out_t = Thread.new {
-  last_err = IO.copy_stream(o, $stdout)
+  #last_err = IO.copy_stream(o, $stdout)
+  while true
+    begin
+      readout = o.read_nonblock(chunk)
+      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}")
+      $stdout.write(readout)
+      $stdout.flush
+    rescue IO::EAGAINWaitReadable
+    rescue EOFError
+      break
+    end
+  end
 }
 
 err_t = Thread.new {
