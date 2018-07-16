@@ -183,18 +183,19 @@ HEREDOC
   def receive_pack(origin)
     git_push_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i", "-t",
+                     "-i", #"-t",
                      "--",
-                     "git", "receive-pack", "/var/tmp/#{APP}"
+                     #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
+                     "bash", "--rcfile", "/root/.pushrc", "-c", "git receive-pack /var/tmp/#{APP}"
                    ]
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
 
     #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts; puts '0000'; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
 
-    if false || origin == "sys"
-      system(*git_push_cmd)
-      exit 1
+    if true || origin == "sys"
+      exec(*git_push_cmd)
+      #exit 1
     end
 
     execute_simple(:synctty, git_push_cmd, {})
@@ -818,12 +819,14 @@ out_t = Thread.new {
   while true
     begin
       readout = o.read_nonblock(1)
-      #unless fixed > 0
-        fixed += readout.gsub!("\r", "")
+      #if readout == "\r"
+      #  #&& fixed < 4
+      #  fixed += 1
+      #else
+        #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+        $stdout.write(readout)
+        $stdout.flush
       #end
-      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-      $stdout.write(readout)
-      $stdout.flush
     rescue IO::EAGAINWaitReadable
       #$stderr.write("x")
       IO.select([o], [], [], slowness)
@@ -841,7 +844,7 @@ err_t = Thread.new {
 in_t.join
 #out_t.join
 #err_t.join
-#f.join
+f.join
 
 $stderr.write("EXIT")
 $stderr.flush
