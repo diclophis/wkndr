@@ -918,12 +918,13 @@ exiting = false
 flush_count = 0
 flushing = false
 chunk = 65520
-slowness = 0.001
+slowness = 1 #0.01
 
 full_debug = false
 
-fd = $stdin.fcntl(Fcntl::F_DUPFD)
-stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
+#fd = $stdin.fcntl(Fcntl::F_DUPFD)
+#stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
+stdin_io = $stdin
 
 loop do
   $stderr.write(".") if full_debug
@@ -932,7 +933,7 @@ loop do
   all_stdout = "" #StringIO.new
   all_stderr = "" #StringIO.new
 
-  ra, wa, er = IO.select([stdin_io, o, e].reject(&:closed?), [], [], 0.1)
+  ra, wa, er = IO.select([stdin_io, o, e].reject(&:closed?), [], [], slowness)
 
   #$stderr.write(er.inspect)
 
@@ -995,8 +996,8 @@ loop do
   else
     #all_stdin.rewind
     recv_stdin.write(all_stdin) if all_stdin.length > 0
-    recv_stdin.flush
-    #slave.ioflush
+    #recv_stdin.flush
+    recv_stdin.ioflush
   end
 
   $stderr.write("%") if full_debug
@@ -1034,7 +1035,7 @@ loop do
 
   if flushing
     flush_count += 1
-    break if flush_count > 128
+    break if flush_count > 5
   end
 
   $stderr.write("*") if full_debug
@@ -1069,7 +1070,6 @@ exit((done_status && done_status.success?) || false)
 #$stderr.write("X")
 
 #f.join
-
 
 ###read, w = IO.pipe
 ####read.raw!
