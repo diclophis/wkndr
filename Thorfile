@@ -183,7 +183,7 @@ HEREDOC
   def receive_pack(origin)
     git_push_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i", "-t",
+                     "-i", #"-t",
                      "--",
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
@@ -840,7 +840,6 @@ HEREDOC
       when :synctty
 
 
-#master.winsize = 20, 80, 0, 0
 #master.echo = false
 #slave.echo = false
 
@@ -849,10 +848,12 @@ if $stdin.tty?
 #  $stdin.echo = false
   recv_stdin = $stdin
   reads_stdin = $stdin
+  #$stdin.winsize = 22, 100, 0, 0
 else
   pty_io, pty_file = PTY.open
   recv_stdin = pty_file
   reads_stdin = pty_io
+  #pty_io.winsize = 22, 100, 0, 0
 end
 #end
 
@@ -885,14 +886,14 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #$stdout.raw! if $stdout.tty?
 #$stderr.raw! if $stderr.tty?
 
-#recv_stdin.sync = true
-#reads_stdin.sync = true
-#e.sync = true
-#errw.sync = true
-#o.sync = true
-#ow.sync = true
-#$stdout.sync = true
-#$stderr.sync = true
+recv_stdin.sync = true
+reads_stdin.sync = true
+e.sync = true
+errw.sync = true
+o.sync = true
+ow.sync = true
+$stdout.sync = true
+$stderr.sync = true
 
 #$stdout.binmode
 #master.raw!
@@ -916,13 +917,13 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 65444
+chunk = 65520
 slowness = 0.001
 
 full_debug = false
 
 fd = $stdin.fcntl(Fcntl::F_DUPFD)
-stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
 
 loop do
   $stderr.write(".") if full_debug
@@ -979,11 +980,14 @@ loop do
 
   $stderr.write("#") if full_debug
 
-  all_stdout.gsub!("\r", "")
+  #all_stdout.gsub!("\r\n0000", "\r0000")
+  #all_stdout.gsub!("\r\n0000", "\n0000")
+  #all_stdin.gsub!("\r", "")
+  #all_stderr.gsub!("\r", "")
 
-  #$stderr.write("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
-  $stderr.write("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
-  #$stderr.write("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
+  #$stderr.puts("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
+  #$stderr.puts("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
+  #$stderr.puts("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
 
   $stderr.write("$") if full_debug
 
