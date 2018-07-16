@@ -190,7 +190,7 @@ HEREDOC
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
 
-    #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts $stdin.binmode?; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
+    #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts; puts '0000'; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
 
     if false || origin == "sys"
       system(*git_push_cmd)
@@ -868,18 +868,20 @@ o, ow = IO.pipe
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 #pid = spawn(*cmd, options.merge({:in => slave}))
 
-recv_stdin.binmode
-reads_stdin.binmode
-$stdin.binmode
-$stdout.binmode
-$stderr.binmode
-o.binmode
-e.binmode
-ow.binmode
-errw.binmode
+#recv_stdin.binmode
+#reads_stdin.binmode
+#$stdin.binmode
+#$stdout.binmode
+#$stderr.binmode
+#o.binmode
+#e.binmode
+#ow.binmode
+#errw.binmode
 
 #recv_stdin.raw!
 #reads_stdin.raw!
+#recv_stdin.write("\c[20h")
+#recv_stdin.raw!
 #$stdout.raw! if $stdout.tty?
 #$stderr.raw! if $stderr.tty?
 
@@ -920,7 +922,7 @@ slowness = 0.001
 full_debug = false
 
 fd = $stdin.fcntl(Fcntl::F_DUPFD)
-stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
+stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
 
 loop do
   $stderr.write(".") if full_debug
@@ -980,7 +982,7 @@ loop do
   all_stdout.gsub!("\r", "")
 
   #$stderr.write("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
-  #$stderr.write("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
+  $stderr.write("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
   #$stderr.write("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
 
   $stderr.write("$") if full_debug
