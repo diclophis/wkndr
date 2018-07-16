@@ -12,6 +12,7 @@ require 'json'
 require 'expect'
 require 'uri'
 require 'securerandom'
+require 'fcntl'
 
 #$stdin.sync = true
 #$stdout.sync = true
@@ -189,7 +190,7 @@ HEREDOC
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
 
-    #git_push_cmd = ["ruby", "-e", "puts $stdin.read_nonblock(3).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
+    #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts $stdin.binmode?; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
 
     if false || origin == "sys"
       system(*git_push_cmd)
@@ -846,12 +847,12 @@ HEREDOC
 #NOTE: interesting...
 if $stdin.tty?
 #  $stdin.echo = false
-  master = $stdin
+  recv_stdin = $stdin
   reads_stdin = $stdin
 else
   pty_io, pty_file = PTY.open
-  recv_stdin = pty_io
-  reads_stdin = pty_file
+  recv_stdin = pty_file
+  reads_stdin = pty_io
 end
 #end
 
@@ -867,12 +868,29 @@ o, ow = IO.pipe
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 #pid = spawn(*cmd, options.merge({:in => slave}))
 
-#$stdin.sync = true
-#master.sync = true
-#slave.sync = true
-#$stdout.sync = true
+recv_stdin.binmode
+reads_stdin.binmode
+$stdin.binmode
+$stdout.binmode
+$stderr.binmode
+o.binmode
+e.binmode
+ow.binmode
+errw.binmode
+
+#recv_stdin.raw!
+#reads_stdin.raw!
+#$stdout.raw! if $stdout.tty?
+#$stderr.raw! if $stderr.tty?
+
+#recv_stdin.sync = true
+#reads_stdin.sync = true
+#e.sync = true
+#errw.sync = true
 #o.sync = true
 #ow.sync = true
+#$stdout.sync = true
+#$stderr.sync = true
 
 #$stdout.binmode
 #master.raw!
@@ -896,10 +914,13 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 1
-slowness = 0.1
+chunk = 65444
+slowness = 0.001
 
 full_debug = false
+
+fd = $stdin.fcntl(Fcntl::F_DUPFD)
+stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
 
 loop do
   $stderr.write(".") if full_debug
@@ -908,19 +929,19 @@ loop do
   all_stdout = "" #StringIO.new
   all_stderr = "" #StringIO.new
 
-  ra, wa, er = IO.select([$stdin, o, e].reject(&:closed?), [], [], 0.1)
+  ra, wa, er = IO.select([stdin_io, o, e].reject(&:closed?), [], [], 0.1)
 
   #$stderr.write(er.inspect)
 
   if !$stdin.closed?
     if $stdin.tty?
     else
-      if ra && ra.include?($stdin)
+      if ra && ra.include?(stdin_io)
         #$stderr.write("C-")
 
         begin
           #all_stdin.write($stdin.read_nonblock(chunk))
-          all_stdin = ($stdin.read_nonblock(chunk))
+          all_stdin = (stdin_io.read_nonblock(chunk))
         rescue EOFError
         rescue IO::EAGAINWaitReadable => err
         end
@@ -956,16 +977,11 @@ loop do
 
   $stderr.write("#") if full_debug
 
-  #all_stdin.rewind
-  #$stderr.write("in(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n") if all_stdin.length > 0
+  all_stdout.gsub!("\r", "")
 
-  $stderr.write("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
-
-  #all_stdout.rewind
-  #$stderr.write("out(#{cmd[0]}): #{all_stdout.read.chars.inspect}\n") if all_stdout.length > 0
-
-  #all_stderr.rewind
-  #$stderr.write("err(#{cmd[0]}): #{all_stderr.read.chars.inspect}\n") if all_stderr.length > 0
+  #$stderr.write("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
+  #$stderr.write("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
+  #$stderr.write("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
 
   $stderr.write("$") if full_debug
 
