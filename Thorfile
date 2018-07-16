@@ -198,6 +198,9 @@ HEREDOC
     end
 
     execute_simple(:synctty, git_push_cmd, {})
+
+    $stderr.write("EXIT2")
+    exit(1)
   end
 
   desc "upload-pack", ""
@@ -782,7 +785,7 @@ stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT') #, cr_newline: true)
 #recv_stdin.binmode
 #recv_stdin.set_encoding('ASCII-8BIT')
 
-Thread.abort_on_exception = true
+#Thread.abort_on_exception = true
 
 #recv_stdin.winsize = 22, 100, 0, 0
 #$stderr.write(recv_stdin.winsize.inspect)
@@ -791,13 +794,14 @@ in_t = Thread.new {
   if !stdin_io.tty?
     #last_in = IO.copy_stream(stdin_io, recv_stdin)
     while true
-
       begin
         readin = stdin_io.read_nonblock(chunk)
-        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}")
+        #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}")
         recv_stdin.write(readin)
         recv_stdin.flush
       rescue IO::EAGAINWaitReadable
+        #$stderr.write(".")
+        IO.select([stdin_io], [], [], slowness)
       rescue EOFError
         break
       end
@@ -807,16 +811,23 @@ in_t = Thread.new {
   end
 }
 
+fixed = 0
+
 out_t = Thread.new {
   #last_err = IO.copy_stream(o, $stdout)
   while true
     begin
-      readout = o.read_nonblock(chunk)
-      readout.gsub!("\r", "")
-      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}")
+      readout = o.read_nonblock(1)
+      #unless fixed > 0
+        fixed += readout.gsub!("\r", "")
+      #end
+      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
       $stdout.flush
     rescue IO::EAGAINWaitReadable
+      #$stderr.write("x")
+      IO.select([o], [], [], slowness)
+      f.join(slowness)
     rescue EOFError
       break
     end
@@ -830,9 +841,12 @@ err_t = Thread.new {
 in_t.join
 #out_t.join
 #err_t.join
-f.join
+#f.join
 
-exit(f.value.success?)
+$stderr.write("EXIT")
+$stderr.flush
+
+#exit(f.value.success?)
 
 #last_in = 0
 #last_out = 0
