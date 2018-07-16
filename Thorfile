@@ -193,7 +193,7 @@ HEREDOC
 
     #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts; puts '0000'; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
 
-    if true || origin == "sys"
+    if false || origin == "sys"
       exec(*git_push_cmd)
       #exit 1
     end
