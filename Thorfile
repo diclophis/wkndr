@@ -786,7 +786,7 @@ exiting = false
 flush_count = 0
 flushing = false
 chunk = 65520
-slowness = 0.1
+slowness = 0.001
 
 full_debug = false
 
