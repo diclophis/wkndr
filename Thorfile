@@ -183,7 +183,7 @@ HEREDOC
   def receive_pack(origin)
     git_push_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i", #"-t",
+                     "-i", "-t",
                      "--",
                      "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
@@ -773,7 +773,7 @@ stdin_eof = false
 full_debug = false
 
 fd = $stdin.fcntl(Fcntl::F_DUPFD)
-stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
+stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT') #, cr_newline: true)
 
 #stdin_io = $stdin
 
@@ -812,6 +812,7 @@ out_t = Thread.new {
   while true
     begin
       readout = o.read_nonblock(chunk)
+      readout.gsub!("\r", "")
       $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}")
       $stdout.write(readout)
       $stdout.flush
