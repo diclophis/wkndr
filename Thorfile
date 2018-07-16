@@ -191,7 +191,7 @@ HEREDOC
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.read_nonblock(3).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
 
-    if origin == "sys"
+    if false || origin == "sys"
       system(*git_push_cmd)
       exit 1
     end
@@ -359,9 +359,9 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
+    #execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
 
-    #system("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    system("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -838,15 +838,21 @@ HEREDOC
 
       when :synctty
 
-master, slave = PTY.open
 
 #master.winsize = 20, 80, 0, 0
 #master.echo = false
 #slave.echo = false
 
 #NOTE: interesting...
-#if $stdin.tty?
+if $stdin.tty?
 #  $stdin.echo = false
+  master = $stdin
+  reads_stdin = $stdin
+else
+  pty_io, pty_file = PTY.open
+  recv_stdin = pty_io
+  reads_stdin = pty_file
+end
 #end
 
 #fd = IO.sysopen "/dev/tty", "r+"
@@ -855,7 +861,10 @@ master, slave = PTY.open
 e, errw = IO.pipe
 o, ow = IO.pipe
 
-pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => master, :err => errw}))
+#reads_stdin.echo = false
+#reads_stdin.raw!
+
+pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 #pid = spawn(*cmd, options.merge({:in => slave}))
 
 #$stdin.sync = true
@@ -887,82 +896,97 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 65544
+chunk = 1
+slowness = 0.1
+
+full_debug = false
 
 loop do
-  #$stderr.write(".")
+  $stderr.write(".") if full_debug
 
-  all_stdin = StringIO.new
-  all_stdout = StringIO.new
-  all_stderr = StringIO.new
+  all_stdin = "" #StringIO.new
+  all_stdout = "" #StringIO.new
+  all_stderr = "" #StringIO.new
 
   ra, wa, er = IO.select([$stdin, o, e].reject(&:closed?), [], [], 0.1)
 
   #$stderr.write(er.inspect)
 
-  if ra && ra.include?($stdin)
-    #$stderr.write("C-")
+  if !$stdin.closed?
+    if $stdin.tty?
+    else
+      if ra && ra.include?($stdin)
+        #$stderr.write("C-")
 
-    begin
-      #$stdin.read_nonblock(1024)
-      #w.write_nonblock($stdin.read_nonblock(1))
-      #w.write($stdin.read_nonblock(1024))
-      all_stdin.write($stdin.read_nonblock(chunk))
-    rescue EOFError
-      #$stderr.write("!!!!!!")
-      #w2.flush
-      #w2.close
-      #w.close
-      #$stdin.close
-    rescue IO::EAGAINWaitReadable => err
-      #$stderr.write("again")
-    #, Errno::EIO
-      #stdin_ok = true
-      #$stdin.close
-      #w.close
+        begin
+          #all_stdin.write($stdin.read_nonblock(chunk))
+          all_stdin = ($stdin.read_nonblock(chunk))
+        rescue EOFError
+        rescue IO::EAGAINWaitReadable => err
+        end
+      end
     end
   end
+
+  $stderr.write("!") if full_debug
 
   if ra && ra.include?(o)
     #$stderr.write("0-")
 
     begin
-      outp = o.read_nonblock(chunk)
-      all_stdout.write(outp)
+      #outp = o.read_nonblock(chunk)
+      #all_stdout.write(outp)
+      all_stdout = o.read_nonblock(chunk)
     rescue IO::EAGAINWaitReadable => err
-      #$stderr.write("ogain")
     end
   end
+
+  $stderr.write("@") if full_debug
 
   if ra && ra.include?(e)
     #$stderr.write("A-")
 
     begin
-      errp = e.read_nonblock(chunk)
-      all_stderr.write(errp)
+      #errp = e.read_nonblock(chunk)
+      #all_stderr.write(errp)
+      all_stderr = e.read_nonblock(chunk)
     rescue IO::EAGAINWaitReadable => err
     end
   end
 
-  #all_stdin.rewind
-  #$stderr.write("in(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n")
+  $stderr.write("#") if full_debug
 
-  all_stdout.rewind
+  #all_stdin.rewind
+  #$stderr.write("in(#{cmd[0]}) #{all_stdin.read.chars.inspect}\n") if all_stdin.length > 0
+
+  $stderr.write("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
+
+  #all_stdout.rewind
   #$stderr.write("out(#{cmd[0]}): #{all_stdout.read.chars.inspect}\n") if all_stdout.length > 0
 
-  all_stderr.rewind
+  #all_stderr.rewind
   #$stderr.write("err(#{cmd[0]}): #{all_stderr.read.chars.inspect}\n") if all_stderr.length > 0
 
-  all_stdin.rewind
-  slave.write(all_stdin.read) if all_stdin.length > 0
-  #slave.ioflush
+  $stderr.write("$") if full_debug
 
-  all_stdout.rewind
-  $stdout.write(all_stdout.read) if all_stdout.length > 0
+  if !$stdin.closed? && $stdin.tty?
+  else
+    #all_stdin.rewind
+    recv_stdin.write(all_stdin) if all_stdin.length > 0
+    recv_stdin.flush
+    #slave.ioflush
+  end
+
+  $stderr.write("%") if full_debug
+
+  #all_stdout.rewind
+  $stdout.write(all_stdout) if all_stdout.length > 0
+  $stdout.flush
   #$stdout.ioflush
 
-  all_stderr.rewind
-  $stderr.write(all_stderr.read) if all_stderr.length > 0
+  #all_stderr.rewind
+  $stderr.write(all_stderr) if all_stderr.length > 0
+  $stderr.flush
   #$stderr.ioflush
 
   #$stderr.write("clsd?:#{master.closed?}")
@@ -971,10 +995,8 @@ loop do
   #$stderr.write("clsd?:#{$stdout.closed?}")
 
   #break 
-  #if $stdin.eof? || exiting
-  #  exiting = true
-  #  #Process.kill('INT', pid) rescue Errno::ECHILD
-  #end
+
+  $stderr.write("^") if full_debug
 
   begin
     done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
@@ -986,19 +1008,41 @@ loop do
     flushing = true
   end
 
+  $stderr.write("&") if full_debug
+
   if flushing
     flush_count += 1
-    break if flush_count > 5
+    break if flush_count > 128
   end
 
-  #sleep 1
+  $stderr.write("*") if full_debug
+
+  if !$stdin.closed?
+    if $stdin.tty?
+    else
+      #if $stdin.eof?
+      #  $stderr.write("|")
+      #  $stdin.close
+      #  reads_stdin.close
+      #  pty_file.close
+      #  flushing = true
+      #  #all_stdin.write("\cd")
+      #  #exiting = true
+      #  #Process.kill('INT', pid) rescue Errno::ECHILD
+      #end
+    end
+  end
+
+  $stderr.write("(") if full_debug
+
+  sleep slowness
 end
 
 #if $stdin.tty?
 #  $stdin.echo = true
 #end
 
-exit(done_status.success? || false)
+exit((done_status && done_status.success?) || false)
 
 #$stderr.write("X")
 
