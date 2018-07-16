@@ -735,7 +735,10 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #ow.binmode
 #errw.binmode
 
-#recv_stdin.raw!
+if !$stdin.tty?
+  recv_stdin.raw!
+end
+
 #reads_stdin.raw!
 #recv_stdin.raw!
 #$stdout.raw! if $stdout.tty?
@@ -763,7 +766,7 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 1024
+chunk = 1024 * 60
 slowness = 0.001
 stdin_eof = false
 
@@ -791,7 +794,7 @@ in_t = Thread.new {
 
       begin
         readin = stdin_io.read_nonblock(chunk)
-        $stderr.write("in(#{cmd[0]}): #{readin.chars.inspect}")
+        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}")
         recv_stdin.write(readin)
         recv_stdin.flush
       rescue IO::EAGAINWaitReadable
