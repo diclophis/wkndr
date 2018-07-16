@@ -708,12 +708,10 @@ HEREDOC
         return [stdin, stdout, stderr, wait_thr, exit_proc]
 
       when :synctty
-#master.echo = false
-#slave.echo = false
 
-#NOTE: interesting...
 if $stdin.tty?
-#  $stdin.echo = false
+  #NOTE: interesting...
+  #$stdin.echo = false
   recv_stdin = $stdin
   reads_stdin = $stdin
 else
@@ -721,20 +719,11 @@ else
   recv_stdin = pty_file
   reads_stdin = pty_io
 end
-#end
-
-#fd = IO.sysopen "/dev/tty", "r+"
-#slave = IO.new(fd, "r+")
 
 e, errw = IO.pipe
 o, ow = IO.pipe
 
-#reads_stdin.echo = false
-#reads_stdin.raw!
-
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
-#pid = spawn(*cmd, options.merge({:in => slave}))
-
 
 #recv_stdin.binmode
 #reads_stdin.binmode
@@ -746,12 +735,11 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #ow.binmode
 #errw.binmode
 
-#recv_stdin.raw!
-#reads_stdin.raw!
-#recv_stdin.write("\c[20h")
-#recv_stdin.raw!
-#$stdout.raw! if $stdout.tty?
-#$stderr.raw! if $stderr.tty?
+recv_stdin.raw!
+reads_stdin.raw!
+recv_stdin.raw!
+$stdout.raw! if $stdout.tty?
+$stderr.raw! if $stderr.tty?
 
 #recv_stdin.sync = true
 #reads_stdin.sync = true
@@ -761,15 +749,6 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #ow.sync = true
 #$stdout.sync = true
 #$stderr.sync = true
-
-#$stdout.binmode
-#master.raw!
-#slave.raw!
-#$stdin.raw!
-#$stdout.raw!
-#= true
-
-#puts 
 
 f = Thread.new {
   begin
@@ -790,26 +769,29 @@ stdin_eof = false
 
 full_debug = false
 
-#fd = $stdin.fcntl(Fcntl::F_DUPFD)
-#stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
-stdin_io = $stdin
+fd = $stdin.fcntl(Fcntl::F_DUPFD)
+stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: true)
 
-stdin_io.binmode
-stdin_io.set_encoding('ASCII-8BIT')
-recv_stdin.binmode
-recv_stdin.set_encoding('ASCII-8BIT')
+#stdin_io = $stdin
+
+#stdin_io.binmode
+#stdin_io.set_encoding('ASCII-8BIT')
+#recv_stdin.binmode
+#recv_stdin.set_encoding('ASCII-8BIT')
 
 Thread.abort_on_exception = true
 
+#recv_stdin.winsize = 22, 100, 0, 0
+#$stderr.write(recv_stdin.winsize.inspect)
+
 in_t = Thread.new {
-  recv_stdin.winsize = 22, 100, 0, 0
-  $stderr.write(recv_stdin.winsize.inspect)
-  if !recv_stdin.tty?
+  if !stdin_io.tty?
     #last_in = IO.copy_stream(stdin_io, recv_stdin)
     while true
       begin
-        recv_stdin.write(stdin_io.read(chunk))
+        recv_stdin.write(stdin_io.readpartial(chunk))
       rescue EOFError
+        break
       end
     end
   else
