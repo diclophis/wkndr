@@ -216,8 +216,8 @@ HEREDOC
     #  #exit 1
     #end
 
-    #execute_simple(:synctty, git_push_cmd, {})
-    exec(*git_push_cmd)
+    execute_simple(:synctty, git_push_cmd, {})
+    #exec(*git_push_cmd)
   end
 
   desc "upload-pack", ""
