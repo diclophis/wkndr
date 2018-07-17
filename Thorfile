@@ -733,11 +733,6 @@ if stdin_io_tty
   exec(*cmd)
 end
 
-#if !stdin_io_tty
-#  trap 'INT' do
-#    $stderr.write("INT")
-#  end
-#end
 
 #if stdin_io_tty
 #  #NOTE: interesting...
@@ -769,7 +764,16 @@ o, ow = IO.pipe
 #newt.oflag &= ~Termios::OPOST
 #Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
 
+exiting = false
+
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
+
+#if !stdin_io_tty
+  trap 'INT' do
+    $stderr.write("INT")
+    exiting = true
+  end
+#end
 
 #if (stdin_io_tty)
 #  $stdin.close
@@ -851,6 +855,10 @@ Thread.abort_on_exception = true
 in_t = Thread.new {
   last_in = IO.copy_stream(stdin_io, recv_stdin)
 
+  while true
+    break if exiting
+  end
+
   #while true
   #  #$stderr.write("1")
   #  begin
@@ -872,6 +880,10 @@ in_t = Thread.new {
 out_t = Thread.new {
   last_out = IO.copy_stream(o, $stdout)
 
+  while true
+    break if exiting
+  end
+
   #while true
   #  #$stderr.write("2")
   #  begin
@@ -890,6 +902,11 @@ out_t = Thread.new {
 
 err_t = Thread.new {
   last_err = IO.copy_stream(e, $stderr)
+
+  while true
+    break if exiting
+  end
+
   #while true
   #  #$stderr.write("3")
   #  begin
@@ -906,8 +923,8 @@ err_t = Thread.new {
 }
 
 in_t.join
-#out_t.join
-#err_t.join
+out_t.join
+err_t.join
 f.join
 
 trap 'INT', 'DEFAULT'
