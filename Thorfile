@@ -139,6 +139,9 @@ spec:
           privileged: true
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
+        envs:
+        - name: GIT_TRACE_PACKET
+          value: "true"
         resources:
           requests:
             memory: 500Mi
@@ -871,9 +874,8 @@ in_t = Thread.new {
       readin = stdin_io.readpartial(chunk + 1)
       out = recv_stdin.write(readin)
       recv_stdin.flush
-      $stderr.write("in(#{cmd[0]}): #{readin.chars.inspect}=#{out}\n")
+      #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}=#{out}\n")
     rescue IO::EAGAINWaitReadable, Errno::EINTR
-      #$stderr.write("!!!!!!!!!!!!!!!!!!!")
       IO.select([stdin_io], [], [], slowness)
       f.join(slowness)
       Thread.pass
@@ -896,9 +898,9 @@ out_t = Thread.new {
     break if exiting
     begin
       readout = o.readpartial(chunk + 2)
-      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
-      #$stdout.flush
+      $stdout.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([o], [], [], slowness)
       f.join(slowness)
