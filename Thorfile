@@ -186,7 +186,7 @@ HEREDOC
                      "-i", #"-t",
                      "--",
                      #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
-                     "bash", "--rcfile", "/root/.pushrc", "-c", "git receive-pack /var/tmp/#{APP}"
+                     "bash", "--rcfile", "/root/.pushrc", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
                    ]
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
@@ -797,7 +797,7 @@ in_t = Thread.new {
     while true
       begin
         readin = stdin_io.read_nonblock(chunk)
-        #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}")
+        #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
         recv_stdin.write(readin)
         recv_stdin.flush
       rescue IO::EAGAINWaitReadable
@@ -818,12 +818,12 @@ out_t = Thread.new {
   #last_err = IO.copy_stream(o, $stdout)
   while true
     begin
-      readout = o.read_nonblock(1)
+      readout = o.read_nonblock(chunk)
       #if readout == "\r"
       #  #&& fixed < 4
       #  fixed += 1
       #else
-        #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+        $stderr.write("out(#{cmd[0]}): #{readout}\n")
         $stdout.write(readout)
         $stdout.flush
       #end
@@ -838,7 +838,7 @@ out_t = Thread.new {
 }
 
 err_t = Thread.new {
-  last_err = IO.copy_stream(e, $stderr)
+  #last_err = IO.copy_stream(e, $stderr)
 }
 
 in_t.join
@@ -1004,8 +1004,7 @@ $stderr.flush
 #if $stdin.tty?
 #  $stdin.echo = true
 #end
-
-exit((done_status && done_status.success?) || false)
+#exit((done_status && done_status.success?) || false)
 
     end
   end
