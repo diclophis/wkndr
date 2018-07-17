@@ -185,18 +185,17 @@ HEREDOC
 
   desc "rcp", ""
   def rcp(app, origin)
-    if $stdin.tty?
-      oldt = Termios.tcgetattr($stdin)
-      newt = oldt.dup
-      newt.oflag &= ~Termios::ONLCR
-      newt.oflag &= ~Termios::OPOST
-      Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
-    end
+    #if $stdin.tty?
+    #  oldt = Termios.tcgetattr($stdin)
+    #  newt = oldt.dup
+    #  newt.oflag &= ~Termios::ONLCR
+    #  newt.oflag &= ~Termios::OPOST
+    #  Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
+    #end
 
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
     execute_simple(:synctty, cmd, {})
-    #exec(*cmd)
   end
 
   desc "receive-pack", ""
@@ -217,7 +216,6 @@ HEREDOC
     #end
 
     execute_simple(:synctty, git_push_cmd, {})
-    #exec(*git_push_cmd)
   end
 
   desc "upload-pack", ""
@@ -731,15 +729,15 @@ HEREDOC
 stdin_io_tty = $stdin.tty?
 
 if stdin_io_tty
-  $stderr.write(cmd.inspect)
+  #$stderr.write(cmd.inspect)
   exec(*cmd)
 end
 
-if !stdin_io_tty
-  trap 'INT' do
-    $stderr.write("INT")
-  end
-end
+#if !stdin_io_tty
+#  trap 'INT' do
+#    $stderr.write("INT")
+#  end
+#end
 
 if stdin_io_tty
   #NOTE: interesting...
