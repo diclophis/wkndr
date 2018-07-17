@@ -808,7 +808,7 @@ f = Thread.new {
   begin
     done_pid, done_status = Process.waitpid2(pid)
     done_status
-  rescue Errno::ECHILD => e
+  rescue Errno::ECHILD, Errno::ESRCH => e
     nil
   end
 }
@@ -818,7 +818,7 @@ exiting = false
 flush_count = 0
 flushing = false
 chunk = 65432
-slowness = 0.1
+slowness = 1.0
 stdin_eof = false
 
 full_debug = false
@@ -850,7 +850,7 @@ in_t = Thread.new {
         #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
         recv_stdin.write(readin)
         #recv_stdin.flush
-      rescue IO::EAGAINWaitReadable
+      rescue IO::EAGAINWaitReadable, Errno::EINTR
         IO.select([stdin_io], [], [], slowness)
         f.join(slowness)
       rescue EOFError
@@ -873,7 +873,7 @@ out_t = Thread.new {
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
       #$stdout.flush
-    rescue IO::EAGAINWaitReadable
+    rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([o], [], [], slowness)
       f.join(slowness)
     rescue EOFError
@@ -891,7 +891,7 @@ err_t = Thread.new {
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stderr.write(readerr)
       #$stderr.flush
-    rescue IO::EAGAINWaitReadable
+    rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([e], [], [], slowness)
       f.join(slowness)
     rescue EOFError
