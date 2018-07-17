@@ -166,8 +166,8 @@ HEREDOC
 
   desc "sh", ""
   def sh
-    exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
-    #execute_simple(:synctty, ["kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash"], {})
+    #exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
+    execute_simple(:synctty, ["kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash"], {})
   end
 
   desc "continous", ""
@@ -728,11 +728,18 @@ HEREDOC
 
       when :synctty
 
-trap 'INT' do
-  $stderr.write("INT")
+stdin_io_tty = $stdin.tty?
+
+if stdin_io_tty
+  $stderr.write(cmd.inspect)
+  exec(*cmd)
 end
 
-stdin_io_tty = $stdin.tty?
+if !stdin_io_tty
+  trap 'INT' do
+    $stderr.write("INT")
+  end
+end
 
 if stdin_io_tty
   #NOTE: interesting...
@@ -764,20 +771,30 @@ o, ow = IO.pipe
 #newt.oflag &= ~Termios::OPOST
 #Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
 
-pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
+pid = nil
 
-recv_stdin.binmode
-reads_stdin.binmode
-$stdin.binmode
-$stdout.binmode
-$stderr.binmode
-o.binmode
-e.binmode
-ow.binmode
-errw.binmode
+if stdin_io_tty
+  pid = spawn(*cmd, options.merge({:unsetenv_others => false}))
+else
+  pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
+end
+
+#if (stdin_io_tty)
+#  $stdin.close
+#end
+
+#recv_stdin.binmode
+#reads_stdin.binmode
+#$stdin.binmode
+#$stdout.binmode
+#$stderr.binmode
+#o.binmode
+#e.binmode
+#ow.binmode
+#errw.binmode
 
 if !stdin_io_tty
-  recv_stdin.raw!
+  #recv_stdin.raw!
 end
 
 #reads_stdin.raw!
@@ -785,23 +802,23 @@ end
 #$stdout.raw! if $stdout.tty?
 #$stderr.raw! if $stderr.tty?
 
-recv_stdin.sync = true
-reads_stdin.sync = true
-e.sync = true
-errw.sync = true
-o.sync = true
-ow.sync = true
-$stdout.sync = true
-$stderr.sync = true
-
-recv_stdin.autoclose = false
-reads_stdin.autoclose = false
-e.autoclose = false
-errw.autoclose = false
-o.autoclose = false
-ow.autoclose = false
-$stdout.autoclose = false
-$stderr.autoclose = false
+#recv_stdin.sync = true
+#reads_stdin.sync = true
+#e.sync = true
+#errw.sync = true
+#o.sync = true
+#ow.sync = true
+#$stdout.sync = true
+#$stderr.sync = true
+#
+#recv_stdin.autoclose = false
+#reads_stdin.autoclose = false
+#e.autoclose = false
+#errw.autoclose = false
+#o.autoclose = false
+#ow.autoclose = false
+#$stdout.autoclose = false
+#$stderr.autoclose = false
 
 f = Thread.new {
   begin
@@ -822,9 +839,11 @@ stdin_eof = false
 
 full_debug = false
 
-#fd = $stdin.fcntl(Fcntl::F_DUPFD)
-#stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
-stdin_io = $stdin
+if !stdin_io_tty
+  fd = $stdin.fcntl(Fcntl::F_DUPFD)
+  stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+  #stdin_io = $stdin
+end
 
 #stdin_io = $stdin
 #stdin_io.binmode
@@ -847,19 +866,21 @@ in_t = Thread.new {
       #$stderr.write("1")
       begin
         readin = stdin_io.read_nonblock(chunk + 1)
-        #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
+        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
         recv_stdin.write(readin)
         #recv_stdin.flush
       rescue IO::EAGAINWaitReadable, Errno::EINTR
         IO.select([stdin_io], [], [], slowness)
-        #f.join(slowness)
+        f.join(slowness)
       rescue EOFError
         #break
       end
     end
   else
+    sleep
     #while true
-    #  break if recv_stdin.eof?
+    #  $stderr.write(">")
+    #  break if stdin_io.eof?
     #end
   end
 }
@@ -870,12 +891,12 @@ out_t = Thread.new {
     #$stderr.write("2")
     begin
       readout = o.read_nonblock(chunk + 2)
-      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
       #$stdout.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([o], [], [], slowness)
-      #f.join(slowness)
+      f.join(slowness)
     rescue EOFError
       #break
     end
@@ -888,7 +909,6 @@ err_t = Thread.new {
     #$stderr.write("3")
     begin
       readerr = e.read_nonblock(chunk + 3)
-      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stderr.write(readerr)
       #$stderr.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
@@ -900,12 +920,16 @@ err_t = Thread.new {
   end
 }
 
-in_t.join
+if stdin_io_tty
+  in_t.join
+end
 #out_t.join
 #err_t.join
-#f.join
+f.join
 
 trap 'INT', 'DEFAULT'
+
+$stderr.write("wtf")
 
 return
 
