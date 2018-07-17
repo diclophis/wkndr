@@ -5,6 +5,3 @@
 
 [receive]
   denyDeleteCurrent = ignore
-
-[sendpack]
-	sideband = false
