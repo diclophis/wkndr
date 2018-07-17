@@ -806,15 +806,15 @@ errw.binmode
 #ow.sync = true
 #$stdout.sync = true
 #$stderr.sync = true
-#
-#recv_stdin.autoclose = false
-#reads_stdin.autoclose = false
-#e.autoclose = false
-#errw.autoclose = false
-#o.autoclose = false
-#ow.autoclose = false
-#$stdout.autoclose = false
-#$stderr.autoclose = false
+
+recv_stdin.autoclose = false
+reads_stdin.autoclose = false
+e.autoclose = false
+errw.autoclose = false
+o.autoclose = false
+ow.autoclose = false
+$stdout.autoclose = false
+$stderr.autoclose = false
 
 f = Thread.new {
   begin
@@ -829,16 +829,16 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 1
-slowness = 0.001
+chunk = 1024
+slowness = 1.0
 stdin_eof = false
 
 full_debug = false
 
 #if !stdin_io_tty
-  fd = $stdin.fcntl(Fcntl::F_DUPFD)
-  stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
-  #stdin_io = $stdin
+  #fd = $stdin.fcntl(Fcntl::F_DUPFD)
+  #stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+  stdin_io = $stdin
 #end
 
 #stdin_io = $stdin
@@ -922,9 +922,9 @@ err_t = Thread.new {
   #end
 }
 
-in_t.join
-out_t.join
-err_t.join
+#in_t.join
+#out_t.join
+#err_t.join
 f.join
 
 trap 'INT', 'DEFAULT'
