@@ -846,7 +846,7 @@ in_t = Thread.new {
     while true
       #$stderr.write("1")
       begin
-        readin = stdin_io.read_nonblock(chunk)
+        readin = stdin_io.read_nonblock(chunk + 1)
         #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
         recv_stdin.write(readin)
         #recv_stdin.flush
@@ -869,7 +869,7 @@ out_t = Thread.new {
   while true
     #$stderr.write("2")
     begin
-      readout = o.read_nonblock(chunk)
+      readout = o.read_nonblock(chunk + 2)
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
       #$stdout.flush
@@ -887,7 +887,7 @@ err_t = Thread.new {
   while true
     #$stderr.write("3")
     begin
-      readerr = e.read_nonblock(chunk)
+      readerr = e.read_nonblock(chunk + 3)
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stderr.write(readerr)
       #$stderr.flush
