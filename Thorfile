@@ -824,55 +824,68 @@ Thread.abort_on_exception = true
 #$stderr.write(recv_stdin.winsize.inspect)
 
 in_t = Thread.new {
-  if !stdin_io.tty?
-    last_in = IO.copy_stream(stdin_io, recv_stdin)
-  end
-
   #if !stdin_io.tty?
-  #  while true
-  #    begin
-  #      readin = stdin_io.read_nonblock(chunk)
-  #      $stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
-  #      recv_stdin.write(readin)
-  #      recv_stdin.flush
-  #    rescue IO::EAGAINWaitReadable
-  #      IO.select([stdin_io], [], [], slowness)
-  #      f.join(slowness)
-  #    rescue EOFError
-  #      break
-  #    end
-  #  end
-  #else
-  #  while true
-  #    break if recv_stdin.eof?
-  #  end
+  #  last_in = IO.copy_stream(stdin_io, recv_stdin)
   #end
+
+  if !stdin_io.tty?
+    while true
+      begin
+        readin = stdin_io.read_nonblock(chunk)
+        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
+        recv_stdin.write(readin)
+        recv_stdin.flush
+      rescue IO::EAGAINWaitReadable
+        IO.select([stdin_io], [], [], slowness)
+        f.join(slowness)
+      rescue EOFError
+        break
+      end
+    end
+  else
+    while true
+      break if recv_stdin.eof?
+    end
+  end
 }
 
 out_t = Thread.new {
-  last_err = IO.copy_stream(o, $stdout)
-  #while true
-  #  begin
-  #    readout = o.read_nonblock(chunk)
-  #    $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-  #    $stdout.write(readout)
-  #    $stdout.flush
-  #  rescue IO::EAGAINWaitReadable
-  #    IO.select([o], [], [], slowness)
-  #    f.join(slowness)
-  #  rescue EOFError
-  #    break
-  #  end
-  #end
+  #last_err = IO.copy_stream(o, $stdout)
+  while true
+    begin
+      readout = o.read_nonblock(chunk)
+      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      $stdout.write(readout)
+      $stdout.flush
+    rescue IO::EAGAINWaitReadable
+      IO.select([o], [], [], slowness)
+      f.join(slowness)
+    rescue EOFError
+      break
+    end
+  end
 }
 
 err_t = Thread.new {
-  last_err = IO.copy_stream(e, $stderr)
+  #last_err = IO.copy_stream(e, $stderr)
+  while true
+    begin
+      readerr = e.read_nonblock(chunk)
+      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      $stderr.write(readerr)
+      $stderr.flush
+    rescue IO::EAGAINWaitReadable
+      IO.select([e], [], [], slowness)
+      f.join(slowness)
+    rescue EOFError
+      break
+    end
+  end
 }
 
-#in_t.join
-#out_t.join
-#err_t.join
+in_t.join
+out_t.join
+err_t.join
 f.join
 
 #$stderr.write("EXIT")
