@@ -245,7 +245,7 @@ HEREDOC
                      #"git", "init", "/var/tmp/#{APP}"
                    ]
 
-    #systemx(*git_init_cmd)
+    systemx(*git_init_cmd)
 
     execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
 
@@ -770,7 +770,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 
 #if !stdin_io_tty
   trap 'INT' do
-    $stderr.write("INT")
+    #$stderr.write("INT")
     exiting = true
   end
 #end
@@ -856,79 +856,80 @@ Thread.abort_on_exception = true
 #$stderr.write(recv_stdin.winsize.inspect)
 
 in_t = Thread.new {
-  last_in = IO.copy_stream(stdin_io, recv_stdin)
+  #last_in = IO.copy_stream(stdin_io, recv_stdin)
+  #while true
+  #  #break if stdin_io.eof?
+  #  break if exiting
+  #  sleep 1
+  #end
 
   while true
-    #break if stdin_io.eof?
+    #$stderr.write("1")
     break if exiting
-    sleep 1
-  end
 
-  #while true
-  #  #$stderr.write("1")
-  #  begin
-  #    readin = stdin_io.readpartial(chunk + 1)
-  #    out = recv_stdin.write(readin)
-  #    recv_stdin.flush
-  #    $stderr.write("in(#{cmd[0]}): #{readin.chars.inspect}=#{out}\n")
-  #  rescue IO::EAGAINWaitReadable, Errno::EINTR
-  #    #$stderr.write("!!!!!!!!!!!!!!!!!!!")
-  #    IO.select([stdin_io], [], [], slowness)
-  #    f.join(slowness)
-  #    Thread.pass
-  #  rescue EOFError
-  #    #break
-  #  end
-  #end
+    begin
+      readin = stdin_io.readpartial(chunk + 1)
+      out = recv_stdin.write(readin)
+      recv_stdin.flush
+      $stderr.write("in(#{cmd[0]}): #{readin.chars.inspect}=#{out}\n")
+    rescue IO::EAGAINWaitReadable, Errno::EINTR
+      #$stderr.write("!!!!!!!!!!!!!!!!!!!")
+      IO.select([stdin_io], [], [], slowness)
+      f.join(slowness)
+      Thread.pass
+    rescue EOFError
+      #break
+    end
+  end
 }
 
 out_t = Thread.new {
-  last_out = IO.copy_stream(o, $stdout)
+  #last_out = IO.copy_stream(o, $stdout)
+  #while true
+  #  #break if o.eof?
+  #  break if exiting
+  #  sleep 1
+  #end
 
   while true
-    #break if o.eof?
+    #$stderr.write("2")
     break if exiting
-    sleep 1
+    begin
+      readout = o.readpartial(chunk + 2)
+      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      $stdout.write(readout)
+      #$stdout.flush
+    rescue IO::EAGAINWaitReadable, Errno::EINTR
+      IO.select([o], [], [], slowness)
+      f.join(slowness)
+    rescue EOFError
+      #break
+    end
   end
-
-  #while true
-  #  #$stderr.write("2")
-  #  begin
-  #    readout = o.readpartial(chunk + 2)
-  #    $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-  #    $stdout.write(readout)
-  #    #$stdout.flush
-  #  rescue IO::EAGAINWaitReadable, Errno::EINTR
-  #    IO.select([o], [], [], slowness)
-  #    f.join(slowness)
-  #  rescue EOFError
-  #    #break
-  #  end
-  #end
 }
 
 err_t = Thread.new {
-  last_err = IO.copy_stream(e, $stderr)
+  #last_err = IO.copy_stream(e, $stderr)
+  #while true
+  #  #break if e.eof?
+  #  break if exiting
+  #  sleep 1
+  #end
 
   while true
-    #break if e.eof?
+    #$stderr.write("3")
     break if exiting
-    sleep 1
+    begin
+      readerr = e.readpartial(chunk + 3)
+      $stderr.write(readerr)
+      #$stderr.flush
+    rescue IO::EAGAINWaitReadable, Errno::EINTR
+      IO.select([e], [], [], slowness)
+      f.join(slowness)
+    rescue EOFError
+      #break
+    end
   end
-
-  #while true
-  #  #$stderr.write("3")
-  #  begin
-  #    readerr = e.readpartial(chunk + 3)
-  #    $stderr.write(readerr)
-  #    #$stderr.flush
-  #  rescue IO::EAGAINWaitReadable, Errno::EINTR
-  #    IO.select([e], [], [], slowness)
-  #    f.join(slowness)
-  #  rescue EOFError
-  #    #break
-  #  end
-  #end
 }
 
 in_t.join
