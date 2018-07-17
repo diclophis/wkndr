@@ -785,15 +785,15 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #  $stdin.close
 #end
 
-recv_stdin.binmode
-reads_stdin.binmode
-$stdin.binmode
-$stdout.binmode
-$stderr.binmode
-o.binmode
-e.binmode
-ow.binmode
-errw.binmode
+#recv_stdin.binmode
+#reads_stdin.binmode
+#$stdin.binmode
+#$stdout.binmode
+#$stderr.binmode
+#o.binmode
+#e.binmode
+#ow.binmode
+#errw.binmode
 
 #if !stdin_io_tty
   #recv.raw!
@@ -804,36 +804,42 @@ errw.binmode
 #$stdout.raw! if $stdout.tty?
 #$stderr.raw! if $stderr.tty?
 
-recv_stdin.sync = true
-reads_stdin.sync = true
-e.sync = true
-errw.sync = true
-o.sync = true
-ow.sync = true
-$stdin.sync = true
-$stdout.sync = true
-$stderr.sync = true
+#recv_stdin.sync = true
+#reads_stdin.sync = true
+#e.sync = true
+#errw.sync = true
+#o.sync = true
+#ow.sync = true
+#$stdin.sync = true
+#$stdout.sync = true
+#$stderr.sync = true
 
-recv_stdin.autoclose = false
-reads_stdin.autoclose = false
-e.autoclose = false
-errw.autoclose = false
-o.autoclose = false
-ow.autoclose = false
-$stdin.autoclose = false
-$stdout.autoclose = false
-$stderr.autoclose = false
+#recv_stdin.autoclose = false
+#reads_stdin.autoclose = false
+#e.autoclose = false
+#errw.autoclose = false
+#o.autoclose = false
+#ow.autoclose = false
+#$stdin.autoclose = false
+#$stdout.autoclose = false
+#$stderr.autoclose = false
 
 f = Thread.new {
   loop do
     begin
-      done_pid, done_status = Process.waitpid2(pid)
-      break if done_status
-    rescue Errno::ECHILD, Errno::ESRCH => e
-      nil
+      #$stderr.write("p")
+      done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
+      #done_status
+      #$stderr.write(done_status.inspect)
+      sleep 1
+      break if (exiting || done_status)
+    rescue Errno::ECHILD, Errno::ESRCH => err
+      break
     end
   end
 }
+
+#f.join
 
 done_status = nil
 exiting = false
@@ -874,9 +880,9 @@ in_t = Thread.new {
     break if exiting
 
     begin
-      readin = stdin_io.readpartial(chunk + 1)
+      readin = stdin_io.read_nonblock(chunk + 1)
       out = recv_stdin.write(readin)
-      recv_stdin.flush
+      #recv_stdin.flush
       #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}=#{out}\n")
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([stdin_io], [], [], slowness)
@@ -899,11 +905,12 @@ out_t = Thread.new {
   while true
     #$stderr.write("2")
     break if exiting
+
     begin
-      readout = o.readpartial(chunk + 2)
+      readout = o.read_nonblock(chunk + 2)
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
-      $stdout.flush
+      #$stdout.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([o], [], [], slowness)
       f.join(slowness)
@@ -924,8 +931,9 @@ err_t = Thread.new {
   while true
     #$stderr.write("3")
     break if exiting
+
     begin
-      readerr = e.readpartial(chunk + 3)
+      readerr = e.read_nonblock(chunk + 3)
       $stderr.write(readerr)
       #$stderr.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
@@ -937,9 +945,9 @@ err_t = Thread.new {
   end
 }
 
-in_t.join
-out_t.join
-err_t.join
+#in_t.join
+#out_t.join
+#err_t.join
 f.join
 
 trap 'INT', 'DEFAULT'
