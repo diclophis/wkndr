@@ -181,6 +181,20 @@ HEREDOC
     execute_procfile(ENV['PWD'], procfile) unless options["only-prepare"]
   end
 
+  desc "rcp", ""
+  def rcp(origin)
+    oldt = Termios.tcgetattr($stdin)
+    newt = oldt.dup
+    newt.oflag &= ~Termios::ONLCR
+    #newt.oflag &= ~Termios::OPOST
+    #newt.iflag &= Termios::ICRNL
+    Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
+
+    cmd = ["git", "receive-pack", "/var/tmp/#{APP}"]
+
+    exec(*cmd)
+  end
+
   desc "receive-pack", ""
   def receive_pack(origin)
     git_push_cmd = [
@@ -189,7 +203,7 @@ HEREDOC
                      "--",
                      #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
                      #"bash", "--rcfile", "/root/.pushrc", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
-                     "git", "receive-pack", "/var/tmp/#{APP}"
+                     "wkndr", "rcp", origin 
                    ]
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
