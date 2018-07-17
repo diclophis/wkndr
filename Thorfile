@@ -845,7 +845,7 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 1024
+chunk = 65536
 slowness = 1.0
 stdin_eof = false
 full_debug = false
@@ -880,8 +880,8 @@ in_t = Thread.new {
     break if exiting
 
     begin
-      readin = stdin_io.read_nonblock(chunk + 1)
-      out = recv_stdin.write(readin)
+      readin = stdin_io.read_nonblock(chunk)
+      out = recv_stdin.write_nonblock(readin)
       recv_stdin.flush
       #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}=#{out}\n")
     rescue IO::EAGAINWaitReadable, Errno::EINTR
@@ -907,9 +907,9 @@ out_t = Thread.new {
     break if exiting
 
     begin
-      readout = o.read_nonblock(chunk + 2)
+      readout = o.read_nonblock(chunk)
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-      $stdout.write(readout)
+      $stdout.write_nonblock(readout)
       $stdout.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([o], [], [], slowness)
@@ -934,8 +934,8 @@ err_t = Thread.new {
     break if exiting
 
     begin
-      readerr = e.read_nonblock(chunk + 3)
-      $stderr.write(readerr)
+      readerr = e.read_nonblock(chunk)
+      $stderr.write_nonblock(readerr)
       $stderr.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([e], [], [], slowness)
