@@ -27,11 +27,12 @@ COPY nginx-apt-proxy.conf /etc/nginx/conf.d
 COPY git-repo-template /usr/share/git-core/templates
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
 
-COPY Thorfile Procfile.init Gemfile Gemfile.lock Rakefile Thorfile wkndr.gemspec /var/lib/wkndr/
+COPY Gemfile Gemfile.lock Rakefile wkndr.gemspec /var/lib/wkndr/
 COPY ext /var/lib/wkndr/ext/
 COPY lib /var/lib/wkndr/lib/
 
 RUN cd /var/lib/wkndr && ls -l && bundle && bundle exec rake
 
+COPY Thorfile Procfile.init strace.sh /var/lib/wkndr/
+
 RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
-#COPY Procfile.init /usr/lib/wkndr/Procfile.init
