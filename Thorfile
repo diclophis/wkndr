@@ -14,7 +14,7 @@ require 'uri'
 require 'securerandom'
 require 'fcntl'
 
-require './lib/termios'
+require_relative './lib/termios'
 
 #$stdin.sync = true
 #$stdout.sync = true

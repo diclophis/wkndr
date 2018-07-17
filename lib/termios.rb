@@ -1,4 +1,4 @@
-require './lib/termios.so'
+require_relative './termios.so'
 
 module Termios
   VISIBLE_CHAR = {}

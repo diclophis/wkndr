@@ -15,6 +15,7 @@ apt-get update \
        jq \
        strace \
        htop \
+       ruby-bundler rake ruby2.5-dev build-essential make \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 locale-gen --purge en_US.UTF-8 && /bin/echo -e  "LANG=$LANG\nLANGUAGE=$LANGUAGE\n" | tee /etc/default/locale \
