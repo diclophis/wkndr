@@ -148,7 +148,7 @@ spec:
         - containerPort: 8111
         - containerPort: 8080
         - containerPort: 5000
-        command: ["wkndr", "dev", "/usr/lib/wkndr/Procfile.init"]
+        command: ["wkndr", "dev", "/var/lib/wkndr/Procfile.init"]
 HEREDOC
 
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
