@@ -14,6 +14,8 @@ require 'uri'
 require 'securerandom'
 require 'fcntl'
 
+require './lib/termios'
+
 #$stdin.sync = true
 #$stdout.sync = true
 
@@ -183,14 +185,14 @@ HEREDOC
   def receive_pack(origin)
     git_push_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i", #"-t",
+                     "-i", "-t",
                      "--",
                      #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
-                     "bash", "--rcfile", "/root/.pushrc", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
+                     #"bash", "--rcfile", "/root/.pushrc", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
+                     "git", "receive-pack", "/var/tmp/#{APP}"
                    ]
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
-
     #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts; puts '0000'; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
 
     if false || origin == "sys"
@@ -200,7 +202,7 @@ HEREDOC
 
     execute_simple(:synctty, git_push_cmd, {})
 
-    $stderr.write("EXIT2")
+    #$stderr.write("EXIT2")
     exit(1)
   end
 
@@ -727,7 +729,12 @@ end
 e, errw = IO.pipe
 o, ow = IO.pipe
 
+#Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
+#Termios.tcsetattr(o, Termios::TCSANOW, newt)
+#Termios.tcsetattr(ow, Termios::TCSANOW, newt)
+
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
+
 
 #recv_stdin.binmode
 #reads_stdin.binmode
@@ -740,7 +747,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #errw.binmode
 
 if !$stdin.tty?
-  recv_stdin.raw!
+  #recv_stdin.raw!
 end
 
 #reads_stdin.raw!
@@ -777,10 +784,10 @@ stdin_eof = false
 full_debug = false
 
 fd = $stdin.fcntl(Fcntl::F_DUPFD)
-stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT') #, cr_newline: true)
+stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+
 
 #stdin_io = $stdin
-
 #stdin_io.binmode
 #stdin_io.set_encoding('ASCII-8BIT')
 #recv_stdin.binmode
@@ -795,6 +802,23 @@ in_t = Thread.new {
   if !stdin_io.tty?
     #last_in = IO.copy_stream(stdin_io, recv_stdin)
     while true
+
+oldt = Termios.tcgetattr(reads_stdin)
+newt = oldt.dup
+newt.oflag &= ~Termios::ONLCR
+newt.oflag &= ~Termios::OPOST
+#newt.iflag &= Termios::ICRNL
+Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
+
+#$stderr.write(oldt.inspect)
+
+oldt = Termios.tcgetattr(recv_stdin)
+newt = oldt.dup
+newt.oflag &= ~Termios::ONLCR
+newt.oflag &= ~Termios::OPOST
+#newt.iflag &= Termios::ICRNL
+Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
+
       begin
         readin = stdin_io.read_nonblock(chunk)
         #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
@@ -823,7 +847,7 @@ out_t = Thread.new {
       #  #&& fixed < 4
       #  fixed += 1
       #else
-        $stderr.write("out(#{cmd[0]}): #{readout}\n")
+        $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
         $stdout.write(readout)
         $stdout.flush
       #end
@@ -846,7 +870,7 @@ in_t.join
 #err_t.join
 f.join
 
-$stderr.write("EXIT")
+#$stderr.write("EXIT")
 $stderr.flush
 
 #exit(f.value.success?)
