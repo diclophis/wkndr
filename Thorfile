@@ -727,7 +727,6 @@ HEREDOC
         return [stdin, stdout, stderr, wait_thr, exit_proc]
 
       when :synctty
-#Interrupt
 
 trap 'INT' do
   $stderr.write("INT")
@@ -817,14 +816,15 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 65432
+chunk = 65430
 slowness = 1.0
 stdin_eof = false
 
 full_debug = false
 
-fd = $stdin.fcntl(Fcntl::F_DUPFD)
-stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+#fd = $stdin.fcntl(Fcntl::F_DUPFD)
+#stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+stdin_io = $stdin
 
 #stdin_io = $stdin
 #stdin_io.binmode
@@ -852,7 +852,7 @@ in_t = Thread.new {
         #recv_stdin.flush
       rescue IO::EAGAINWaitReadable, Errno::EINTR
         IO.select([stdin_io], [], [], slowness)
-        f.join(slowness)
+        #f.join(slowness)
       rescue EOFError
         #break
       end
@@ -875,7 +875,7 @@ out_t = Thread.new {
       #$stdout.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([o], [], [], slowness)
-      f.join(slowness)
+      #f.join(slowness)
     rescue EOFError
       #break
     end
@@ -893,19 +893,21 @@ err_t = Thread.new {
       #$stderr.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
       IO.select([e], [], [], slowness)
-      f.join(slowness)
+      #f.join(slowness)
     rescue EOFError
       #break
     end
   end
 }
 
-#in_t.join
+in_t.join
 #out_t.join
 #err_t.join
-f.join
+#f.join
 
 trap 'INT', 'DEFAULT'
+
+return
 
 #$stderr.write("EXIT")
 #$stderr.flush
@@ -1066,7 +1068,6 @@ trap 'INT', 'DEFAULT'
 #  $stdin.echo = true
 #end
 #exit((done_status && done_status.success?) || false)
-
     end
   end
 
