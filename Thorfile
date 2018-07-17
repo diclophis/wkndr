@@ -139,9 +139,6 @@ spec:
           privileged: true
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
-        envs:
-        - name: GIT_TRACE_PACKET
-          value: "true"
         resources:
           requests:
             memory: 500Mi
@@ -154,6 +151,12 @@ spec:
         - containerPort: 8080
         - containerPort: 5000
         command: ["wkndr", "dev", "/var/lib/wkndr/Procfile.init"]
+        env:
+        - name: GIT_TRACE_PACKET
+          value: "/var/log/git.trace"
+        - name: GIT_FLUSH
+          value: "1"
+...
 HEREDOC
 
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
@@ -311,7 +314,7 @@ spec:
             "--verbosity", "info",
             "-c", "/var/tmp/git/#{APP}"
           ]
-    envs:
+    env:
     - name: HTTP_PROXY_HOST
       value: #{http_proxy_service_ip}:8111
     volumeMounts:
