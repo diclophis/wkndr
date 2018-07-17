@@ -135,6 +135,8 @@ spec:
     spec:
       containers:
       - name: wkndr-app
+        securityContext:
+          privileged: true
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
         resources:
@@ -252,7 +254,7 @@ HEREDOC
 
     #execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
 
-    system("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -747,8 +749,21 @@ o, ow = IO.pipe
 #Termios.tcsetattr(o, Termios::TCSANOW, newt)
 #Termios.tcsetattr(ow, Termios::TCSANOW, newt)
 
-pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
+oldt = Termios.tcgetattr(reads_stdin)
+newt = oldt.dup
+newt.oflag &= ~Termios::ONLCR
+#newt.oflag &= ~Termios::OPOST
+#newt.iflag &= Termios::ICRNL
+Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
 
+oldt = Termios.tcgetattr(recv_stdin)
+newt = oldt.dup
+newt.oflag &= ~Termios::ONLCR
+#newt.oflag &= ~Termios::OPOST
+#newt.iflag &= Termios::ICRNL
+Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
+
+pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 
 #recv_stdin.binmode
 #reads_stdin.binmode
@@ -817,22 +832,6 @@ in_t = Thread.new {
     #last_in = IO.copy_stream(stdin_io, recv_stdin)
     while true
 
-oldt = Termios.tcgetattr(reads_stdin)
-newt = oldt.dup
-newt.oflag &= ~Termios::ONLCR
-newt.oflag &= ~Termios::OPOST
-#newt.iflag &= Termios::ICRNL
-Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
-
-#$stderr.write(oldt.inspect)
-
-oldt = Termios.tcgetattr(recv_stdin)
-newt = oldt.dup
-newt.oflag &= ~Termios::ONLCR
-newt.oflag &= ~Termios::OPOST
-#newt.iflag &= Termios::ICRNL
-Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
-
       begin
         readin = stdin_io.read_nonblock(chunk)
         #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
@@ -861,7 +860,7 @@ out_t = Thread.new {
       #  #&& fixed < 4
       #  fixed += 1
       #else
-        $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+        #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
         $stdout.write(readout)
         $stdout.flush
       #end
@@ -876,7 +875,7 @@ out_t = Thread.new {
 }
 
 err_t = Thread.new {
-  #last_err = IO.copy_stream(e, $stderr)
+  last_err = IO.copy_stream(e, $stderr)
 }
 
 in_t.join
