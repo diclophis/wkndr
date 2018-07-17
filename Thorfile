@@ -739,16 +739,16 @@ end
 #  end
 #end
 
-if stdin_io_tty
-  #NOTE: interesting...
-  #$stdin.echo = false
-  recv_stdin = $stdin
-  reads_stdin = $stdin
-else
+#if stdin_io_tty
+#  #NOTE: interesting...
+#  #$stdin.echo = false
+#  recv_stdin = $stdin
+#  reads_stdin = $stdin
+#else
   pty_io, pty_file = PTY.open
   recv_stdin = pty_file
   reads_stdin = pty_io
-end
+#end
 
 e, errw = IO.pipe
 o, ow = IO.pipe
@@ -769,31 +769,25 @@ o, ow = IO.pipe
 #newt.oflag &= ~Termios::OPOST
 #Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
 
-pid = nil
-
-if stdin_io_tty
-  pid = spawn(*cmd, options.merge({:unsetenv_others => false}))
-else
-  pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
-end
+pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 
 #if (stdin_io_tty)
 #  $stdin.close
 #end
 
-#recv_stdin.binmode
-#reads_stdin.binmode
-#$stdin.binmode
-#$stdout.binmode
-#$stderr.binmode
-#o.binmode
-#e.binmode
-#ow.binmode
-#errw.binmode
+recv_stdin.binmode
+reads_stdin.binmode
+$stdin.binmode
+$stdout.binmode
+$stderr.binmode
+o.binmode
+e.binmode
+ow.binmode
+errw.binmode
 
-if !stdin_io_tty
+#if !stdin_io_tty
   #recv_stdin.raw!
-end
+#end
 
 #reads_stdin.raw!
 #recv_stdin.raw!
@@ -831,17 +825,17 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 65430
-slowness = 1.0
+chunk = 1
+slowness = 0.001
 stdin_eof = false
 
 full_debug = false
 
-if !stdin_io_tty
+#if !stdin_io_tty
   fd = $stdin.fcntl(Fcntl::F_DUPFD)
   stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
   #stdin_io = $stdin
-end
+#end
 
 #stdin_io = $stdin
 #stdin_io.binmode
@@ -855,72 +849,63 @@ Thread.abort_on_exception = true
 #$stderr.write(recv_stdin.winsize.inspect)
 
 in_t = Thread.new {
-  #if !stdin_io_tty
-  #  last_in = IO.copy_stream(stdin_io, recv_stdin)
-  #end
+  last_in = IO.copy_stream(stdin_io, recv_stdin)
 
-  if !stdin_io_tty
-    while true
-      #$stderr.write("1")
-      begin
-        readin = stdin_io.read_nonblock(chunk + 1)
-        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
-        recv_stdin.write(readin)
-        #recv_stdin.flush
-      rescue IO::EAGAINWaitReadable, Errno::EINTR
-        IO.select([stdin_io], [], [], slowness)
-        f.join(slowness)
-      rescue EOFError
-        #break
-      end
-    end
-  else
-    sleep
-    #while true
-    #  $stderr.write(">")
-    #  break if stdin_io.eof?
-    #end
-  end
+  #while true
+  #  #$stderr.write("1")
+  #  begin
+  #    readin = stdin_io.readpartial(chunk + 1)
+  #    out = recv_stdin.write(readin)
+  #    recv_stdin.flush
+  #    $stderr.write("in(#{cmd[0]}): #{readin.chars.inspect}=#{out}\n")
+  #  rescue IO::EAGAINWaitReadable, Errno::EINTR
+  #    #$stderr.write("!!!!!!!!!!!!!!!!!!!")
+  #    IO.select([stdin_io], [], [], slowness)
+  #    f.join(slowness)
+  #    Thread.pass
+  #  rescue EOFError
+  #    #break
+  #  end
+  #end
 }
 
 out_t = Thread.new {
-  #last_err = IO.copy_stream(o, $stdout)
-  while true
-    #$stderr.write("2")
-    begin
-      readout = o.read_nonblock(chunk + 2)
-      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-      $stdout.write(readout)
-      #$stdout.flush
-    rescue IO::EAGAINWaitReadable, Errno::EINTR
-      IO.select([o], [], [], slowness)
-      f.join(slowness)
-    rescue EOFError
-      #break
-    end
-  end
+  last_out = IO.copy_stream(o, $stdout)
+
+  #while true
+  #  #$stderr.write("2")
+  #  begin
+  #    readout = o.readpartial(chunk + 2)
+  #    $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+  #    $stdout.write(readout)
+  #    #$stdout.flush
+  #  rescue IO::EAGAINWaitReadable, Errno::EINTR
+  #    IO.select([o], [], [], slowness)
+  #    f.join(slowness)
+  #  rescue EOFError
+  #    #break
+  #  end
+  #end
 }
 
 err_t = Thread.new {
-  #last_err = IO.copy_stream(e, $stderr)
-  while true
-    #$stderr.write("3")
-    begin
-      readerr = e.read_nonblock(chunk + 3)
-      $stderr.write(readerr)
-      #$stderr.flush
-    rescue IO::EAGAINWaitReadable, Errno::EINTR
-      IO.select([e], [], [], slowness)
-      #f.join(slowness)
-    rescue EOFError
-      #break
-    end
-  end
+  last_err = IO.copy_stream(e, $stderr)
+  #while true
+  #  #$stderr.write("3")
+  #  begin
+  #    readerr = e.readpartial(chunk + 3)
+  #    $stderr.write(readerr)
+  #    #$stderr.flush
+  #  rescue IO::EAGAINWaitReadable, Errno::EINTR
+  #    IO.select([e], [], [], slowness)
+  #    f.join(slowness)
+  #  rescue EOFError
+  #    #break
+  #  end
+  #end
 }
 
-if stdin_io_tty
-  in_t.join
-end
+in_t.join
 #out_t.join
 #err_t.join
 f.join
