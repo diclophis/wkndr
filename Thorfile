@@ -733,7 +733,9 @@ trap 'INT' do
   $stderr.write("INT")
 end
 
-if $stdin.tty?
+stdin_io_tty = $stdin.tty?
+
+if stdin_io_tty
   #NOTE: interesting...
   #$stdin.echo = false
   recv_stdin = $stdin
@@ -775,7 +777,7 @@ e.binmode
 ow.binmode
 errw.binmode
 
-if !$stdin.tty?
+if !stdin_io_tty
   recv_stdin.raw!
 end
 
@@ -815,8 +817,8 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 1
-slowness = 0.01
+chunk = 65432
+slowness = 0.1
 stdin_eof = false
 
 full_debug = false
@@ -836,11 +838,11 @@ Thread.abort_on_exception = true
 #$stderr.write(recv_stdin.winsize.inspect)
 
 in_t = Thread.new {
-  #if !stdin_io.tty?
+  #if !stdin_io_tty
   #  last_in = IO.copy_stream(stdin_io, recv_stdin)
   #end
 
-  if !stdin_io.tty?
+  if !stdin_io_tty
     while true
       #$stderr.write("1")
       begin
