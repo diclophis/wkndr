@@ -26,5 +26,8 @@ COPY apache.conf /etc/apache2/sites-available/000-default.conf
 COPY nginx-apt-proxy.conf /etc/nginx/conf.d
 COPY git-repo-template /usr/share/git-core/templates
 COPY etc-docker-registry-config.yaml /etc/docker/registry/config.yml
-COPY Thorfile /usr/bin/wkndr
-COPY Procfile.init /usr/lib/wkndr/Procfile.init
+
+COPY Thorfile Procfile.init Gemfile Gemfile.lock Rakefile Thorfile ext/extconf.rb ext/termios.c lib/termios.rb wkndr.gemspec /var/lib/wkndr
+
+#COPY Thorfile /usr/bin/wkndr
+#COPY Procfile.init /usr/lib/wkndr/Procfile.init
