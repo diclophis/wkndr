@@ -185,13 +185,13 @@ HEREDOC
 
   desc "rcp", ""
   def rcp(app, origin)
-    #if $stdin.tty?
-    #  oldt = Termios.tcgetattr($stdin)
-    #  newt = oldt.dup
-    #  newt.oflag &= ~Termios::ONLCR
-    #  newt.oflag &= ~Termios::OPOST
-    #  Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
-    #end
+    if $stdin.tty?
+      oldt = Termios.tcgetattr($stdin)
+      newt = oldt.dup
+      newt.oflag &= ~Termios::ONLCR
+      newt.oflag &= ~Termios::OPOST
+      Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
+    end
 
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
