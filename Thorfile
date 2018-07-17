@@ -195,8 +195,8 @@ HEREDOC
 
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
-    #execute_simple(:synctty, cmd, {})
-    exec(*cmd)
+    execute_simple(:synctty, cmd, {})
+    #exec(*cmd)
   end
 
   desc "receive-pack", ""
@@ -746,31 +746,29 @@ o, ow = IO.pipe
 #Termios.tcsetattr(o, Termios::TCSANOW, newt)
 #Termios.tcsetattr(ow, Termios::TCSANOW, newt)
 
-#oldt = Termios.tcgetattr(reads_stdin)
-#newt = oldt.dup
-#newt.oflag &= ~Termios::ONLCR
-#newt.oflag &= ~Termios::OPOST
-##newt.iflag &= Termios::ICRNL
-#Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
-#
-#oldt = Termios.tcgetattr(recv_stdin)
-#newt = oldt.dup
-#newt.oflag &= ~Termios::ONLCR
-#newt.oflag &= ~Termios::OPOST
-##newt.iflag &= Termios::ICRNL
-#Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
+oldt = Termios.tcgetattr(reads_stdin)
+newt = oldt.dup
+newt.oflag &= ~Termios::ONLCR
+newt.oflag &= ~Termios::OPOST
+Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
+
+oldt = Termios.tcgetattr(recv_stdin)
+newt = oldt.dup
+newt.oflag &= ~Termios::ONLCR
+newt.oflag &= ~Termios::OPOST
+Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
 
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 
-#recv_stdin.binmode
-#reads_stdin.binmode
-#$stdin.binmode
-#$stdout.binmode
-#$stderr.binmode
-#o.binmode
-#e.binmode
-#ow.binmode
-#errw.binmode
+recv_stdin.binmode
+reads_stdin.binmode
+$stdin.binmode
+$stdout.binmode
+$stderr.binmode
+o.binmode
+e.binmode
+ow.binmode
+errw.binmode
 
 if !$stdin.tty?
   #recv_stdin.raw!
@@ -781,14 +779,23 @@ end
 #$stdout.raw! if $stdout.tty?
 #$stderr.raw! if $stderr.tty?
 
-#recv_stdin.sync = true
-#reads_stdin.sync = true
-#e.sync = true
-#errw.sync = true
-#o.sync = true
-#ow.sync = true
-#$stdout.sync = true
-#$stderr.sync = true
+recv_stdin.sync = true
+reads_stdin.sync = true
+e.sync = true
+errw.sync = true
+o.sync = true
+ow.sync = true
+$stdout.sync = true
+$stderr.sync = true
+
+recv_stdin.autoclose = false
+reads_stdin.autoclose = false
+e.autoclose = false
+errw.autoclose = false
+o.autoclose = false
+ow.autoclose = false
+$stdout.autoclose = false
+$stderr.autoclose = false
 
 f = Thread.new {
   begin
@@ -803,8 +810,8 @@ done_status = nil
 exiting = false
 flush_count = 0
 flushing = false
-chunk = 1024 * 60
-slowness = 0.001
+chunk = 1
+slowness = 0.01
 stdin_eof = false
 
 full_debug = false
@@ -830,38 +837,40 @@ in_t = Thread.new {
 
   if !stdin_io.tty?
     while true
+      #$stderr.write("1")
       begin
         readin = stdin_io.read_nonblock(chunk)
-        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
+        #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
         recv_stdin.write(readin)
-        recv_stdin.flush
+        #recv_stdin.flush
       rescue IO::EAGAINWaitReadable
         IO.select([stdin_io], [], [], slowness)
         f.join(slowness)
       rescue EOFError
-        break
+        #break
       end
     end
   else
-    while true
-      break if recv_stdin.eof?
-    end
+    #while true
+    #  break if recv_stdin.eof?
+    #end
   end
 }
 
 out_t = Thread.new {
   #last_err = IO.copy_stream(o, $stdout)
   while true
+    #$stderr.write("2")
     begin
       readout = o.read_nonblock(chunk)
-      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stdout.write(readout)
-      $stdout.flush
+      #$stdout.flush
     rescue IO::EAGAINWaitReadable
       IO.select([o], [], [], slowness)
       f.join(slowness)
     rescue EOFError
-      break
+      #break
     end
   end
 }
@@ -869,27 +878,28 @@ out_t = Thread.new {
 err_t = Thread.new {
   #last_err = IO.copy_stream(e, $stderr)
   while true
+    #$stderr.write("3")
     begin
       readerr = e.read_nonblock(chunk)
       #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
       $stderr.write(readerr)
-      $stderr.flush
+      #$stderr.flush
     rescue IO::EAGAINWaitReadable
       IO.select([e], [], [], slowness)
       f.join(slowness)
     rescue EOFError
-      break
+      #break
     end
   end
 }
 
-in_t.join
-out_t.join
-err_t.join
+#in_t.join
+#out_t.join
+#err_t.join
 f.join
 
 #$stderr.write("EXIT")
-$stderr.flush
+#$stderr.flush
 
 #exit(f.value.success?)
 
