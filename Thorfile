@@ -188,13 +188,15 @@ HEREDOC
     oldt = Termios.tcgetattr($stdin)
     newt = oldt.dup
     newt.oflag &= ~Termios::ONLCR
-    #newt.oflag &= ~Termios::OPOST
+    newt.oflag &= ~Termios::OPOST
     #newt.iflag &= Termios::ICRNL
     Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
 
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
-    exec(*cmd)
+    execute_simple(:synctty, cmd, {})
+
+    exit(true)
   end
 
   desc "receive-pack", ""
@@ -219,7 +221,8 @@ HEREDOC
     execute_simple(:synctty, git_push_cmd, {})
 
     #$stderr.write("EXIT2")
-    exit(1)
+    #exit(1)
+    exit(true)
   end
 
   desc "upload-pack", ""
@@ -752,7 +755,7 @@ o, ow = IO.pipe
 oldt = Termios.tcgetattr(reads_stdin)
 newt = oldt.dup
 newt.oflag &= ~Termios::ONLCR
-#newt.oflag &= ~Termios::OPOST
+newt.oflag &= ~Termios::OPOST
 #newt.iflag &= Termios::ICRNL
 Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
 
