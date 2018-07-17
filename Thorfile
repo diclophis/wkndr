@@ -773,7 +773,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #errw.binmode
 
 if !$stdin.tty?
-  recv_stdin.raw!
+  #recv_stdin.raw!
 end
 
 #reads_stdin.raw!
