@@ -245,7 +245,7 @@ HEREDOC
                      #"git", "init", "/var/tmp/#{APP}"
                    ]
 
-    systemx(*git_init_cmd)
+    #systemx(*git_init_cmd)
 
     execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
 
@@ -790,7 +790,7 @@ ow.binmode
 errw.binmode
 
 #if !stdin_io_tty
-  #recv_stdin.raw!
+  #recv.raw!
 #end
 
 #reads_stdin.raw!
@@ -798,14 +798,15 @@ errw.binmode
 #$stdout.raw! if $stdout.tty?
 #$stderr.raw! if $stderr.tty?
 
-#recv_stdin.sync = true
-#reads_stdin.sync = true
-#e.sync = true
-#errw.sync = true
-#o.sync = true
-#ow.sync = true
-#$stdout.sync = true
-#$stderr.sync = true
+recv_stdin.sync = true
+reads_stdin.sync = true
+e.sync = true
+errw.sync = true
+o.sync = true
+ow.sync = true
+$stdin.sync = true
+$stdout.sync = true
+$stderr.sync = true
 
 recv_stdin.autoclose = false
 reads_stdin.autoclose = false
@@ -813,15 +814,18 @@ e.autoclose = false
 errw.autoclose = false
 o.autoclose = false
 ow.autoclose = false
+$stdin.autoclose = false
 $stdout.autoclose = false
 $stderr.autoclose = false
 
 f = Thread.new {
-  begin
-    done_pid, done_status = Process.waitpid2(pid)
-    done_status
-  rescue Errno::ECHILD, Errno::ESRCH => e
-    nil
+  loop do
+    begin
+      done_pid, done_status = Process.waitpid2(pid)
+      break if done_status
+    rescue Errno::ECHILD, Errno::ESRCH => e
+      nil
+    end
   end
 }
 
@@ -832,7 +836,6 @@ flushing = false
 chunk = 1024
 slowness = 1.0
 stdin_eof = false
-
 full_debug = false
 
 #if !stdin_io_tty
@@ -856,7 +859,9 @@ in_t = Thread.new {
   last_in = IO.copy_stream(stdin_io, recv_stdin)
 
   while true
+    #break if stdin_io.eof?
     break if exiting
+    sleep 1
   end
 
   #while true
@@ -881,7 +886,9 @@ out_t = Thread.new {
   last_out = IO.copy_stream(o, $stdout)
 
   while true
+    #break if o.eof?
     break if exiting
+    sleep 1
   end
 
   #while true
@@ -904,7 +911,9 @@ err_t = Thread.new {
   last_err = IO.copy_stream(e, $stderr)
 
   while true
+    #break if e.eof?
     break if exiting
+    sleep 1
   end
 
   #while true
@@ -922,9 +931,9 @@ err_t = Thread.new {
   #end
 }
 
-#in_t.join
-#out_t.join
-#err_t.join
+in_t.join
+out_t.join
+err_t.join
 f.join
 
 trap 'INT', 'DEFAULT'
