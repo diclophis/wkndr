@@ -166,8 +166,8 @@ HEREDOC
 
   desc "sh", ""
   def sh
-    #exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
-    execute_simple(:synctty, ["kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash"], {})
+    exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
+    #execute_simple(:synctty, ["kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash"], {})
   end
 
   desc "continous", ""
@@ -194,9 +194,8 @@ HEREDOC
 
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
-    execute_simple(:synctty, cmd, {})
-
-    exit(true)
+    #execute_simple(:synctty, cmd, {})
+    exec(*cmd)
   end
 
   desc "receive-pack", ""
@@ -212,17 +211,12 @@ HEREDOC
 
     #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
     #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts; puts '0000'; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
+    #if false || origin == "sys"
+    #  #exit 1
+    #end
 
-    if false || origin == "sys"
-      exec(*git_push_cmd)
-      #exit 1
-    end
-
-    execute_simple(:synctty, git_push_cmd, {})
-
-    #$stderr.write("EXIT2")
-    #exit(1)
-    exit(true)
+    #execute_simple(:synctty, git_push_cmd, {})
+    exec(*git_push_cmd)
   end
 
   desc "upload-pack", ""
@@ -234,9 +228,8 @@ HEREDOC
                      "git", "upload-pack", "/var/tmp/#{APP}"
                    ]
 
-    #exec(*git_pull_cmd)
-
-    execute_simple(:synctty, git_pull_cmd, {})
+    exec(*git_pull_cmd)
+    #execute_simple(:synctty, git_pull_cmd, {})
   end
 
   desc "push", ""
@@ -253,7 +246,7 @@ HEREDOC
                      #"git", "init", "/var/tmp/#{APP}"
                    ]
 
-    systemx(*git_init_cmd)
+    #systemx(*git_init_cmd)
 
     #execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
 
@@ -752,19 +745,19 @@ o, ow = IO.pipe
 #Termios.tcsetattr(o, Termios::TCSANOW, newt)
 #Termios.tcsetattr(ow, Termios::TCSANOW, newt)
 
-oldt = Termios.tcgetattr(reads_stdin)
-newt = oldt.dup
-newt.oflag &= ~Termios::ONLCR
-newt.oflag &= ~Termios::OPOST
-#newt.iflag &= Termios::ICRNL
-Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
-
-oldt = Termios.tcgetattr(recv_stdin)
-newt = oldt.dup
-newt.oflag &= ~Termios::ONLCR
+#oldt = Termios.tcgetattr(reads_stdin)
+#newt = oldt.dup
+#newt.oflag &= ~Termios::ONLCR
 #newt.oflag &= ~Termios::OPOST
-#newt.iflag &= Termios::ICRNL
-Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
+##newt.iflag &= Termios::ICRNL
+#Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
+#
+#oldt = Termios.tcgetattr(recv_stdin)
+#newt = oldt.dup
+#newt.oflag &= ~Termios::ONLCR
+#newt.oflag &= ~Termios::OPOST
+##newt.iflag &= Termios::ICRNL
+#Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
 
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 
@@ -779,7 +772,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #errw.binmode
 
 if !$stdin.tty?
-  #recv_stdin.raw!
+  recv_stdin.raw!
 end
 
 #reads_stdin.raw!
@@ -818,14 +811,13 @@ full_debug = false
 fd = $stdin.fcntl(Fcntl::F_DUPFD)
 stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
 
-
 #stdin_io = $stdin
 #stdin_io.binmode
 #stdin_io.set_encoding('ASCII-8BIT')
 #recv_stdin.binmode
 #recv_stdin.set_encoding('ASCII-8BIT')
 
-#Thread.abort_on_exception = true
+Thread.abort_on_exception = true
 
 #recv_stdin.winsize = 22, 100, 0, 0
 #$stderr.write(recv_stdin.winsize.inspect)
@@ -834,15 +826,14 @@ in_t = Thread.new {
   if !stdin_io.tty?
     #last_in = IO.copy_stream(stdin_io, recv_stdin)
     while true
-
       begin
         readin = stdin_io.read_nonblock(chunk)
-        #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
+        $stderr.write("in(#{cmd[0]}): #{readin.chars.length}\n")
         recv_stdin.write(readin)
         recv_stdin.flush
       rescue IO::EAGAINWaitReadable
-        #$stderr.write(".")
         IO.select([stdin_io], [], [], slowness)
+        f.join(slowness)
       rescue EOFError
         break
       end
@@ -852,23 +843,15 @@ in_t = Thread.new {
   end
 }
 
-fixed = 0
-
 out_t = Thread.new {
   #last_err = IO.copy_stream(o, $stdout)
   while true
     begin
       readout = o.read_nonblock(chunk)
-      #if readout == "\r"
-      #  #&& fixed < 4
-      #  fixed += 1
-      #else
-        #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-        $stdout.write(readout)
-        $stdout.flush
-      #end
+      $stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+      $stdout.write(readout)
+      $stdout.flush
     rescue IO::EAGAINWaitReadable
-      #$stderr.write("x")
       IO.select([o], [], [], slowness)
       f.join(slowness)
     rescue EOFError
@@ -878,7 +861,7 @@ out_t = Thread.new {
 }
 
 err_t = Thread.new {
-  last_err = IO.copy_stream(e, $stderr)
+  #last_err = IO.copy_stream(e, $stderr)
 }
 
 in_t.join
