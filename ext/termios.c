@@ -42,7 +42,7 @@ static VALUE
 termios_set_iflag(self, value)
     VALUE self, value;
 {
-    rb_ivar_set(self, id_iflag, validate_ulong(value));
+    rb_ivar_set(self, id_iflag, (value));
 
     return value;
 }
