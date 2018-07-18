@@ -1,4 +1,4 @@
-# wkndr
+![wkndr](public/wkndr.png)
 
 A choose your own adventure git+ops authenticated journaled deployment controller development pipeline kubernetes utility test service
 
