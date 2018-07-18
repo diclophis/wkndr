@@ -732,6 +732,7 @@ HEREDOC
 
       when :async
         stdin, stdout, stderr, wait_thr = Open3.popen3(*cmd, options)
+        stdout.sync
         return [stdin, stdout, stderr, wait_thr, exit_proc]
 
     end
