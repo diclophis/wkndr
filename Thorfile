@@ -152,10 +152,10 @@ spec:
         - containerPort: 5000
         command: ["wkndr", "dev", "/var/lib/wkndr/Procfile.init"]
         env:
-        - name: GIT_TRACE_PACKET
-          value: "/var/log/git.trace"
-        - name: GIT_FLUSH
-          value: "1"
+        #- name: GIT_TRACE_PACKET
+        #  value: "/var/log/git.trace"
+        #- name: GIT_FLUSH
+        #  value: "1"
 ...
 HEREDOC
 
@@ -195,19 +195,24 @@ HEREDOC
       oldt = Termios.tcgetattr($stdin)
       newt = oldt.dup
       newt.oflag &= ~Termios::ONLCR
-      newt.oflag &= ~Termios::OPOST
+      #newt.oflag &= ~Termios::OPOST
       Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
     end
 
+    $stdin.sync = true
+    $stdout.sync = true
+    $stderr.sync = true
+
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
-    execute_simple(:synctty, cmd, {})
+    #execute_simple(:synctty, cmd, {})
+    system(*cmd)
   end
 
   desc "receive-pack", ""
   def receive_pack(origin)
     git_push_cmd = [
-                     "kubectl", "exec", name_of_wkndr_pod,
+                     "script", "rcp", "kubectl", "exec", name_of_wkndr_pod,
                      "-i", "-t",
                      "--",
                      #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
@@ -222,6 +227,7 @@ HEREDOC
     #end
 
     execute_simple(:synctty, git_push_cmd, {})
+    #exec(*git_push_cmd)
   end
 
   desc "upload-pack", ""
@@ -253,9 +259,9 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    execute_simple(:synctty, ["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"], {})
+    #systemx(*["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"])
 
-    #exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
@@ -775,10 +781,10 @@ exiting = false
 pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 
 #if !stdin_io_tty
-  trap 'INT' do
-    #$stderr.write("INT")
-    exiting = true
-  end
+  #trap 'INT' do
+  #  #$stderr.write("INT")
+  #  exiting = true
+  #end
 #end
 
 #if (stdin_io_tty)
@@ -825,6 +831,7 @@ pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => r
 #$stderr.autoclose = false
 
 f = Thread.new {
+  done_status = nil
   loop do
     begin
       #$stderr.write("p")
@@ -837,6 +844,7 @@ f = Thread.new {
       break
     end
   end
+  done_status
 }
 
 #f.join
@@ -867,7 +875,10 @@ Thread.abort_on_exception = true
 #recv_stdin.winsize = 22, 100, 0, 0
 #$stderr.write(recv_stdin.winsize.inspect)
 
-in_t = Thread.new {
+loop do
+  sleep slowness
+
+#in_t = Thread.new {
   #last_in = IO.copy_stream(stdin_io, recv_stdin)
   #while true
   #  #break if stdin_io.eof?
@@ -875,9 +886,13 @@ in_t = Thread.new {
   #  sleep 1
   #end
 
-  while true
+  #while true
     #$stderr.write("1")
     break if exiting
+
+    IO.select([stdin_io], [], [], slowness)
+    IO.select([o], [], [], slowness)
+    #IO.select([e], [], [], slowness)
 
     begin
       readin = stdin_io.read_nonblock(chunk)
@@ -885,16 +900,13 @@ in_t = Thread.new {
       recv_stdin.flush
       #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}=#{out}\n")
     rescue IO::EAGAINWaitReadable, Errno::EINTR
-      IO.select([stdin_io], [], [], slowness)
-      f.join(slowness)
-      Thread.pass
     rescue EOFError
       #break
     end
-  end
-}
+  #end
+#}
 
-out_t = Thread.new {
+#out_t = Thread.new {
   #last_out = IO.copy_stream(o, $stdout)
   #while true
   #  #break if o.eof?
@@ -902,7 +914,7 @@ out_t = Thread.new {
   #  sleep 1
   #end
 
-  while true
+  #while true
     #$stderr.write("2")
     break if exiting
 
@@ -912,16 +924,13 @@ out_t = Thread.new {
       $stdout.write_nonblock(readout)
       $stdout.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
-      IO.select([o], [], [], slowness)
-      f.join(slowness)
-      Thread.pass
     rescue EOFError
       #break
     end
-  end
-}
+  #end
+#}
 
-err_t = Thread.new {
+#err_t = Thread.new {
   #last_err = IO.copy_stream(e, $stderr)
   #while true
   #  #break if e.eof?
@@ -929,7 +938,7 @@ err_t = Thread.new {
   #  sleep 1
   #end
 
-  while true
+  #while true
     #$stderr.write("3")
     break if exiting
 
@@ -938,21 +947,20 @@ err_t = Thread.new {
       $stderr.write_nonblock(readerr)
       $stderr.flush
     rescue IO::EAGAINWaitReadable, Errno::EINTR
-      IO.select([e], [], [], slowness)
-      f.join(slowness)
-      Thread.pass
     rescue EOFError
       #break
     end
-  end
-}
+  #end
+
+    break if f.join(slowness)
+#}
+end
 
 #in_t.join
 #out_t.join
 #err_t.join
-f.join
 
-trap 'INT', 'DEFAULT'
+#trap 'INT', 'DEFAULT'
 
 $stderr.write("wtf")
 
