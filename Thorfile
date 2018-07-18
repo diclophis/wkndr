@@ -511,7 +511,7 @@ HEREDOC
 
     raise "unknown job #{job_to_bootstrap}" unless job
 
-    clean_name = (APP + "-" + job_to_bootstrap + "-" + version).gsub(/[^\.a-z0-9]/, "-")[0..34]
+    clean_name = (APP + "-" + job_to_bootstrap).gsub(/[^\.a-z0-9]/, "-")[0..34]
 
     circle_env = {
       "CI" => "true",
@@ -556,6 +556,9 @@ HEREDOC
         #  "fsGroup" => 20
         #},
         #"restartPolicy" => "Never",
+        #"annotations": {
+        #  "labels"
+        #},
 				"initContainers" => [
           {
             "name" => "git-clone",
@@ -660,6 +663,8 @@ HEREDOC
     apply_configmap = ["kubectl", "apply", "-f", "-"]
     apply_configmap_options = {:stdin_data => configmap_manifest.to_yaml}
     execute_simple(:blocking, apply_configmap, apply_configmap_options)
+
+    system(*["kubectl", "delete", "pod/#{run_name}"])
 
     ci_run_cmd = [
                    "kubectl", "run",
