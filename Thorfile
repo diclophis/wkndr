@@ -409,7 +409,9 @@ HEREDOC
             deps[job_and_reqs] = []
           else
             first_key = job_and_reqs.keys.first
-            deps[first_key] = job_and_reqs[first_key]["requires"]
+            if job_and_reqs[first_key]
+              deps[first_key] = job_and_reqs[first_key]["requires"]
+            end
           end
         end
       end
@@ -560,9 +562,10 @@ HEREDOC
       "apiVersion" => "v1",
       "spec" => {
         #"terminationGracePeriodSeconds" => 1,
-        #"securityContext" => {
-        #  "fsGroup" => 20
-        #},
+        "securityContext" => {
+          #"fsGroup" => 20
+          "privileged" => true
+        },
         #"restartPolicy" => "Never",
         #"annotations": {
         #  "labels"
