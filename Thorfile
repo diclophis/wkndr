@@ -175,6 +175,11 @@ HEREDOC
     exec(*["kubectl", "exec", name_of_wkndr_pod, "-i", $stdin.tty? ? "-t" : nil, "--", "bash"].compact)
   end
 
+  desc "logs", ""
+  def logs
+    exec(*["kubectl", "logs", name_of_wkndr_pod, "-f"].compact)
+  end
+
   desc "continous", ""
   def continous
     sleep
