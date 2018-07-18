@@ -300,7 +300,7 @@ spec:
         - mountPath: /var/tmp/git
           name: git-repo
   containers:
-  - image: gcr.io/kaniko-project/executor:81f520812c84c7ba020ff0537cf4295917f37d77
+  - image: gcr.io/kaniko-project/executor:5f9fb2cb8d55003b2da8f406e22a4705b08d471e
     imagePullPolicy: IfNotPresent
     name: kaniko-#{APP}
     args: [
