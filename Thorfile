@@ -191,29 +191,29 @@ HEREDOC
 
   desc "rcp", ""
   def rcp(app, origin)
-    if $stdin.tty?
-      oldt = Termios.tcgetattr($stdin)
-      newt = oldt.dup
-      newt.oflag &= ~Termios::ONLCR
-      #newt.oflag &= ~Termios::OPOST
-      Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
-    end
+    #if $stdin.tty?
+    #  oldt = Termios.tcgetattr($stdin)
+    #  newt = oldt.dup
+    #  newt.oflag &= ~Termios::ONLCR
+    #  #newt.oflag &= ~Termios::OPOST
+    #  Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
+    #end
 
-    $stdin.sync = true
-    $stdout.sync = true
-    $stderr.sync = true
+    #$stdin.sync = true
+    #$stdout.sync = true
+    #$stderr.sync = true
 
     cmd = ["git", "receive-pack", "/var/tmp/#{app}"]
 
     #execute_simple(:synctty, cmd, {})
-    system(*cmd)
+    exec(*cmd)
   end
 
   desc "receive-pack", ""
   def receive_pack(origin)
     git_push_cmd = [
-                     "script", "rcp", "kubectl", "exec", name_of_wkndr_pod,
-                     "-i", "-t",
+                     "kubectl", "exec", name_of_wkndr_pod,
+                     "-i",
                      "--",
                      #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
                      #"bash", "--rcfile", "/root/.pushrc", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
@@ -226,21 +226,21 @@ HEREDOC
     #  #exit 1
     #end
 
-    execute_simple(:synctty, git_push_cmd, {})
-    #exec(*git_push_cmd)
+    #execute_simple(:synctty, git_push_cmd, {})
+    exec(*git_push_cmd)
   end
 
   desc "upload-pack", ""
   def upload_pack
     git_pull_cmd = [
                      "kubectl", "exec", name_of_wkndr_pod,
-                     "-i", "-t",
+                     "-i",
                      "--",
                      "git", "upload-pack", "/var/tmp/#{APP}"
                    ]
 
-    exec(*git_pull_cmd)
     #execute_simple(:synctty, git_pull_cmd, {})
+    exec(*git_pull_cmd)
   end
 
   desc "push", ""
@@ -259,9 +259,7 @@ HEREDOC
 
     systemx(*git_init_cmd)
 
-    #systemx(*["git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack"])
-
-    exec("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
+    systemx("git", "push", "-f", "wkndr", branch, "--exec=wkndr receive-pack")
 
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
