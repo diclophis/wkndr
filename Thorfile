@@ -627,7 +627,7 @@ HEREDOC
           {
             "name" => "fd-config-volume",
             "configMap" => {
-              "name" => "fd-#{run_name}"
+              "name" => "fd-#{run_name}-#{version}"
             }
           },
           {
@@ -660,7 +660,7 @@ HEREDOC
       "apiVersion" => "v1",
       "kind" => "ConfigMap",
       "metadata" => {
-        "name" => "fd-#{run_name}"
+        "name" => "fd-#{run_name}-#{version}"
       },
       "data" => {
         "init.sh" => pro_fd.read
