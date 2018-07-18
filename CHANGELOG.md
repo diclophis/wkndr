@@ -1,3 +1,9 @@
+# [1.12.0] - 2018-07-18 - Jon Bardin
+
+Working wkndr push --test pipeline
+
+#######
+
 # [1.11.0] - 2018-07-02 - Jon Bardin
 
 allow automatic version bumping of WKNDR deployment

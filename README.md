@@ -32,6 +32,10 @@ installs `$TOOL` as a deployment.
 
 exec into `$WKNDR` deployement for debugging interactive tty
 
+# wkndr logs
+
+logs of `$WKNDR` deployement for debugging
+
 # wkndr push
 
 _requires_ `$PATH/git` to be present.
