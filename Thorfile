@@ -473,17 +473,17 @@ HEREDOC
         process_waiter = cmds[3]
         exit_stdout = cmds[4]
 
-        chunk = 1024
-        begin
-          output = cmds[1].read_nonblock(chunk)
-          $stdout.write(output)
-        rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR => err
-        rescue EOFError => err
-        end
 
         unless completed[fjob]
           if process_waiter.alive?
             all_exited = false
+            chunk = 65432
+            begin
+              output = cmds[1].read_nonblock(chunk)
+              $stdout.write(output)
+            rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR => err
+            rescue EOFError => err
+            end
             process_waiter.join(0.1)
           else
             completed[fjob] = {}
