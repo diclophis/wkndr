@@ -255,13 +255,13 @@ HEREDOC
     if options["test"]
       systemx("git", "tag", "-f", "wkndr/test")
       system("git", "push", "-f", "wkndr", ":wkndr/test", "--exec=wkndr receive-pack")
-      system("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
+      exec("git", "push", "-f", "wkndr", "wkndr/test", "--exec=wkndr receive-pack")
     end
 
     if options["build"]
       systemx("git", "tag", "-f", "wkndr/build")
       system("git", "push", "-f", "wkndr", ":wkndr/build", "--exec=wkndr receive-pack")
-      system("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
+      exec("git", "push", "-f", "wkndr", "wkndr/build", "--exec=wkndr receive-pack")
     end
   end
 
