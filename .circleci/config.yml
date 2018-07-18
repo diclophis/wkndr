@@ -24,12 +24,10 @@ jobs:
           name: bundle and test
           command: |
             set -e
-            env
-            cd #$CIRCLE_WORKING_DIRECTORY
-            pwd
-            whoami
 
-            trap "echo INT" SIGINT
-            trap "echo TERM" SIGTERM
+            cd /var/lib/wkndr
 
-            sleep 120
+            bundle
+            bundle exec rake
+
+            wkndr help

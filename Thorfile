@@ -590,7 +590,7 @@ HEREDOC
             #"securityContext" => {
             #},
             "args" => [
-              "bash", "-e", "-x", "-o", "pipefail", run_shell
+              "bash", "-e", "-o", "pipefail", run_shell
             ],
             "volumeMounts" => [
               {
@@ -662,9 +662,9 @@ HEREDOC
 
     apply_configmap = ["kubectl", "apply", "-f", "-"]
     apply_configmap_options = {:stdin_data => configmap_manifest.to_yaml}
-    execute_simple(:blocking, apply_configmap, apply_configmap_options)
+    execute_simple(:silentx, apply_configmap, apply_configmap_options)
 
-    system(*["kubectl", "delete", "pod/#{run_name}"])
+    execute_simple(:silent, ["kubectl", "delete", "pod/#{run_name}"], {})
 
     ci_run_cmd = [
                    "kubectl", "run",
@@ -685,10 +685,10 @@ HEREDOC
   end
 
   def execute_simple(mode, cmd, options)
-    exit_proc = lambda { |stdout, stderr, wait_thr_value, exit_or_not|
-      $stdout.write(stdout)
-      $stderr.write(stderr)
+    exit_proc = lambda { |stdout, stderr, wait_thr_value, exit_or_not, silent=false|
+      $stdout.write(stdout) unless silent
       if !wait_thr_value.success?
+        $stderr.write(stderr)
         $stderr.write(cmd.join(" "))
         $stderr.write($/)
         $stderr.write("FAILED!!!")
@@ -706,27 +706,16 @@ HEREDOC
         o, e, s = Open3.capture3(*cmd, options)
         return s.success?
 
+      when :silentx
+        o, e, s = Open3.capture3(*cmd, options)
+        s.success?
+        return exit_proc.call(o, e, s, true, true)
+
       when :blocking
         o, e, s = Open3.capture3(*cmd, options)
         return exit_proc.call(o, e, s, true)
 
       when :async
-        #NOTE: support tty?
-        #r, w, pid = PTY.spawn(*cmd, options)
-        #r.sync = true
-        #w.sync = true
-        #if $stdin.tty?
-        #  w.winsize = [*$stdin.winsize, 0, 0]
-        #end
-        #d = Thread.new {
-        #  begin
-        #    done_pid, done_status = Process.waitpid2(pid)
-        #    done_status
-        #  rescue Errno::ECHILD => e
-        #    nil
-        #  end
-        #}
-        #d[:pid] = pid
         stdin, stdout, stderr, wait_thr = Open3.popen3(*cmd, options)
         return [stdin, stdout, stderr, wait_thr, exit_proc]
 
