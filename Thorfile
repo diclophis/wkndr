@@ -172,8 +172,7 @@ HEREDOC
 
   desc "sh", ""
   def sh
-    #exec("kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash")
-    execute_simple(:synctty, ["kubectl", "exec", name_of_wkndr_pod, "-i", "-t", "--", "bash"], {})
+    exec(*["kubectl", "exec", name_of_wkndr_pod, "-i", $stdin.tty? ? "-t" : nil, "--", "bash"].compact)
   end
 
   desc "continous", ""
@@ -215,16 +214,8 @@ HEREDOC
                      "kubectl", "exec", name_of_wkndr_pod,
                      "-i",
                      "--",
-                     #"bash", "--rcfile", "/root/.pushrc", "--noediting", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
-                     #"bash", "--rcfile", "/root/.pushrc", "-i", "-c", "git receive-pack /var/tmp/#{APP}"
                      "wkndr", "rcp", APP, origin 
                    ]
-
-    #git_push_cmd = ["ruby", "-e", "puts $stdin.tty?"]
-    #git_push_cmd = ["ruby", "-e", "$stdin.binmode; puts; puts '0000'; puts $stdin.read_nonblock(1024).inspect rescue IO::EAGAINWaitReadable; $stdout.flush; puts '1' * 32; $stdout.flush; $stderr.write('*****'); $stderr.flush; puts $stdin.tty?.inspect"]
-    #if false || origin == "sys"
-    #  #exit 1
-    #end
 
     #execute_simple(:synctty, git_push_cmd, {})
     exec(*git_push_cmd)
@@ -735,394 +726,216 @@ HEREDOC
         return [stdin, stdout, stderr, wait_thr, exit_proc]
 
       when :synctty
+        raise :depc
 
-stdin_io_tty = $stdin.tty?
+        stdin_io_tty = $stdin.tty?
 
-if stdin_io_tty
-  #$stderr.write(cmd.inspect)
-  exec(*cmd)
-end
+        if stdin_io_tty
+          exec(*cmd)
+        end
 
+        pty_io, pty_file = PTY.open
+        recv_stdin = pty_file
+        reads_stdin = pty_io
 
-#if stdin_io_tty
-#  #NOTE: interesting...
-#  #$stdin.echo = false
-#  recv_stdin = $stdin
-#  reads_stdin = $stdin
-#else
-  pty_io, pty_file = PTY.open
-  recv_stdin = pty_file
-  reads_stdin = pty_io
-#end
+        e, errw = IO.pipe
+        o, ow = IO.pipe
 
-e, errw = IO.pipe
-o, ow = IO.pipe
+        #Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
+        #Termios.tcsetattr(o, Termios::TCSANOW, newt)
+        #Termios.tcsetattr(ow, Termios::TCSANOW, newt)
+        #oldt = Termios.tcgetattr(reads_stdin)
+        #newt = oldt.dup
+        #newt.oflag &= ~Termios::ONLCR
+        #newt.oflag &= ~Termios::OPOST
+        #Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
+        #
+        #oldt = Termios.tcgetattr(recv_stdin)
+        #newt = oldt.dup
+        #newt.oflag &= ~Termios::ONLCR
+        #newt.oflag &= ~Termios::OPOST
+        #Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
 
-#Termios.tcsetattr($stdin, Termios::TCSANOW, newt)
-#Termios.tcsetattr(o, Termios::TCSANOW, newt)
-#Termios.tcsetattr(ow, Termios::TCSANOW, newt)
+        exiting = false
 
-#oldt = Termios.tcgetattr(reads_stdin)
-#newt = oldt.dup
-#newt.oflag &= ~Termios::ONLCR
-#newt.oflag &= ~Termios::OPOST
-#Termios.tcsetattr(reads_stdin, Termios::TCSANOW, newt)
-#
-#oldt = Termios.tcgetattr(recv_stdin)
-#newt = oldt.dup
-#newt.oflag &= ~Termios::ONLCR
-#newt.oflag &= ~Termios::OPOST
-#Termios.tcsetattr(recv_stdin, Termios::TCSANOW, newt)
+        pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
 
-exiting = false
+        #if !stdin_io_tty
+          #trap 'INT' do
+          #  #$stderr.write("INT")
+          #  exiting = true
+          #end
+        #end
 
-pid = spawn(*cmd, options.merge({:unsetenv_others => false, :out => ow, :in => reads_stdin, :err => errw}))
+        #if (stdin_io_tty)
+        #  $stdin.close
+        #end
 
-#if !stdin_io_tty
-  #trap 'INT' do
-  #  #$stderr.write("INT")
-  #  exiting = true
-  #end
-#end
+        #recv_stdin.binmode
+        #reads_stdin.binmode
+        #$stdin.binmode
+        #$stdout.binmode
+        #$stderr.binmode
+        #o.binmode
+        #e.binmode
+        #ow.binmode
+        #errw.binmode
 
-#if (stdin_io_tty)
-#  $stdin.close
-#end
+        #if !stdin_io_tty
+          #recv.raw!
+        #end
 
-#recv_stdin.binmode
-#reads_stdin.binmode
-#$stdin.binmode
-#$stdout.binmode
-#$stderr.binmode
-#o.binmode
-#e.binmode
-#ow.binmode
-#errw.binmode
+        #reads_stdin.raw!
+        #recv_stdin.raw!
+        #$stdout.raw! if $stdout.tty?
+        #$stderr.raw! if $stderr.tty?
 
-#if !stdin_io_tty
-  #recv.raw!
-#end
+        #recv_stdin.sync = true
+        #reads_stdin.sync = true
+        #e.sync = true
+        #errw.sync = true
+        #o.sync = true
+        #ow.sync = true
+        #$stdin.sync = true
+        #$stdout.sync = true
+        #$stderr.sync = true
 
-#reads_stdin.raw!
-#recv_stdin.raw!
-#$stdout.raw! if $stdout.tty?
-#$stderr.raw! if $stderr.tty?
+        #recv_stdin.autoclose = false
+        #reads_stdin.autoclose = false
+        #e.autoclose = false
+        #errw.autoclose = false
+        #o.autoclose = false
+        #ow.autoclose = false
+        #$stdin.autoclose = false
+        #$stdout.autoclose = false
+        #$stderr.autoclose = false
 
-#recv_stdin.sync = true
-#reads_stdin.sync = true
-#e.sync = true
-#errw.sync = true
-#o.sync = true
-#ow.sync = true
-#$stdin.sync = true
-#$stdout.sync = true
-#$stderr.sync = true
+        f = Thread.new {
+          done_status = nil
+          loop do
+            begin
+              #$stderr.write("p")
+              done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
+              #done_status
+              #$stderr.write(done_status.inspect)
+              sleep 1
+              break if (exiting || done_status)
+            rescue Errno::ECHILD, Errno::ESRCH => err
+              break
+            end
+          end
+          done_status
+        }
 
-#recv_stdin.autoclose = false
-#reads_stdin.autoclose = false
-#e.autoclose = false
-#errw.autoclose = false
-#o.autoclose = false
-#ow.autoclose = false
-#$stdin.autoclose = false
-#$stdout.autoclose = false
-#$stderr.autoclose = false
+        #f.join
 
-f = Thread.new {
-  done_status = nil
-  loop do
-    begin
-      #$stderr.write("p")
-      done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
-      #done_status
-      #$stderr.write(done_status.inspect)
-      sleep 1
-      break if (exiting || done_status)
-    rescue Errno::ECHILD, Errno::ESRCH => err
-      break
-    end
-  end
-  done_status
-}
+        done_status = nil
+        exiting = false
+        flush_count = 0
+        flushing = false
+        chunk = 65536
+        slowness = 1.0
+        stdin_eof = false
+        full_debug = false
 
-#f.join
+        #if !stdin_io_tty
+          #fd = $stdin.fcntl(Fcntl::F_DUPFD)
+          #stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
+          stdin_io = $stdin
+        #end
 
-done_status = nil
-exiting = false
-flush_count = 0
-flushing = false
-chunk = 65536
-slowness = 1.0
-stdin_eof = false
-full_debug = false
+        #stdin_io = $stdin
+        #stdin_io.binmode
+        #stdin_io.set_encoding('ASCII-8BIT')
+        #recv_stdin.binmode
+        #recv_stdin.set_encoding('ASCII-8BIT')
 
-#if !stdin_io_tty
-  #fd = $stdin.fcntl(Fcntl::F_DUPFD)
-  #stdin_io = IO.new(fd, mode: 'rb:ASCII-8BIT', cr_newline: false)
-  stdin_io = $stdin
-#end
+        Thread.abort_on_exception = true
 
-#stdin_io = $stdin
-#stdin_io.binmode
-#stdin_io.set_encoding('ASCII-8BIT')
-#recv_stdin.binmode
-#recv_stdin.set_encoding('ASCII-8BIT')
+        #recv_stdin.winsize = 22, 100, 0, 0
+        #$stderr.write(recv_stdin.winsize.inspect)
 
-Thread.abort_on_exception = true
+        loop do
+          sleep slowness
 
-#recv_stdin.winsize = 22, 100, 0, 0
-#$stderr.write(recv_stdin.winsize.inspect)
+        #in_t = Thread.new {
+          #last_in = IO.copy_stream(stdin_io, recv_stdin)
+          #while true
+          #  #break if stdin_io.eof?
+          #  break if exiting
+          #  sleep 1
+          #end
 
-loop do
-  sleep slowness
+          #while true
+            #$stderr.write("1")
+            break if exiting
 
-#in_t = Thread.new {
-  #last_in = IO.copy_stream(stdin_io, recv_stdin)
-  #while true
-  #  #break if stdin_io.eof?
-  #  break if exiting
-  #  sleep 1
-  #end
+            IO.select([stdin_io], [], [], slowness)
+            IO.select([o], [], [], slowness)
+            #IO.select([e], [], [], slowness)
 
-  #while true
-    #$stderr.write("1")
-    break if exiting
+            begin
+              readin = stdin_io.read_nonblock(chunk)
+              out = recv_stdin.write_nonblock(readin)
+              recv_stdin.flush
+              #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}=#{out}\n")
+            rescue IO::EAGAINWaitReadable, Errno::EINTR
+            rescue EOFError
+              #break
+            end
+          #end
+        #}
 
-    IO.select([stdin_io], [], [], slowness)
-    IO.select([o], [], [], slowness)
-    #IO.select([e], [], [], slowness)
+        #out_t = Thread.new {
+          #last_out = IO.copy_stream(o, $stdout)
+          #while true
+          #  #break if o.eof?
+          #  break if exiting
+          #  sleep 1
+          #end
 
-    begin
-      readin = stdin_io.read_nonblock(chunk)
-      out = recv_stdin.write_nonblock(readin)
-      recv_stdin.flush
-      #$stderr.write("in(#{cmd[0]}): #{readin.chars.length}=#{out}\n")
-    rescue IO::EAGAINWaitReadable, Errno::EINTR
-    rescue EOFError
-      #break
-    end
-  #end
-#}
+          #while true
+            #$stderr.write("2")
+            break if exiting
 
-#out_t = Thread.new {
-  #last_out = IO.copy_stream(o, $stdout)
-  #while true
-  #  #break if o.eof?
-  #  break if exiting
-  #  sleep 1
-  #end
+            begin
+              readout = o.read_nonblock(chunk)
+              #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
+              $stdout.write_nonblock(readout)
+              $stdout.flush
+            rescue IO::EAGAINWaitReadable, Errno::EINTR
+            rescue EOFError
+              #break
+            end
+          #end
+        #}
 
-  #while true
-    #$stderr.write("2")
-    break if exiting
+        #err_t = Thread.new {
+          #last_err = IO.copy_stream(e, $stderr)
+          #while true
+          #  #break if e.eof?
+          #  break if exiting
+          #  sleep 1
+          #end
 
-    begin
-      readout = o.read_nonblock(chunk)
-      #$stderr.write("out(#{cmd[0]}): #{readout.chars.inspect}\n")
-      $stdout.write_nonblock(readout)
-      $stdout.flush
-    rescue IO::EAGAINWaitReadable, Errno::EINTR
-    rescue EOFError
-      #break
-    end
-  #end
-#}
+          #while true
+            #$stderr.write("3")
+            break if exiting
 
-#err_t = Thread.new {
-  #last_err = IO.copy_stream(e, $stderr)
-  #while true
-  #  #break if e.eof?
-  #  break if exiting
-  #  sleep 1
-  #end
+            begin
+              readerr = e.read_nonblock(chunk)
+              $stderr.write_nonblock(readerr)
+              $stderr.flush
+            rescue IO::EAGAINWaitReadable, Errno::EINTR
+            rescue EOFError
+              #break
+            end
+          #end
 
-  #while true
-    #$stderr.write("3")
-    break if exiting
+            break if f.join(slowness)
+        #}
+        end
 
-    begin
-      readerr = e.read_nonblock(chunk)
-      $stderr.write_nonblock(readerr)
-      $stderr.flush
-    rescue IO::EAGAINWaitReadable, Errno::EINTR
-    rescue EOFError
-      #break
-    end
-  #end
-
-    break if f.join(slowness)
-#}
-end
-
-#in_t.join
-#out_t.join
-#err_t.join
-
-#trap 'INT', 'DEFAULT'
-
-$stderr.write("wtf")
-
-return
-
-#$stderr.write("EXIT")
-#$stderr.flush
-
-#exit(f.value.success?)
-
-#last_in = 0
-#last_out = 0
-#last_err = 0
-#loop do
-#  $stderr.write(".") if full_debug
-#
-#  ra, wa, er = IO.select([stdin_io, o, e].reject(&:closed?), [], [], slowness)
-#
-#  if ra && ra.include?(stdin_io)
-#    last_in = IO.copy_stream(stdin_io, recv_stdin, 1, last_in)
-#  end
-#
-#  #if ra && ra.include?(o)
-#  #  last_out = IO.copy_stream(o, $stdout)
-#  #end
-#
-#  if ra && ra.include?(e)
-#    last_err = IO.copy_stream(e, $stderr, 1, last_err)
-#  end
-#
-#  #if !$stdin.closed?
-#  #  if $stdin.tty?
-#  #  else
-#  #    if ra && ra.include?(stdin_io)
-#  #      #$stderr.write("C-")
-#
-#  #      begin
-#  #        all_stdin = (stdin_io.read_nonblock(chunk))
-#
-#  #        if all_stdin
-#  #          if !$stdin.closed? && $stdin.tty?
-#  #          else
-#  #            recv_stdin.write(all_stdin) if all_stdin.length > 0
-#  #            #recv_stdin.flush
-#  #          end
-#  #        end
-#  #      rescue EOFError
-#  #        stdin_eof = true
-#  #      rescue IO::EAGAINWaitReadable => err
-#  #      end
-#  #    end
-#  #  end
-#  #end
-#
-#  #$stderr.write("!") if full_debug
-#
-#  #if ra && ra.include?(o)
-#  #  begin
-#  #    all_stdout = (o.read_nonblock(chunk))
-#  #    if all_stdout
-#  #      $stdout.write(all_stdout) if all_stdout.length > 0
-#  #      $stdout.flush
-#  #    end
-#  #  rescue IO::EAGAINWaitReadable => err
-#  #  end
-#  #end
-#
-#  #$stderr.write("@") if full_debug
-#
-#  #if ra && ra.include?(e)
-#  #  begin
-#  #    all_stderr = (e.read_nonblock(chunk))
-#
-#  #    if all_stderr
-#  #      $stderr.write(all_stderr) if all_stderr.length > 0
-#  #      $stderr.flush
-#  #    end
-#  #  rescue IO::EAGAINWaitReadable => err
-#  #  end
-#  #end
-#
-#  #$stderr.write("#") if full_debug
-#  #all_stdout.gsub!("\r\n0000", "\r0000")
-#  #all_stdout.gsub!("\r\n0000", "\n0000")
-#  #all_stdin.gsub!("\r", "")
-#  #all_stderr.gsub!("\r", "")
-#  #$stderr.puts("in(#{cmd[0]}) #{all_stdin.chars.inspect}\n") if all_stdin.length > 0
-#  #$stderr.puts("out(#{cmd[0]}): #{all_stdout.chars.inspect}\n") if all_stdout.length > 0
-#  #$stderr.puts("err(#{cmd[0]}): #{all_stderr.chars.inspect}\n") if all_stderr.length > 0
-#  #$stderr.write("clsd?:#{master.closed?}")
-#  #$stderr.write("clsd?:#{slave.closed?}")
-#  #$stderr.write("clsd?:#{$stdin.eof?}")
-#  #$stderr.write("clsd?:#{$stdout.closed?}")
-#
-#  $stderr.write("^") if full_debug
-#
-#  begin
-#    done_pid, done_status = Process.waitpid2(pid, Process::WNOHANG)
-#    if done_status
-#      flushing = true
-#    end
-#  rescue Errno::ECHILD => err
-#    #$stderr.write(e.inspect)
-#    flushing = true
-#  end
-#
-#  $stderr.write("&") if full_debug
-#
-#  if stdin_eof && !recv_stdin.closed?
-#    recv_stdin.flush
-#    recv_stdin.close
-#  end
-#
-#  if flushing
-#    $stderr.write(".")
-#
-#    #if !recv_stdin.closed?
-#    #  recv_stdin.flush
-#    #end
-#    
-#    flush_count += 1
-#
-#    break if flush_count > (60.0 / slowness)
-#  end
-#
-#  $stderr.write("*") if full_debug
-#
-#  if !$stdin.closed?
-#    if $stdin.tty?
-#    else
-#      #if stdin_eof
-#      #  #$stderr.write("|")
-#
-#      #  if $stdin.eof? && !recv_stdin.closed?
-#      #    recv_stdin.flush
-#      #    recv_stdin.close
-#      #  end
-#
-#      #  begin
-#      #    Process.waitpid2(pid)
-#      #  rescue Errno::ECHILD
-#      #    break
-#      #  end
-#
-#      ##  $stdin.close
-#      ##  reads_stdin.close
-#      ##  pty_file.close
-#      ##  flushing = true
-#      ##  #all_stdin.write("\cd")
-#      ##  #exiting = true
-#      ##  #Process.kill('INT', pid) rescue Errno::ECHILD
-#      #end
-#    end
-#  end
-#
-#  $stderr.write("(") if full_debug
-#
-#  sleep slowness
-#end
-
-#if $stdin.tty?
-#  $stdin.echo = true
-#end
-#exit((done_status && done_status.success?) || false)
     end
   end
 
