@@ -137,10 +137,6 @@ spec:
         - name: var-tmp
           hostPath:
             path: /var/tmp
-        - name: kube-safe-ssh-key
-          nfs:
-            path: /Users/mavenlink/.kube-data/ssh
-            server: docker.for.mac.host.internal
       containers:
       - name: wkndr-app
         securityContext:
@@ -148,8 +144,6 @@ spec:
         volumeMounts:
           - mountPath: /var/tmp/cache
             name: var-tmp
-          - mountPath: /home/app/.ssh
-            name: kube-safe-ssh-key
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
         resources:
@@ -639,7 +633,11 @@ HEREDOC
               {
                 "mountPath" => "/home/app",
                 "name" => "git-repo"
-              }
+              },
+              {
+                "mountPath" => "/home/app/.ssh",
+                "name" => "ssh-key"
+              },
             ],
             "env" => circle_env.collect { |k,v| {"name" => k, "value" => v } }
           }
@@ -660,6 +658,13 @@ HEREDOC
           {
             "name" => "git-repo",
             "emptyDir" => {}
+          },
+          {
+            "name" => "ssh-key",
+            "nfs" => {
+              "path" => "#{ENV['HOME']}/.kube-data/ssh",
+              "server" => "docker.for.mac.host.internal"
+            }
           }
         ]
       }
