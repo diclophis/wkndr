@@ -134,16 +134,16 @@ spec:
         name: wkndr-app
     spec:
       volumes:
-        - name: var-tmp
+        - name: tmp
           hostPath:
-            path: /var/tmp
+            path: /tmp
       containers:
       - name: wkndr-app
         securityContext:
           privileged: true
         volumeMounts:
           - mountPath: /var/tmp/cache
-            name: var-tmp
+            name: tmp
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
         resources:
@@ -303,7 +303,8 @@ spec:
       args:
         - bash
         - -c
-        - git clone http://wkndr-app:8080/#{APP} /var/tmp/git/#{APP} && cd /var/tmp/git/#{APP}
+        #- git clone http://wkndr-app:8080/#{APP} /var/tmp/git/#{APP} && cd /var/tmp/git/#{APP}
+        #- "mkdir /home/app/#{APP} && cd /home/app/#{APP} && git init && git remote add origin http://wkndr-app:8080/#{APP} && git fetch origin && git checkout -b master --track origin/master
       securityContext:
         runAsUser: 1
         allowPrivilegeEscalation: false
@@ -595,7 +596,9 @@ HEREDOC
 						"args" => [
 							"bash",
 							"-c",
-							"git clone http://wkndr-app:8080/#{APP} /home/app/#{APP} && ln -sf /home/app/#{APP} /home/app/current"
+							#"id && ls -lan /home/app && git clone http://wkndr-app:8080/#{APP} /home/app/#{APP} && ln -sf /home/app/#{APP} /home/app/current"
+              "mkdir -p /home/app/#{APP} && cd /home/app/#{APP} && (test -e .git || git init) && ((git remote | grep origin) || git remote add origin http://wkndr-app:8080/#{APP}) && git fetch origin && git checkout #{version}"
+              #-b master --track origin/master
             ],
 						"securityContext" => {
 							"runAsUser" => 1,
@@ -657,7 +660,10 @@ HEREDOC
           },
           {
             "name" => "git-repo",
-            "emptyDir" => {}
+            #"emptyDir" => {}
+            "hostPath" => {
+              "path" => "/tmp"
+            }
           },
           {
             "name" => "ssh-key",
