@@ -133,10 +133,23 @@ spec:
       labels:
         name: wkndr-app
     spec:
+      volumes:
+        - name: var-tmp
+          hostPath:
+            path: /var/tmp
+        - name: kube-safe-ssh-key
+          nfs:
+            path: /Users/mavenlink/.kube-data/ssh
+            server: docker.for.mac.host.internal
       containers:
       - name: wkndr-app
         securityContext:
           privileged: true
+        volumeMounts:
+          - mountPath: /var/tmp/cache
+            name: var-tmp
+          - mountPath: /home/app/.ssh
+            name: kube-safe-ssh-key
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
         resources:
@@ -550,6 +563,11 @@ HEREDOC
     steps = job["steps"]
 
     #TODO: refactor image url parsing
+    unless job["docker"]
+      $stderr.puts "req'd docker key missing" 
+      exit 1
+    end
+
     docker_image_url = URI.parse("http://local/#{job["docker"][0]["image"]}")
     repo = docker_image_url.host
     image_and_tag = File.basename(docker_image_url.path)
@@ -603,6 +621,7 @@ HEREDOC
             "name" => run_name,
             "image" => run_image,
             "imagePullPolicy" => "IfNotPresent",
+            "workingDir" => job["working_directory"],
             #"securityContext" => {
             #},
             "args" => [
@@ -708,6 +727,7 @@ HEREDOC
         $stderr.write($/)
         $stderr.write("FAILED!!!")
         $stderr.write($/)
+        exit 1
         if exit_or_not
           exit 1
         end
