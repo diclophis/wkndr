@@ -597,7 +597,7 @@ HEREDOC
 							"bash",
 							"-c",
 							#"id && ls -lan /home/app && git clone http://wkndr-app:8080/#{APP} /home/app/#{APP} && ln -sf /home/app/#{APP} /home/app/current"
-              "mkdir -p /home/app/#{APP} && cd /home/app/#{APP} && (test -e .git || git init) && ((git remote | grep origin) || git remote add origin http://wkndr-app:8080/#{APP}) && git fetch origin && git checkout #{version}"
+              "mkdir -p /home/app/#{APP} && cd /home/app/#{APP} && (test -e .git || git init) && ((git remote | grep origin) || git remote add origin http://wkndr-app:8080/#{APP}) && git fetch origin && git checkout #{version} && ln -sf /home/app/#{APP} /home/app/current"
               #-b master --track origin/master
             ],
 						"securityContext" => {
@@ -662,7 +662,7 @@ HEREDOC
             "name" => "git-repo",
             #"emptyDir" => {}
             "hostPath" => {
-              "path" => "/tmp"
+              "path" => "/tmp/#{APP}"
             }
           },
           {
