@@ -1,5 +1,0 @@
-Script started on Wed Jul 11 23:25:54 2018
-command: exec wkndr-app-678f5cdc68-xl7rh -i -t -- git receive-pack /var/tmp/wkndr
-script: exec: No such file or directory
-
-Script done on Wed Jul 11 23:25:54 2018
