@@ -16,9 +16,6 @@ require 'fcntl'
 
 require_relative './lib/termios'
 
-#$stdin.sync = true
-#$stdout.sync = true
-
 THORFILE = (File.realdirpath(__FILE__))
 WKNDR = "wkndr"
 APP = File.basename(Dir.pwd)
@@ -597,7 +594,7 @@ HEREDOC
 							"bash",
 							"-c",
 							#"id && ls -lan /home/app && git clone http://wkndr-app:8080/#{APP} /home/app/#{APP} && ln -sf /home/app/#{APP} /home/app/current"
-              "mkdir -p /home/app/#{APP} && cd /home/app/#{APP} && (test -e .git || git init) && ((git remote | grep origin) || git remote add origin http://wkndr-app:8080/#{APP}) && git fetch origin && git checkout #{version} && ln -sf /home/app/#{APP} /home/app/current"
+              "mkdir -p /home/app/#{APP} && cd /home/app/#{APP} && (test -e .git || git init) && (flock -w 600 -x 200 && ((git remote | grep origin) || git remote add origin http://wkndr-app:8080/#{APP}) && git fetch origin && git checkout #{version}) 200>/home/app/#{APP}/.wkndr.lock && ln -sf /home/app/#{APP} /home/app/current"
               #-b master --track origin/master
             ],
 						"securityContext" => {
