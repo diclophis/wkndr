@@ -395,8 +395,9 @@ HEREDOC
     Process.wait rescue Errno::ECHILD
     puts "you are in #{Dir.pwd} building #{version}"
 
+    config_yml = ".circleci/config.yml"
     ## TODO: merge inference vs. configured steps...
-    circle_yaml = YAML.load(File.read(".circleci/config.yml").gsub("{{ .Environment.CIRCLE_SHA1 }}", version).gsub("$CIRCLE_SHA1", version))
+    circle_yaml = YAML.load(File.read(config_yml).gsub("{{ .Environment.CIRCLE_SHA1 }}", version).gsub("$CIRCLE_SHA1", version))
 
     all_job_keys = circle_yaml["jobs"].keys
     first_job = all_job_keys.first
@@ -478,7 +479,6 @@ HEREDOC
         process_waiter = cmds[3]
         exit_stdout = cmds[4]
 
-
         unless completed[fjob]
           if process_waiter.alive?
             all_exited = false
@@ -492,6 +492,7 @@ HEREDOC
             process_waiter.join(0.1)
           else
             completed[fjob] = {}
+            $stderr.write(">>>>>>>>>> (#{config_yml}) #{fjob} finished\n")
             exit_stdout.call(cmds[1].read, cmds[2].read, process_waiter.value, false)
           end
         end
@@ -576,7 +577,6 @@ HEREDOC
     container_specs = {
       "apiVersion" => "v1",
       "spec" => {
-        #"terminationGracePeriodSeconds" => 1,
         "securityContext" => {
           #"fsGroup" => 20
           "privileged" => true
@@ -587,6 +587,7 @@ HEREDOC
         #},
 				"initContainers" => [
           {
+            "terminationGracePeriodSeconds" => 5,
             "name" => "git-clone",
 						"image" => "wkndr:latest",
 						"imagePullPolicy" => "IfNotPresent",
@@ -612,6 +613,7 @@ HEREDOC
         ],
         "containers" => [
           {
+            "terminationGracePeriodSeconds" => 5,
             "name" => run_name,
             "image" => run_image,
             "imagePullPolicy" => "IfNotPresent",
@@ -706,7 +708,7 @@ HEREDOC
     apply_configmap_options = {:stdin_data => configmap_manifest.to_yaml}
     execute_simple(:silentx, apply_configmap, apply_configmap_options)
 
-    execute_simple(:silent, ["kubectl", "delete", "pod/#{run_name}"], {})
+    execute_simple(:silent, ["kubectl", "delete", "pod/#{run_name}", "--grace-period=5"], {})
 
     ci_run_cmd = [
                    "kubectl", "run",
