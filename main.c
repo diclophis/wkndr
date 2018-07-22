@@ -11,6 +11,7 @@
 #include <mruby/string.h>
 #include <mruby/error.h>
 
+#include "thor.h"
 
 static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
   // check for exception, only one can exist at any point in time
@@ -72,7 +73,7 @@ int main(int argc, char** argv) {
 
   mrb_define_global_const(mrb, "ARGV", args);
 
-  eval_static_libs(mrb, NULL);
+  eval_static_libs(mrb, thor, NULL);
 
   mrbc_context *detective_file = mrbc_context_new(mrb);
   mrbc_filename(mrb, detective_file, config);

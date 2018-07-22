@@ -18,9 +18,9 @@ USER root
 #TODO: build openssl certs on client-side
 COPY openssl.conf /etc/ssl/private/openssl.conf
 
-COPY container.sh /var/tmp/container.sh
+COPY bootstrap.sh /var/tmp/bootstrap.sh
 
-RUN /var/tmp/container.sh
+RUN /var/tmp/bootstrap.sh
 
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
 COPY nginx-apt-proxy.conf /etc/nginx/conf.d/
