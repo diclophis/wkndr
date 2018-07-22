@@ -430,7 +430,7 @@ HEREDOC
       jobs_with_zero_req = []
 
       deps.each do |job, reqs|
-        if reqs.all? { |req| completed[req] }
+        if !reqs || reqs.all? { |req| completed[req] }
           jobs_with_zero_req << job
         end
       end
