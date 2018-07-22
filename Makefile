@@ -23,6 +23,7 @@ $(shell mkdir -p $(build))
 
 docker-build: $(target) $(sources)
 #	(echo $(LDFLAGS) | grep -q static && docker build .) || echo you must build on linux
+	ln -sf $(shell realpath $(target)) /usr/local/bin/wkndr.mruby
 
 $(target): $(objects) $(sources)
 	$(CC) -o $@ $(objects) $(LDFLAGS)

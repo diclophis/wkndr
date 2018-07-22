@@ -1,3 +1,9 @@
+# [1.14.0] - fo/ba/bz - Jon Bardin
+
+add wkndr.mruby link on build
+
+#######
+
 # [1.13.0] - fo/ba/bz - Jon Bardin
 
 does mruby work
