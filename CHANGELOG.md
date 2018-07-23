@@ -1,3 +1,9 @@
+# [1.15.0] - 2018-07-23 - Jon Bardin
+
+Implemented better util for check that autohandles dispatching git-clone locks
+
+#######
+
 # [1.14.0] - fo/ba/bz - Jon Bardin
 
 add wkndr.mruby link on build
