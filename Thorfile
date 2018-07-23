@@ -16,7 +16,6 @@ require 'fcntl'
 
 require_relative './lib/termios'
 
-THORFILE = (File.realdirpath(__FILE__))
 WKNDR = "wkndr"
 APP = File.basename(Dir.pwd)
 
@@ -61,20 +60,21 @@ class Wkndr < Thor
   def checkout(repo, version, destination)
     systemx("mkdir", "-p", destination)
 
-    wkndr_lock = "#{destination}/.wkndr.lock"
+    wkndr_lock = "#{File.dirname(destination)}/.wkndr.lock"
 
     File.open(wkndr_lock, File::RDWR|File::CREAT, 0644) { |f|
       f.flock(File::LOCK_EX)
-      if system("git", "--git-dir=#{destination}/.git", "status")
-      else
-        systemx("git", "init", destination)
-      end
-
-      system("git", "--git-dir=#{destination}/.git", "remote", "add", "origin", repo)
-      systemx("git", "--git-dir=#{destination}/.git", "fetch", "origin")
-
       if Dir.chdir(destination)
-        systemx("git", "--git-dir=#{destination}/.git", "checkout", version)
+        if system("git", "status")
+        else
+          systemx("git", "init")
+        end
+
+        system("git", "remote", "add", "origin", repo)
+        systemx("git","fetch", "origin")
+
+        #systemx("git", "clean", "-f", "-d", "-x")
+        systemx("git", "checkout", "-f", version)
       end
     }
   end
