@@ -57,6 +57,28 @@ class Wkndr < Thor
     systemx("git", "commit", "--allow-empty", "-m", "updates in #{changelog}")
   end
 
+  desc "checkout", ""
+  def checkout(repo, version, destination)
+    systemx("mkdir", "-p", destination)
+
+    wkndr_lock = "#{destination}/.wkndr.lock"
+
+    File.open(wkndr_lock, File::RDWR|File::CREAT, 0644) { |f|
+      f.flock(File::LOCK_EX)
+      if system("git", "--git-dir=#{destination}/.git", "status")
+      else
+        systemx("git", "init", destination)
+      end
+
+      system("git", "--git-dir=#{destination}/.git", "remote", "add", "origin", repo)
+      systemx("git", "--git-dir=#{destination}/.git", "fetch", "origin")
+
+      if Dir.chdir(destination)
+        systemx("git", "--git-dir=#{destination}/.git", "checkout", version)
+      end
+    }
+  end
+
   desc "build", ""
   def build
     version = IO.popen("git rev-parse --verify HEAD").read.strip
@@ -298,10 +320,11 @@ spec:
       image: wkndr:latest
       imagePullPolicy: IfNotPresent
       args:
-        - bash
-        - -c
-        #- git clone http://wkndr-app:8080/#{APP} /var/tmp/git/#{APP} && cd /var/tmp/git/#{APP}
-        #- "mkdir /home/app/#{APP} && cd /home/app/#{APP} && git init && git remote add origin http://wkndr-app:8080/#{APP} && git fetch origin && git checkout -b master --track origin/master
+        - wkndr
+        - checkout
+        - http://wkndr-app:8080/#{APP} 
+        - master
+        - /home/app/#{APP}
       securityContext:
         runAsUser: 1
         allowPrivilegeEscalation: false
@@ -569,10 +592,10 @@ HEREDOC
     run_image = image_and_tag
     build_id = SecureRandom.uuid
 
-		build_tmp_dir = "/var/tmp"
-		build_manifest_dir = File.join(build_tmp_dir, run_name, version)
-		run_shell_path = File.join(build_manifest_dir, "init.sh")
-		run_shell = run_shell_path
+    build_tmp_dir = "/var/tmp"
+    build_manifest_dir = File.join(build_tmp_dir, run_name, version)
+    run_shell_path = File.join(build_manifest_dir, "init.sh")
+    run_shell = run_shell_path
 
     container_specs = {
       "apiVersion" => "v1",
@@ -585,28 +608,25 @@ HEREDOC
         #"annotations": {
         #  "labels"
         #},
-				"initContainers" => [
+        "initContainers" => [
           {
             "terminationGracePeriodSeconds" => 5,
             "name" => "git-clone",
-						"image" => "wkndr:latest",
-						"imagePullPolicy" => "IfNotPresent",
-						"args" => [
-							"bash",
-							"-c",
-							#"id && ls -lan /home/app && git clone http://wkndr-app:8080/#{APP} /home/app/#{APP} && ln -sf /home/app/#{APP} /home/app/current"
-              "mkdir -p /home/app/#{APP} && cd /home/app/#{APP} && (test -e .git || git init) && (flock -w 600 -x 200 && ((git remote | grep origin) || git remote add origin http://wkndr-app:8080/#{APP}) && git fetch origin && git checkout #{version}) 200>/home/app/#{APP}/.wkndr.lock && ln -sf /home/app/#{APP} /home/app/current"
-              #-b master --track origin/master
+            "image" => "wkndr:latest",
+            "imagePullPolicy" => "IfNotPresent",
+            "args" => [
+              "wkndr", "checkout", "http://wkndr-app:8080/#{APP}", version, "/home/app/current"
             ],
-						"securityContext" => {
-							"runAsUser" => 1,
-							"allowPrivilegeEscalation" => false,
-							"readOnlyRootFilesystem" => true
+            "env" => { "GIT_DISCOVERY_ACROSS_FILESYSTEM" => "true" }.collect { |k,v| {"name" => k, "value" => v } },
+            "securityContext" => {
+              "runAsUser" => 1,
+              "allowPrivilegeEscalation" => false,
+              "readOnlyRootFilesystem" => true
             },
-						"volumeMounts" => [
+            "volumeMounts" => [
               {
-							  "mountPath" => "/home/app",
-								"name" => "git-repo"
+                "mountPath" => "/home/app",
+                "name" => "git-repo"
               }
             ]
           }
