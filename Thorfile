@@ -60,6 +60,7 @@ class Wkndr < Thor
   def checkout(repo, version, destination)
     systemx("mkdir", "-p", destination)
 
+    #TODO: implement locking as an option
     wkndr_lock = "#{File.dirname(destination)}/.wkndr.lock"
 
     File.open(wkndr_lock, File::RDWR|File::CREAT, 0644) { |f|
@@ -73,6 +74,7 @@ class Wkndr < Thor
         system("git", "remote", "add", "origin", repo)
         systemx("git","fetch", "origin")
 
+        #TODO: implement caching option/flag
         #systemx("git", "clean", "-f", "-d", "-x")
         systemx("git", "checkout", "-f", version)
       end
@@ -276,7 +278,6 @@ HEREDOC
                      "-i",
                      "--",
                      "git", "init", "--bare", "/var/tmp/#{APP}"
-                     #"git", "init", "/var/tmp/#{APP}"
                    ]
 
     systemx(*git_init_cmd)
@@ -324,7 +325,7 @@ spec:
         - checkout
         - http://wkndr-app:8080/#{APP} 
         - master
-        - /home/app/#{APP}
+        - /home/app/current
       securityContext:
         runAsUser: 1
         allowPrivilegeEscalation: false
@@ -375,6 +376,7 @@ HEREDOC
     systemx(*kaniko_run_cmd)
   end
 
+  #TODO: install via helm???
   #desc "deploy", ""
   #def deploy
   #  #true
@@ -483,7 +485,6 @@ HEREDOC
         unless started_commands.include?(fjob)
           started_commands << fjob
           foo_job_tasks = build_job.call(fjob)
-          #foo_job_tasks[1][0].close
           remapped << foo_job_tasks
         end
       }
