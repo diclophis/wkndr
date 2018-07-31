@@ -157,7 +157,7 @@ spec:
       volumes:
         - name: tmp
           hostPath:
-            path: /tmp
+            path: /tmp/wkndr
       containers:
       - name: wkndr-app
         securityContext:
@@ -682,7 +682,7 @@ HEREDOC
             "name" => "git-repo",
             #"emptyDir" => {}
             "hostPath" => {
-              "path" => "/tmp/#{APP}"
+              "path" => "/tmp/wkndr/#{APP}"
             }
           },
           {
