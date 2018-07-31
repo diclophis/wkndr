@@ -904,11 +904,14 @@ HEREDOC
         begin
           if ready_for_reading.include?(stdout)
             stdout_chunk = stdout.read_nonblock(chunk)
-            should_newline = !stdout_chunk.end_with?($/)
+            #should_newline = !stdout_chunk.end_with?($/)
+            #if should_newline
 
-            $stdout.write(process_name.ljust(ljustp_padding) + "OUT: ")
-            $stdout.write(stdout_chunk)
-            $stdout.write($/) if should_newline
+            stdout_chunk.split($/).each do |sc|
+              $stdout.write(process_name.ljust(ljustp_padding) + "OUT: ")
+              $stdout.write(sc)
+              $stdout.write($/)
+            end
           end
 
         rescue EOFError => e
