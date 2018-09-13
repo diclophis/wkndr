@@ -90,6 +90,12 @@ class Wkndr < Thor
 
     tag_dockerfile = ["docker", "tag", APP + ":" + version, APP + ":latest"]
     systemx(*tag_dockerfile)
+
+    tag_dockerfile = ["docker", "tag", APP + ":" + version, APP + ":git-latest"]
+    systemx(*tag_dockerfile)
+
+    tag_dockerfile = ["docker", "tag", APP + ":" + version, "localhost/" + APP + ":git-latest"]
+    systemx(*tag_dockerfile)
   end
 
   desc "provision", ""
