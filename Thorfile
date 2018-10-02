@@ -82,6 +82,7 @@ class Wkndr < Thor
   end
 
   desc "build", ""
+  option "run", :type => :boolean, :default => false
   def build
     version = IO.popen("git rev-parse --verify HEAD").read.strip
 
@@ -96,6 +97,11 @@ class Wkndr < Thor
 
     tag_dockerfile = ["docker", "tag", APP + ":" + version, "localhost/" + APP + ":git-latest"]
     systemx(*tag_dockerfile)
+
+    if options["run"]
+      run_dockerfile = ["docker", "run", "-p", "8000:8000", APP + ":" + version]
+      exec(*run_dockerfile)
+    end
   end
 
   desc "provision", ""
