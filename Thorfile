@@ -14,7 +14,7 @@ require 'uri'
 require 'securerandom'
 require 'fcntl'
 
-require_relative './lib/termios'
+#require_relative './lib/termios'
 
 WKNDR = "wkndr"
 APP = File.basename(Dir.pwd)
