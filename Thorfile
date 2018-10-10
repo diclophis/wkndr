@@ -104,6 +104,12 @@ class Wkndr < Thor
     end
   end
 
+  desc "reclaim", ""
+  def reclaim
+    docker_prune = ["docker", "system", "prune", "-a", "--volumes"]
+    exec(*docker_prune)
+  end
+
   desc "provision", ""
   def provision
     #TODO: proper tag release support
@@ -699,9 +705,8 @@ HEREDOC
           },
           {
             "name" => "ssh-key",
-            "nfs" => {
-              "path" => "#{ENV['HOME']}/.kube-data/ssh",
-              "server" => "docker.for.mac.host.internal"
+            "hostPath" => {
+              "path" => "/home/provision/.ssh"
             }
           }
         ]
