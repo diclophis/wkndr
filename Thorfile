@@ -110,8 +110,8 @@ class Wkndr < Thor
     exec(*docker_prune)
   end
 
-  desc "provision", ""
-  def provision
+  desc "init", ""
+  def init
     #TODO: proper tag release support
     version = "latest"
     if (APP == WKNDR)
@@ -500,10 +500,16 @@ HEREDOC
       remapped = []
 
       found_jobs && found_jobs.each { |fjob|
-        unless started_commands.include?(fjob)
-          started_commands << fjob
-          foo_job_tasks = build_job.call(fjob)
-          remapped << foo_job_tasks
+        count_of_started = started_commands.length
+        count_of_finished = completed.length
+        max_queued = count_of_started - count_of_finished
+
+        if max_queued < 2
+          unless started_commands.include?(fjob)
+            started_commands << fjob
+            foo_job_tasks = build_job.call(fjob)
+            remapped << foo_job_tasks
+          end
         end
       }
 
@@ -706,7 +712,7 @@ HEREDOC
           {
             "name" => "ssh-key",
             "hostPath" => {
-              "path" => "/home/provision/.ssh"
+              "path" => "#{ENV['HOME']}/.ssh"
             }
           }
         ]
@@ -771,7 +777,7 @@ HEREDOC
       $stdout.write(stdout) unless silent
       if !wait_thr_value.success?
         $stderr.write(stderr)
-        $stderr.write(cmd.join(" "))
+        $stderr.write(cmd.map { |c| ["'", c, "'"].join }.join(" "))
         $stderr.write($/)
         $stderr.write("FAILED!!!")
         $stderr.write($/)
@@ -809,13 +815,12 @@ HEREDOC
   def execute_procfile(working_directory, procfile = "Procfile")
     time_started = Time.now
     chunk = 1024
-    select_timeout = 1
     exiting = false
     exit_grace_counter = 0
     term_threshold = 3
     kill_threshold = term_threshold + 5 #NOTE: timing controls exit status
     total_kill_count = kill_threshold + 7
-    select_timeout = 1.0
+    select_timeout = 10.0
     needs_winsize_update = false
     trapped = false
     ljustp_padding = 0
@@ -830,7 +835,7 @@ HEREDOC
 
       exiting = true
       trapped = true
-      select_timeout = 0.1
+      select_timeout = 1.0
     end
 
     trap 'WINCH' do
