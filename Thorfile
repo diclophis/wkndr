@@ -83,10 +83,11 @@ class Wkndr < Thor
 
   desc "build", ""
   option "run", :type => :boolean, :default => false
+  option "cache", :type => :boolean, :default => true
   def build
     version = IO.popen("git rev-parse --verify HEAD").read.strip
 
-    build_dockerfile = ["docker", "build", "-t", APP + ":" + version, "."]
+    build_dockerfile = ["docker", "build", options["cache"] ? nil : "--no-cache", "-t", APP + ":" + version, "."].compact
     systemx(*build_dockerfile)
 
     tag_dockerfile = ["docker", "tag", APP + ":" + version, APP + ":latest"]
@@ -99,7 +100,7 @@ class Wkndr < Thor
     systemx(*tag_dockerfile)
 
     if options["run"]
-      run_dockerfile = ["docker", "run", "-p", "8000:8000", APP + ":" + version]
+      run_dockerfile = ["docker", "run", "--rm", "-it", "-p", "8000:8000", APP + ":" + version]
       exec(*run_dockerfile)
     end
   end
