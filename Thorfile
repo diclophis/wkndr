@@ -171,6 +171,8 @@ spec:
     metadata:
       labels:
         name: wkndr-app
+      annotations:
+        "ops.v2.rutty/bash": bash
     spec:
       volumes:
         - name: tmp
