@@ -112,6 +112,7 @@ class Wkndr < Thor
   end
 
   desc "init", ""
+  option "re-init", :type => :boolean, :default => false
   def init
     #TODO: proper tag release support
     version = "latest"
@@ -209,10 +210,16 @@ spec:
 HEREDOC
 
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
-    systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > ca-certificates.crt")
-    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > ca.#{WKNDR}.crt")
+    systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > /var/tmp/wkndr-ca-certificates.crt")
+    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > /var/tmp/wkndr.ca.#{WKNDR}.crt")
     system("kubectl delete configmap ca-certificates")
-    systemx("kubectl create configmap ca-certificates --from-file=ca-certificates.crt --from-file=ca.#{WKNDR}.crt")
+    systemx("kubectl create configmap ca-certificates --from-file=/var/tmp/wkndr-ca-certificates.crt --from-file=/var/tmp/wkndr.ca.#{WKNDR}.crt")
+
+    if options["re-init"]
+      deploy_wkndr_app = ["kubectl", "delete", "-f", "-"]
+      options = {:stdin_data => wkndr_run}
+      execute_simple(:blocking, deploy_wkndr_app, options)
+    end
 
     deploy_wkndr_app = ["kubectl", "apply", "-f", "-"]
     options = {:stdin_data => wkndr_run}
@@ -436,10 +443,9 @@ HEREDOC
 
   desc "test", ""
   def test(version=nil)
-
-    system("echo cheese")
-    system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
-    system("mkdir -p /var/tmp/wkndr-git-dir/#{APP} && chmod -Rv 777 /var/tmp/wkndr-git-dir")
+    #system("echo cheese")
+    #system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
+    #system("mkdir -p /var/tmp/wkndr-git-dir/#{APP} && chmod -Rv 777 /var/tmp/wkndr-git-dir")
 
     apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
     #puts apt_cache_service_fetch # if options["verbose"]
