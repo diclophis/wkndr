@@ -178,13 +178,13 @@ spec:
       volumes:
         - name: tmp
           hostPath:
-            path: /tmp/wkndr
+            path: /var/tmp/wkndr-scratch-dir
       containers:
       - name: wkndr-app
         securityContext:
           privileged: true
         volumeMounts:
-          - mountPath: /var/tmp/cache
+          - mountPath: /var/tmp
             name: tmp
         image: #{WKNDR}:#{version}
         imagePullPolicy: IfNotPresent
@@ -429,8 +429,18 @@ HEREDOC
     end
   end
 
+  desc "latest", ""
+  def latest
+    system("docker images | grep latest | awk -e '{ print $1 \":\" $2 }'")
+  end
+
   desc "test", ""
   def test(version=nil)
+
+    system("echo cheese")
+    system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
+    system("mkdir -p /var/tmp/wkndr-git-dir/#{APP} && chmod -Rv 777 /var/tmp/wkndr-git-dir")
+
     apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
     #puts apt_cache_service_fetch # if options["verbose"]
     http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
@@ -507,7 +517,7 @@ HEREDOC
         count_of_finished = completed.length
         max_queued = count_of_started - count_of_finished
 
-        if max_queued < 2
+        if max_queued < 6
           unless started_commands.include?(fjob)
             started_commands << fjob
             foo_job_tasks = build_job.call(fjob)
@@ -577,8 +587,6 @@ HEREDOC
   private
 
   def execute_ci(version, circle_yaml, job_to_bootstrap, http_proxy_service_ip)
-    build_tmp_dir = "/var/tmp" # TODO: Dir.mktmpdir ???!!!
-
     job = circle_yaml["jobs"][job_to_bootstrap]
 
     raise "unknown job #{job_to_bootstrap}" unless job
@@ -592,8 +600,8 @@ HEREDOC
       "CIRCLE_SHA1" => version,
       "RACK_ENV" => "test",
       "RAILS_ENV" => "test",
-      "CIRCLE_ARTIFACTS" => build_tmp_dir,
-      "CIRCLE_TEST_REPORTS" => build_tmp_dir,
+      "CIRCLE_ARTIFACTS" => "/var/tmp/artifacts",
+      "CIRCLE_TEST_REPORTS" => "/var/tmp/reports",
       "SSH_ASKPASS" => "false",
       "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
       "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
@@ -620,7 +628,7 @@ HEREDOC
     run_image = image_and_tag
     build_id = SecureRandom.uuid
 
-    build_tmp_dir = "/var/tmp"
+    build_tmp_dir = "/var/tmp/wkndr-scratch-dir"
     build_manifest_dir = File.join(build_tmp_dir, run_name, version)
     run_shell_path = File.join(build_manifest_dir, "init.sh")
     run_shell = run_shell_path
@@ -709,7 +717,7 @@ HEREDOC
             "name" => "git-repo",
             #"emptyDir" => {}
             "hostPath" => {
-              "path" => "/tmp/wkndr/#{APP}"
+              "path" => "/var/tmp/wkndr-git-dir/#{APP}"
             }
           },
           {
