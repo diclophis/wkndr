@@ -100,7 +100,14 @@ class Wkndr < Thor
     systemx(*tag_dockerfile)
 
     if options["run"]
-      run_dockerfile = ["docker", "run", "--rm", "-it", "-p", "8000:8000", APP + ":" + version]
+      #run_dockerfile = ["docker", "run", "--rm", "-it", "-p", "8000:8000", APP + ":" + version]
+      #exec(*run_dockerfile)
+
+    #apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
+    #http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
+    #puts http_proxy_service_ip
+
+      run_dockerfile = ["kubectl", "run", "--rm=true", APP, "--attach=true", "--expose", "--port", "8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
       exec(*run_dockerfile)
     end
   end
