@@ -449,7 +449,7 @@ HEREDOC
   end
 
   desc "test", ""
-  def test(version=nil)
+  def test(just_this_job=nil, version=nil)
     #system("echo cheese")
     #system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
     #system("mkdir -p /var/tmp/wkndr-git-dir/#{APP} && chmod -Rv 777 /var/tmp/wkndr-git-dir")
@@ -532,9 +532,13 @@ HEREDOC
 
         if max_queued < 6
           unless started_commands.include?(fjob)
-            started_commands << fjob
-            foo_job_tasks = build_job.call(fjob)
-            remapped << foo_job_tasks
+            if !just_this_job || (just_this_job && just_this_job == fjob)
+              started_commands << fjob
+              foo_job_tasks = build_job.call(fjob)
+              remapped << foo_job_tasks
+            else
+              completed[fjob] = {}
+            end
           end
         end
       }
