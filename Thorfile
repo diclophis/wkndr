@@ -465,7 +465,7 @@ HEREDOC
 
     version = IO.popen("git rev-parse --verify HEAD").read.strip #TODO
     Process.wait rescue Errno::ECHILD
-    puts "you are in #{Dir.pwd} building #{version}"
+    puts "you are in #{Dir.pwd} building #{version} with #{options}"
 
     config_yml = ".circleci/config.yml"
     ## TODO: merge inference vs. configured steps...
@@ -718,6 +718,10 @@ HEREDOC
                 "name" => "git-repo"
               },
               {
+                "mountPath" => "/var/tmp/artifacts",
+                "name" => "build-artifacts"
+              },
+              {
                 "mountPath" => "/home/app/.ssh",
                 "name" => "ssh-key"
               },
@@ -743,6 +747,12 @@ HEREDOC
             #"emptyDir" => {}
             "hostPath" => {
               "path" => "/var/tmp/wkndr-git-dir/#{APP}"
+            }
+          },
+          {
+            "name" => "build-artifacts",
+            "hostPath" => {
+              "path" => "/var/tmp/wkndr-git-dir/artifacts"
             }
           },
           {
