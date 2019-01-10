@@ -216,6 +216,8 @@ spec:
 ...
 HEREDOC
 
+    system("kubectl delete pod/dump-ca")
+
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
     systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > /var/tmp/wkndr-ca-certificates.crt")
     systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > /var/tmp/wkndr.ca.#{WKNDR}.crt")
@@ -449,6 +451,7 @@ HEREDOC
   end
 
   desc "test", ""
+  option "with-bootstrap", :type => :string, :default => nil
   def test(just_this_job=nil, version=nil)
     #system("echo cheese")
     #system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
@@ -476,8 +479,23 @@ HEREDOC
     started_commands = []
     first_time_through = true
 
+    circle_env = {
+      "CI" => "true",
+      "CIRCLE_NODE_INDEX" => "0",
+      "CIRCLE_NODE_TOTAL" => "1",
+      "CIRCLE_SHA1" => version,
+      "RACK_ENV" => "test",
+      "RAILS_ENV" => "test",
+      "CIRCLE_ARTIFACTS" => "/var/tmp/artifacts",
+      "CIRCLE_TEST_REPORTS" => "/var/tmp/reports",
+      "SSH_ASKPASS" => "false",
+      "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
+      "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+      "HTTP_PROXY_HOST" => "#{http_proxy_service_ip}:8111"
+    }
+
     build_job = lambda { |job_to_build|
-      execute_ci(version, circle_yaml, job_to_build, http_proxy_service_ip)
+      execute_ci(version, circle_yaml, job_to_build, circle_env, ((job_to_build == first_job) ? options["with-bootstrap"] : nil))
     }
 
     find_ready_jobs = lambda {
@@ -603,27 +621,12 @@ HEREDOC
 
   private
 
-  def execute_ci(version, circle_yaml, job_to_bootstrap, http_proxy_service_ip)
+  def execute_ci(version, circle_yaml, job_to_bootstrap, circle_env, image_override = nil)
     job = circle_yaml["jobs"][job_to_bootstrap]
 
     raise "unknown job #{job_to_bootstrap}" unless job
 
     clean_name = (APP + "-" + job_to_bootstrap).gsub(/[^\.a-z0-9]/, "-")[0..34]
-
-    circle_env = {
-      "CI" => "true",
-      "CIRCLE_NODE_INDEX" => "0",
-      "CIRCLE_NODE_TOTAL" => "1",
-      "CIRCLE_SHA1" => version,
-      "RACK_ENV" => "test",
-      "RAILS_ENV" => "test",
-      "CIRCLE_ARTIFACTS" => "/var/tmp/artifacts",
-      "CIRCLE_TEST_REPORTS" => "/var/tmp/reports",
-      "SSH_ASKPASS" => "false",
-      "CIRCLE_WORKING_DIRECTORY" => "/home/app/current",
-      "PATH" => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
-      "HTTP_PROXY_HOST" => "#{http_proxy_service_ip}:8111"
-    }
 
     if job_env = job["environment"]
       circle_env.merge!(job["environment"])
@@ -643,6 +646,11 @@ HEREDOC
 
     run_name = clean_name
     run_image = image_and_tag
+
+    if image_override
+      run_image = image_override
+    end
+
     build_id = SecureRandom.uuid
 
     build_tmp_dir = "/var/tmp/wkndr-scratch-dir"
