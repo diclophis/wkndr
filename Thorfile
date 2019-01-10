@@ -204,7 +204,7 @@ spec:
       volumes:
         - name: tmp
           hostPath:
-            path: /var/tmp/wkndr-scratch-dir
+            path: /var/tmp/wkndr/wkndr-scratch-dir
       containers:
       - name: wkndr-app
         securityContext:
@@ -237,10 +237,10 @@ HEREDOC
     system("kubectl delete pod/dump-ca")
 
     dump_ca = "kubectl run dump-ca --attach=true --rm=true --image=#{WKNDR}:#{version} --image-pull-policy=IfNotPresent --restart=Never --quiet=true -- cat"
-    systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > /var/tmp/wkndr-ca-certificates.crt")
-    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > /var/tmp/wkndr.ca.#{WKNDR}.crt")
+    systemx("#{dump_ca} /etc/ssl/certs/ca-certificates.crt > /var/tmp/wkndr/wkndr-ca-certificates.crt")
+    systemx("#{dump_ca} /usr/local/share/ca-certificates/ca.#{WKNDR}.crt > /var/tmp/wkndr/wkndr.ca.#{WKNDR}.crt")
     system("kubectl delete configmap ca-certificates")
-    systemx("kubectl create configmap ca-certificates --from-file=/var/tmp/wkndr-ca-certificates.crt --from-file=/var/tmp/wkndr.ca.#{WKNDR}.crt")
+    systemx("kubectl create configmap ca-certificates --from-file=/var/tmp/wkndr/wkndr-ca-certificates.crt --from-file=/var/tmp/wkndr/wkndr.ca.#{WKNDR}.crt")
 
     if options["re-init"]
       deploy_wkndr_app = ["kubectl", "delete", "-f", "-"]
@@ -473,7 +473,8 @@ HEREDOC
   def test(just_this_job=nil, version=nil)
     #system("echo cheese")
     #system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
-    #system("mkdir -p /var/tmp/wkndr-git-dir/#{APP} && chmod -Rv 777 /var/tmp/wkndr-git-dir")
+
+    #system("mkdir -p /var/tmp/wkndr && chmod -R 777 /var/tmp/wkndr")
 
     apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
     #puts apt_cache_service_fetch # if options["verbose"]
@@ -540,7 +541,13 @@ HEREDOC
         end
       end
 
+      #skip completed
       jobs_with_zero_req.reject! { |req| completed[req] }
+
+      #only known job types
+      jobs_with_zero_req.select! { |req|
+        true #TODO: fill in list??
+      }
 
       if jobs_with_zero_req.compact.length > 0
         jobs_with_zero_req
@@ -645,6 +652,7 @@ HEREDOC
     raise "unknown job #{job_to_bootstrap}" unless job
 
     clean_name = (APP + "-" + job_to_bootstrap).gsub(/[^\.a-z0-9]/, "-")[0..34]
+    run_name = clean_name
 
     if job_env = job["environment"]
       circle_env.merge!(job["environment"])
@@ -653,20 +661,15 @@ HEREDOC
     steps = job["steps"]
 
     #TODO: refactor image url parsing
-    unless job["docker"]
+    unless job["docker"] || image_override
       $stderr.puts "req'd docker key missing" 
       exit 1
     end
 
-    docker_image_url = URI.parse("http://local/#{job["docker"][0]["image"]}")
-    repo = docker_image_url.host
-    image_and_tag = File.basename(docker_image_url.path)
-
-    run_name = clean_name
-    run_image = image_and_tag
-
-    if image_override
-      run_image = image_override
+    run_image = image_override || begin
+      docker_image_url = URI.parse("http://local/#{job["docker"][0]["image"]}")
+      repo = docker_image_url.host
+      File.basename(docker_image_url.path)
     end
 
     build_id = SecureRandom.uuid
@@ -720,7 +723,8 @@ HEREDOC
             #"securityContext" => {
             #},
             "args" => [
-              "bash", "-e", "-o", "pipefail", run_shell
+              #"bash", "-e", "-o", "pipefail", run_shell
+              "cat", run_shell
             ],
             "volumeMounts" => [
               {
@@ -764,13 +768,13 @@ HEREDOC
             "name" => "git-repo",
             #"emptyDir" => {}
             "hostPath" => {
-              "path" => "/var/tmp/wkndr-git-dir/#{APP}"
+              "path" => "/var/tmp/wkndr/wkndr-git-dir/#{APP}"
             }
           },
           {
             "name" => "build-artifacts",
             "hostPath" => {
-              "path" => "/var/tmp/wkndr-git-dir/artifacts"
+              "path" => "/var/tmp/wkndr/wkndr-git-dir/artifacts"
             }
           },
           {
@@ -793,6 +797,15 @@ HEREDOC
 
       if run = step["run"]
         name = run["name"]
+        unless name.include?("build") ||
+               name.include?("bootstrap") ||
+               name.include?("Compile") ||
+               name.include?("Install") ||
+               name.include?("install") ||
+               name.include?("Bundle")
+          next
+        end
+
         pro_fd.write(run["command"])
 
         next
