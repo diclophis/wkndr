@@ -118,6 +118,24 @@ class Wkndr < Thor
     exec(*docker_prune)
   end
 
+  desc "kubeadm", ""
+  def kubeadm
+    kubeadm_reset = <<KUBEADM_RESET
+    ifconfig lo:0 10.2.0.1 netmask 255.0.0.0 up
+    kubeadm reset -f
+    kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443
+    mkdir -p /home/#{ENV['SUDO_USER']}/.kube
+    chown #{ENV['SUDO_USER']}. /home/#{ENV['SUDO_USER']}/.kube
+    cp /etc/kubernetes/admin.conf /home/#{ENV['SUDO_USER']}/.kube/kubeadm_config
+    chown #{ENV['SUDO_USER']}. /home/#{ENV['SUDO_USER']}/.kube/kubeadm_config
+    export KUBECONFIG=/home/#{ENV['SUDO_USER']}/.kube/kubeadm_config
+    kubectl taint nodes --all node-role.kubernetes.io/master-
+    #TODO: remove network apply...?
+    kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\\\n')"
+KUBEADM_RESET
+    systemx(kubeadm_reset)
+  end
+
   desc "init", ""
   option "re-init", :type => :boolean, :default => false
   def init
