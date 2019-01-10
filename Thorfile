@@ -19,6 +19,8 @@ require 'fcntl'
 WKNDR = "wkndr"
 APP = File.basename(Dir.pwd)
 
+FileUtils.mkdir_p("/var/tmp/wkndr")
+
 class Wkndr < Thor
   desc "changelog [CHANGELOG]", "appends changelog item to CHANGELOG.md"
   def changelog(changelog = "CHANGELOG.md")
@@ -77,6 +79,9 @@ class Wkndr < Thor
         #TODO: implement caching option/flag
         #systemx("git", "clean", "-f", "-d", "-x")
         systemx("git", "checkout", "-f", version)
+
+        systemx("chmod", "777", destination)
+        systemx("chown", "-R", "1000", File.dirname(destination))
       end
     }
   end
@@ -473,7 +478,6 @@ HEREDOC
   def test(just_this_job=nil, version=nil)
     #system("echo cheese")
     #system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
-
     #system("mkdir -p /var/tmp/wkndr && chmod -R 777 /var/tmp/wkndr")
 
     apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
@@ -514,7 +518,7 @@ HEREDOC
     }
 
     build_job = lambda { |job_to_build|
-      execute_ci(version, circle_yaml, job_to_build, circle_env, ((job_to_build == first_job) ? options["with-bootstrap"] : nil))
+      execute_ci(version, circle_yaml, job_to_build, circle_env, options["with-bootstrap"]) #((job_to_build == first_job) ? options["with-bootstrap"] : nil))
     }
 
     find_ready_jobs = lambda {
@@ -701,7 +705,7 @@ HEREDOC
             ],
             "env" => { "GIT_DISCOVERY_ACROSS_FILESYSTEM" => "true" }.collect { |k,v| {"name" => k, "value" => v } },
             "securityContext" => {
-              "runAsUser" => 1,
+              "runAsUser" => 0,
               "allowPrivilegeEscalation" => false,
               "readOnlyRootFilesystem" => true
             },
@@ -719,12 +723,12 @@ HEREDOC
             "name" => run_name,
             "image" => run_image,
             "imagePullPolicy" => "IfNotPresent",
-            "workingDir" => job["working_directory"],
+            "workingDir" => job["working_directory"] || "/home/app/current",
             #"securityContext" => {
             #},
             "args" => [
-              #"bash", "-e", "-o", "pipefail", run_shell
-              "cat", run_shell
+              "bash", "-e", "-o", "pipefail", run_shell
+              #"cat", run_shell
             ],
             "volumeMounts" => [
               {
@@ -766,9 +770,15 @@ HEREDOC
           },
           {
             "name" => "git-repo",
-            #"emptyDir" => {}
+            #TODO: bundle cache bits!! "emptyDir" => {}
             "hostPath" => {
               "path" => "/var/tmp/wkndr/wkndr-git-dir/#{APP}"
+            }
+          },
+          {
+            "name" => "pre-git-repo",
+            "hostPath" => {
+              "path" => "/var/tmp/wkndr/wkndr-git-dir"
             }
           },
           {
@@ -802,11 +812,15 @@ HEREDOC
                name.include?("Compile") ||
                name.include?("Install") ||
                name.include?("install") ||
-               name.include?("Bundle")
+               name.include?("Bundle") ||
+               name.include?("Critical") ||
+               name.include?("Build")
           next
         end
 
+        pro_fd.write("\n#BEGIN #{name}\n")
         pro_fd.write(run["command"])
+        pro_fd.write("\n#END #{name}\n")
 
         next
       end
@@ -853,11 +867,12 @@ HEREDOC
     exit_proc = lambda { |stdout, stderr, wait_thr_value, exit_or_not, silent=false|
       $stdout.write(stdout) unless silent
       if !wait_thr_value.success?
+        #MASSIVE DEBUG
         $stderr.write(stderr)
-        $stderr.write(cmd.map { |c| ["'", c, "'"].join }.join(" "))
-        $stderr.write($/)
-        $stderr.write("FAILED!!!")
-        $stderr.write($/)
+        #$stderr.write(cmd.map { |c| ["'", c, "'"].join }.join(" "))
+        #$stderr.write($/)
+        #$stderr.write("FAILED!!!")
+        #$stderr.write($/)
         exit 1
         if exit_or_not
           exit 1
