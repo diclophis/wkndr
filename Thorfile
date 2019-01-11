@@ -824,6 +824,7 @@ HEREDOC
       if run = step["run"]
         name = run["name"]
         unless name.include?("build") ||
+               name.include?("bundle") ||
                name.include?("bootstrap") ||
                name.include?("Compile") ||
                name.include?("Install") ||
