@@ -125,6 +125,11 @@ class Wkndr < Thor
 
   desc "kubeadm", ""
   def kubeadm
+    unless Process.euid == 0
+      $stderr.puts "must be root"
+      exit 1
+    end
+
     kubeadm_reset = <<KUBEADM_RESET
     ifconfig lo:0 10.2.0.1 netmask 255.0.0.0 up
     kubeadm reset -f
@@ -580,9 +585,17 @@ HEREDOC
         if max_queued < 6
           unless started_commands.include?(fjob)
             if !just_this_job || (just_this_job && just_this_job == fjob)
+              #TODO: abstract all these seperate bits into WorkUnit class
+              # WorkUnit can support --explain
               started_commands << fjob
               foo_job_tasks = build_job.call(fjob)
               remapped << foo_job_tasks
+              if foo_job_tasks[2].empty?
+                $stderr.write(">>>>>>>>>> (#{config_yml}) #{fjob} skipped\n")
+                completed[fjob] = {}
+              else
+                $stderr.write(">>>>>>>>>> (#{config_yml}) #{fjob} started\n")
+              end
             else
               completed[fjob] = {}
             end
@@ -592,15 +605,17 @@ HEREDOC
 
       all_cmds += remapped
 
-      process_fds = all_cmds.collect { |fjob, podn, cmds| [cmds[1], cmds[2]] }.flatten
+      process_fds = all_cmds.collect { |fjob, podn, cmds| [cmds[1], cmds[2]] }.flatten.compact
 
-      _r, _w, _e = IO.select(process_fds, nil, process_fds, 0.1)
+      _r, _w, _e = IO.select(process_fds, nil, process_fds, 1.0)
 
       exited_this_loop = false
 
       all_exited = true
 
       all_cmds.each do |fjob, podn, cmds|
+        next if cmds.empty?
+
         process_waiter = cmds[3]
         exit_stdout = cmds[4]
 
@@ -636,7 +651,7 @@ HEREDOC
 
     Process.wait rescue Errno::ECHILD
 
-    all_ok = all_cmds.all? { |fjob, podn, cmds| !cmds[3].alive? && cmds[3].value.success? }
+    all_ok = all_cmds.all? { |fjob, podn, cmds| cmds.empty? || (!cmds[3].alive? && cmds[3].value.success?) }
 
     while (all_cmds.any? { |fjob, podn, cmds|
       execute_simple(:silent, ["kubectl", "get", "pod/#{podn}"], {})
@@ -800,6 +815,7 @@ HEREDOC
     pro_fd = StringIO.new
     flow_desc = "#{job_to_bootstrap}"
 
+    count_of_steps_to_run = 0
     steps.each_with_index do |step, step_index|
       if step == "checkout"
         next
@@ -821,6 +837,7 @@ HEREDOC
         pro_fd.write("\n#BEGIN #{name}\n")
         pro_fd.write(run["command"])
         pro_fd.write("\n#END #{name}\n")
+        count_of_steps_to_run += 1
 
         next
       end
@@ -843,7 +860,7 @@ HEREDOC
     apply_configmap_options = {:stdin_data => configmap_manifest.to_yaml}
     execute_simple(:silentx, apply_configmap, apply_configmap_options)
 
-    execute_simple(:silent, ["kubectl", "delete", "pod/#{run_name}", "--grace-period=5"], {})
+    execute_simple(:silent, ["kubectl", "delete", "pod/#{run_name}", "--grace-period=1"], {})
 
     ci_run_cmd = [
                    "kubectl", "run",
@@ -857,7 +874,8 @@ HEREDOC
                    "--overrides", container_specs.to_json
                  ]
 
-    return job_to_bootstrap, run_name, execute_simple(:async, ci_run_cmd, {})
+    runtime_bits = (count_of_steps_to_run > 0) ? execute_simple(:async, ci_run_cmd, {}) : []
+    return job_to_bootstrap, run_name, runtime_bits
   rescue Interrupt => _e
     puts _e.inspect
     nil
