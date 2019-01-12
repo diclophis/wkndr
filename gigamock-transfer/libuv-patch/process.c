@@ -466,6 +466,7 @@ int uv_spawn(uv_loop_t* loop,
     pipes[i][1] = -1;
   }
 
+///TODO: figure out what this was needed for...
 /*
   for (i = 0; i < options->stdio_count; i++) {
     err = uv__process_init_stdio(options->stdio + i, pipes[i]);
