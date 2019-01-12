@@ -12,8 +12,8 @@ class MainMenu < GameLoop
   def play(global_time, delta_time)
     drawmode {
       twod {
-        button(0.0, 0.0, 250.0, 20.0, @hero.experience_button) {
-          @hero.intensify_experience!
+        button(0.0, 0.0, 250.0, 20.0, "start") {
+          #TODO: onclick
         }
       }
     }

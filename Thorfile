@@ -288,6 +288,7 @@ HEREDOC
 
   desc "rcp", ""
   def rcp(app, origin)
+    #TODO: this is where the getpty fix from server.rb goes!
     #if $stdin.tty?
     #  oldt = Termios.tcgetattr($stdin)
     #  newt = oldt.dup

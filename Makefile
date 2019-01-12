@@ -1,6 +1,6 @@
 ## Makefile
 
-product=wkndr
+product=wkndr.mruby
 build=release
 target=$(build)/$(product)
 
@@ -31,11 +31,11 @@ objects += $(raylib_static_lib)
 
 
 #TODO: platform switch
-LDFLAGS=-lm -lpthread -ldl -lX11
+LDFLAGS=-lm -lpthread -ldl -lX11 -lpthread -lssl -lcrypto -lutil
 #OSX LDFLAGS=-lm -lpthread -ldl -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
 
 #TODO: platform switch
-CFLAGS=-DPLATFORM_DESKTOP -Os -std=c99 -Imruby/include -Iraylib-src -I$(build)
+CFLAGS=-DPLATFORM_DESKTOP -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
 #TODO: remove GL_SILENCE_DEPRECATION
 #OSX  CFLAGS=-DPLATFORM_DESKTOP -DGL_SILENCE_DEPRECATION -Os -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
 #EMS EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s STACK_OVERFLOW_CHECK=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s SAFE_HEAP_LOG=0 -s WASM=1 -s EMTERPRETIFY=0
