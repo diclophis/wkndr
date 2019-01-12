@@ -29,12 +29,12 @@ COPY gigamock-transfer/nginx-apt-proxy.conf /etc/nginx/conf.d/
 COPY gigamock-transfer/git-repo-template /usr/share/git-core/templates/
 COPY gigamock-transfer/etc-docker-registry-config.yaml /etc/docker/registry/config.yml
 
-COPY Gemfile Gemfile.lock Rakefile wkndr.gemspec /var/lib/wkndr/
+COPY Gemfile Gemfile.lock wkndr.gemspec /var/lib/wkndr/
 COPY lib /var/lib/wkndr/lib/
 
-RUN cd /var/lib/wkndr && ls -l && bundle && bundle exec rake
+RUN cd /var/lib/wkndr && ls -l && bundle
 
-COPY Thorfile Procfile.init /var/lib/wkndr/
+COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
 
 RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
@@ -60,30 +60,38 @@ RUN /var/tmp/emscripten-warmup.sh
 
 COPY config /var/lib/wkndr/config
 
+RUN cd /var/lib/wkndr && ls -l && \
+    git init && \
+    git submodule add https://github.com/mruby/mruby mruby \
+    git submodule init && \
+    git submodule update && \
+    ls -l
+
 RUN cd /var/lib/wkndr/mruby && rm -Rf build && make clean && MRUBY_CONFIG=../config/emscripten.rb make -j
 
-COPY libuv-patch/process.c /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/src/unix/process.c
-COPY libuv-patch/Makefile.am /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/Makefile.am
-COPY libuv-patch/mrbgem.rake /var/lib/wkndr/mruby/build/mrbgems/mruby-uv/mrbgem.rake
+COPY gigamock-transfer/libuv-patch/process.c /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/src/unix/process.c
+COPY gigamock-transfer/libuv-patch/Makefile.am /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/Makefile.am
+COPY gigamock-transfer/libuv-patch/mrbgem.rake /var/lib/wkndr/mruby/build/mrbgems/mruby-uv/mrbgem.rake
 
 RUN touch /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/include/uv.h && cd /var/lib/wkndr/mruby && MRUBY_CONFIG=../config/emscripten.rb make -j
 
 COPY raylib-src /var/lib/wkndr/raylib-src
 COPY lib /var/lib/wkndr/lib
 
-#COPY Makefile.emscripten main.c iterate.sh lib shell.html /var/tmp/kit1zx/
-##RUN /var/tmp/kit1zx/iterate.sh
+COPY Makefile main.c gigamock-transfer/iterate.sh lib public /var/lib/wkndr/
+RUN /var/lib/wkndr/iterate.sh
+
 ##COPY web_static.rb /var/tmp/kit1zx/
 ##COPY shell.js /var/tmp/kit1zx/release/libs/html5/
 #COPY server /var/tmp/kit1zx/server
-#RUN cd /var/tmp/kit1zx/server && make
-#RUN mkdir -p /var/tmp/chroot/bin
-#RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
-#RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 
+RUN mkdir -p /var/tmp/chroot/bin
+RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
+RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 
-#CMD ["bash"]
+CMD ["bash"]
+
 #CMD ["rackup", "/var/tmp/kit1zx/web_static.rb", "-p8000", "-o0.0.0.0"]
-CMD ["/var/tmp/kit1zx/server/release/libs/osx/kit1zx-server"]
+#CMD ["/var/tmp/kit1zx/server/release/libs/osx/kit1zx-server"]
 
 #TODO: !!!!!!!!!!!!!!!  flesh out submodules in dockerfile, dont rely on local filesystem!!!

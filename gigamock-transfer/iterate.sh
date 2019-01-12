@@ -9,8 +9,10 @@ cd /root/emsdk
 
 . ./emsdk_env.sh
 
-cd /var/tmp/kit1zx
+cd /var/lib/wkndr
 
-make -f Makefile.emscripten clean
 
-emmake make -f Makefile.emscripten
+make -f Makefile clean
+make
+
+#emmake make -f Makefile.emscripten
