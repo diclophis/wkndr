@@ -33,11 +33,3 @@ class Window < PlatformSpecificBits
     super
   end
 end
-
-show! Window.new("window", 512, 512, 60)
-
-#maze = maze.to_unicursal
-
-#puts maze.to_s(:mode => :plain)
-#puts maze.to_s(:mode => :unicode)
-#puts maze.to_s(:mode => :lines)

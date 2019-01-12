@@ -105,8 +105,8 @@ class Connection
             filename = "/index.html"
           end
 
-          #required_prefix = "/home/jon/workspace/kit1zx/server/"
-          required_prefix = "/var/tmp/kit1zx/server/"
+          required_prefix = "/home/jon/workspace/wkndr/public/"
+          #required_prefix = "/var/lib/wkndr/public/"
 
           UV::FS.realpath("#{required_prefix}#{filename}") { |resolved_filename|
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(required_prefix)
@@ -275,7 +275,15 @@ class Connection
 end
 
 class Server
+  def self.run!
+    Server.new
+    UV.run
+  end
+
   def initialize
+    #TODO: where does this go????
+    UV.disable_stdio_inheritance
+
     host = '0.0.0.0'
     port = 8000
     @address = UV.ip4_addr(host, port)
@@ -304,12 +312,4 @@ class Server
 
     http
   end
-
-  def spinlock!
-    UV.disable_stdio_inheritance
-    UV::run
-  end
 end
-
-server = Server.new
-server.spinlock!

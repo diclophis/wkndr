@@ -1059,7 +1059,6 @@ static mrb_value pty_getpty(mrb_state* mrb, mrb_value self)
 
 int main(int argc, char** argv) {
   mrb_state *mrb;
-  struct mrb_parser_state *ret;
 
   // initialize mruby
   if (!(mrb = mrb_open())) {
@@ -1125,6 +1124,7 @@ int main(int argc, char** argv) {
   struct RClass *sphere_class = mrb_define_class(mrb, "Sphere", model_class);
   mrb_define_method(mrb, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
+/*
   FILE *f = 0;
   char *config = "Wkndrfile";
 
@@ -1134,7 +1134,6 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-/*
   mrbc_context *detective_file = mrbc_context_new(mrb);
   mrbc_filename(mrb, detective_file, config);
   mrb_value ret2;
@@ -1146,8 +1145,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, thor, NULL);
 */
 
-//TODO: --server
-//  eval_static_libs(mrb, server, NULL);
 
   eval_static_libs(mrb, globals, NULL);
 
@@ -1161,11 +1158,22 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, box, NULL);
 
-#ifdef PLATFORM_DESKTOP
-  eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
-#endif
-
   eval_static_libs(mrb, window, NULL);
+
+#ifdef PLATFORM_DESKTOP
+  eval_static_libs(mrb, thor, NULL);
+  eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
+  eval_static_libs(mrb, server, NULL);
+
+  mrbc_context *server_file = mrbc_context_new(mrb);
+  mrbc_filename(mrb, server_file, "server.rb");
+  struct mrb_parser_state *ret3;
+  ret3 = mrb_parse_string(mrb, "Server.run!", server_file);
+  mrb_value foo;
+  foo = mrb_load_exec(mrb, ret3, server_file);
+  mrbc_context_free(mrb, server_file);
+  if_exception_error_and_exit(mrb, "server.rb");
+#endif
 
   mrb_close(mrb);
 

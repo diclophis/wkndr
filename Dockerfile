@@ -30,7 +30,6 @@ COPY gigamock-transfer/git-repo-template /usr/share/git-core/templates/
 COPY gigamock-transfer/etc-docker-registry-config.yaml /etc/docker/registry/config.yml
 
 COPY Gemfile Gemfile.lock wkndr.gemspec /var/lib/wkndr/
-COPY lib /var/lib/wkndr/lib/
 
 RUN cd /var/lib/wkndr && ls -l && bundle
 
@@ -89,9 +88,9 @@ RUN mkdir -p /var/tmp/chroot/bin
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
 RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 
+WORKDIR /var/lib/wkndr
 CMD ["bash"]
-
 #CMD ["rackup", "/var/tmp/kit1zx/web_static.rb", "-p8000", "-o0.0.0.0"]
-#CMD ["/var/tmp/kit1zx/server/release/libs/osx/kit1zx-server"]
+#CMD ["/var/lib/wkndr/release/wkndr.mruby"]
 
 #TODO: !!!!!!!!!!!!!!!  flesh out submodules in dockerfile, dont rely on local filesystem!!!
