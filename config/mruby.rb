@@ -25,7 +25,7 @@ MRuby::Build.new do |conf|
 
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
-  conf.gem :github => "mattn/mruby-uv"
+  conf.gem :github => "diclophis/mruby-uv", :branch => "wkndr-patch-1"
   conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0"
   conf.gem :github => "Asmod4n/mruby-b64"
   conf.gem :github => "Asmod4n/mruby-phr"

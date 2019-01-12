@@ -13,6 +13,6 @@ cd /var/lib/wkndr
 
 
 make -f Makefile clean
-make
+make -j
 
 #emmake make -f Makefile.emscripten

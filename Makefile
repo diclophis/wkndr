@@ -58,7 +58,7 @@ $(build)/test.yml: $(target) config.ru
 #TODO: platform switch
 #EMS: cd raylib-src && make PLATFORM=PLATFORM_WEB clean
 clean:
-	cd mruby && make clean
+	cd mruby && make clean && rm -Rf build
 	cd raylib-src && make PLATFORM=PLATFORM_DESKTOP clean
 	rm -R $(build)
 

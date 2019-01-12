@@ -77,7 +77,7 @@ RUN touch /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/include/
 COPY raylib-src /var/lib/wkndr/raylib-src
 COPY lib /var/lib/wkndr/lib
 
-COPY Makefile main.c gigamock-transfer/iterate.sh lib public /var/lib/wkndr/
+COPY Wkndrfile Makefile main.c gigamock-transfer/iterate.sh lib public /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate.sh
 
 ##COPY web_static.rb /var/tmp/kit1zx/
@@ -89,8 +89,5 @@ RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
 RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 
 WORKDIR /var/lib/wkndr
-CMD ["bash"]
-#CMD ["rackup", "/var/tmp/kit1zx/web_static.rb", "-p8000", "-o0.0.0.0"]
-#CMD ["/var/lib/wkndr/release/wkndr.mruby"]
-
-#TODO: !!!!!!!!!!!!!!!  flesh out submodules in dockerfile, dont rely on local filesystem!!!
+#CMD ["bash"]
+CMD ["/var/lib/wkndr/release/wkndr.mruby"]

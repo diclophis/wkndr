@@ -3225,6 +3225,7 @@ class Thor
   end
 
   include Thor::Base
+  ####
 
   #TODO!!!!!!!!!!!!
   #map HELP_MAPPINGS => :help
