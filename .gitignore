@@ -2,3 +2,17 @@
 tmp
 *bundle
 build
+release
+build
+release
+.DS_Store
+*.o
+*.cmake
+*CMake*
+.*
+*.in
+*.pbxuser
+*.perspectivev3
+project.xcworkspace
+xcuserdata
+*.pbxuser
