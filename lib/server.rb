@@ -23,7 +23,7 @@ class Connection
                 :ss,
                 :socket
 
-  def initialize(socket)
+  def initialize(socket, required_prefix)
     self.socket = socket
 
     self.ss = ""
@@ -31,6 +31,8 @@ class Connection
     self.processing_handshake = true
 
     self.phr = Phr.new
+
+    @required_prefix = required_prefix
   end
 
   def disconnect!
@@ -105,11 +107,11 @@ class Connection
             filename = "/index.html"
           end
 
-          required_prefix = "/home/jon/workspace/wkndr/public/"
-          #required_prefix = "/var/lib/wkndr/public/"
+          requested_path = "#{@required_prefix}#{filename}"
+          UV::FS.realpath(requested_path) { |resolved_filename|
+            log!(self, resolved_filename, requested_path, @required_prefix, ARGV)
 
-          UV::FS.realpath("#{required_prefix}#{filename}") { |resolved_filename|
-            if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(required_prefix)
+            if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
                 self.socket.close
               }
@@ -221,10 +223,10 @@ class Connection
     ps = UV::Process.new({
       #'file' => 'factor',
       #'args' => [],
-      'file' => 'sh',
-      'args' => [],
-      #'file' => "/usr/sbin/chroot",
-      #'args' => ["/var/tmp/chroot", "/bin/sh"],
+      #'file' => 'sh',
+      #'args' => [],
+      'file' => "/usr/sbin/chroot",
+      'args' => ["/var/tmp/chroot", "/bin/sh"],
       #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
       #'file' => 'nc',
       #'args' => ["localhost", "12345"],
@@ -276,13 +278,16 @@ end
 
 class Server
   def self.run!
-    Server.new
+    Server.new(ARGV[0])
     UV.run
   end
 
-  def initialize
+  def initialize(required_prefix)
     #TODO: where does this go????
     UV.disable_stdio_inheritance
+    #required_prefix = "/home/jon/workspace/wkndr/public/"
+    @required_prefix = required_prefix #"/var/lib/wkndr/public/"
+    log!(:wtf, self, @required_prefix)
 
     host = '0.0.0.0'
     port = 8000
@@ -304,7 +309,7 @@ class Server
   end
 
   def create_connection!
-    http = Connection.new(@server.accept)
+    http = Connection.new(@server.accept, @required_prefix)
 
     http.socket.read_start { |b|
       http.read_bytes_safely(b)

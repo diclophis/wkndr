@@ -68,16 +68,12 @@ RUN cd /var/lib/wkndr && ls -l && \
 
 RUN cd /var/lib/wkndr/mruby && rm -Rf build && make clean && MRUBY_CONFIG=../config/emscripten.rb make -j
 
-COPY gigamock-transfer/libuv-patch/process.c /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/src/unix/process.c
-COPY gigamock-transfer/libuv-patch/Makefile.am /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/Makefile.am
-COPY gigamock-transfer/libuv-patch/mrbgem.rake /var/lib/wkndr/mruby/build/mrbgems/mruby-uv/mrbgem.rake
-
 RUN touch /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/include/uv.h && cd /var/lib/wkndr/mruby && MRUBY_CONFIG=../config/emscripten.rb make -j
 
 COPY raylib-src /var/lib/wkndr/raylib-src
 COPY lib /var/lib/wkndr/lib
 
-COPY Wkndrfile Makefile main.c gigamock-transfer/iterate.sh lib public /var/lib/wkndr/
+COPY Wkndrfile Makefile main.c gigamock-transfer/iterate.sh lib /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate.sh
 
 ##COPY web_static.rb /var/tmp/kit1zx/
@@ -88,6 +84,10 @@ RUN mkdir -p /var/tmp/chroot/bin
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
 RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 
+COPY public/index.html /var/lib/wkndr/public/index.html
+COPY public/index.js /var/lib/wkndr/public/index.js
+COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
+
 WORKDIR /var/lib/wkndr
 #CMD ["bash"]
-CMD ["/var/lib/wkndr/release/wkndr.mruby"]
+CMD ["/var/lib/wkndr/release/wkndr.mruby", "/var/lib/wkndr/public"]

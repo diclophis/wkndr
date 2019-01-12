@@ -1071,12 +1071,11 @@ int main(int argc, char** argv) {
 
   // convert argv into mruby strings
   for (i=1; i<argc; i++) {
-     mrb_ary_push(mrb, args, mrb_str_new_cstr(mrb,argv[i]));
+     mrb_ary_push(mrb, args, mrb_str_new_cstr(mrb, argv[i]));
   }
 
   mrb_define_global_const(mrb, "ARGV", args);
   mrb_define_method(mrb, mrb->kernel_module, "show!", global_show, MRB_ARGS_REQ(1));
-
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
@@ -1163,6 +1162,10 @@ int main(int argc, char** argv) {
 #ifdef PLATFORM_DESKTOP
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, server, NULL);
+
+  //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
+  //TODO!!!!!!!!!!!!!!!!!!!!1
+  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
 
   mrbc_context *server_file = mrbc_context_new(mrb);
   mrbc_filename(mrb, server_file, "server.rb");
