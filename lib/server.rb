@@ -4,6 +4,7 @@ def Integer(f)
   f.to_i
 end
 
+#TODO: move this somewhere
 $stdout = UV::Pipe.new
 $stdout.open(1)
 $stdout.read_stop
@@ -278,33 +279,8 @@ class Connection
 end
 
 class Server
-  def self.run!
-    running = true
-    Signal.trap(:INT) { |signo|
-      running = false
-    }
-
-    server = Server.new(ARGV[0])
-
-    #TODO: server FPS
-    ticks = 0
-    timer = UV::Timer.new
-    timer.start((1.0/60.0)*1000.0, (1.0/60)*1000.0) { |x|
-      ticks += 1
-      if running
-        if ((ticks) % 100) == 0
-          log!(:idle, ticks)
-        end
-      else
-        log!(:shutdown, ticks) {
-          timer.stop
-          server.shutdown
-          UV.default_loop.stop
-        }
-      end
-    }
-
-    UV.run
+  def self.run!(directory)
+    server = Server.new(directory)
   end
 
   def initialize(required_prefix)

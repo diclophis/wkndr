@@ -309,11 +309,6 @@ HEREDOC
     exec(*["kubectl", "logs", name_of_wkndr_pod, "-f"].compact)
   end
 
-  desc "continous", ""
-  def continous
-    sleep
-  end
-
   desc "dev", ""
   option "prepare", :type => :boolean, :default => false
   option "only-prepare", :type => :boolean, :default => false

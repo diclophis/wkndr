@@ -71,12 +71,12 @@
 #include "main_menu.h"
 #include "window.h"
 #include "socket_stream.h"
-#include "platform_bits.h"
-#include "server.h"
-
 
 //TODO
 #ifdef PLATFORM_DESKTOP
+#include "platform_bits.h"
+#include "server.h"
+#include "wkndr.h"
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
 #endif
@@ -1123,27 +1123,6 @@ int main(int argc, char** argv) {
   struct RClass *sphere_class = mrb_define_class(mrb, "Sphere", model_class);
   mrb_define_method(mrb, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
-/*
-  FILE *f = 0;
-  char *config = "Wkndrfile";
-
-  f = fopen(config, "r");
-  if (0 == f) {
-    fprintf(stderr,"could not find %s\n", config);
-    return 1;
-  }
-
-  mrbc_context *detective_file = mrbc_context_new(mrb);
-  mrbc_filename(mrb, detective_file, config);
-  mrb_value ret2;
-  ret2 = mrb_load_file_cxt(mrb, f, detective_file);
-  mrbc_context_free(mrb, detective_file);
-  fclose(f);
-  if_exception_error_and_exit(mrb, config);
-
-  eval_static_libs(mrb, thor, NULL);
-*/
-
 
   eval_static_libs(mrb, globals, NULL);
 
@@ -1162,19 +1141,39 @@ int main(int argc, char** argv) {
 #ifdef PLATFORM_DESKTOP
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, server, NULL);
+  eval_static_libs(mrb, thor, NULL);
+  eval_static_libs(mrb, wkndr, NULL);
 
   //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
   //TODO!!!!!!!!!!!!!!!!!!!!1
   //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
 
-  mrbc_context *server_file = mrbc_context_new(mrb);
-  mrbc_filename(mrb, server_file, "server.rb");
-  struct mrb_parser_state *ret3;
-  ret3 = mrb_parse_string(mrb, "Server.run!", server_file);
-  mrb_value foo;
-  foo = mrb_load_exec(mrb, ret3, server_file);
-  mrbc_context_free(mrb, server_file);
-  if_exception_error_and_exit(mrb, "server.rb");
+  ////TODO: only if --server
+  //mrbc_context *server_file = mrbc_context_new(mrb);
+  //mrbc_filename(mrb, server_file, "server.rb");
+  //struct mrb_parser_state *ret3;
+  //ret3 = mrb_parse_string(mrb, "Server.run!", server_file);
+  //mrb_value foo;
+  //foo = mrb_load_exec(mrb, ret3, server_file);
+  //mrbc_context_free(mrb, server_file);
+  //if_exception_error_and_exit(mrb, "server.rb");
+
+  FILE *f = 0;
+  char *config = "Wkndrfile";
+
+  f = fopen(config, "r");
+  if (0 == f) {
+    fprintf(stderr,"could not find %s\n", config);
+    return 1;
+  }
+
+  mrbc_context *detective_file = mrbc_context_new(mrb);
+  mrbc_filename(mrb, detective_file, config);
+  mrb_value ret2;
+  ret2 = mrb_load_file_cxt(mrb, f, detective_file);
+  mrbc_context_free(mrb, detective_file);
+  fclose(f);
+  if_exception_error_and_exit(mrb, config);
 #endif
 
   mrb_close(mrb);
