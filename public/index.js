@@ -67,8 +67,6 @@ window.startConnection = function(wsUrl) {
 
 startConnection("ws://" + window.location.host + "/ws");
 
-/* 
-
 var Module = {
   preRun: [],
   postRun: [],
@@ -108,6 +106,7 @@ window.onerror = function(event) {
   };
 };
 
+/*
 window.startConnection = function(wsUrl) {
   if (window["WebSocket"]) {
     var debug_print = Module.cwrap(
@@ -157,6 +156,6 @@ window.makeMove = function(x, y) {
 
   window.conn.send(serializeMsgPack(moveEvent));
 };
+*/
 
 Module.setStatus('Downloading...');
-*/

@@ -11,5 +11,6 @@ cd /root/emsdk
 
 cd /var/lib/wkndr
 
-rm -Rf release/*.o release/*.h
-emmake make TARGET=emsc -j
+emmake make TARGET=emsc -j ${1}
+
+ls -l release

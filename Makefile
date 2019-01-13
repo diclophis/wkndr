@@ -12,7 +12,7 @@ target=$(build)/$(product)
 
 $(shell mkdir -p $(build))
 
-mruby_static_lib_deps=$(shell find mruby -type f | grep -v 'mruby/build\|mruby/bin')
+mruby_static_lib_deps=$(wildcard mruby/**/*.c) #$(shell find mruby -type f | grep -v 'mruby/build\|mruby/bin')
 
 ifeq ($(TARGET),desktop)
   mruby_static_lib="mruby/build/host/lib/libmruby.a"
@@ -66,12 +66,10 @@ run: $(target) $(sources)
 	echo $(target)
 	realpath $(target)
 
-ifeq ($(TARGET),desktop)
 $(target): $(objects) $(sources)
+ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-#TODO: platform switch
-$(target): $(objects) $(sources)
 	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=167772160 #--shell-file shell.html --preload-file resources
 endif
 
@@ -102,6 +100,8 @@ ifeq ($(TARGET),desktop)
 else
 	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -e -B -j
 endif
+
+cheese: $(mruby_static_lib)
 
 $(mrbc): $(mruby_static_lib)
 

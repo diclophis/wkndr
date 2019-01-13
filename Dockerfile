@@ -59,6 +59,8 @@ COPY lib /var/lib/wkndr/lib
 RUN /var/lib/wkndr/iterate-server.sh
 
 COPY Wkndrfile gigamock-transfer/iterate-web.sh /var/lib/wkndr/
+RUN /var/lib/wkndr/iterate-web.sh cheese
+RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
 RUN /var/lib/wkndr/iterate-web.sh
 
 RUN mkdir -p /var/tmp/chroot/bin
@@ -68,6 +70,7 @@ RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 COPY public/index.html /var/lib/wkndr/public/index.html
 COPY public/index.js /var/lib/wkndr/public/index.js
 COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
+RUN cd /var/lib/wkndr && ls -hl release && cp release/wkndr* public/
 
 COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
 
@@ -75,6 +78,6 @@ RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
 WORKDIR /var/lib/wkndr
 
-#CMD ["/var/lib/wkndr/release/wkndr.mruby"]
+CMD ["/var/lib/wkndr/release/wkndr.mruby", "serve", "/var/lib/wkndr/public"]
 #CMD ["bash"]
-CMD ["sleep", "infinity"]
+#CMD ["sleep", "infinity"]

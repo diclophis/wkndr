@@ -2158,7 +2158,7 @@ class Thor
         file = "Wkndrfile" #caller[1].match(/(.*):\d+/)[1]
         Thor::Base.subclasses << klass unless Thor::Base.subclasses.include?(klass)
 
-        file_subclasses = Thor::Base.subclass_files[File.expand_path(file)]
+        file_subclasses = Thor::Base.subclass_files[file] #File.expand_path(file)]
         file_subclasses << klass unless file_subclasses.include?(klass)
       end
     end

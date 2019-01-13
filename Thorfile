@@ -147,7 +147,7 @@ spec:
   template:
     metadata:
       labels:
-        name: #{APP}-app
+        app: #{APP}-app
       annotations:
         "ops.v2.rutty/bash": bash
     spec:
@@ -200,6 +200,8 @@ HEREDOC
       exit 1
     end
 
+    #??? --pod-network-cidr=10.32.0.0/12
+
     kubeadm_reset = <<KUBEADM_RESET
     set -x
     set -e
@@ -207,7 +209,7 @@ HEREDOC
     ifconfig lo:0 10.2.0.1 netmask 255.0.0.0 up
     kubeadm reset -f
     iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
-    kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443 --pod-network-cidr=10.32.0.0/12
+    kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443
     mkdir -p /home/#{ENV['SUDO_USER']}/.kube
     chown #{ENV['SUDO_USER']}. /home/#{ENV['SUDO_USER']}/.kube
     cp /etc/kubernetes/admin.conf /home/#{ENV['SUDO_USER']}/.kube/kubeadm_config
