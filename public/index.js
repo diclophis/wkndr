@@ -65,7 +65,7 @@ window.startConnection = function(wsUrl) {
   }
 };
 
-startConnection("ws://10.2.0.1:31588/ws");
+startConnection("ws://" + window.location.host + "/ws");
 
 /* 
 

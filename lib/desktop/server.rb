@@ -4,7 +4,7 @@ def Integer(f)
   f.to_i
 end
 
-#TODO: move this somewhere
+##TODO: move this somewhere
 $stdout = UV::Pipe.new
 $stdout.open(1)
 $stdout.read_stop
@@ -78,20 +78,23 @@ class Connection
             sending = false
           end
         else
-          self.socket.close
+          #self.socket.close
           idle.stop
+          self.processing_handshake = true
         end
       end
     }
   end
 
   def handle_bytes!(b)
-    if self.processing_handshake
+    if self.processing_handshake == -1
+      self.ss += b
+    elsif self.processing_handshake
       self.ss += b
       @offset = self.phr.parse_request(self.ss)
       case @offset
       when Fixnum
-        log!(:get, phr.path)
+        log!(:get, self.object_id, phr.path)
 
         case phr.path
         when "/debug"
@@ -116,6 +119,9 @@ class Connection
                 self.socket.close
               }
             else
+              self.processing_handshake = -1
+              self.ss = self.ss[@offset..-1]
+              self.phr.reset
               serve_static_file!(resolved_filename)
             end
           }
@@ -225,10 +231,10 @@ class Connection
     ps = UV::Process.new({
       #'file' => 'factor',
       #'args' => [],
-      #'file' => 'sh',
-      #'args' => [],
-      'file' => "/usr/sbin/chroot",
-      'args' => ["/var/tmp/chroot", "/bin/sh"],
+      'file' => 'sh',
+      'args' => [],
+      #'file' => "/usr/sbin/chroot",
+      #'args' => ["/var/tmp/chroot", "/bin/sh"],
       #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
       #'file' => 'nc',
       #'args' => ["localhost", "12345"],
@@ -324,8 +330,84 @@ class Server
   end
 
   def loop(name, x, y, fps)
-    yield GameLoop.new(name, x, y, fps)
+    gl = GameLoop.new(self)
+    yield gl
+
+    window = Window.new("wkndr", x, y, fps, gl)
+
+    @idle = UV::Timer.new
+    @idle.start(0, 1) {
+      window.update
+    }
 
     self
   end
+
+  def spinlock!
+    UV.run
+  end
+
+#class PlatformSpecificBits < PlatformBits
+#  def initialize(*args)
+#    super(*args)
+#  def init_other_bits
+#    #### #TODO: make stdin abstraction???
+#    #### @stdin = UV::Pipe.new
+#    #### @stdin.open(0)
+#    #### @stdin.read_stop
+#
+#    #@stdin.read_start do |buf|
+#    #  if buf.is_a?(UVError)
+#    #    log!(buf)
+#    #  else
+#    #    if buf && buf.length
+#    #      self.feed_state!(buf)
+#    #    end
+#    #  end
+#    #end
+#    #self.init!
+#
+#    #### @stdout = UV::Pipe.new
+#    #### @stdout.open(1)
+#    #### @stdout.read_stop
+#
+#    @all_connections = []
+#  end
+
+  def socket_klass
+    WslaySocketStream
+  end
+
+  def create_websocket_connection(&block)
+    ss = WslaySocketStream.new(self, block)
+    @all_connections << ss
+    ss.connect!
+    ss
+  end
+
+  #def log!(*args)
+  #  @stdout.write(args.inspect + "\n") {
+  #    false
+  #  }
+  #end
+
+  def spinlock!
+    UV::run
+  end
+
+  #def spindown!
+  #  log! :spindown
+
+  #  @idle.unref if @idle
+  #  @stdin.unref if @stdin
+  #  @stdout.unref if @stdout
+
+  #  #tty = UV::TTY.new(0, 0)
+  #  #tty.set_mode(1)
+  #  #tty.reset_mode
+  #  
+  #  #@all_connections.each { |ss|
+  #  #  ss.disconnect!
+  #  #}
+  #end
 end

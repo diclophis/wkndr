@@ -293,6 +293,7 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 
 static mrb_value platform_bits_initialize(mrb_state* mrb, mrb_value self)
 {
+
   // Initialization
   mrb_value game_name = mrb_nil_value();
   mrb_int screenWidth,screenHeight,screenFps;
@@ -1085,7 +1086,7 @@ int main(int argc, char** argv) {
   mrb_define_module_function(mrb, cPTY, "getpty", pty_getpty, MRB_ARGS_NONE());
 
   // class PlatformBits
-  struct RClass *platform_bits_class = mrb_define_class(mrb, "PlatformBits", mrb->object_class);
+  struct RClass *platform_bits_class = mrb_define_class(mrb, "BaseWindow", mrb->object_class);
   mrb_define_method(mrb, platform_bits_class, "initialize", platform_bits_initialize, MRB_ARGS_REQ(4));
   mrb_define_method(mrb, platform_bits_class, "update", platform_bits_update, MRB_ARGS_NONE());
 
