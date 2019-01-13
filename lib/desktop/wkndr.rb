@@ -7,7 +7,7 @@ class Wkndr < Thor
       running = false
     }
     if args.empty?
-      args = ["continous"]
+      args = ["default"]
     end
 
     if running && run_loop_blocker = super(args)

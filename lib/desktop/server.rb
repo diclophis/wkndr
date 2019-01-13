@@ -322,4 +322,10 @@ class Server
 
     http
   end
+
+  def loop(name, x, y, fps)
+    yield GameLoop.new(name, x, y, fps)
+
+    self
+  end
 end
