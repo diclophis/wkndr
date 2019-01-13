@@ -14,6 +14,7 @@ MRuby::Build.new do |conf|
   conf.gem :core => "mruby-io"
   conf.gem :core => "mruby-enum-ext"
   conf.gem :core => "mruby-struct"
+  conf.gem :core => "mruby-metaprog"
 
   conf.gem :core => "mruby-sprintf"
   conf.gem :core => "mruby-string-ext"

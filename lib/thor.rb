@@ -533,7 +533,7 @@ class Thor
       raise "Expected Thor class, got #{klass}" unless klass <= Thor::Base
 
       args, opts, config = _parse_initialization_options(args, opts, config)
-      klass.send(:dispatch, command, args, opts, config) do |instance|
+      klass.__send__(:dispatch, command, args, opts, config) do |instance|
         instance.parent_options = options
       end
     end
@@ -2127,10 +2127,9 @@ class Thor
 
     class << self
       def included(base) #:nodoc:
-        #log!(:cheese, base, self, ClassMethods, Invocation, Shell)
         base.extend ClassMethods
-        base.send :include, Invocation
-        base.send :include, Shell
+        base.__send__ :include, Invocation
+        base.__send__ :include, Shell
       end
 
       # Returns the classes that inherits from Thor or Thor::Group.
@@ -2677,7 +2676,7 @@ class Thor
         if self == baseclass || !superclass.respond_to?(method, true)
           default
         else
-          value = superclass.send(method)
+          value = superclass.__send__(method)
 
           # Ruby implements `dup` on Object, but raises a `TypeError`
           # if the method is called on immediates. As a result, we
@@ -3399,7 +3398,7 @@ class Thor::Group
     #
     def class_options_help(shell, groups = {}) #:nodoc:
       get_options_from_invocations(groups, class_options) do |klass|
-        klass.send(:get_options_from_invocations, groups, class_options)
+        klass.__send__(:get_options_from_invocations, groups, class_options)
       end
       super(shell, groups)
     end
