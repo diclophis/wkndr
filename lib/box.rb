@@ -1,3 +1,5 @@
+#
+
 module EasyBoxPacker
   class << self
     def pack(container, items)

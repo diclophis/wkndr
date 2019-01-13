@@ -49,13 +49,17 @@ RUN cd /var/lib/wkndr && ls -l && \
     git submodule init && \
     git submodule update
 
-RUN cd /var/lib/wkndr/mruby && rm -Rf build && make clean && MRUBY_CONFIG=../config/emscripten.rb make -j
-
 COPY raylib-src /var/lib/wkndr/raylib-src
-COPY lib /var/lib/wkndr/lib
 
-COPY Wkndrfile Makefile main.c gigamock-transfer/iterate.sh lib /var/lib/wkndr/
-RUN /var/lib/wkndr/iterate.sh
+COPY Makefile gigamock-transfer/iterate-server.sh /var/lib/wkndr/
+RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
+RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
+COPY main.c /var/lib/wkndr/
+COPY lib /var/lib/wkndr/lib
+RUN /var/lib/wkndr/iterate-server.sh
+
+COPY Wkndrfile gigamock-transfer/iterate-web.sh /var/lib/wkndr/
+RUN /var/lib/wkndr/iterate-web.sh
 
 RUN mkdir -p /var/tmp/chroot/bin
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
@@ -70,5 +74,7 @@ COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
 RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
 WORKDIR /var/lib/wkndr
+
+#CMD ["/var/lib/wkndr/release/wkndr.mruby"]
 #CMD ["bash"]
-CMD ["/var/lib/wkndr/release/wkndr.mruby", "/var/lib/wkndr/public"]
+CMD ["sleep", "infinity"]

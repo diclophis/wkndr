@@ -2127,6 +2127,7 @@ class Thor
 
     class << self
       def included(base) #:nodoc:
+        #log!(:cheese, base, self, ClassMethods, Invocation, Shell)
         base.extend ClassMethods
         base.send :include, Invocation
         base.send :include, Shell

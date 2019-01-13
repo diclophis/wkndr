@@ -1,6 +1,6 @@
 #
 
-class Wkndr < Thor
+class Wkndr < Base
   def self.start(args)
     running = true
     Signal.trap(:INT) { |signo|

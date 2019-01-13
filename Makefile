@@ -1,65 +1,86 @@
 ## Makefile
 
-product=wkndr.mruby
+TARGET ?= desktop
+
+ifeq ($(TARGET),desktop)
+  product=wkndr.mruby
+else
+  product=wkndr.html
+endif
 build=release
 target=$(build)/$(product)
 
 $(shell mkdir -p $(build))
 
 mruby_static_lib_deps=$(shell find mruby -type f | grep -v 'mruby/build\|mruby/bin')
-#TODO: platform switch
-mruby_static_lib=mruby/build/host/lib/libmruby.a
-#mruby_static_lib=mruby/build/emscripten/lib/libmruby.a
+
+ifeq ($(TARGET),desktop)
+  mruby_static_lib="mruby/build/host/lib/libmruby.a"
+else
+  mruby_static_lib="mruby/build/emscripten/lib/libmruby.a"
+endif
 
 raylib_static_lib_deps=$(shell find raylib-src -type f)
-#TODO: platform switch
-raylib_static_lib=$(build)/libraylib.a
-#raylib_static_lib=$(build)/libraylib.bc
 
-#TODO: platform switch
-mrbc=mruby/bin/mrbc
-#mrbc=mruby/build/host/bin/mrbc
+ifeq ($(TARGET),desktop)
+  raylib_static_lib=$(build)/libraylib.a
+else
+  raylib_static_lib=$(build)/libraylib.bc
+endif
+
+ifeq ($(TARGET),desktop)
+  mrbc=mruby/bin/mrbc
+else
+  mrbc=mruby/build/host/bin/mrbc
+endif
 
 sources = $(wildcard *.c)
 objects = $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
 static_ruby_headers = $(patsubst %,$(build)/%, $(patsubst lib/%.rb,%.h, $(wildcard lib/*.rb)))
-#TODO: platform switch
+
+ifeq ($(TARGET),desktop)
 static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h, $(wildcard lib/desktop/*.rb)))
+endif
+
 .SECONDARY: $(static_ruby_headers) $(objects)
 objects += $(mruby_static_lib)
 objects += $(raylib_static_lib)
 
-
 #TODO: platform switch
-LDFLAGS=-lm -lpthread -ldl -lX11 -lpthread -lssl -lcrypto -lutil
-#OSX LDFLAGS=-lm -lpthread -ldl -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+ifeq ($(TARGET),desktop)
+  LDFLAGS=-lm -lpthread -ldl -lX11 -lpthread -lssl -lcrypto -lutil
+  #ifeq ($(TARGET),desktop)
+  #LDFLAGS=-lm -lpthread -ldl -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+endif
 
-#TODO: platform switch
-CFLAGS=-DPLATFORM_DESKTOP -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
-#TODO: remove GL_SILENCE_DEPRECATION
-#OSX  CFLAGS=-DPLATFORM_DESKTOP -DGL_SILENCE_DEPRECATION -Os -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
-#EMS EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s STACK_OVERFLOW_CHECK=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s SAFE_HEAP_LOG=0 -s WASM=1 -s EMTERPRETIFY=0
-#EMS CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build
+ifeq ($(TARGET),desktop)
+  CFLAGS=-DPLATFORM_DESKTOP -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
+  #TODO: remove GL_SILENCE_DEPRECATION
+  #OSX  CFLAGS=-DPLATFORM_DESKTOP -DGL_SILENCE_DEPRECATION -Os -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
+else
+  EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s STACK_OVERFLOW_CHECK=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s SAFE_HEAP_LOG=0 -s WASM=1 -s EMTERPRETIFY=0
+  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
+endif
 
 run: $(target) $(sources)
 	echo $(target)
 	realpath $(target)
 
+ifeq ($(TARGET),desktop)
 $(target): $(objects) $(sources)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
-
+else
 #TODO: platform switch
-#$(target): shell.html $(objects) $(sources)
-#	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' --source-map-base $(map_base) -s TOTAL_MEMORY=167772160 --shell-file shell.html --preload-file resources
+$(target): $(objects) $(sources)
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=167772160 #--shell-file shell.html --preload-file resources
+endif
 
 $(build)/test.yml: $(target) config.ru
 	$(target) > $@
 
-#TODO: platform switch
-#EMS: cd raylib-src && make PLATFORM=PLATFORM_WEB clean
 clean:
 	cd mruby && make clean && rm -Rf build
-	cd raylib-src && make PLATFORM=PLATFORM_DESKTOP clean
+	cd raylib-src && make RAYLIB_RELEASE_PATH=../$(build) PLATFORM=PLATFORM_DESKTOP clean
 	rm -R $(build)
 
 $(build):
@@ -68,16 +89,20 @@ $(build):
 $(build)/%.o: %.c $(static_ruby_headers) $(sources)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-#TODO: platform switch... why????
 $(mruby_static_lib): config/mruby.rb $(mruby_static_lib_deps)
-	cd mruby && MRUBY_CONFIG=../config/mruby.rb make -j
+ifeq ($(TARGET),desktop)
+	cd mruby && MRUBY_CONFIG=../config/mruby.rb $(MAKE) -j
+else
+	cd mruby && MRUBY_CONFIG=../config/emscripten.rb $(MAKE) -j
+endif
 
-#TODO: platform switch
-#EMS: cd raylib-src && make -j PLATFORM=PLATFORM_WEB -B
 $(raylib_static_lib): $(raylib_static_lib_deps)
-	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) PLATFORM=PLATFORM_DESKTOP make -e -j -B
+ifeq ($(TARGET),desktop)
+	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) PLATFORM=PLATFORM_DESKTOP $(MAKE) -e -B -j
+else
+	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -e -B -j
+endif
 
-#TODO: platform switch
 $(mrbc): $(mruby_static_lib)
 
 $(build)/%.h: lib/desktop/%.rb $(mrbc)

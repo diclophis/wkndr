@@ -91,7 +91,7 @@ class Wkndr < Thor
   option "cache", :type => :boolean, :default => true
   def build
     if options["run"]
-      delete_dockerfile = ["kubectl", "delete", "--grace-period=0", "deployment/#{APP}", "service/#{APP}", "service/#{APP}-node-service"]
+      delete_dockerfile = ["kubectl", "delete", "--grace-period=0", "deployment/#{APP}-app", "service/#{APP}", "service/#{APP}-node-service"]
       system(*delete_dockerfile)
     end
 
@@ -129,16 +129,50 @@ spec:
     nodePort: 31588
     protocol: TCP
   selector:
-    run: #{APP}
+    app: #{APP}-app
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: #{APP}-app
+  labels:
+    app: #{APP}-app
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: #{APP}-app
+      annotations:
+        "ops.v2.rutty/bash": bash
+    spec:
+      containers:
+      - name: #{APP}-app
+        image: #{APP}:#{version}
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: 1Mi
+            cpu: 1m
+          limits:
+            memory: 500Mi
+            cpu: 2000m
+        ports:
+        - containerPort: 8000
 ...
 HEREDOC
 
       apply_node_port = ["kubectl", "apply", "-f", "-"]
       options = {:stdin_data => deploy_wkndr_run_node_port}
-      execute_simple(:silentx, apply_node_port, options)
+      execute_simple(:blocking, apply_node_port, options)
 
-      run_dockerfile = ["kubectl", "run", "--quiet=true", "--rm=true", APP, "--attach=true", "--expose", "--port=8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
-      exec(*run_dockerfile)
+      #run_dockerfile = ["kubectl", "run", "--quiet=true", "--rm=true", APP, "--attach=true", "--expose", "--port=8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
+      #exec(*run_dockerfile)
      
       ##expose_dockerfile = ["kubectl", "run", "--rm=true", APP, "--attach=true", "--expose", "--port", "8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
       #expose_dockerfile = ["kubectl", "expose", "deployment", APP, "--type=NodePort", "--name=#{APP}-node-service", '--overrides=\'{"apiVersion":"v1","spec":{type:"NodePort","ports":[{"port":8000,"protocol":"TCP","targetPort":8000,"nodePort":31520}]}}\'']
@@ -167,9 +201,13 @@ HEREDOC
     end
 
     kubeadm_reset = <<KUBEADM_RESET
+    set -x
+    set -e
+
     ifconfig lo:0 10.2.0.1 netmask 255.0.0.0 up
     kubeadm reset -f
-    kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443
+    iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+    kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443 --pod-network-cidr=10.32.0.0/12
     mkdir -p /home/#{ENV['SUDO_USER']}/.kube
     chown #{ENV['SUDO_USER']}. /home/#{ENV['SUDO_USER']}/.kube
     cp /etc/kubernetes/admin.conf /home/#{ENV['SUDO_USER']}/.kube/kubeadm_config

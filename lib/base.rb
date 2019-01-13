@@ -1,0 +1,4 @@
+#
+
+class Base < Thor
+end

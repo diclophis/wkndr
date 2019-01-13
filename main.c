@@ -44,9 +44,6 @@
 #include <mruby/value.h>
 #include <mruby/variable.h>
 #include <string.h>
-#include <openssl/sha.h>
-#include <mruby/string.h>
-#include <b64/cencode.h>
 
 
 // raylib stuff
@@ -56,29 +53,34 @@
 #include <raygui.h>
 
 
-// emscripten/wasm stuff
-#ifdef PLATFORM_WEB
-  #include <emscripten/emscripten.h>
-#endif
-
-
 // kit1zx stuff
-#include "thor.h"
-#include "kube.h"
 #include "box.h"
 #include "globals.h"
+#include "platform_bits.h"
 #include "game_loop.h"
 #include "main_menu.h"
-#include "window.h"
 #include "socket_stream.h"
+#include "window.h"
+#include "thor.h"
+#include "base.h"
 
-//TODO
+
+//server stuff
 #ifdef PLATFORM_DESKTOP
-#include "platform_bits.h"
+#include <openssl/sha.h>
+#include <mruby/string.h>
+#include <b64/cencode.h>
+#include "kube.h"
 #include "server.h"
 #include "wkndr.h"
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
+#endif
+
+
+// emscripten/wasm stuff
+#ifdef PLATFORM_WEB
+  #include <emscripten/emscripten.h>
 #endif
 
 
@@ -960,6 +962,7 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 }
 
 
+#ifdef PLATFORM_DESKTOP
 // The Sec-WebSocket-Accept part is interesting.
 // The server must derive it from the Sec-WebSocket-Key that the client sent.
 // To get it, concatenate the client's Sec-WebSocket-Key and "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" together
@@ -1056,7 +1059,7 @@ static mrb_value pty_getpty(mrb_state* mrb, mrb_value self)
 
   return mrb_fixnum_value(master);
 }
-
+#endif
 
 int main(int argc, char** argv) {
   mrb_state *mrb;
@@ -1080,10 +1083,12 @@ int main(int argc, char** argv) {
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
-  mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
 
+#ifdef PLATFORM_DESKTOP
+  mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
   struct RClass *cPTY = mrb_define_module(mrb, "PTY");
   mrb_define_module_function(mrb, cPTY, "getpty", pty_getpty, MRB_ARGS_NONE());
+#endif
 
   // class PlatformBits
   struct RClass *platform_bits_class = mrb_define_class(mrb, "BaseWindow", mrb->object_class);
@@ -1139,10 +1144,13 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, window, NULL);
 
+  eval_static_libs(mrb, thor, NULL);
+
+  eval_static_libs(mrb, base, NULL);
+
 #ifdef PLATFORM_DESKTOP
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, server, NULL);
-  eval_static_libs(mrb, thor, NULL);
   eval_static_libs(mrb, wkndr, NULL);
 
   //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
