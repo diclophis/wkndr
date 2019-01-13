@@ -8,9 +8,9 @@ $stdout = UV::Pipe.new
 $stdout.open(1)
 $stdout.read_stop
 
-def log!(*args)
+def log!(*args, &block)
   $stdout.write(args.inspect + "\n") {
-    false
+    yield if block
   }
 end
 
@@ -247,7 +247,6 @@ class Connection
     end
 
     stderr_tty.read_start do |bbbb|
-      log!(:debug_stderr, bbbb)
       if bbbb.is_a?(UVError)
         log!(:baderr, bbbb)
       elsif bbbb && bbbb.length > 0
@@ -257,8 +256,6 @@ class Connection
     end
 
     stdout_tty.read_start do |bout|
-      log!(:debug_stdout, bout)
-
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
@@ -289,22 +286,21 @@ class Server
 
     server = Server.new(ARGV[0])
 
-    ticks = 1
-    idle = UV::Idle.new
-    idle.start { |x|
+    #TODO: server FPS
+    ticks = 0
+    timer = UV::Timer.new
+    timer.start((1.0/60.0)*1000.0, (1.0/60)*1000.0) { |x|
       ticks += 1
-      if ((ticks) % 1000000) == 0
-        if running
-          $stdout.write(".") {
-            false
-          }
-        else
-          $stdout.write("x") {
-            idle.stop
-            server.shutdown
-            UV.default_loop.stop
-          }
+      if running
+        if ((ticks) % 100) == 0
+          log!(:idle, ticks)
         end
+      else
+        log!(:shutdown, ticks) {
+          timer.stop
+          server.shutdown
+          UV.default_loop.stop
+        }
       end
     }
 
