@@ -90,6 +90,11 @@ class Wkndr < Thor
   option "run", :type => :boolean, :default => false
   option "cache", :type => :boolean, :default => true
   def build
+    if options["run"]
+      delete_dockerfile = ["kubectl", "delete", "deployment/#{APP}", "service/#{APP}", "service/#{APP}-node-service"]
+      system(*delete_dockerfile)
+    end
+
     version = IO.popen("git rev-parse --verify HEAD").read.strip
 
     build_dockerfile = ["docker", "build", options["cache"] ? nil : "--no-cache", "-t", APP + ":" + version, "."].compact
@@ -111,9 +116,40 @@ class Wkndr < Thor
       #apt_cache_service_fetch = "kubectl get service wkndr-app -o json | jq -r '.spec.clusterIP'"
       #http_proxy_service_ip = IO.popen(apt_cache_service_fetch).read.split("\n")[0]
       #puts http_proxy_service_ip
-      run_dockerfile = ["kubectl", "run", "--rm=true", APP, "--attach=true", "--expose", "--port", "8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
+    deploy_wkndr_run_node_port=<<-HEREDOC
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "#{APP}-node-service"
+spec:
+  type: NodePort
+  ports:
+  - port: 8000
+    nodePort: 31588
+    protocol: TCP
+  selector:
+    run: #{APP}
+...
+HEREDOC
 
+      apply_node_port = ["kubectl", "apply", "-f", "-"]
+      options = {:stdin_data => deploy_wkndr_run_node_port}
+      execute_simple(:silentx, apply_node_port, options)
+
+      run_dockerfile = ["kubectl", "run", "-it", "--quiet=true", "--rm=true", APP, "--attach=true", "--expose", "--port=8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
       exec(*run_dockerfile)
+     
+      ##expose_dockerfile = ["kubectl", "run", "--rm=true", APP, "--attach=true", "--expose", "--port", "8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
+      #expose_dockerfile = ["kubectl", "expose", "deployment", APP, "--type=NodePort", "--name=#{APP}-node-service", '--overrides=\'{"apiVersion":"v1","spec":{type:"NodePort","ports":[{"port":8000,"protocol":"TCP","targetPort":8000,"nodePort":31520}]}}\'']
+      #systemx(*expose_dockerfile)
+      #
+      #attach_dockerfile = ["kubectl", "attach", "-it", "deployment/#{APP}"]
+
+      ##process_stdin, process_stdout, process_stderr, process_waiter = execute_simple(:async, kubectl_port_forward_cmd, options)
+      ##process_stdout.expect("-> 5000")
+
+      #exec(*attach_dockerfile)
     end
   end
 

@@ -65,4 +65,4 @@ window.startConnection = function(wsUrl) {
   }
 };
 
-startConnection("ws://10.110.107.195:8000/wss");
+startConnection("ws://10.2.0.1:31588/ws");

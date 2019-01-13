@@ -33,26 +33,10 @@ COPY Gemfile Gemfile.lock wkndr.gemspec /var/lib/wkndr/
 
 RUN cd /var/lib/wkndr && ls -l && bundle
 
-COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
-
-RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
-
-#FROM ubuntu:bionic-20180526
-
-#ENV LC_ALL C.UTF-8
-#ENV LANG en_US.UTF-8
-#ENV LANGUAGE en_US.UTF-8
-
-#ENV DEBIAN_FRONTEND noninteractive
-
-#USER root
-
 COPY --from=0 /var/tmp/build/vim-src/src/vim /var/lib/vim-static
 
 COPY gigamock-transfer/emscripten.sh /var/tmp/emscripten.sh
 RUN /var/tmp/emscripten.sh
-
-COPY Makefile /var/lib/wkndr/Makefile
 
 COPY gigamock-transfer/emscripten-warmup.sh /var/tmp/emscripten-warmup.sh
 RUN /var/tmp/emscripten-warmup.sh
@@ -63,22 +47,15 @@ RUN cd /var/lib/wkndr && ls -l && \
     git init && \
     git submodule add https://github.com/mruby/mruby mruby \
     git submodule init && \
-    git submodule update && \
-    ls -l
+    git submodule update
 
 RUN cd /var/lib/wkndr/mruby && rm -Rf build && make clean && MRUBY_CONFIG=../config/emscripten.rb make -j
-
-RUN touch /var/lib/wkndr/mruby/build/host/mrbgems/mruby-uv/libuv-1.19.1/include/uv.h && cd /var/lib/wkndr/mruby && MRUBY_CONFIG=../config/emscripten.rb make -j
 
 COPY raylib-src /var/lib/wkndr/raylib-src
 COPY lib /var/lib/wkndr/lib
 
 COPY Wkndrfile Makefile main.c gigamock-transfer/iterate.sh lib /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate.sh
-
-##COPY web_static.rb /var/tmp/kit1zx/
-##COPY shell.js /var/tmp/kit1zx/release/libs/html5/
-#COPY server /var/tmp/kit1zx/server
 
 RUN mkdir -p /var/tmp/chroot/bin
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
@@ -87,6 +64,10 @@ RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
 COPY public/index.html /var/lib/wkndr/public/index.html
 COPY public/index.js /var/lib/wkndr/public/index.js
 COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
+
+COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
+
+RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
 WORKDIR /var/lib/wkndr
 #CMD ["bash"]

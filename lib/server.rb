@@ -96,12 +96,11 @@ class Connection
         when "/debug"
           serve_static_file!("/var/tmp/big.data")
 
-        when "/wss"
+        when "/ws"
           upgrade_to_websocket!
 
         else
           filename = phr.path
-          log!(phr.path)
 
           if filename == "/"
             filename = "/index.html"
@@ -109,7 +108,7 @@ class Connection
 
           requested_path = "#{@required_prefix}#{filename}"
           UV::FS.realpath(requested_path) { |resolved_filename|
-            log!(self, resolved_filename, requested_path, @required_prefix, ARGV)
+            #log!(self, resolved_filename, requested_path, @required_prefix, ARGV)
 
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
@@ -153,6 +152,8 @@ class Connection
   end
 
   def upgrade_to_websocket!
+    #log!(:debug_upgrade)
+
     stdin_tty = UV::Pipe.new(false)
     stdout_tty = UV::Pipe.new(false)
     stderr_tty = UV::Pipe.new(false)
@@ -191,7 +192,7 @@ class Connection
       # to_str => returns the message revieced
 
       if msg[:opcode] == :binary_frame
-        #log!("INBOUND", msg)
+        log!("INBOUND", msg)
 
         stdin_tty.write(msg) {
           false
@@ -246,6 +247,7 @@ class Connection
     end
 
     stderr_tty.read_start do |bbbb|
+      log!(:debug_stderr, bbbb)
       if bbbb.is_a?(UVError)
         log!(:baderr, bbbb)
       elsif bbbb && bbbb.length > 0
@@ -255,6 +257,8 @@ class Connection
     end
 
     stdout_tty.read_start do |bout|
+      log!(:debug_stdout, bout)
+
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
@@ -264,7 +268,7 @@ class Connection
     end
 
     #TODO???
-    #@ps.kill(0)
+    ps.kill(0)
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset
@@ -279,6 +283,17 @@ end
 class Server
   def self.run!
     Server.new(ARGV[0])
+    ticks = 1
+    idle = UV::Idle.new
+    idle.start { |x|
+      ticks += 1
+      if ((ticks) % 1000000) == 0
+        $stdout.write(".") {
+          false
+        }
+      end
+    }
+
     UV.run
   end
 
