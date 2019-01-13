@@ -192,9 +192,9 @@ class Connection
       # to_str => returns the message revieced
 
       if msg[:opcode] == :binary_frame
-        log!("INBOUND", msg)
+        #log!("INBOUND", msg, msg.to_s)
 
-        stdin_tty.write(msg) {
+        stdin_tty.write(msg.msg) {
           false
         }
       end
@@ -282,15 +282,29 @@ end
 
 class Server
   def self.run!
-    Server.new(ARGV[0])
+    running = true
+    Signal.trap(:INT) { |signo|
+      running = false
+    }
+
+    server = Server.new(ARGV[0])
+
     ticks = 1
     idle = UV::Idle.new
     idle.start { |x|
       ticks += 1
       if ((ticks) % 1000000) == 0
-        $stdout.write(".") {
-          false
-        }
+        if running
+          $stdout.write(".") {
+            false
+          }
+        else
+          $stdout.write("x") {
+            idle.stop
+            server.shutdown
+            UV.default_loop.stop
+          }
+        end
       end
     }
 
@@ -313,6 +327,10 @@ class Server
     @server.listen(1) { |connection_error|
       self.on_connection(connection_error)
     }
+  end
+
+  def shutdown
+    @server.close
   end
 
   def on_connection(connection_error)

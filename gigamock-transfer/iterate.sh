@@ -11,8 +11,7 @@ cd /root/emsdk
 
 cd /var/lib/wkndr
 
-
-make -f Makefile clean
+#make -f Makefile clean
 make -j
 
 #emmake make -f Makefile.emscripten

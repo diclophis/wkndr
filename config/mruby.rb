@@ -22,6 +22,7 @@ MRuby::Build.new do |conf|
   conf.gem :github => "yui-knk/mruby-set"
   conf.gem :github => "iij/mruby-tempfile"
   conf.gem :github => "iij/mruby-process"
+  conf.gem :github => "ksss/mruby-signal"
 
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 

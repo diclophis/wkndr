@@ -91,7 +91,7 @@ class Wkndr < Thor
   option "cache", :type => :boolean, :default => true
   def build
     if options["run"]
-      delete_dockerfile = ["kubectl", "delete", "deployment/#{APP}", "service/#{APP}", "service/#{APP}-node-service"]
+      delete_dockerfile = ["kubectl", "delete", "--grace-period=0", "deployment/#{APP}", "service/#{APP}", "service/#{APP}-node-service"]
       system(*delete_dockerfile)
     end
 
@@ -137,7 +137,7 @@ HEREDOC
       options = {:stdin_data => deploy_wkndr_run_node_port}
       execute_simple(:silentx, apply_node_port, options)
 
-      run_dockerfile = ["kubectl", "run", "-it", "--quiet=true", "--rm=true", APP, "--attach=true", "--expose", "--port=8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
+      run_dockerfile = ["kubectl", "run", "--quiet=true", "--rm=true", APP, "--attach=true", "--expose", "--port=8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
       exec(*run_dockerfile)
      
       ##expose_dockerfile = ["kubectl", "run", "--rm=true", APP, "--attach=true", "--expose", "--port", "8000", "--image", APP + ":" + version, "--image-pull-policy=IfNotPresent"]
