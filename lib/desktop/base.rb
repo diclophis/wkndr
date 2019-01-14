@@ -17,12 +17,26 @@ class Base < Thor
 
   desc "client", ""
   def client
-    #TODO: refactor multi loop
-    window("window", 512, 512, 60) { |window, gl|
-      log! :in_opened_window, window, gl
+    stack = StackBlocker.new
+
+    gl = gameloop
+
+    socket_stream = SocketStream.create_websocket_connection { |bytes|
+      #gl.process_as_msgpack_stream(bytes) { |result|
+
+        log!(:wss_goood, bytes)
+
+      #}
+    }
+    stack.up socket_stream
+
+    ##TODO: refactor multi loop
+    wlh = window("window", 512, 512, 60, gl) { |window|
+      #log! :in_opened_window, window, gl
 
       gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
       cube = Cube.new(1.0, 1.0, 1.0, 5.0)
+
 
       gl.play { |global_time, delta_time|
         gl.drawmode {
@@ -34,11 +48,16 @@ class Base < Thor
           gl.twod {
             gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time}") {
               log! :click
+              socket_stream.write(["getCode"])
             }
           }
         }
       }
     }
+
+    stack.up wlh
+
+    stack
   end
 
   def self.start(args)
@@ -81,21 +100,19 @@ class Base < Thor
 
             run_loop_blocker.shutdown
             timer.stop
+          else
+            all_halting = run_loop_blocker.halt!
+            #log!(:all_halting, ticks, exit_counter, all_halting)
+
+            exit_counter += 1
           end
-
-          all_halting = run_loop_blocker.halt!
-          log!(:all_halting, ticks, exit_counter, all_halting)
-
-
-          exit_counter += 1
         end
       }
 
-      show! run_loop_blocker
+      show! run_loop_blocker, run_loop_blocker.running_game
 
       UV.run
     end
-    #log!(:END)
   end
 
   desc "serve [DIRECTORY]", "services given directory over http"

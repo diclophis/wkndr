@@ -1,19 +1,6 @@
 ##
 
 class PlatformBits
-  #def socket_klass
-  #  SocketStream
-  #end
-
-  #def create_websocket_connection(&block)
-  #  ss = socket_klass.new
-
-  #  @websocket_singleton_proc = Proc.new { |bytes|
-  #    yield bytes
-  #  }
-
-  #  ss
-  #end
 
   ##def create_websocket_connection(&block)
   ##  ss = WslaySocketStream.new(self, block)

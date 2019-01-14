@@ -15,6 +15,10 @@ class Window < BaseWindow
     @game_loop = game_loop
   end
 
+  def running_game
+    @game_loop
+  end
+
   def play(global_time, delta_time)
     @game_loop.play(global_time, delta_time)
   end

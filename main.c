@@ -72,6 +72,7 @@
 #include <mruby/string.h>
 #include <b64/cencode.h>
 #include "kube.h"
+#include "connection.h"
 #include "server.h"
 #include "wkndr.h"
 #include "uv_io.h"
@@ -121,6 +122,7 @@ const struct mrb_data_type model_data_type = {"model_data", model_data_destructo
 //TODO???????
 static mrb_state *global_mrb;
 static mrb_value global_platform_bits;
+static mrb_value global_gl;
 static int counter = 0;
 static mrb_value mousexyz;
 static mrb_value pressedkeys;
@@ -132,7 +134,7 @@ EMSCRIPTEN_KEEPALIVE
 size_t debug_print(const char* buf, size_t n) {
   mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
   //TODO!!!!!!!!!!!!!!!!!!!!1
-  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
+  mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
   //???? mrb_yield_argv(mrb, block, 1, cstrlikebuf);
   return 0;
 }
@@ -951,7 +953,7 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
   //TODO: fix this hack
   global_mrb = mrb;
-  mrb_get_args(mrb, "o", &global_platform_bits);
+  mrb_get_args(mrb, "oo", &global_platform_bits, &global_gl);
 
 //TODO: FOOO lols
   //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
@@ -1172,6 +1174,7 @@ int main(int argc, char** argv) {
 
 #ifdef PLATFORM_DESKTOP
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
+  eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
   eval_static_libs(mrb, wkndr, NULL);
 

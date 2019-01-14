@@ -6,8 +6,7 @@ class Wkndr < Base
     gl
   end
 
-  def window(name, x, y, fps)
-    gl = gameloop
+  def window(name, x, y, fps, gl)
     window = Window.new("wkndr", x, y, fps, gl)
     yield window, gl
     window

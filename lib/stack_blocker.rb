@@ -14,14 +14,18 @@ class StackBlocker
   end
 
   def halt!
-    @stack.all? { |srb| srb.halt! }
+    @stack.each { |srb| srb.halt! }
   end
 
   def shutdown
-    @stack.all? { |srb| srb.shutdown }
+    @stack.each { |srb| srb.shutdown }
   end
 
   def update
-    @stack.all? { |srb| srb.update }
+    @stack.each { |srb| srb.update }
+  end
+
+  def running_game
+    @stack.detect { |srb| srb.running_game }.running_game
   end
 end
