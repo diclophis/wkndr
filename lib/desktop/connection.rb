@@ -130,7 +130,7 @@ class Connection
             #log!(self, resolved_filename, requested_path, @required_prefix, ARGV)
 
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-              self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
+              self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
                 #self.socket.close
                 self.halt!
               }

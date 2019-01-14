@@ -29,7 +29,7 @@ window.startConnection = function(wsUrl) {
     window.conn.onopen = function (event) {
       console.log(event);
 
-      window.terminal = new Terminal();
+      window.terminal = new Terminal({rows: 20, cols: 80});
       window.terminal.open(document.getElementById("terminal"));
 
       window.terminal.on('data', function(termInputData) {
@@ -68,6 +68,7 @@ window.startConnection = function(wsUrl) {
 startConnection("ws://" + window.location.host + "/ws");
 
 var Module = {
+  arguments: ['web'],
   preRun: [],
   postRun: [],
   print: (function() {

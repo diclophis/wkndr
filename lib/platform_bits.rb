@@ -9,13 +9,13 @@ class PlatformBits
   ##  ss
   ##end
 
-  def log!(*args)
-    #puts (args.inspect)
-  end
+  #def log!(*args)
+  #  #puts (args.inspect)
+  #end
 
-  def puts!(*args)
-    #puts(*args)
-  end
+  #def puts!(*args)
+  #  #puts(*args)
+  #end
 
   #def spinlock!
   #  #puts :spinlock

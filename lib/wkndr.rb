@@ -1,5 +1,8 @@
 #
 
+class Base < Thor
+end
+
 class Wkndr < Base
   def gameloop
     gl = GameLoop.new(self)
@@ -10,5 +13,9 @@ class Wkndr < Base
     window = Window.new("wkndr", x, y, fps, gl)
     yield window, gl
     window
+  end
+
+  def web
+    log!(:in_web)
   end
 end

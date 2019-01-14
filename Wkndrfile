@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
 
-class WkndrExample < Wkndr
-  def default
-  end
-end
 
-WkndrExample.start(ARGV)
+#class WkndrExample < Wkndr
+#  def default
+#  end
+#end
+
+#WkndrExample.start(ARGV)

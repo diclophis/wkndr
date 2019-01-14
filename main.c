@@ -62,8 +62,9 @@
 #include "socket_stream.h"
 #include "window.h"
 #include "thor.h"
-#include "base.h"
 #include "stack_blocker.h"
+#include "start.h"
+#include "wkndr.h"
 
 
 //server stuff
@@ -71,10 +72,10 @@
 #include <openssl/sha.h>
 #include <mruby/string.h>
 #include <b64/cencode.h>
+#include "base.h"
 #include "kube.h"
 #include "connection.h"
 #include "server.h"
-#include "wkndr.h"
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
 #endif
@@ -1168,15 +1169,15 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, thor, NULL);
 
-  eval_static_libs(mrb, base, NULL);
-
   eval_static_libs(mrb, stack_blocker, NULL);
 
+  eval_static_libs(mrb, wkndr, NULL);
+
 #ifdef PLATFORM_DESKTOP
+  eval_static_libs(mrb, base, NULL);
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
-  eval_static_libs(mrb, wkndr, NULL);
 
   //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
   //TODO!!!!!!!!!!!!!!!!!!!!1
@@ -1209,6 +1210,8 @@ int main(int argc, char** argv) {
   fclose(f);
   if_exception_error_and_exit(mrb, config);
 #endif
+
+  eval_static_libs(mrb, start, NULL);
 
   mrb_close(mrb);
 

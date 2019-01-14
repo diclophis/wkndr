@@ -4,6 +4,8 @@ def Integer(f)
   f.to_i
 end
 
+$stdout.write("WTF")
+
 ##TODO: move this somewhere
 $stdout = UV::Pipe.new
 $stdout.open(1)
