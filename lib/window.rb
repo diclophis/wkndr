@@ -4,16 +4,14 @@ class Window < BaseWindow
   def initialize(name, x, y, fps, game_loop)
     super(name, x, y, fps)
 
-    log!(:Window, game_loop)
-
+    #log!(:Window, game_loop)
     ##@world = World.new
     ##(@world.hero)
-
     #@main_menu = MainMenu.new
-
     ##@simple_boxes = SimpleBoxes.new(self)
     ##@snake = Snake.new(self)
     ##@cheese = ""
+
     @game_loop = game_loop
   end
 
@@ -30,4 +28,12 @@ class Window < BaseWindow
   #  GC.start
   #  super
   #end
+
+  def running
+    !@halting
+  end
+
+  def halt!
+    @halting = true
+  end
 end

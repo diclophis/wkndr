@@ -28,7 +28,7 @@ class Wkndr < Base
       timer = UV::Timer.new
       timer.start(tick_interval_ms, tick_interval_ms) { |x|
         ticks += 1
-        if running
+        if running && run_loop_blocker.running
           if ((ticks) % 100) == 0
             log!(:idle, ticks)
           end

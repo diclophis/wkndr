@@ -462,7 +462,7 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef PLATFORM_DESKTOP
   if (WindowShouldClose()) {
-    mrb_funcall(mrb, self, "spindown!", 0, NULL);
+    mrb_funcall(mrb, self, "halt!", 0, NULL);
     return mrb_nil_value();
   }
 #endif

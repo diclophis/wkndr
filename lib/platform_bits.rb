@@ -34,9 +34,9 @@ class PlatformBits
   #  #puts :spinlock
   #end
 
-  def spindown!
-    #puts :spindown
-  end
+  #def spindown!
+  #  #puts :spindown
+  #end
 end
 
 class PlatformSpecificBits < PlatformBits

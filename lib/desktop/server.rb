@@ -389,6 +389,10 @@ class Server
     #end
   end
 
+  def running
+    !@halting
+  end
+
   def halt!
     @all_connections.each { |cn|
       cn.halt!
