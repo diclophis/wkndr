@@ -1,6 +1,46 @@
 #
 
-class Wkndr < Base
+class Base < Thor
+  def client_and_server
+    stack = StackBlocker.new
+    stack.up client
+    stack.up server
+    stack
+  end
+
+  desc "server", ""
+  def server
+    if File.exists?("public")
+      Server.run!(File.realpath("public"))
+    end
+  end
+
+  desc "client", ""
+  def client
+    #TODO: refactor multi loop
+    window("window", 512, 512, 60) { |window, gl|
+      log! :in_opened_window, window, gl
+
+      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+      cube = Cube.new(1.0, 1.0, 1.0, 5.0)
+
+      gl.play { |global_time, delta_time|
+        gl.drawmode {
+          gl.threed {
+            gl.draw_grid(10, 10.0)
+            cube.draw(true)
+          }
+
+          gl.twod {
+            gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time}") {
+              log! :click
+            }
+          }
+        }
+      }
+    }
+  end
+
   def self.start(args)
     log!(:START, args)
 
@@ -8,8 +48,9 @@ class Wkndr < Base
     Signal.trap(:INT) { |signo|
       running = false
     }
+
     if args.empty?
-      args = ["default"]
+      args = ["client_and_server"]
     end
 
     if running && run_loop_blocker = super(args)
@@ -36,29 +77,25 @@ class Wkndr < Base
           run_loop_blocker.update
         else
           if exit_counter > 5
+            log!(:shutdown, ticks, exit_counter)
+
             run_loop_blocker.shutdown
             timer.stop
           end
 
-          run_loop_blocker.halt!
+          all_halting = run_loop_blocker.halt!
+          log!(:all_halting, ticks, exit_counter, all_halting)
 
-          log!(:shutdown, ticks, exit_counter)
 
           exit_counter += 1
         end
       }
 
       show! run_loop_blocker
+
       UV.run
     end
     #log!(:END)
-  end
-
-  desc "continous", ""
-  def continous
-    if File.exists?("public")
-      Server.run!(File.realpath("public"))
-    end
   end
 
   desc "serve [DIRECTORY]", "services given directory over http"

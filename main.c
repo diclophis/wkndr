@@ -63,6 +63,7 @@
 #include "window.h"
 #include "thor.h"
 #include "base.h"
+#include "stack_blocker.h"
 
 
 //server stuff
@@ -496,7 +497,7 @@ static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
   //TODO: move this to window class somehow
   CloseWindow(); // Close window and OpenGL context
 
-  return mrb_nil_value();
+  return mrb_true_value();
 }
 
 
@@ -747,7 +748,7 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
 
 static void model_data_destructor(mrb_state *mrb, void *p_) {
-  fprintf(stderr, "deconstruct!!!\n");
+  fprintf(stderr, "!!!!!!!!!!! deconstruct!!!\n");
 
   //TODO
   //mrb_value data_value;
@@ -1166,6 +1167,8 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, thor, NULL);
 
   eval_static_libs(mrb, base, NULL);
+
+  eval_static_libs(mrb, stack_blocker, NULL);
 
 #ifdef PLATFORM_DESKTOP
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);

@@ -40,44 +40,25 @@ class Connection
   end
 
   def disconnect!
-    #self.socket.close if self.socket
-    #self.socket.unref if self.socket
-#    if !@closing
-      if !@closed
-        @closed = true
-#
-        if @ps
-          @ps.kill(UV::Signal::SIGINT)
-          @ps.close
-          @ps = nil
-          #@ps.unref
-          @stdin_tty.close
-          #@stdin_tty.unref
-          @stdout_tty.close
-          #@stdout_tty.unref
-          @stderr_tty.close
-          #@stderr_tty.unref
-          @stderr = nil
-          @stdout = nil
-          @stderr = nil
-          #log!(:stdps_closed)
-        end
+    if @ps
+      @ps.kill(UV::Signal::SIGINT)
+      @ps.close
+      @ps = nil
 
-        #log!(:socket_closed, self.object_id) {
-        #, @closing, @closed, @halting, self.socket.has_ref?) {
-          #self.socket.unref # if self.socket # && self.socket.active? && !self.socket.closing?
-          if self.socket.has_ref?
-            self.socket.read_stop 
-            self.socket.close
-          end
-          self.socket = nil
-          @closing = true
-        #}
-        #self.socket.unref if self.socket && self.socket.has_ref?
-#        #self.socket.unref if self.socket
-      end
+      @stdin_tty.close
+      @stdout_tty.close
+      @stderr_tty.close
 
-#    end
+      @stderr = nil
+      @stdout = nil
+      @stderr = nil
+    end
+
+    if self.socket && self.socket.has_ref?
+      self.socket.read_stop 
+      self.socket.close
+      self.socket = nil
+    end
   end
 
   def halt!
@@ -379,14 +360,7 @@ class Server
       cn.disconnect!
     }
 
-    #if !@closing
-      log!(:server_closing, @closing, @closed)
-    #  if @closing && !@closed
-        @server.close
-    #    @closed = true
-    #  end
-    #  @closing = true
-    #end
+    @server.close
   end
 
   def running
@@ -394,11 +368,7 @@ class Server
   end
 
   def halt!
-    @all_connections.each { |cn|
-      cn.halt!
-    }
-
-    @halting = true
+    @halting = @all_connections.all? { |cn| cn.halt! }
   end
 
   def on_connection(connection_error)
@@ -425,37 +395,6 @@ class Server
     #NOOP: TODO????
   end
 
-  #def spinlock!
-  #  UV.run
-  #end
-
-#class PlatformSpecificBits < PlatformBits
-#  def initialize(*args)
-#    super(*args)
-#  def init_other_bits
-#    #### #TODO: make stdin abstraction???
-#    #### @stdin = UV::Pipe.new
-#    #### @stdin.open(0)
-#    #### @stdin.read_stop
-#
-#    #@stdin.read_start do |buf|
-#    #  if buf.is_a?(UVError)
-#    #    log!(buf)
-#    #  else
-#    #    if buf && buf.length
-#    #      self.feed_state!(buf)
-#    #    end
-#    #  end
-#    #end
-#    #self.init!
-#
-#    #### @stdout = UV::Pipe.new
-#    #### @stdout.open(1)
-#    #### @stdout.read_stop
-#
-#    @all_connections = []
-#  end
-
   def socket_klass
     WslaySocketStream
   end
@@ -466,30 +405,4 @@ class Server
     ss.connect!
     ss
   end
-
-  #def log!(*args)
-  #  @stdout.write(args.inspect + "\n") {
-  #    false
-  #  }
-  #end
-
-  #def spinlock!
-  #  UV.run
-  #end
-
-  #def spindown!
-  #  log! :spindown
-
-  #  @idle.unref if @idle
-  #  @stdin.unref if @stdin
-  #  @stdout.unref if @stdout
-
-  #  #tty = UV::TTY.new(0, 0)
-  #  #tty.set_mode(1)
-  #  #tty.reset_mode
-  #  
-  #  #@all_connections.each { |ss|
-  #  #  ss.disconnect!
-  #  #}
-  #end
 end
