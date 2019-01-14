@@ -30,9 +30,9 @@ class PlatformBits
     #puts(*args)
   end
 
-  def spinlock!
-    #puts :spinlock
-  end
+  #def spinlock!
+  #  #puts :spinlock
+  #end
 
   def spindown!
     #puts :spindown

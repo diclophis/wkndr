@@ -34,10 +34,54 @@ class Connection
     self.phr = Phr.new
 
     @required_prefix = required_prefix
+
+    @closing = false
+    @closed = false
   end
 
   def disconnect!
-    self.socket.unref if self.socket
+    #self.socket.close if self.socket
+    #self.socket.unref if self.socket
+#    if !@closing
+      if !@closed
+        @closed = true
+#
+        if @ps
+          @ps.kill(UV::Signal::SIGINT)
+          @ps.close
+          @ps = nil
+          #@ps.unref
+          @stdin_tty.close
+          #@stdin_tty.unref
+          @stdout_tty.close
+          #@stdout_tty.unref
+          @stderr_tty.close
+          #@stderr_tty.unref
+          @stderr = nil
+          @stdout = nil
+          @stderr = nil
+          #log!(:stdps_closed)
+        end
+
+        #log!(:socket_closed, self.object_id) {
+        #, @closing, @closed, @halting, self.socket.has_ref?) {
+          #self.socket.unref # if self.socket # && self.socket.active? && !self.socket.closing?
+          if self.socket.has_ref?
+            self.socket.read_stop 
+            self.socket.close
+          end
+          self.socket = nil
+          @closing = true
+        #}
+        #self.socket.unref if self.socket && self.socket.has_ref?
+#        #self.socket.unref if self.socket
+      end
+
+#    end
+  end
+
+  def halt!
+    @halting = true
   end
 
   def serve_static_file!(filename)
@@ -53,6 +97,10 @@ class Connection
 
       idle = UV::Idle.new
       idle.start do |x|
+        if @halting
+          idle.stop
+        end
+
         if (sent < file_size)
           left = file_size - sent
           if left > max_chunk
@@ -79,6 +127,7 @@ class Connection
           end
         else
           #self.socket.close
+          fd.close
           idle.stop
           self.processing_handshake = true
         end
@@ -116,7 +165,8 @@ class Connection
 
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
-                self.socket.close
+                #self.socket.close
+                self.halt!
               }
             else
               self.processing_handshake = -1
@@ -129,14 +179,15 @@ class Connection
       when :incomplete
         log!("incomplete")
       when :parser_error
-        log!(:parser_error, offset)
+        log!(:parser_error, @offset)
       end
     else
       if self.ws
         self.last_buf = b
         proto_ok = (self.ws.recv != :proto)
         unless proto_ok
-          self.socket.close
+          #self.socket.close
+          self.halt!
         end
       end
     end
@@ -149,7 +200,9 @@ class Connection
   end
 
   def read_bytes_safely(b)
-    if b && b.is_a?(UVError)
+    if @halting
+      #NO
+    elsif (b && b.is_a?(UVError))
       self.disconnect!
     else
       if b && b.is_a?(String)
@@ -161,9 +214,9 @@ class Connection
   def upgrade_to_websocket!
     #log!(:debug_upgrade)
 
-    stdin_tty = UV::Pipe.new(false)
-    stdout_tty = UV::Pipe.new(false)
-    stderr_tty = UV::Pipe.new(false)
+    @stdin_tty = UV::Pipe.new(false)
+    @stdout_tty = UV::Pipe.new(false)
+    @stderr_tty = UV::Pipe.new(false)
 
     self.wslay_callbacks = Wslay::Event::Callbacks.new
 
@@ -201,7 +254,7 @@ class Connection
       if msg[:opcode] == :binary_frame
         #log!("INBOUND", msg, msg.to_s)
 
-        stdin_tty.write(msg.msg) {
+        @stdin_tty.write(msg.msg) {
           false
         }
       end
@@ -210,7 +263,11 @@ class Connection
     self.wslay_callbacks.send_callback do |buf|
       # when there is data to send, you have to return the bytes send here
       # the I/O object must be in non blocking mode and raise EAGAIN/EWOULDBLOCK when sending would block
-      self.socket.try_write(buf)
+      if self.socket && !@halted
+        self.socket.try_write(buf)
+      else
+        0
+      end
     end
 
     self.ws = Wslay::Event::Context::Server.new self.wslay_callbacks
@@ -245,15 +302,15 @@ class Connection
       'env' => ['TERM=xterm-256color'],
     })
 
-    ps.stdin_pipe = stdin_tty
-    ps.stdout_pipe = stdout_tty
-    ps.stderr_pipe = stderr_tty
+    ps.stdin_pipe = @stdin_tty
+    ps.stdout_pipe = @stdout_tty
+    ps.stderr_pipe = @stderr_tty
 
     ps.spawn do |sig|
       log!("exit #{sig}")
     end
 
-    stderr_tty.read_start do |bbbb|
+    @stderr_tty.read_start do |bbbb|
       if bbbb.is_a?(UVError)
         log!(:baderr, bbbb)
       elsif bbbb && bbbb.length > 0
@@ -262,12 +319,14 @@ class Connection
       end
     end
 
-    stdout_tty.read_start do |bout|
+    @stdout_tty.read_start do |bout|
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
         self.ws.queue_msg(bout, :binary_frame)
         outg = self.ws.send
+        log!(:outg, outg)
+        outg
       end
     end
 
@@ -279,8 +338,11 @@ class Connection
     proto_ok = (self.ws.recv != :proto)
     unless proto_ok
       log!(:wss_handshake_error)
-      self.socket.close
+      #self.socket.close
+      self.halt!
     end
+
+    @ps = ps
   end
 end
 
@@ -305,10 +367,34 @@ class Server
     @server.listen(1) { |connection_error|
       self.on_connection(connection_error)
     }
+
+    @all_connections = []
+
+    @closing = false
+    @closed = false
   end
 
   def shutdown
-    @server.close
+    @all_connections.each { |cn|
+      cn.disconnect!
+    }
+
+    #if !@closing
+      log!(:server_closing, @closing, @closed)
+    #  if @closing && !@closed
+        @server.close
+    #    @closed = true
+    #  end
+    #  @closing = true
+    #end
+  end
+
+  def halt!
+    @all_connections.each { |cn|
+      cn.halt!
+    }
+
+    @halting = true
   end
 
   def on_connection(connection_error)
@@ -322,6 +408,8 @@ class Server
   def create_connection!
     http = Connection.new(@server.accept, @required_prefix)
 
+    @all_connections << http
+
     http.socket.read_start { |b|
       http.read_bytes_safely(b)
     }
@@ -329,23 +417,13 @@ class Server
     http
   end
 
-  def loop(name, x, y, fps)
-    gl = GameLoop.new(self)
-    yield gl
-
-    window = Window.new("wkndr", x, y, fps, gl)
-
-    @idle = UV::Timer.new
-    @idle.start(0, 1) {
-      window.update
-    }
-
-    self
+  def update
+    #NOOP: TODO????
   end
 
-  def spinlock!
-    UV.run
-  end
+  #def spinlock!
+  #  UV.run
+  #end
 
 #class PlatformSpecificBits < PlatformBits
 #  def initialize(*args)
@@ -391,9 +469,9 @@ class Server
   #  }
   #end
 
-  def spinlock!
-    UV::run
-  end
+  #def spinlock!
+  #  UV.run
+  #end
 
   #def spindown!
   #  log! :spindown

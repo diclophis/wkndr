@@ -2,6 +2,8 @@
 
 class Wkndr < Base
   def self.start(args)
+    log!(:START, args)
+
     running = true
     Signal.trap(:INT) { |signo|
       running = false
@@ -13,26 +15,43 @@ class Wkndr < Base
     if running && run_loop_blocker = super(args)
       log!(:rl, run_loop_blocker)
 
+      #idle_updater = UV::Timer.new
+      #idle_updater.start(0, 1) {
+      #}
+
+      exit_counter = 0
+
       #TODO: server FPS
+      fps = 30.0
+      tick_interval_ms = ((1.0/60.0)*1000.0)
       ticks = 0
       timer = UV::Timer.new
-      timer.start((1.0/60.0)*1000.0, (1.0/60)*1000.0) { |x|
+      timer.start(tick_interval_ms, tick_interval_ms) { |x|
         ticks += 1
         if running
           if ((ticks) % 100) == 0
             log!(:idle, ticks)
           end
+
+          run_loop_blocker.update
         else
-          log!(:shutdown, ticks) {
-            timer.stop
+          if exit_counter > 5
             run_loop_blocker.shutdown
-            UV.default_loop.stop
-          }
+            timer.stop
+          end
+
+          run_loop_blocker.halt!
+
+          log!(:shutdown, ticks, exit_counter)
+
+          exit_counter += 1
         end
       }
 
+      show! run_loop_blocker
       UV.run
     end
+    #log!(:END)
   end
 
   desc "continous", ""

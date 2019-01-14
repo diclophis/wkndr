@@ -487,6 +487,18 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   return mrb_nil_value();
 }
 
+static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
+  //TODO: implenent on_shutdown
+  //mrb_funcall(mrb, self, "play", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+
+  fprintf(stderr, "CloseWindow\n");
+
+  //TODO: move this to window class somehow
+  CloseWindow(); // Close window and OpenGL context
+
+  return mrb_nil_value();
+}
+
 
 void platform_bits_update_void(void) {
   platform_bits_update(global_mrb, global_platform_bits);
@@ -950,13 +962,19 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   //start_connection();
   emscripten_set_main_loop(platform_bits_update_void, 0, 1);
 #else
-  mrb_funcall(mrb, global_platform_bits, "spinlock!", 0, NULL);
+  //mrb_funcall(mrb, global_platform_bits, "spinlock!", 0, NULL);
+
+  //mrbc_context *server_file = mrbc_context_new(mrb);
+  //mrbc_filename(mrb, server_file, "main.c");
+
+  //struct mrb_parser_state *ret3;
+  //ret3 = mrb_parse_string(mrb, "UV.run", server_file);
+  //mrb_value foo;
+  //foo = mrb_load_exec(mrb, ret3, server_file);
+  //mrbc_context_free(mrb, server_file);
+  //if_exception_error_and_exit(mrb, "main.c");
+
 #endif
-
-  fprintf(stderr, "CloseWindow\n");
-
-  //TODO: move this to window class somehow
-  CloseWindow(); // Close window and OpenGL context
 
   return self;
 }
@@ -1094,6 +1112,7 @@ int main(int argc, char** argv) {
   struct RClass *platform_bits_class = mrb_define_class(mrb, "BaseWindow", mrb->object_class);
   mrb_define_method(mrb, platform_bits_class, "initialize", platform_bits_initialize, MRB_ARGS_REQ(4));
   mrb_define_method(mrb, platform_bits_class, "update", platform_bits_update, MRB_ARGS_NONE());
+  mrb_define_method(mrb, platform_bits_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);

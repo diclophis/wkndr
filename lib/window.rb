@@ -21,6 +21,10 @@ class Window < BaseWindow
     @game_loop.play(global_time, delta_time)
   end
 
+  #def spinlock!
+  #  #NOOP: TODO????
+  #end
+
   #def spindown!
   #  log! :foop
   #  GC.start

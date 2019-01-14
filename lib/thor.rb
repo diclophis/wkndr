@@ -2506,7 +2506,6 @@ class Thor
       #   script.invoke(:command, first_arg, second_arg, third_arg)
       #
       def start(given_args = ARGV, config = {})
-      log! :cheese, given_args, config
         config[:shell] ||= Thor::Base.shell.new
         dispatch(nil, given_args.dup, nil, config)
       rescue Thor::Error => e
