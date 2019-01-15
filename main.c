@@ -121,7 +121,7 @@ const struct mrb_data_type model_data_type = {"model_data", model_data_destructo
 
 
 //TODO???????
-static mrb_state *global_mrb;
+//static mrb_state *global_mrb;
 //static mrb_value global_platform_bits;
 //static mrb_value global_gl;
 static int counter = 0;
@@ -132,21 +132,25 @@ static mrb_value pressedkeys;
 #ifdef PLATFORM_WEB
 
 EMSCRIPTEN_KEEPALIVE
-size_t debug_print(const char* buf, size_t n) {
-  fprintf(stdout,"debug_print\n");
+//size_t debug_print(int mrbP, int cbP, const char* buf, size_t n) {
+size_t debug_print(mrb_state* mrb, mrb_value self, const char* buf, size_t n) {
 
-  mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
-  //TODO!!!!!!!!!!!!!!!!!!!!1
-  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
-  //???? mrb_yield_argv(mrb, block, 1, cstrlikebuf);
+  //mrb_value sllf = *(mrb_value*)self; //*((mrb_value)self);
+
+  fprintf(stdout, "debug_print %p %p\n", mrb, &self); //, &sllf);
+
+  //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
+  //mrb_funcall(mrb, self, "process", 1, cstrlikebuf);
+  mrb_funcall(mrb, self, "process", 0);
+
   return 0;
 }
 
 EMSCRIPTEN_KEEPALIVE
 size_t pack_outbound_tty(const char* buf, size_t n) {
-  fprintf(stdout,"debug_print\n");
+  fprintf(stdout,"pack_tty\n");
 
-  mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
+  //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
   //TODO!!!!!!!!!!!!!!!!!!!!1
   //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
   //???? mrb_yield_argv(mrb, block, 1, cstrlikebuf);
@@ -164,6 +168,20 @@ void Alert(const char *msg) {
 }
 
 #endif
+
+mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
+  fprintf(stdout, "socket_stream_connet %p %p\n", mrb, &self);
+  
+  mrb_funcall(mrb, &self, "process", 0);
+
+#ifdef PLATFORM_WEB
+  EM_ASM_({
+    window.startConnection($0, $1);
+  }, mrb, &self);
+#endif
+
+  return self;
+}
 
 
 static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
@@ -987,19 +1005,6 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 }
 
 
-mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
-  fprintf(stdout, "socket_stream_connet\n");
-
-#ifdef PLATFORM_WEB
-  EM_ASM(
-    window.startConnection();
-  );
-#endif
-
-  return self;
-}
-
-
 #ifdef PLATFORM_DESKTOP
 // The Sec-WebSocket-Accept part is interesting.
 // The server must derive it from the Sec-WebSocket-Key that the client sent.
@@ -1109,7 +1114,7 @@ int main(int argc, char** argv) {
   }
 
   //TODO: fix this hack
-  global_mrb = mrb;
+  //global_mrb = mrb;
 
   mrb_value args = mrb_ary_new(mrb);
   int i;

@@ -4,11 +4,11 @@ class SocketStream
   def initialize(got_bytes_block)
     #log!(:InitSocketStream, got_bytes_block)
 
-    @got_bytes_block = Proc.new { |bytes|
-      process_as_msgpack_stream(bytes) { |typed_msg|
-        got_bytes_block.call(typed_msg)
-      }
-    }
+    #TODO: rename this
+    @got_bytes_block = got_bytes_block
+
+    #Proc.new { |bytes|
+    #}
 
     @outbound_messages = []
   end
@@ -17,15 +17,23 @@ class SocketStream
     SocketStream
   end
 
-
-  #def socket_klass
-  #  WslaySocketStream
-  #end
-
   def self.create_websocket_connection(&block)
     ss = socket_klass.new(block)
     ss.connect!
     ss
+  end
+
+  def process(bytes = nil)
+    #begin
+      log!(:process, bytes)
+
+    #  process_as_msgpack_stream(bytes) { |typed_msg|
+    #    @got_bytes_block.call(typed_msg)
+    #  }
+    #rescue => e
+    #end
+  rescue => e
+    log!(:err, e)
   end
 
   def write(msg_typed)
@@ -53,7 +61,6 @@ class SocketStream
     #NOOP: ??
   end
 
-  #TODO: include module maybe?????
   def process_as_msgpack_stream(bytes)
     all_bits_to_consider = (@left_over_bits || "") + bytes
     all_l = all_bits_to_consider.length

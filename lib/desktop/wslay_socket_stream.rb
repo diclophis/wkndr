@@ -55,7 +55,7 @@ class WslaySocketStream < SocketStream
         #NOTE!!!!!!! get back to this refactor
         #self.feed_state!(msg[:msg])
         #log!(:inb_client_from_outb, self, @got_bytes_block)
-        @got_bytes_block.call(msg[:msg])
+        process(msg[:msg])
       else
         log!(msg[:opcode])
       end

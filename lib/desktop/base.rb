@@ -15,35 +15,6 @@ class Base < Thor
     end
   end
 
-=begin
-    ##TODO: refactor multi loop
-    wlh = window("window", 512, 512, 60, gl) { |window|
-      #log! :in_opened_window, window, gl
-
-      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-      cube = Cube.new(1.0, 1.0, 1.0, 5.0)
-
-
-      gl.play { |global_time, delta_time|
-        gl.drawmode {
-          gl.threed {
-            gl.draw_grid(10, 10.0)
-            cube.draw(true)
-          }
-
-          gl.twod {
-            gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time}") {
-              log! :click
-              socket_stream.write(["getCode"])
-            }
-          }
-        }
-      }
-    }
-    stack.up wlh
-    stack
-=end
-
   def self.show!(run_loop_blocker, game_loop)
     running = true
     #TODO: server FPS
