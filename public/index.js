@@ -16,24 +16,21 @@ function str2ab(str) {
 }
 
 
-window.startConnection = function(wsUrl) {
-  if (window["WebSocket"]) {
-    //TODO: this goes in the client/shell.js later
-    //var debug_print = Module.cwrap(
-    //  'debug_print', 'number', ['number', 'number']
-    //);
+window.startConnection = function() {
+  var wsUrl = ("ws://" + window.location.host + "/ws");
 
+  if (window["WebSocket"]) {
     window.conn = new WebSocket(wsUrl);
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      console.log(event);
-
       window.terminal = new Terminal({rows: 20, cols: 80});
       window.terminal.open(document.getElementById("terminal"));
 
       window.terminal.on('data', function(termInputData) {
-        window.conn.send(str2ab(termInputData));
+        var outboudArrayBuffer = str2ab(termInputData);
+        var heapBuffer = Module._malloc(outboundArrayBuffer.length * outboudArrayBuffer.BYTES_PER_ELEMENT);
+        pack_outbound_tty(outboundArrayBuffer, heapBuffer);
       });
 
       window.onbeforeunload = function() {
@@ -47,29 +44,41 @@ window.startConnection = function(wsUrl) {
     };
 
     window.conn.onmessage = function (event) {
-      //console.log(event.data);
-      var stringBits = ab2str(event.data); //String.fromCharCode.apply(null, new Uint8Array(event.data));
-      window.terminal.write(stringBits);
+      console.log(event.data);
+      //var stringBits = ab2str(event.data); //String.fromCharCode.apply(null, new Uint8Array(event.data));
 
-      /*
       origData = event.data;
       typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(typedData.length * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
       debug_print(heapBuffer, typedData.length);
       Module._free(heapBuffer);
-      */
     };
+
+    window.unpack_inbound_tty = function(stringBits) {
+      //window.terminal.write(stringBits);
+    }
   } else {
     console.log("Your browser does not support WebSockets.");
   }
 };
 
-startConnection("ws://" + window.location.host + "/ws");
+//startConnection();
 
 var Module = {
   arguments: ['client'],
-  preRun: [],
+  preRun: [(function() {
+    //TODO: this goes in the client/shell.js later
+    window.debug_print = Module.cwrap(
+      'debug_print', 'number', ['number', 'number']
+    );
+
+    window.pack_outbound_tty = Module.cwrap(
+      'pack_outbound_tty', 'number', ['number', 'number']
+    );
+
+    console.log(window.debug_print, window.pack_outbound_tty);
+  })],
   postRun: [],
   print: (function() {
     return function(text) {

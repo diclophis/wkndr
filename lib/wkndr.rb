@@ -41,9 +41,11 @@ class Wkndr < Base
     end
 
     if run_loop_blocker = super(args)
-      log!(:rl, self, run_loop_blocker)
+      log!(:rl, self, run_loop_blocker, run_loop_blocker.running_game)
 
-      self.show! run_loop_blocker, run_loop_blocker.running_game
+      #if args[0] == "server"
+        self.show! run_loop_blocker, run_loop_blocker.running_game
+      #end
     end
   end
 end

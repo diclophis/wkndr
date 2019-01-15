@@ -122,8 +122,8 @@ const struct mrb_data_type model_data_type = {"model_data", model_data_destructo
 
 //TODO???????
 static mrb_state *global_mrb;
-static mrb_value global_platform_bits;
-static mrb_value global_gl;
+//static mrb_value global_platform_bits;
+//static mrb_value global_gl;
 static int counter = 0;
 static mrb_value mousexyz;
 static mrb_value pressedkeys;
@@ -133,9 +133,22 @@ static mrb_value pressedkeys;
 
 EMSCRIPTEN_KEEPALIVE
 size_t debug_print(const char* buf, size_t n) {
+  fprintf(stdout,"debug_print\n");
+
   mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
   //TODO!!!!!!!!!!!!!!!!!!!!1
-  mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
+  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
+  //???? mrb_yield_argv(mrb, block, 1, cstrlikebuf);
+  return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t pack_outbound_tty(const char* buf, size_t n) {
+  fprintf(stdout,"debug_print\n");
+
+  mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
+  //TODO!!!!!!!!!!!!!!!!!!!!1
+  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
   //???? mrb_yield_argv(mrb, block, 1, cstrlikebuf);
   return 0;
 }
@@ -505,15 +518,8 @@ static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
 
 
 void platform_bits_update_void(void) {
-  platform_bits_update(global_mrb, global_platform_bits);
+  //platform_bits_update(global_mrb, global_platform_bits);
 }
-
-
-#ifdef PLATFORM_WEB
-EM_JS(int, start_connection, (), {
-  return startConnection("ws://10.9.47.7:8081/ws");
-});
-#endif
 
 
 static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
@@ -952,9 +958,7 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
-  //TODO: fix this hack
-  global_mrb = mrb;
-  mrb_get_args(mrb, "oo", &global_platform_bits, &global_gl);
+  //mrb_get_args(mrb, "oo", &global_platform_bits, &global_gl);
 
 //TODO: FOOO lols
   //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
@@ -977,7 +981,19 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   //foo = mrb_load_exec(mrb, ret3, server_file);
   //mrbc_context_free(mrb, server_file);
   //if_exception_error_and_exit(mrb, "main.c");
+#endif
 
+  return self;
+}
+
+
+mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
+  fprintf(stdout, "socket_stream_connet\n");
+
+#ifdef PLATFORM_WEB
+  EM_ASM(
+    window.startConnection();
+  );
 #endif
 
   return self;
@@ -1092,6 +1108,9 @@ int main(int argc, char** argv) {
     return -1;
   }
 
+  //TODO: fix this hack
+  global_mrb = mrb;
+
   mrb_value args = mrb_ary_new(mrb);
   int i;
 
@@ -1156,6 +1175,9 @@ int main(int argc, char** argv) {
   struct RClass *thor_class = mrb_define_class(mrb, "Thor", mrb->object_class);
   mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(2));
 
+  struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
+  mrb_define_method(mrb, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
+
   eval_static_libs(mrb, globals, NULL);
 
   eval_static_libs(mrb, socket_stream, NULL);
@@ -1169,7 +1191,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, box, NULL);
 
   eval_static_libs(mrb, window, NULL);
-
 
 
   eval_static_libs(mrb, stack_blocker, NULL);

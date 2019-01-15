@@ -4,12 +4,12 @@ class Base < Thor
   def client_and_server
     stack = StackBlocker.new
     stack.up client
-    stack.up server
+    stack.up continous
     stack
   end
 
-  desc "server", ""
-  def server
+  desc "continous", ""
+  def continous
     if File.exists?("public")
       Server.run!(File.realpath("public"))
     end
@@ -88,8 +88,8 @@ class Base < Thor
     end
   end
 
-  desc "serve [DIRECTORY]", "services given directory over http"
-  def serve(directory)
+  desc "server [DIRECTORY]", "services given directory over http"
+  def server(directory)
     Server.run!(directory)
   end
 

@@ -51,21 +51,23 @@ RUN cd /var/lib/wkndr && ls -l && \
 
 COPY raylib-src /var/lib/wkndr/raylib-src
 
-COPY Makefile gigamock-transfer/iterate-server.sh /var/lib/wkndr/
+RUN mkdir -p /var/tmp/chroot/bin
+RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
+RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
+
+COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
+RUN /var/lib/wkndr/iterate-web.sh cheese
+RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
+
 COPY main.c /var/lib/wkndr/
 COPY lib /var/lib/wkndr/lib
 RUN /var/lib/wkndr/iterate-server.sh
 
-COPY Wkndrfile gigamock-transfer/iterate-web.sh /var/lib/wkndr/
-RUN /var/lib/wkndr/iterate-web.sh cheese
-RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
 RUN /var/lib/wkndr/iterate-web.sh
 
-RUN mkdir -p /var/tmp/chroot/bin
-RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
-RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
+COPY Wkndrfile /var/lib/wkndr/
 
 COPY public/index.html /var/lib/wkndr/public/index.html
 COPY public/index.js /var/lib/wkndr/public/index.js
@@ -78,6 +80,6 @@ RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
 WORKDIR /var/lib/wkndr
 
-CMD ["/var/lib/wkndr/release/wkndr.mruby", "serve", "/var/lib/wkndr/public"]
+CMD ["/var/lib/wkndr/release/wkndr.mruby", "server", "/var/lib/wkndr/public"]
 #CMD ["bash"]
 #CMD ["sleep", "infinity"]

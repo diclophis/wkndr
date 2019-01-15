@@ -58,7 +58,7 @@ ifeq ($(TARGET),desktop)
   #TODO: remove GL_SILENCE_DEPRECATION
   #OSX  CFLAGS=-DPLATFORM_DESKTOP -DGL_SILENCE_DEPRECATION -Os -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
 else
-  EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s STACK_OVERFLOW_CHECK=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s SAFE_HEAP_LOG=0 -s WASM=1 -s EMTERPRETIFY=0
+  EMSCRIPTEN_FLAGS=-s EMTERPRETIFY_ADVISE=1 -s NO_EXIT_RUNTIME=0 -s STACK_OVERFLOW_CHECK=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s SAFE_HEAP_LOG=0 -s WASM=1 -s EMTERPRETIFY=0
   #EMSCRIPTEN_FLAGS=""
   #CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
   CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -Imruby/include -Iraylib-src -I$(build)
@@ -72,7 +72,7 @@ $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=167772160 #--shell-file shell.html --preload-file resources
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=167772160 #--shell-file shell.html --preload-file resources
 endif
 
 $(build)/test.yml: $(target) config.ru
