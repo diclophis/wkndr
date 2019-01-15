@@ -68,7 +68,7 @@ window.startConnection = function(wsUrl) {
 startConnection("ws://" + window.location.host + "/ws");
 
 var Module = {
-  arguments: ['web'],
+  arguments: ['client'],
   preRun: [],
   postRun: [],
   print: (function() {

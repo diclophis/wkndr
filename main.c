@@ -1101,7 +1101,6 @@ int main(int argc, char** argv) {
   }
 
   mrb_define_global_const(mrb, "ARGV", args);
-  mrb_define_method(mrb, mrb->kernel_module, "show!", global_show, MRB_ARGS_REQ(1));
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
@@ -1152,6 +1151,10 @@ int main(int argc, char** argv) {
   struct RClass *sphere_class = mrb_define_class(mrb, "Sphere", model_class);
   mrb_define_method(mrb, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
+  eval_static_libs(mrb, thor, NULL);
+
+  struct RClass *thor_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+  mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(2));
 
   eval_static_libs(mrb, globals, NULL);
 
@@ -1167,7 +1170,7 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, window, NULL);
 
-  eval_static_libs(mrb, thor, NULL);
+
 
   eval_static_libs(mrb, stack_blocker, NULL);
 

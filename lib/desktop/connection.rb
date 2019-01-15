@@ -24,7 +24,9 @@ class Connection
     @closed = false
   end
 
-  def disconnect!
+  def shutdown
+    log!(:connection_shutdown)
+
     if @ps
       @ps.kill(UV::Signal::SIGINT)
       @ps.close
@@ -47,6 +49,7 @@ class Connection
   end
 
   def halt!
+    log!(:halt_connection)
     @halting = true
   end
 
@@ -181,7 +184,7 @@ class Connection
     if @halting
       #NO
     elsif (b && b.is_a?(UVError))
-      self.disconnect!
+      self.shutdown
     else
       if b && b.is_a?(String)
         self.handle_bytes!(b)

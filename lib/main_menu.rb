@@ -4,8 +4,6 @@ class MainMenu < GameLoop
   def initialize(*args)
     super(*args)
 
-    @hero = args[0]
-
     lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
   end
 

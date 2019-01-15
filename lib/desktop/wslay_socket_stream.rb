@@ -2,11 +2,24 @@
 
 class WslaySocketStream < SocketStream
   def shutdown
-    if @socket && @socket.has_ref?
-      @socket.read_stop 
+    log!(:wslay_shutdown, @socket)
+    if @socket
+      #&& @socket.has_ref?
+      #@socket.read_stop 
       @socket.close
       @socket = nil
     end
+
+    if @t
+      @t.stop
+      @t.close
+      @t = nil
+    end
+  end
+
+  def halt!
+    log!(:wslay_halt)
+    @halting = super
   end
 
   def connect!
@@ -41,7 +54,7 @@ class WslaySocketStream < SocketStream
       if msg[:opcode] == :binary_frame
         #NOTE!!!!!!! get back to this refactor
         #self.feed_state!(msg[:msg])
-        log!(:inb_client_from_outb, self, @got_bytes_block)
+        #log!(:inb_client_from_outb, self, @got_bytes_block)
         @got_bytes_block.call(msg[:msg])
       else
         log!(msg[:opcode])
@@ -58,7 +71,6 @@ class WslaySocketStream < SocketStream
           0
         end
       rescue UVError => e
-      #  self.disconnect!
         log!(e)
         0
       end
@@ -75,7 +87,9 @@ class WslaySocketStream < SocketStream
     on_read_start = Proc.new { |b|
       if b && b.is_a?(UVError)
         log!(:retry, b, @halting)
-        if !@halting
+        if @halting
+          shutdown
+        else
           restart_connection!
         end
       else
@@ -88,18 +102,24 @@ class WslaySocketStream < SocketStream
     on_connect = Proc.new { |connection_broken_status|
       if @halting
         log!(:halting, connection_broken_status)
-        @t.stop
       elsif connection_broken_status
         log!(:broken, connection_broken_status)
+        restart_connection!
       else
-        @t.stop
-        write_ws_request!
-        reset_handshake!
-        @socket.read_start(&on_read_start)
+        log!(:connected!, connection_broken_status)
+        write_ws_request! {
+          reset_handshake!
+          @socket.read_start(&on_read_start)
+        }
       end
     }
 
     @try_connect = Proc.new {
+      #if @socket
+      #  @socket.close
+      #  @socket = nil
+      #end
+
       @socket = UV::TCP.new
       @socket.connect(@address, &on_connect)
     }
@@ -108,13 +128,11 @@ class WslaySocketStream < SocketStream
   end
 
   def restart_connection!
+    log!(:restart_con!)
+
     @t = UV::Timer.new
-    @t.start(1000, 1000) {
-      if @halting
-        @t.stop
-      else
-        @try_connect.call
-      end
+    @t.start(1000, 0) {
+      @try_connect.call
     }
   end
 
@@ -136,20 +154,20 @@ class WslaySocketStream < SocketStream
         proto_ok = (@client.recv != :proto)
         unless proto_ok
           @gl.log!(:wslay_handshake_proto_error)
-          @socket.close
+          shutdown
         end
       when :incomplete
         log!("incomplete")
       when :parser_error
         log!(:parser_error, offset)
-        spindown!
+        shutdown
       end
     else
       @last_buf += b
       proto_ok = (@client.recv != :proto)
       unless proto_ok
         log!(:wslay_handshake_proto_error)
-        @socket.close
+        shutdown
       end
     end
   end
@@ -163,7 +181,9 @@ class WslaySocketStream < SocketStream
     path = "/ws"
     key = B64.encode(Sysrandom.buf(16)).chomp!
     log!(@address)
-    @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@address.sin_addr}:#{@address.sin_port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n")
+    @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@address.sin_addr}:#{@address.sin_port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
+      yield
+    }
   end
 
   def running_game
@@ -193,10 +213,6 @@ class WslaySocketStream < SocketStream
     rescue Wslay::Err => e
       log!(e)
     end
-  end
-
-  def halt!
-    @halting = true
   end
 end
 

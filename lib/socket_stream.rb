@@ -10,7 +10,6 @@ class SocketStream
       }
     }
 
-    @connected = true
     @outbound_messages = []
   end
 
@@ -43,6 +42,7 @@ class SocketStream
   end
 
   def halt!
+    log!(:halt_socket_stream)
     @halting = true
   end
 

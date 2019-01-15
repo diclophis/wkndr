@@ -38,6 +38,7 @@ class Window < BaseWindow
   end
 
   def halt!
+    log!(:halt_window)
     @halting = true
   end
 end

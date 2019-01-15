@@ -15,21 +15,7 @@ class Base < Thor
     end
   end
 
-  desc "client", ""
-  def client
-    stack = StackBlocker.new
-
-    gl = gameloop
-
-    socket_stream = SocketStream.create_websocket_connection { |bytes|
-      #gl.process_as_msgpack_stream(bytes) { |result|
-
-        log!(:wss_goood, bytes)
-
-      #}
-    }
-    stack.up socket_stream
-
+=begin
     ##TODO: refactor multi loop
     wlh = window("window", 512, 512, 60, gl) { |window|
       #log! :in_opened_window, window, gl
@@ -54,63 +40,50 @@ class Base < Thor
         }
       }
     }
-
     stack.up wlh
-
     stack
-  end
+=end
 
-  def self.start(args)
-    log!(:START, args)
-
+  def self.show!(run_loop_blocker, game_loop)
     running = true
+    #TODO: server FPS
+    fps = 30.0
+    exit_counter = 0
+    tick_interval_ms = ((1.0/60.0)*1000.0)
+    ticks = 0
+
     Signal.trap(:INT) { |signo|
       running = false
     }
 
-    if args.empty?
-      args = ["client_and_server"]
-    end
-
-    if running && run_loop_blocker = super(args)
-      log!(:rl, run_loop_blocker)
-
-      #idle_updater = UV::Timer.new
-      #idle_updater.start(0, 1) {
-      #}
-
-      exit_counter = 0
-
-      #TODO: server FPS
-      fps = 30.0
-      tick_interval_ms = ((1.0/60.0)*1000.0)
-      ticks = 0
+    if running
       timer = UV::Timer.new
       timer.start(tick_interval_ms, tick_interval_ms) { |x|
-        ticks += 1
         if running && run_loop_blocker.running
           if ((ticks) % 100) == 0
             log!(:idle, ticks)
           end
-
           run_loop_blocker.update
         else
-          if exit_counter > 5
+          if exit_counter > 0
             log!(:shutdown, ticks, exit_counter)
-
-            run_loop_blocker.shutdown
             timer.stop
+            run_loop_blocker.shutdown
+            #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
+            #UV.default_loop.close
+            UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
           else
             all_halting = run_loop_blocker.halt!
             #log!(:all_halting, ticks, exit_counter, all_halting)
-
             exit_counter += 1
           end
         end
+
+        ticks += 1
       }
 
-      show! run_loop_blocker, run_loop_blocker.running_game
-
+      super(run_loop_blocker, game_loop)
+    
       UV.run
     end
   end
