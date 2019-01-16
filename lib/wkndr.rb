@@ -10,9 +10,9 @@ class Wkndr < Base
   end
 
   def window(name, x, y, fps, gl)
-    window = Window.new("wkndr", x, y, fps, gl)
-    yield window, gl
-    window
+    wndw = Window.new("wkndr", x, y, fps, gl)
+    yield wndw, gl
+    wndw
   end
 
   #def web
@@ -29,6 +29,36 @@ class Wkndr < Base
       log!(:wss_goood, bytes)
     }
     stack.up socket_stream
+
+    log! :gonna_opened_window, self, gl
+
+    wlh = window("window", 512, 512, 60, gl) { |wndw|
+      log! :did_window, self, gl
+
+      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+      cube = Cube.new(1.0, 1.0, 1.0, 5.0)
+      gl.play { |global_time, delta_time|
+        log! :play, self
+
+        gl.drawmode {
+          gl.threed {
+            gl.draw_grid(10, 10.0)
+            cube.draw(true)
+          }
+          gl.twod {
+            gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time}") {
+              log! :click
+              socket_stream.write(["getCode"])
+            }
+          }
+        }
+      }
+
+      #log! :casdasdasdasd, self
+      #self.class.show!(stack, stack.running_game)
+    }
+    stack.up wlh
+    log! :did_stackup, self, gl
 
     stack
   end

@@ -28,7 +28,7 @@ class StackBlocker
 
   def running_game
     if first_game = @stack.detect { |srb| srb.running_game }
-      game.running_game
+      first_game.running_game
     end
   end
 end

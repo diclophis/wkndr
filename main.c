@@ -308,7 +308,7 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
-static mrb_value platform_bits_initialize(mrb_state* mrb, mrb_value self)
+static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 {
 
   // Initialization
@@ -319,15 +319,17 @@ static mrb_value platform_bits_initialize(mrb_state* mrb, mrb_value self)
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
 
+  fprintf(stdout, "WTF@ASDZAXZCZXCZXCZXCZX\n");
+
   InitWindow(screenWidth, screenHeight, c_game_name);
 
   //SetExitKey(0);
 
-#ifdef PLATFORM_DESKTOP
+//#ifdef PLATFORM_DESKTOP
   //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
   //SetWindowMonitor(0);
   SetTargetFPS(screenFps);
-#endif
+//#endif
 
   return self;
 }
@@ -959,10 +961,8 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   //TODO: FOOO lols
   //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
 
-  mousexyz = mrb_ary_new(mrb);
-  pressedkeys = mrb_ary_new(mrb);
-
 #ifdef PLATFORM_WEB
+  fprintf(stdout, "WSDASDASDASDASDASDAS\n");
   emscripten_set_main_loop(platform_bits_update_void, 0, 1);
 #else
 #endif
@@ -1079,6 +1079,9 @@ int main(int argc, char** argv) {
     return -1;
   }
 
+  mousexyz = mrb_ary_new(mrb);
+  pressedkeys = mrb_ary_new(mrb);
+
   mrb_value args = mrb_ary_new(mrb);
   int i;
 
@@ -1099,8 +1102,8 @@ int main(int argc, char** argv) {
 #endif
 
   // class PlatformBits
-  struct RClass *platform_bits_class = mrb_define_class(mrb, "BaseWindow", mrb->object_class);
-  mrb_define_method(mrb, platform_bits_class, "initialize", platform_bits_initialize, MRB_ARGS_REQ(4));
+  struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
+  mrb_define_method(mrb, platform_bits_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
   mrb_define_method(mrb, platform_bits_class, "update", platform_bits_update, MRB_ARGS_NONE());
   mrb_define_method(mrb, platform_bits_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
 
@@ -1138,6 +1141,8 @@ int main(int argc, char** argv) {
   struct RClass *sphere_class = mrb_define_class(mrb, "Sphere", model_class);
   mrb_define_method(mrb, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
+  eval_static_libs(mrb, window, NULL);
+
   eval_static_libs(mrb, thor, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Thor", mrb->object_class);
@@ -1158,7 +1163,6 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, box, NULL);
 
-  eval_static_libs(mrb, window, NULL);
 
 
   eval_static_libs(mrb, stack_blocker, NULL);

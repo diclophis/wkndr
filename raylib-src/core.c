@@ -2331,7 +2331,7 @@ static bool InitGraphicsDevice(int width, int height)
     
     // Try to disable GPU V-Sync by default, set framerate using SetTargetFPS()
     // NOTE: V-Sync can be enabled by graphic driver configuration
-    glfwSwapInterval(0);                
+    //TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! glfwSwapInterval(0);                
 
 #if defined(PLATFORM_DESKTOP)
     // Load OpenGL 3.3 extensions

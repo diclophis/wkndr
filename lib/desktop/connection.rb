@@ -64,20 +64,25 @@ class Connection
     content_type = case file_type_guess
       when "wasm"
         "Content-Type: application/wasm\r\n"
+      when "js"
+        "Content-Type: text/javascript\r\n"
+      when "css"
+        "Content-Type: text/css\r\n"
+      when "html"
+        "Content-Type: text/html\r\n"
       else
         ""
-        #when "js"
         #when "css"
         #when "html"
       end
 
-    header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
+    header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
     self.socket.write(header) {
-      max_chunk = (self.socket.recv_buffer_size / 4).to_i
+      max_chunk = (self.socket.recv_buffer_size / 2).to_i
       sending = false
 
-      idle = UV::Idle.new
-      idle.start do |x|
+      idle = UV::Timer.new #deadlocks??? UV::Idle.new
+      idle.start(0, 33) do |x|
         if @halting
           idle.stop
         end

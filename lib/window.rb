@@ -1,8 +1,14 @@
 ##
+$count = 0
 
-class Window < BaseWindow
+class Window
   def initialize(name, x, y, fps, game_loop)
-    super(name, x, y, fps)
+    should_raise = $count == 1
+    log!(:chees77777, self, $count)
+    $count += 1
+    open(name, x, y, fps)
+
+    raise "wtd" if should_raise
 
     #log!(:Window, game_loop)
     ##@world = World.new
@@ -22,16 +28,6 @@ class Window < BaseWindow
   def play(global_time, delta_time)
     @game_loop.play(global_time, delta_time)
   end
-
-  #def spinlock!
-  #  #NOOP: TODO????
-  #end
-
-  #def spindown!
-  #  log! :foop
-  #  GC.start
-  #  super
-  #end
 
   def running
     !@halting

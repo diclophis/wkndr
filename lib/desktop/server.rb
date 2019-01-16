@@ -35,7 +35,7 @@ class Server
 
     @server = UV::TCP.new
     @server.bind(@address)
-    @server.listen(1) { |connection_error|
+    @server.listen(32) { |connection_error|
       self.on_connection(connection_error)
     }
 
