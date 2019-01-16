@@ -134,11 +134,10 @@ static mrb_value pressedkeys;
 
 EMSCRIPTEN_KEEPALIVE
 //size_t debug_print(int mrbP, int cbP, const char* buf, size_t n) {
-size_t debug_print(mrb_state* mrb, mrb_value self, const char* buf, size_t n) {
-
+size_t debug_print(mrb_state* mrb, mrb_value *self, const char* buf, size_t n) {
   //mrb_value sllf = *self; //*((mrb_value)self);
 
-  fprintf(stdout, "debug_print %p %p %p %p\n", mrb, &self, global_mrb, &global_platform_bits);
+  fprintf(stdout, "debug_print %p %p %p %p\n", mrb, self, global_mrb, &global_platform_bits);
 
   //fprintf(stdout, "wtf %d wtf\n", (&self == &platform_bits));
   //fprintf(stdout, "wtf %d wtf\n", (&sllf == &platform_bits));
@@ -147,7 +146,7 @@ size_t debug_print(mrb_state* mrb, mrb_value self, const char* buf, size_t n) {
   //mrb_funcall(mrb, self, "process", 1, cstrlikebuf);
   //mrb_funcall(global_mrb, global_platform_bits, "process", 0);
   //mrb_funcall(mrb, sllf, "process", 0);
-  mrb_funcall(mrb, self, "process", 0);
+  mrb_funcall(mrb, *self, "process", 0);
 
   return 0;
 }
@@ -180,12 +179,14 @@ mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
   global_mrb = mrb;
   global_platform_bits = self;
 
-  fprintf(stdout, "socket_stream_connet %p %p %p %p\n", mrb, &self, mrb, &global_platform_bits);
+  mrb_value *cheese = &self;
+
+  fprintf(stdout, "socket_stream_connet %p %p %p %p -- --\n", mrb, &self, mrb, &global_platform_bits);
   
 #ifdef PLATFORM_WEB
   EM_ASM_({
     window.startConnection($0, $1);
-  }, mrb, &self);
+  }, mrb, cheese);
 #endif
 
   return self;
