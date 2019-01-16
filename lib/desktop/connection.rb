@@ -59,7 +59,19 @@ class Connection
     file_size =  fd.stat.size
     sent = 0
 
-    header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n\r\n"
+    file_type_guess = filename.split(".").last
+
+    content_type = case file_type_guess
+      when "wasm"
+        "Content-Type: application/wasm\r\n"
+      else
+        ""
+        #when "js"
+        #when "css"
+        #when "html"
+      end
+
+    header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
     self.socket.write(header) {
       max_chunk = (self.socket.recv_buffer_size / 4).to_i
       sending = false
@@ -267,7 +279,7 @@ class Connection
     self.write_ws_response!(sec_websocket_key)
 
     t = UV::Timer.new
-    t.start(1000, 1000) {
+    t.start(1000, 3000) {
       self.write_raw(["outboundMessage"])    
     }
 =begin
@@ -342,6 +354,9 @@ class Connection
       end
     rescue Wslay::Err => e
       log!(:server_out_err, e)
+      #[:server_out_err, lib/desktop/connection.rb:339: further message queueing is not allowed (Wslay::Err)]
+      self.halt!
+      self.shutdown!
     end
   end
 end

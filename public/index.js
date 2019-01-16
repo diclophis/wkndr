@@ -68,7 +68,7 @@ var Module = {
   preRun: [(function() {
     //TODO: this goes in the client/shell.js later
     window.debug_print = Module.cwrap(
-      'debug_print', 'number', ['number', 'number']
+      'debug_print', 'number', ['number', 'number', 'number', 'number']
     );
 
     window.pack_outbound_tty = Module.cwrap(

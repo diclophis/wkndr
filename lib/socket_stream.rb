@@ -32,8 +32,6 @@ class SocketStream
     #  }
     #rescue => e
     #end
-  rescue => e
-    log!(:err, e)
   end
 
   def write(msg_typed)

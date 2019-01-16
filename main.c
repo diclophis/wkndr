@@ -121,8 +121,9 @@ const struct mrb_data_type model_data_type = {"model_data", model_data_destructo
 
 
 //TODO???????
-//static mrb_state *global_mrb;
-//static mrb_value global_platform_bits;
+static mrb_state *global_mrb;
+static mrb_value global_platform_bits;
+
 //static mrb_value global_gl;
 static int counter = 0;
 static mrb_value mousexyz;
@@ -135,12 +136,17 @@ EMSCRIPTEN_KEEPALIVE
 //size_t debug_print(int mrbP, int cbP, const char* buf, size_t n) {
 size_t debug_print(mrb_state* mrb, mrb_value self, const char* buf, size_t n) {
 
-  //mrb_value sllf = *(mrb_value*)self; //*((mrb_value)self);
+  //mrb_value sllf = *self; //*((mrb_value)self);
 
-  fprintf(stdout, "debug_print %p %p\n", mrb, &self); //, &sllf);
+  fprintf(stdout, "debug_print %p %p %p %p\n", mrb, &self, global_mrb, &global_platform_bits);
+
+  //fprintf(stdout, "wtf %d wtf\n", (&self == &platform_bits));
+  //fprintf(stdout, "wtf %d wtf\n", (&sllf == &platform_bits));
 
   //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
   //mrb_funcall(mrb, self, "process", 1, cstrlikebuf);
+  //mrb_funcall(global_mrb, global_platform_bits, "process", 0);
+  //mrb_funcall(mrb, sllf, "process", 0);
   mrb_funcall(mrb, self, "process", 0);
 
   return 0;
@@ -170,10 +176,12 @@ void Alert(const char *msg) {
 #endif
 
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
-  fprintf(stdout, "socket_stream_connet %p %p\n", mrb, &self);
-  
-  mrb_funcall(mrb, &self, "process", 0);
+  //mrb_funcall(mrb, self, "process", 0);
+  global_mrb = mrb;
+  global_platform_bits = self;
 
+  fprintf(stdout, "socket_stream_connet %p %p %p %p\n", mrb, &self, mrb, &global_platform_bits);
+  
 #ifdef PLATFORM_WEB
   EM_ASM_({
     window.startConnection($0, $1);
