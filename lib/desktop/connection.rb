@@ -356,7 +356,7 @@ class Connection
       log!(:server_out_err, e)
       #[:server_out_err, lib/desktop/connection.rb:339: further message queueing is not allowed (Wslay::Err)]
       self.halt!
-      self.shutdown!
+      self.shutdown
     end
   end
 end
