@@ -69,6 +69,7 @@
 
 //server stuff
 #ifdef PLATFORM_DESKTOP
+
 #include <openssl/sha.h>
 #include <mruby/string.h>
 #include <b64/cencode.h>
@@ -78,6 +79,7 @@
 #include "server.h"
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
+
 #endif
 
 
@@ -120,11 +122,6 @@ const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
 const struct mrb_data_type model_data_type = {"model_data", model_data_destructor};
 
 
-//TODO???????
-static mrb_state *global_mrb;
-static mrb_value global_platform_bits;
-
-//static mrb_value global_gl;
 static int counter = 0;
 static mrb_value mousexyz;
 static mrb_value pressedkeys;
@@ -133,32 +130,14 @@ static mrb_value pressedkeys;
 #ifdef PLATFORM_WEB
 
 EMSCRIPTEN_KEEPALIVE
-//size_t debug_print(int mrbP, int cbP, const char* buf, size_t n) {
 size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
-  //mrb_value sllf = *self; //*((mrb_value)self);
-
-  //fprintf(stdout, "debug_print %p %p %p %p %p\n", mrb, self, &&sllf, global_mrb, &global_platform_bits);
-
-  //fprintf(stdout, "wtf %d wtf\n", (&self == &platform_bits));
-  //fprintf(stdout, "wtf %d wtf\n", (&sllf == &platform_bits));
-
-  //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
-  //mrb_funcall(mrb, self, "process", 1, cstrlikebuf);
-  //mrb_funcall(global_mrb, global_platform_bits, "process", 0);
-  //mrb_funcall(mrb, sllf, "process", 0);
   mrb_funcall(mrb, mrb_obj_value(selfP), "process", 0);
-
   return 0;
 }
 
 EMSCRIPTEN_KEEPALIVE
 size_t pack_outbound_tty(const char* buf, size_t n) {
   fprintf(stdout,"pack_tty\n");
-
-  //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
-  //TODO!!!!!!!!!!!!!!!!!!!!1
-  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
-  //???? mrb_yield_argv(mrb, block, 1, cstrlikebuf);
   return 0;
 }
 
@@ -175,14 +154,6 @@ void Alert(const char *msg) {
 #endif
 
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
-  //mrb_funcall(mrb, self, "process", 0);
-  //global_mrb = mrb;
-  //global_platform_bits = self;
-
-  //mrb_value *cheese = &self;
-
-  //fprintf(stdout, "socket_stream_connet %p %p %p %p -- --\n", mrb, &self, mrb, &global_platform_bits);
-  
 #ifdef PLATFORM_WEB
   EM_ASM_({
     window.startConnection($0, $1);
@@ -985,29 +956,15 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
-  //mrb_get_args(mrb, "oo", &global_platform_bits, &global_gl);
-
-//TODO: FOOO lols
+  //TODO: FOOO lols
   //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
 
   mousexyz = mrb_ary_new(mrb);
   pressedkeys = mrb_ary_new(mrb);
 
 #ifdef PLATFORM_WEB
-  //start_connection();
   emscripten_set_main_loop(platform_bits_update_void, 0, 1);
 #else
-  //mrb_funcall(mrb, global_platform_bits, "spinlock!", 0, NULL);
-
-  //mrbc_context *server_file = mrbc_context_new(mrb);
-  //mrbc_filename(mrb, server_file, "main.c");
-
-  //struct mrb_parser_state *ret3;
-  //ret3 = mrb_parse_string(mrb, "UV.run", server_file);
-  //mrb_value foo;
-  //foo = mrb_load_exec(mrb, ret3, server_file);
-  //mrbc_context_free(mrb, server_file);
-  //if_exception_error_and_exit(mrb, "main.c");
 #endif
 
   return self;
@@ -1122,9 +1079,6 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  //TODO: fix this hack
-  //global_mrb = mrb;
-
   mrb_value args = mrb_ary_new(mrb);
   int i;
 
@@ -1216,20 +1170,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
-
-  //mrb_value cstrlikebuf = mrb_str_new(global_mrb, buf, n);
-  //TODO!!!!!!!!!!!!!!!!!!!!1
-  //mrb_funcall(global_mrb, global_gl, "feed_state!", 1, cstrlikebuf);
-
-  ////TODO: only if --server
-  //mrbc_context *server_file = mrbc_context_new(mrb);
-  //mrbc_filename(mrb, server_file, "server.rb");
-  //struct mrb_parser_state *ret3;
-  //ret3 = mrb_parse_string(mrb, "Server.run!", server_file);
-  //mrb_value foo;
-  //foo = mrb_load_exec(mrb, ret3, server_file);
-  //mrbc_context_free(mrb, server_file);
-  //if_exception_error_and_exit(mrb, "server.rb");
 
   FILE *f = 0;
   char *config = "Wkndrfile";
