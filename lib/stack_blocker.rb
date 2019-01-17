@@ -14,7 +14,6 @@ class StackBlocker
   end
 
   def halt!
-    log!(:halt_stack_blocker)
     @stack.each { |srb| srb.halt! }
   end
 
@@ -22,13 +21,7 @@ class StackBlocker
     @stack.each { |srb| srb.shutdown }
   end
 
-  def update
-    @stack.each { |srb| srb.update }
-  end
-
-  def running_game
-    if first_game = @stack.detect { |srb| srb.running_game }
-      first_game.running_game
-    end
+  def update(gt, dt)
+    @stack.each { |srb| srb.update(gt, dt) }
   end
 end

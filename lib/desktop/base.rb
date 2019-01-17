@@ -34,7 +34,7 @@ class Base < Thor
           if ((ticks) % 100) == 0
             log!(:idle, ticks)
           end
-          run_loop_blocker.update
+          run_loop_blocker.signal
         else
           if exit_counter > 0
             log!(:shutdown, ticks, exit_counter)

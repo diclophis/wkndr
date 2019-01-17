@@ -39,10 +39,6 @@ class SocketStream
     @outbound_messages << msg_typed
   end
 
-  def running_game
-    nil
-  end
-
   def running
     !@halting
   end
@@ -55,7 +51,7 @@ class SocketStream
   def shutdown
   end
 
-  def update
+  def update(gt = nil, dt = nil)
     #NOOP: ??
   end
 

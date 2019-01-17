@@ -113,6 +113,11 @@ typedef struct {
   Model model;
 } model_data_s;
 
+typedef struct {
+ mrb_state* mrb_pointer;
+ struct RObject* self_pointer;
+} loop_data_s;
+
 
 static void play_data_destructor(mrb_state *mrb, void *p_);
 static void model_data_destructor(mrb_state *mrb, void *p_);
@@ -158,6 +163,60 @@ mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
   EM_ASM_({
     window.startConnection($0, $1);
   }, mrb, mrb_obj_ptr(self));
+#endif
+
+  return self;
+}
+
+
+static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
+#ifdef PLATFORM_DESKTOP
+  if (WindowShouldClose()) {
+    mrb_funcall(mrb, self, "halt!", 0, NULL);
+    return mrb_nil_value();
+  }
+#endif
+
+  double time;
+  float dt;
+
+  time = GetTime();
+  dt = GetFrameTime();
+
+  //self is instance of StackBlocker.new !!!!!!!!!!
+  mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+
+  return mrb_nil_value();
+}
+
+
+void platform_bits_update_void(void* arg) {
+  loop_data_s* loop_data = arg;
+
+  mrb_state* mrb = loop_data->mrb_pointer;
+  struct RObject* self = loop_data->self_pointer;
+  mrb_value selfV = mrb_obj_value(self);
+
+  platform_bits_update(mrb, selfV);
+}
+
+
+mrb_value global_show(mrb_state* mrb, mrb_value self) {
+  //TODO: FOOO lols
+  //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
+
+#ifdef PLATFORM_WEB
+  fprintf(stdout, "WSDASDASDASDASDASDAS\n");
+  mrb_value window_self;
+
+  mrb_get_args(mrb, "o", &window_self, &game_loop_self);
+
+  loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
+  loop_data->mrb_pointer = mrb;
+  loop_data->self_pointer = mrb_obj_ptr(window_self);
+  //loop_data->game_loop_self_pointer = mrb_obj_ptr(game_loop_self);
+
+  emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 #endif
 
   return self;
@@ -476,34 +535,6 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 }
 
 
-static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
-#ifdef PLATFORM_DESKTOP
-  if (WindowShouldClose()) {
-    mrb_funcall(mrb, self, "halt!", 0, NULL);
-    return mrb_nil_value();
-  }
-#endif
-
-  double time;
-  float dt;
-
-  time = GetTime();
-  dt = GetFrameTime();
-
-/*
-  global_p_data->mousePosition = GetMousePosition();
-
-  //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
-  //SetCameraMode(global_p_data->camera, CAMERA_FREE);
-  UpdateCamera(&global_p_data->camera);
-*/
-
-  //self is instance of Window.new !!!!!!!!!!
-  mrb_funcall(mrb, self, "play", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
-
-  return mrb_nil_value();
-}
-
 static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
   //TODO: implenent on_shutdown
   //mrb_funcall(mrb, self, "play", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
@@ -514,11 +545,6 @@ static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
   CloseWindow(); // Close window and OpenGL context
 
   return mrb_true_value();
-}
-
-
-void platform_bits_update_void(void) {
-  //platform_bits_update(global_mrb, global_platform_bits);
 }
 
 
@@ -957,20 +983,6 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
-mrb_value global_show(mrb_state* mrb, mrb_value self) {
-  //TODO: FOOO lols
-  //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
-
-#ifdef PLATFORM_WEB
-  fprintf(stdout, "WSDASDASDASDASDASDAS\n");
-  emscripten_set_main_loop(platform_bits_update_void, 0, 1);
-#else
-#endif
-
-  return self;
-}
-
-
 #ifdef PLATFORM_DESKTOP
 // The Sec-WebSocket-Accept part is interesting.
 // The server must derive it from the Sec-WebSocket-Key that the client sent.
@@ -1104,8 +1116,10 @@ int main(int argc, char** argv) {
   // class PlatformBits
   struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
   mrb_define_method(mrb, platform_bits_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
-  mrb_define_method(mrb, platform_bits_class, "update", platform_bits_update, MRB_ARGS_NONE());
   mrb_define_method(mrb, platform_bits_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
+
+  struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
+  mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
@@ -1146,7 +1160,7 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, thor, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Thor", mrb->object_class);
-  mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(2));
+  mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   mrb_define_method(mrb, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
