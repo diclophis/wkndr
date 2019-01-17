@@ -1,6 +1,6 @@
 #
 
-EMSDK_VERSION="1.38.22"
+EMSDK_VERSION="1.38.24"
 
 require_relative './mruby.rb'
 

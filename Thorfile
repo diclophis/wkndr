@@ -207,7 +207,7 @@ HEREDOC
     set -e
 
     ifconfig lo:0 10.2.0.1 netmask 255.0.0.0 up
-    kubeadm reset -f
+    KUBECONFIG=~/.kube/kubeadm_config kubeadm reset -f
     iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
     kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443
     mkdir -p /home/#{ENV['SUDO_USER']}/.kube
