@@ -89,6 +89,7 @@ class Wkndr < Thor
   desc "build", ""
   option "run", :type => :boolean, :default => false
   option "cache", :type => :boolean, :default => true
+  option "push", :type => :string, :default => nil
   def build
     if options["run"]
       delete_dockerfile = ["kubectl", "delete", "--grace-period=0", "deployment/#{APP}-app", "service/#{APP}", "service/#{APP}-node-service"]
@@ -108,6 +109,15 @@ class Wkndr < Thor
 
     tag_dockerfile = ["docker", "tag", APP + ":" + version, "localhost/" + APP + ":git-latest"]
     systemx(*tag_dockerfile)
+
+    if options["push"]
+      tag_dockerfile = ["docker", "tag", APP + ":" + version, options["push"] + "/" + APP + ":" + version]
+      puts tag_dockerfile
+      systemx(*tag_dockerfile)
+
+      push_dockerfile = ["docker", "push", options["push"] + "/" + APP + ":" + version]
+      systemx(*push_dockerfile)
+    end
 
     if options["run"]
       #run_dockerfile = ["docker", "run", "--rm", "-it", "-p", "8000:8000", APP + ":" + version]
