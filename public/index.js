@@ -15,7 +15,6 @@ function str2ab(str) {
   return buf;
 }
 
-
 window.startConnection = function(mrbPointer, callbackPointer) {
   var wsUrl = ("ws://" + window.location.host + "/ws");
 
@@ -30,7 +29,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal.on('data', function(termInputData) {
         var outboudArrayBuffer = str2ab(termInputData);
         var heapBuffer = Module._malloc(outboundArrayBuffer.length * outboudArrayBuffer.BYTES_PER_ELEMENT);
-        pack_outbound_tty(outboundArrayBuffer, heapBuffer);
+        window.pack_outbound_tty(outboundArrayBuffer, heapBuffer);
+        Module._free(heapBuffer);
       });
 
       window.onbeforeunload = function() {
@@ -44,9 +44,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
-      console.log(event.data);
-      //var stringBits = ab2str(event.data); //String.fromCharCode.apply(null, new Uint8Array(event.data));
-
       origData = event.data;
       typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(typedData.length * typedData.BYTES_PER_ELEMENT);
@@ -56,7 +53,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.unpack_inbound_tty = function(stringBits) {
-      //window.terminal.write(stringBits);
+      window.terminal.write(stringBits);
     }
   } else {
     console.log("Your browser does not support WebSockets.");
@@ -66,7 +63,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 var Module = {
   arguments: ['client'],
   preRun: [(function() {
-    //TODO: this goes in the client/shell.js later
     window.debug_print = Module.cwrap(
       'debug_print', 'number', ['number', 'number', 'number', 'number']
     );
@@ -74,8 +70,6 @@ var Module = {
     window.pack_outbound_tty = Module.cwrap(
       'pack_outbound_tty', 'number', ['number', 'number']
     );
-
-    console.log(window.debug_print, window.pack_outbound_tty);
   })],
   postRun: [],
   print: (function() {
@@ -89,12 +83,12 @@ var Module = {
     console.error(text);
   },
   canvas: (function() {
-    var canvas = document.getElementById('canvas');
+    var primary = document.getElementById('primary');
     // As a default initial behavior, pop up an alert when webgl context is lost. To make your
     // application robust, you may want to override this behavior before shipping!
     // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-    canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-    return canvas;
+    primary.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+    return primary;
   })(),
   setStatus: function(text) {
     if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };

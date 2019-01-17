@@ -9,9 +9,9 @@ class Wkndr < Base
     gl
   end
 
-  def window(name, x, y, fps, gl)
-    wndw = Window.new("wkndr", x, y, fps, gl)
-    yield wndw, gl
+  def window(name, x, y, fps)
+    wndw = Window.new("wkndr", x, y, fps)
+    yield wndw
     wndw
   end
 
@@ -24,41 +24,31 @@ class Wkndr < Base
     stack = StackBlocker.new
 
     gl = gameloop
+    stack.up(gl)
 
     socket_stream = SocketStream.create_websocket_connection { |bytes|
       log!(:wss_goood, bytes)
     }
     stack.up socket_stream
 
-    log! :gonna_opened_window, self, gl
-
-    wlh = window("window", 512, 512, 60, gl) { |wndw|
-      log! :did_window, self, gl
-
+    wlh = window("window", 512, 512, 60) { |wndw|
       gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
       cube = Cube.new(1.0, 1.0, 1.0, 5.0)
-      gl.play { |global_time, delta_time|
-        log! :play, self
-
+      gl.update { |global_time, delta_time|
         gl.drawmode {
           gl.threed {
             gl.draw_grid(10, 10.0)
             cube.draw(true)
           }
           gl.twod {
-            gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time}") {
-              log! :click
+            gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time.inspect} #{delta_time.inspect}") {
               socket_stream.write(["getCode"])
             }
           }
         }
       }
-
-      #log! :casdasdasdasd, self
-      #self.class.show!(stack, stack.running_game)
     }
     stack.up wlh
-    log! :did_stackup, self, gl
 
     stack
   end
@@ -71,10 +61,10 @@ class Wkndr < Base
     end
 
     if run_loop_blocker = super(args)
-      log!(:rl, self, run_loop_blocker, run_loop_blocker.running_game)
+      log!(:rl, self, run_loop_blocker)
 
       #if args[0] == "server"
-        self.show! run_loop_blocker, run_loop_blocker.running_game
+        self.show! run_loop_blocker
       #end
     end
   end

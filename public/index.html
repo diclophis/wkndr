@@ -5,14 +5,17 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>kit1zx</title>
     <link rel="stylesheet" href="xterm-dist/xterm.css" />
+    <style>
+      .wkndr { background-color: black; margin: 0; }
+      .graphics { width: 512px; height: 512px; position: absolute; }
+      .terminal { left: 512px; top: 0; position: absolute; }
+    </style>
   </head>
-  <body>
-    <div id="terminal"></div>
-    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-
+  <body class="wkndr">
+    <div id="secondary" class="terminal"></div>
+    <canvas id="primary" class="graphics" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript' src='xterm-dist/xterm.js'></script>
     <script type='text/javascript' src='index.js'></script>
-
     <script async type="text/javascript" src="wkndr.js"></script>
   </body>
 </html>

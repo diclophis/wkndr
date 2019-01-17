@@ -83,11 +83,11 @@ class Server
     http
   end
 
-  def update
-    #NOOP: TODO????
+  def signal
+    self.update(0, 0)
   end
 
-  def running_game
-    nil
+  def update(gt = nil, dt = nil)
+    #NOOP: TODO????
   end
 end

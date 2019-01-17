@@ -1,7 +1,7 @@
 #
 
 class GameLoop
-  def play(gt = 0, dt = 0, &block)
+  def update(gt = 0, dt = 0, &block)
     if block
       @play_proc = block
     else
@@ -11,10 +11,15 @@ class GameLoop
     end
   end
 
-  def feed_state!(bytes)
-    if @websocket_singleton_proc
-      @websocket_singleton_proc.call(bytes)
-    end
+  def running
+    !@halting
+  end
+
+  def halt!
+    @halting = true
+  end
+
+  def shutdown
   end
 end
 

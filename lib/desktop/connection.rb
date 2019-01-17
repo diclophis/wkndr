@@ -54,6 +54,8 @@ class Connection
   end
 
   def serve_static_file!(filename)
+    log!(:get, self.object_id, filename)
+
     #TODO: close opened files
     fd = UV::FS::open(filename, UV::FS::O_RDONLY, UV::FS::S_IREAD)
     file_size =  fd.stat.size
@@ -72,8 +74,6 @@ class Connection
         "Content-Type: text/html\r\n"
       else
         ""
-        #when "css"
-        #when "html"
       end
 
     header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
@@ -82,7 +82,7 @@ class Connection
       sending = false
 
       idle = UV::Timer.new #deadlocks??? UV::Idle.new
-      idle.start(0, 33) do |x|
+      idle.start(0, 16) do |x|
         if @halting
           idle.stop
         end
@@ -112,7 +112,6 @@ class Connection
             sending = false
           end
         else
-          #self.socket.close
           fd.close
           idle.stop
           self.processing_handshake = true
@@ -129,11 +128,14 @@ class Connection
       @offset = self.phr.parse_request(self.ss)
       case @offset
       when Fixnum
-        log!(:get, self.object_id, phr.path)
-
         case phr.path
-        when "/debug"
-          serve_static_file!("/var/tmp/big.data")
+        when "/status"
+          self.socket && self.socket.write("HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
+            self.halt!
+          }
+
+        #when "/debug"
+        #  serve_static_file!("/var/tmp/big.data")
 
         when "/ws"
           upgrade_to_websocket!
@@ -147,8 +149,6 @@ class Connection
 
           requested_path = "#{@required_prefix}#{filename}"
           UV::FS.realpath(requested_path) { |resolved_filename|
-            #log!(self, resolved_filename, requested_path, @required_prefix, ARGV)
-
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
                 #self.socket.close
@@ -284,9 +284,10 @@ class Connection
     self.write_ws_response!(sec_websocket_key)
 
     t = UV::Timer.new
-    t.start(1000, 3000) {
-      self.write_raw(["outboundMessage"])    
+    t.start(1000, 1000) {
+      self.write_typed({"c" => "ping"})
     }
+
 =begin
     ps = UV::Process.new({
       #'file' => 'factor',
@@ -343,13 +344,11 @@ class Connection
     proto_ok = (self.ws.recv != :proto)
     unless proto_ok
       log!(:wss_handshake_error)
-      #self.socket.close
       self.halt!
     end
-
   end
 
-  def write_raw(*msg_typed)
+  def write_typed(*msg_typed)
     begin
       if self.ws
         msg = MessagePack.pack(*msg_typed)

@@ -27,4 +27,6 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.cc.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
   conf.linker.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
   conf.archiver.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emar"
+
+  #conf.enable_cxx_exception
 end

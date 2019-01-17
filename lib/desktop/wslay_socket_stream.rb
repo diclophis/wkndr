@@ -52,9 +52,6 @@ class WslaySocketStream < SocketStream
       #@gl.log!(:msg, msg)
 
       if msg[:opcode] == :binary_frame
-        #NOTE!!!!!!! get back to this refactor
-        #self.feed_state!(msg[:msg])
-        #log!(:inb_client_from_outb, self, @got_bytes_block)
         process(msg[:msg])
       else
         log!(msg[:opcode])
@@ -186,15 +183,11 @@ class WslaySocketStream < SocketStream
     }
   end
 
-  def running_game
-    nil
-  end
-
   def running
     !@halting
   end
 
-  def update
+  def update(gt = nil, dt = nil)
     if some_outbound_messages = @outbound_messages.slice!(0, 1)
       unless some_outbound_messages.empty?
         write_raw(*some_outbound_messages)
