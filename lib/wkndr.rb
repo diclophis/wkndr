@@ -64,7 +64,7 @@ class Wkndr < Base
       log!(:rl, self, run_loop_blocker)
 
       #if args[0] == "server"
-        self.show! run_loop_blocker, nil
+        self.show! run_loop_blocker
       #end
     end
   end

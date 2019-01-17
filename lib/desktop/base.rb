@@ -15,7 +15,7 @@ class Base < Thor
     end
   end
 
-  def self.show!(run_loop_blocker, game_loop)
+  def self.show!(run_loop_blocker)
     running = true
     #TODO: server FPS
     fps = 30.0
@@ -53,7 +53,7 @@ class Base < Thor
         ticks += 1
       }
 
-      super(run_loop_blocker, game_loop)
+      super(run_loop_blocker)
     
       UV.run
     end

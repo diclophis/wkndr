@@ -209,7 +209,7 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   fprintf(stdout, "WSDASDASDASDASDASDAS\n");
   mrb_value window_self;
 
-  mrb_get_args(mrb, "o", &window_self, &game_loop_self);
+  mrb_get_args(mrb, "o", &window_self);
 
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
   loop_data->mrb_pointer = mrb;

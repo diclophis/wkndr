@@ -82,7 +82,7 @@ class Connection
       sending = false
 
       idle = UV::Timer.new #deadlocks??? UV::Idle.new
-      idle.start(0, 33) do |x|
+      idle.start(0, 1) do |x|
         if @halting
           idle.stop
         end
