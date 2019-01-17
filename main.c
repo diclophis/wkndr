@@ -123,10 +123,8 @@ typedef struct {
 static void play_data_destructor(mrb_state *mrb, void *p_);
 static void model_data_destructor(mrb_state *mrb, void *p_);
 
-
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
 const struct mrb_data_type model_data_type = {"model_data", model_data_destructor};
-
 
 static int counter = 0;
 static mrb_value mousexyz;
@@ -137,7 +135,8 @@ static mrb_value pressedkeys;
 
 EMSCRIPTEN_KEEPALIVE
 size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
-  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 0);
+  mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
+  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 1, cstrlikebuf);
   return 0;
 }
 
@@ -207,7 +206,6 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
 
 #ifdef PLATFORM_WEB
-  fprintf(stdout, "WSDASDASDASDASDASDAS\n");
   mrb_value window_self;
 
   mrb_get_args(mrb, "o", &window_self);
@@ -215,7 +213,6 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
   loop_data->mrb_pointer = mrb;
   loop_data->self_pointer = mrb_obj_ptr(window_self);
-  //loop_data->game_loop_self_pointer = mrb_obj_ptr(game_loop_self);
 
   emscripten_sample_gamepad_data();
 

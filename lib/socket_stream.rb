@@ -2,15 +2,11 @@
 
 class SocketStream
   def initialize(got_bytes_block)
-    #log!(:InitSocketStream, got_bytes_block)
-
-    #TODO: rename this
     @got_bytes_block = got_bytes_block
 
-    #Proc.new { |bytes|
-    #}
-
     @outbound_messages = []
+
+    @left_over_bits = nil
   end
 
   def self.socket_klass
@@ -24,18 +20,12 @@ class SocketStream
   end
 
   def process(bytes = nil)
-    #begin
-      log!(:process, bytes)
-
-    #  process_as_msgpack_stream(bytes) { |typed_msg|
-    #    @got_bytes_block.call(typed_msg)
-    #  }
-    #rescue => e
-    #end
+    process_as_msgpack_stream(bytes).each { |typed_msg|
+      @got_bytes_block.call(typed_msg)
+    }
   end
 
   def write(msg_typed)
-    log!(:WRITE_SS, msg_typed)
     @outbound_messages << msg_typed
   end
 
@@ -59,10 +49,15 @@ class SocketStream
     all_bits_to_consider = (@left_over_bits || "") + bytes
     all_l = all_bits_to_consider.length
 
+    unpacked_typed = []
     unpacked_length = MessagePack.unpack(all_bits_to_consider) do |result|
-      yield result if result
+      if result
+        unpacked_typed << result
+      end
     end
 
     @left_over_bits = all_bits_to_consider[unpacked_length, all_l]
+
+    unpacked_typed
   end
 end
