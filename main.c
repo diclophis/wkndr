@@ -86,6 +86,7 @@
 // emscripten/wasm stuff
 #ifdef PLATFORM_WEB
   #include <emscripten/emscripten.h>
+  #include <emscripten/html5.h>
 #endif
 
 
@@ -215,6 +216,8 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   loop_data->mrb_pointer = mrb;
   loop_data->self_pointer = mrb_obj_ptr(window_self);
   //loop_data->game_loop_self_pointer = mrb_obj_ptr(game_loop_self);
+
+  emscripten_sample_gamepad_data();
 
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 #endif
