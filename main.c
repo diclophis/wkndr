@@ -180,16 +180,29 @@ void Alert(const char *msg) {
 
 mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
   mrb_value tty_output;
+  mrb_value data_value;
+
   mrb_get_args(mrb, "o", &tty_output);
 
-  const char *foo = mrb_string_value_ptr(mrb, tty_output);
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@client"));
+
+  mrb_int fp = mrb_int(mrb, data_value);
+
+  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+
+  //const char *foo = mrb_string_value_ptr(mrb, tty_output);
+  const char *foo = mrb_string_value_cstr(mrb, &tty_output);
   int len = mrb_string_value_len(mrb, tty_output);
 
-#ifdef PLATFORM_WEB
-  EM_ASM_({
-    return window.unpack_inbound_tty($0); //Pointer_stringify($0, $1)); // Convert message to JS string
-  }, foo);
-#endif
+  mrb_p(mrb, tty_output);
+
+  write_packed_pointer(0, foo, len);
+
+//#ifdef PLATFORM_WEB
+//  EM_ASM_({
+//    window.unpack_inbound_tty(Pointer_stringify($0, $1)); //Pointer_stringify($0, $1)); // Convert message to JS string
+//  }, foo, len);
+//#endif
 
   return mrb_nil_value();
 
@@ -219,16 +232,15 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 
   mrb_int fp = mrb_int(mrb, data_value);
 
-  void (*write_packed_pointer)(const void*, int) = (void (*)(const void*, int))fp;
+  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
 
   mrb_value packed_bytes;
   mrb_get_args(mrb, "o", &packed_bytes);
 
-  //const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
-  const char *foo = mrb_string_value_cstr(mrb, &packed_bytes);
+  const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
   int len = mrb_string_value_len(mrb, packed_bytes);
 
-  write_packed_pointer(foo, len);
+  write_packed_pointer(1, foo, len);
 
   return self;
 }

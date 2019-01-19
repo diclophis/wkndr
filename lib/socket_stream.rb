@@ -21,6 +21,7 @@ class SocketStream
 
   def process(bytes = nil)
     process_as_msgpack_stream(bytes).each { |typed_msg|
+      log!(:typedm, typed_msg)
       channels = typed_msg.keys
       channels.each do |channel|
         case channel

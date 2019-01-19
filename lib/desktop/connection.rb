@@ -268,7 +268,7 @@ class Connection
           channels.each do |channel|
             case channel
               when 0
-                @stdin_tty.write(msg.msg) {
+                @stdin_tty.write(typed_msg[channel]) {
                   false
                 }
             else
@@ -346,7 +346,9 @@ class Connection
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
-        self.write_typed({1 => bout})
+        outbits = {1 => bout.to_s}
+        log!(:WEWEWEWEWE, outbits)
+        self.write_typed(outbits)
       end
     end
 

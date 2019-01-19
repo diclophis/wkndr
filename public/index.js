@@ -1,7 +1,7 @@
 /* */
 
 function ab2str(buf) {
-  return String.fromCharCode.apply(null, new Uint8Array(buf));
+  return String.fromCharCode.apply(null, buf); //new Uint8Array(buf));
 }
 
 function str2ab(str) {
@@ -52,20 +52,24 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       Module._free(heapBuffer);
     };
 
-    window.unpack_inbound_tty = function(stringBits) {
-      console.log(stringBits);
-      window.terminal.write(stringBits);
-    }
+    window.writePackedPointer = addFunction(function(channel, bytes, length) {
 
-    window.writePackedPointer = addFunction(function(bytes, length) {
-      var buf = new ArrayBuffer(length); // 2 bytes for each char
-      var bufView = new Uint8Array(buf);
-      for (var i=0; i < length; i++) {
-        var ic = getValue(bytes + (i), 'i8');
-        bufView[i] = ic;
+      console.log(channel, bytes, length);
+
+      if (channel == 0) {
+        //var stringBits = ab2str(bufView);
+        var stringBits = UTF8ToString(bytes);
+        console.log("WTFFFF", stringBits);
+        window.terminal.write(stringBits);
+      } else if (channel == 1) {
+        var buf = new ArrayBuffer(length); // 2 bytes for each char
+        var bufView = new Uint8Array(buf);
+        for (var i=0; i < length; i++) {
+          var ic = getValue(bytes + (i), 'i8');
+          bufView[i] = ic;
+        }
+        var sent = window.conn.send(buf);
       }
-
-      var sent = window.conn.send(buf);
 
       //TODO: memory cleanup??????
       buf = null;

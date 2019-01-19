@@ -42,7 +42,7 @@ class Wkndr < Base
           }
           gl.twod {
             gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time.inspect} #{delta_time.inspect}") {
-              socket_stream.write(["getCode"])
+              socket_stream.write({"s" => "getCode"})
             }
           }
         }
