@@ -55,6 +55,26 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.unpack_inbound_tty = function(stringBits) {
       window.terminal.write(stringBits);
     }
+
+    window.writePackedPointer = addFunction(function(bytes, length) {
+
+      var buf = new ArrayBuffer(length); // 2 bytes for each char
+      var bufView = new Uint8Array(buf);
+      for (var i=0; i < length; i++) {
+        var ic = getValue(bytes + (i), 'i8');
+        bufView[i] = ic;
+      }
+
+      var sent = window.conn.send(buf);
+
+      //TODO: memory cleanup??????
+      buf = null;
+      bufView = null;
+    }, 'vvi');
+
+    console.log(window.writePackedPointer);
+
+    return window.writePackedPointer;
   } else {
     console.log("Your browser does not support WebSockets.");
   }

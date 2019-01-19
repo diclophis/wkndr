@@ -43,6 +43,7 @@
 #include <mruby/class.h>
 #include <mruby/value.h>
 #include <mruby/variable.h>
+#include <mruby/string.h>
 #include <string.h>
 
 
@@ -143,6 +144,7 @@ size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_
 EMSCRIPTEN_KEEPALIVE
 size_t pack_outbound_tty(const char* buf, size_t n) {
   fprintf(stdout,"pack_tty\n");
+
   return 0;
 }
 
@@ -159,11 +161,38 @@ void Alert(const char *msg) {
 #endif
 
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
+  long int write_packed_pointer = 0;
+
 #ifdef PLATFORM_WEB
-  EM_ASM_({
-    window.startConnection($0, $1);
+  write_packed_pointer = EM_ASM_INT({
+    return window.startConnection($0, $1);
   }, mrb, mrb_obj_ptr(self));
 #endif
+
+  mrb_iv_set(
+      mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
+      mrb_fixnum_value(write_packed_pointer));
+
+  return self;
+}
+
+
+mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
+  mrb_value data_value;
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@client"));
+
+  mrb_int fp = mrb_int(mrb, data_value);
+
+  void (*write_packed_pointer)(const void*, int) = (void (*)(const void*, int))fp;
+
+  mrb_value packed_bytes;
+  mrb_get_args(mrb, "o", &packed_bytes);
+
+  const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
+  int len = mrb_string_value_len(mrb, packed_bytes);
+
+  write_packed_pointer(foo, len);
 
   return self;
 }
@@ -1164,6 +1193,7 @@ int main(int argc, char** argv) {
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   mrb_define_method(mrb, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
+  mrb_define_method(mrb, socket_stream_class, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, globals, NULL);
 
@@ -1176,8 +1206,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, main_menu, NULL);
 
   eval_static_libs(mrb, box, NULL);
-
-
 
   eval_static_libs(mrb, stack_blocker, NULL);
 

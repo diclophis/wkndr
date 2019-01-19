@@ -187,25 +187,9 @@ class WslaySocketStream < SocketStream
     !@halting
   end
 
-  def update(gt = nil, dt = nil)
-    if some_outbound_messages = @outbound_messages.slice!(0, 1)
-      unless some_outbound_messages.empty?
-        write_raw(*some_outbound_messages)
-      end
-    end
-  end
-
-  def write_raw(*msg_typed)
-    begin
-      if @client
-        msg = MessagePack.pack(*msg_typed)
-        @client.queue_msg(msg, :binary_frame)
-        outg = @client.send
-        outg
-      end
-    rescue Wslay::Err => e
-      log!(e)
-    end
+  def write_packed(bytes)
+    @client.queue_msg(bytes, :binary_frame)
+    @client.send
   end
 end
 

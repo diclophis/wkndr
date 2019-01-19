@@ -26,8 +26,8 @@ class Wkndr < Base
     gl = gameloop
     stack.up(gl)
 
-    socket_stream = SocketStream.create_websocket_connection { |bytes|
-      log!(:wss_goood, bytes)
+    socket_stream = SocketStream.create_websocket_connection { |typed_msg|
+      log!(:ws, typed_msg)
     }
     stack.up socket_stream
 

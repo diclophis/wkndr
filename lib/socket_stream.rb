@@ -41,10 +41,6 @@ class SocketStream
   def shutdown
   end
 
-  def update(gt = nil, dt = nil)
-    #NOOP: ??
-  end
-
   def process_as_msgpack_stream(bytes)
     all_bits_to_consider = (@left_over_bits || "") + bytes
     all_l = all_bits_to_consider.length
@@ -59,5 +55,29 @@ class SocketStream
     @left_over_bits = all_bits_to_consider[unpacked_length, all_l]
 
     unpacked_typed
+  end
+
+  def update(gt = nil, dt = nil)
+    if some_outbound_messages = @outbound_messages.slice!(0, 1)
+      unless some_outbound_messages.empty?
+        write_typed(*some_outbound_messages)
+      end
+    end
+  end
+
+  def write_typed(*msg_typed)
+    #begin
+      if connected
+        msg = MessagePack.pack(*msg_typed)
+
+        write_packed(msg)
+      end
+    #rescue Wslay::Err => e
+    #  log!(e)
+    #end
+  end
+
+  def connected
+    @client
   end
 end

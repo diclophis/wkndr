@@ -41,6 +41,11 @@ class Connection
       @stderr = nil
     end
 
+    if @t
+      @t.stop
+      @t = nil
+    end
+
     if self.socket && self.socket.has_ref?
       self.socket.read_stop 
       self.socket.close
@@ -283,8 +288,8 @@ class Connection
 
     self.write_ws_response!(sec_websocket_key)
 
-    t = UV::Timer.new
-    t.start(1000, 1000) {
+    @t = UV::Timer.new
+    @t.start(1000, 1000) {
       self.write_typed({"c" => "ping"})
     }
 
