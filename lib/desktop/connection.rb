@@ -316,7 +316,7 @@ class Connection
       #'file' => 'sh',
       #'args' => [],
       'file' => "/usr/sbin/chroot",
-      'args' => ["/var/tmp/chroot", "/bin/bash"],
+      'args' => ["/var/tmp/chroot", "/bin/bash", "-i", "-l"],
       #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
       #'file' => 'nc',
       #'args' => ["localhost", "12345"],

@@ -51,10 +51,6 @@ RUN cd /var/lib/wkndr && ls -l && \
 
 COPY raylib-src /var/lib/wkndr/raylib-src
 
-RUN mkdir -p /var/tmp/chroot/bin
-RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
-RUN cp /bin/bash-static /var/tmp/chroot/bin/sh
-
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
@@ -77,6 +73,15 @@ RUN cd /var/lib/wkndr && ls -hl release && cp release/wkndr* public/
 COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
 
 RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
+
+RUN mkdir -p /var/tmp/chroot/bin
+RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
+RUN cp /bin/bash-static /var/tmp/chroot/bin/bash
+RUN ln -s /var/tmp/chroot/bin/bash /var/tmp/chroot/bin/sh
+RUN cp /bin/busybox /var/tmp/chroot/bin/busybox && \
+    for I in ls mkdir which; do ln -s /var/tmp/chroot/bin/busybox /var/tmp/chroot/bin/${I}; done
+#RUN mkdir -p /var/tmp/chroot/usr/bin /var/tmp/chroot/sbin /var/tmp/chroot/usr/sbin
+#RUN chroot /var/tmp/chroot /bin/busybox --install -s
 
 WORKDIR /var/lib/wkndr
 
