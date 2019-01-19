@@ -1,7 +1,7 @@
 /* */
 
 function ab2str(buf) {
-  return String.fromCharCode.apply(null, new Uint8Array(buf));
+  return String.fromCharCode.apply(null, buf); //new Uint8Array(buf));
 }
 
 function str2ab(str) {
@@ -27,10 +27,9 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal.open(document.getElementById("terminal"));
 
       window.terminal.on('data', function(termInputData) {
-        var outboudArrayBuffer = str2ab(termInputData);
-        var heapBuffer = Module._malloc(outboundArrayBuffer.length * outboudArrayBuffer.BYTES_PER_ELEMENT);
-        window.pack_outbound_tty(outboundArrayBuffer, heapBuffer);
-        Module._free(heapBuffer);
+        var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
+        window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+        Module._free(ptr);
       });
 
       window.onbeforeunload = function() {
@@ -44,17 +43,35 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
-      origData = event.data;
-      typedData = new Uint8Array(origData);
-      var heapBuffer = Module._malloc(typedData.length * typedData.BYTES_PER_ELEMENT);
+      var origData = event.data;
+      var typedData = new Uint8Array(origData);
+      var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
-      debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.length);
+      window.debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
       Module._free(heapBuffer);
     };
 
-    window.unpack_inbound_tty = function(stringBits) {
-      window.terminal.write(stringBits);
-    }
+    window.writePackedPointer = addFunction(function(channel, bytes, length) {
+      var buf = new ArrayBuffer(length); // 2 bytes for each char
+      var bufView = new Uint8Array(buf);
+      for (var i=0; i < length; i++) {
+        var ic = getValue(bytes + (i), 'i8');
+        bufView[i] = ic;
+      }
+
+      if (channel == 0) {
+        var stringBits = ab2str(bufView);
+        window.terminal.write(stringBits);
+      } else if (channel == 1) {
+        var sent = window.conn.send(buf);
+      }
+
+      //TODO: memory cleanup??????
+      buf = null;
+      bufView = null;
+    }, 'vvi');
+
+    return window.writePackedPointer;
   } else {
     console.log("Your browser does not support WebSockets.");
   }
@@ -68,7 +85,7 @@ var Module = {
     );
 
     window.pack_outbound_tty = Module.cwrap(
-      'pack_outbound_tty', 'number', ['number', 'number']
+      'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
     );
   })],
   postRun: [],

@@ -41,6 +41,11 @@ class Connection
       @stderr = nil
     end
 
+    if @t
+      @t.stop
+      @t = nil
+    end
+
     if self.socket && self.socket.has_ref?
       self.socket.read_stop 
       self.socket.close
@@ -50,6 +55,7 @@ class Connection
 
   def halt!
     log!(:halt_connection)
+
     @halting = true
   end
 
@@ -169,7 +175,7 @@ class Connection
       end
     else
       if self.ws
-        self.last_buf = b
+        self.last_buf += b
         proto_ok = (self.ws.recv != :proto)
         unless proto_ok
           #self.socket.close
@@ -226,9 +232,19 @@ class Connection
       #log!("SDSD", self.last_buf, buf, len, buf.to_s)
 
       if self.last_buf
-        throw_away_buf = self.last_buf.dup
-        self.last_buf = nil
-        throw_away_buf
+        #throw_away_buf = self.last_buf.dup
+        #self.last_buf = nil
+        #throw_away_buf
+        #buf = self.last_buf
+        #buf
+        #log!(:wtf, buf.class)
+        #len.times do |i|
+        #  buf[i] = self.last_buf[i]
+        #end
+
+        s = self.last_buf.slice!(0, len)
+        log!(:sdsd, s, len)
+        s
       else
         nil
       end
@@ -248,13 +264,19 @@ class Connection
       # to_str => returns the message revieced
 
       if msg[:opcode] == :binary_frame
-        process_as_msgpack_stream(msg.msg) { |inbound_msg|
-          log!("INBOUND", inbound_msg)
+        process_as_msgpack_stream(msg.msg) { |typed_msg|
+          channels = typed_msg.keys
+          channels.each do |channel|
+            case channel
+              when 0
+                @stdin_tty.write(typed_msg[channel]) {
+                  false
+                }
+            else
+              log!("INBOUND", typed_msg)
+            end
+          end
         }
-
-        #@stdin_tty.write(msg.msg) {
-        #  false
-        #}
       end
     end
 
@@ -283,19 +305,18 @@ class Connection
 
     self.write_ws_response!(sec_websocket_key)
 
-    t = UV::Timer.new
-    t.start(1000, 1000) {
+    @t = UV::Timer.new
+    @t.start(1000, 1000) {
       self.write_typed({"c" => "ping"})
     }
 
-=begin
-    ps = UV::Process.new({
+    @ps = UV::Process.new({
       #'file' => 'factor',
       #'args' => [],
-      'file' => 'sh',
-      'args' => [],
-      #'file' => "/usr/sbin/chroot",
-      #'args' => ["/var/tmp/chroot", "/bin/sh"],
+      #'file' => 'sh',
+      #'args' => [],
+      'file' => "/usr/sbin/chroot",
+      'args' => ["/var/tmp/chroot", "/bin/bash"],
       #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
       #'file' => 'nc',
       #'args' => ["localhost", "12345"],
@@ -305,13 +326,12 @@ class Connection
       #TODO: proper env cleanup!!
       'env' => ['TERM=xterm-256color'],
     })
-    @ps = ps
 
-    ps.stdin_pipe = @stdin_tty
-    ps.stdout_pipe = @stdout_tty
-    ps.stderr_pipe = @stderr_tty
+    @ps.stdin_pipe = @stdin_tty
+    @ps.stdout_pipe = @stdout_tty
+    @ps.stderr_pipe = @stderr_tty
 
-    ps.spawn do |sig|
+    @ps.spawn do |sig|
       log!("exit #{sig}")
     end
 
@@ -319,8 +339,7 @@ class Connection
       if bbbb.is_a?(UVError)
         log!(:baderr, bbbb)
       elsif bbbb && bbbb.length > 0
-        self.ws.queue_msg(bbbb, :binary_frame)
-        outg = self.ws.send
+        self.write_typed({2 => bbbb})
       end
     end
 
@@ -328,16 +347,14 @@ class Connection
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
-        self.ws.queue_msg(bout, :binary_frame)
-        outg = self.ws.send
-        log!(:outg, outg)
-        outg
+        outbits = {1 => bout}
+        log!(:WEWEWEWEWE, outbits)
+        self.write_typed(outbits)
       end
     end
 
     #TODO???
-    ps.kill(0)
-=end
+    @ps.kill(0)
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset

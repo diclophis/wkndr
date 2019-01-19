@@ -13,6 +13,7 @@ apt-get update \
        bison \
        libssl-dev \
        bash-static \
+       busybox-static \
        automake build-essential libtool curl bison libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev xinit openbox \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 

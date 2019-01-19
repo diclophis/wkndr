@@ -15,10 +15,6 @@ class Wkndr < Base
     wndw
   end
 
-  #def web
-  #  #log!(:in_web)
-  #end
-
   desc "client", ""
   def client
     stack = StackBlocker.new
@@ -26,8 +22,8 @@ class Wkndr < Base
     gl = gameloop
     stack.up(gl)
 
-    socket_stream = SocketStream.create_websocket_connection { |bytes|
-      log!(:wss_goood, bytes)
+    socket_stream = SocketStream.create_websocket_connection { |typed_msg|
+      log!(:ws, typed_msg)
     }
     stack.up socket_stream
 
@@ -42,7 +38,7 @@ class Wkndr < Base
           }
           gl.twod {
             gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time.inspect} #{delta_time.inspect}") {
-              socket_stream.write(["getCode"])
+              socket_stream.write({"s" => "getCode"})
             }
           }
         }

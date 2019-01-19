@@ -43,6 +43,8 @@
 #include <mruby/class.h>
 #include <mruby/value.h>
 #include <mruby/variable.h>
+#include <mruby/string.h>
+#include <mruby/hash.h>
 #include <string.h>
 
 
@@ -135,16 +137,36 @@ static mrb_value pressedkeys;
 
 EMSCRIPTEN_KEEPALIVE
 size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
-  mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
-  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 1, cstrlikebuf);
+  //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
+  mrb_value empty_string = mrb_str_new_lit(mrb, "");
+  mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 1, clikestr_as_string);
   return 0;
 }
 
 EMSCRIPTEN_KEEPALIVE
-size_t pack_outbound_tty(const char* buf, size_t n) {
-  fprintf(stdout,"pack_tty\n");
+size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
+  mrb_value empty_string = mrb_str_new_lit(mrb, "");
+  mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+
+  /*
+  mrb_value outbound_tty_msg = mrb_ary_new(mrb);
+  mrb_ary_push(mrb, outbound_tty_msg, mrb_fixnum_value(0));
+  mrb_ary_push(mrb, outbound_tty_msg, clikestr_as_string);
+  mrb_ary_push(mrb, outbound_tty_msg, empty_string);
+  */
+
+  mrb_value outbound_tty_msg = mrb_hash_new(mrb);
+  mrb_hash_set(mrb, outbound_tty_msg, mrb_fixnum_value(0), clikestr_as_string);
+  
+  mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
+
+  //mrb_free(mrb, mrb_obj_ptr(outbound_tty_msg));
+
   return 0;
 }
+
+
 
 
 // Function to trigger alerts straight from C++
@@ -158,12 +180,71 @@ void Alert(const char *msg) {
 
 #endif
 
-mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
+mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
+  mrb_value tty_output;
+  mrb_value data_value;
+
+  mrb_get_args(mrb, "o", &tty_output);
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@client"));
+
 #ifdef PLATFORM_WEB
-  EM_ASM_({
-    window.startConnection($0, $1);
+  mrb_int fp = mrb_int(mrb, data_value);
+  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+  const char *foo = mrb_string_value_ptr(mrb, tty_output);
+  //const char *foo = mrb_string_value_cstr(mrb, &tty_output);
+  int len = mrb_string_value_len(mrb, tty_output);
+
+  //mrb_p(mrb, tty_output);
+
+  write_packed_pointer(0, foo, len);
+
+  mrb_free(mrb, mrb_obj_ptr(tty_output));
+
+#endif
+
+//#ifdef PLATFORM_WEB
+//  EM_ASM_({
+//    window.unpack_inbound_tty(Pointer_stringify($0, $1)); //Pointer_stringify($0, $1)); // Convert message to JS string
+//  }, foo, len);
+//#endif
+
+  return mrb_nil_value();
+}
+
+mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
+  long int write_packed_pointer = 0;
+
+#ifdef PLATFORM_WEB
+  write_packed_pointer = EM_ASM_INT({
+    return window.startConnection($0, $1);
   }, mrb, mrb_obj_ptr(self));
 #endif
+
+  mrb_iv_set(
+      mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
+      mrb_fixnum_value(write_packed_pointer));
+
+  return self;
+}
+
+
+mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
+  mrb_value data_value;
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@client"));
+
+  mrb_int fp = mrb_int(mrb, data_value);
+
+  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+
+  mrb_value packed_bytes;
+  mrb_get_args(mrb, "o", &packed_bytes);
+
+  const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
+  int len = mrb_string_value_len(mrb, packed_bytes);
+
+  write_packed_pointer(1, foo, len);
 
   return self;
 }
@@ -1164,6 +1245,8 @@ int main(int argc, char** argv) {
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   mrb_define_method(mrb, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
+  mrb_define_method(mrb, socket_stream_class, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, socket_stream_class, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, globals, NULL);
 
@@ -1176,8 +1259,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, main_menu, NULL);
 
   eval_static_libs(mrb, box, NULL);
-
-
 
   eval_static_libs(mrb, stack_blocker, NULL);
 
