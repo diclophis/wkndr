@@ -232,25 +232,12 @@ class Connection
       #log!("SDSD", self.last_buf, buf, len, buf.to_s)
 
       if self.last_buf
-        #throw_away_buf = self.last_buf.dup
-        #self.last_buf = nil
-        #throw_away_buf
-        #buf = self.last_buf
-        #buf
-        #log!(:wtf, buf.class)
-        #len.times do |i|
-        #  buf[i] = self.last_buf[i]
-        #end
-
-        s = self.last_buf.slice!(0, len)
-        log!(:sdsd, s, len)
-        s
+        self.last_buf.slice!(0, len)
       else
         nil
       end
     end
 
-    #TODO: this is where the ws msgs are recvd
     self.wslay_callbacks.on_msg_recv_callback do |msg|
       # when a WebSocket msg is fully recieved this callback is called
       # you get a Wslay::Event::OnMsgRecvArg Struct back with the following fields
@@ -283,6 +270,7 @@ class Connection
     self.wslay_callbacks.send_callback do |buf|
       # when there is data to send, you have to return the bytes send here
       # the I/O object must be in non blocking mode and raise EAGAIN/EWOULDBLOCK when sending would block
+
       if self.socket && !@halted
         self.socket.try_write(buf)
       else
@@ -300,8 +288,6 @@ class Connection
     sec_websocket_key = self.phr.headers.detect { |k,v|
       k == "sec-websocket-key"
     }[1]
-
-    #$stdout.write(sec_websocket_key)
 
     self.write_ws_response!(sec_websocket_key)
 
@@ -348,7 +334,6 @@ class Connection
         log!(:badout, bout)
       elsif bout
         outbits = {1 => bout}
-        log!(:WEWEWEWEWE, outbits)
         self.write_typed(outbits)
       end
     end
@@ -365,17 +350,17 @@ class Connection
     end
   end
 
+  #TODO: merge this with class with SocketStream
   def write_typed(*msg_typed)
     begin
       if self.ws
         msg = MessagePack.pack(*msg_typed)
         self.ws.queue_msg(msg, :binary_frame)
-        outg = self.ws.send #@client
+        outg = self.ws.send
         outg
       end
     rescue Wslay::Err => e
       log!(:server_out_err, e)
-      #[:server_out_err, lib/desktop/connection.rb:339: further message queueing is not allowed (Wslay::Err)]
       self.halt!
       self.shutdown
     end

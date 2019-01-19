@@ -77,9 +77,9 @@ RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 RUN mkdir -p /var/tmp/chroot/bin
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
 RUN cp /bin/bash-static /var/tmp/chroot/bin/bash
-RUN ln -s /var/tmp/chroot/bin/bash /var/tmp/chroot/bin/sh
+RUN cd /var/tmp/chroot/bin && ln -s bash sh
 RUN cp /bin/busybox /var/tmp/chroot/bin/busybox && \
-    for I in ls mkdir which; do ln -s /var/tmp/chroot/bin/busybox /var/tmp/chroot/bin/${I}; done
+    for I in ls mkdir which; do cd /var/tmp/chroot/bin && ln -s busybox ${I}; done
 #RUN mkdir -p /var/tmp/chroot/usr/bin /var/tmp/chroot/sbin /var/tmp/chroot/usr/sbin
 #RUN chroot /var/tmp/chroot /bin/busybox --install -s
 

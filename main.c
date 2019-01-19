@@ -32,7 +32,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <pty.h>
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/irep.h>
@@ -458,8 +457,6 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   mrb_get_args(mrb, "oiii", &game_name, &screenWidth, &screenHeight, &screenFps);
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
-
-  fprintf(stdout, "WTF@ASDZAXZCZXCZXCZXCZX\n");
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
@@ -1064,7 +1061,6 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
-#ifdef PLATFORM_DESKTOP
 // The Sec-WebSocket-Accept part is interesting.
 // The server must derive it from the Sec-WebSocket-Key that the client sent.
 // To get it, concatenate the client's Sec-WebSocket-Key and "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" together
@@ -1085,83 +1081,25 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
   memcpy(key_src, client_key, 24);
   memcpy(key_src+24, WS_GUID, 36);
 
+  mrb_value accept_key = mrb_str_new(mrb, NULL, 28);
+  char *c = RSTRING_PTR(accept_key);
+
+#ifdef PLATFORM_DESKTOP
   uint8_t sha1buf[20];
   if (!SHA1((const unsigned char *) key_src, 60, sha1buf)) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "SHA1 failed");
   }
 
-  mrb_value accept_key = mrb_str_new(mrb, NULL, 28);
-  char *c = RSTRING_PTR(accept_key);
   base64_encodestate s;
   base64_init_encodestate(&s);
   c += base64_encode_block((const char *) sha1buf, 20, c, &s);
   base64_encode_blockend(c, &s);
+#endif
 
   return accept_key;
 }
 
 
-static mrb_value pty_getpty(mrb_state* mrb, mrb_value self)
-{
-    //mrb_value res;
-    //struct pty_info info;
-    //struct pty_info thinfo;
-
-  struct winsize w = {21, 82, 0, 0};
-
-  int master;
-  int slave;
-
-  if (openpty(&master, &slave, NULL, NULL, &w) < 0) {
-    exit(1);
-  }
-
-  //master = posix_openpt(O_RDWR);
-
-  setsid();
-
-  //WTF is all this????
-  //if (ioctl(slave, TIOCSCTTY, NULL) < 0) {
-  //  exit(1);
-  //}
-
-  // Temporarily redirect stdout to the slave, so that the command executed in
-  // the subprocess will write to the slave.
-  //int _stdout = dup(STDOUT_FILENO);
-  //dup2(slave, STDOUT_FILENO);
-
-
-/*
-    rb_io_t *wfptr,*rfptr;
-    VALUE rport = rb_obj_alloc(rb_cFile);
-    VALUE wport = rb_obj_alloc(rb_cFile);
-    char SlaveName[DEVICELEN];
-    MakeOpenFile(rport, rfptr);
-    MakeOpenFile(wport, wfptr);
-    establishShell(argc, argv, &info, SlaveName);
-    rfptr->mode = rb_io_mode_flags("r");
-    rfptr->f = fdopen(info.fd, "r");
-    rfptr->path = strdup(SlaveName);
-    wfptr->mode = rb_io_mode_flags("w") | FMODE_SYNC;
-    wfptr->f = fdopen(dup(info.fd), "w");
-    wfptr->path = strdup(SlaveName);
-    res = rb_ary_new2(3);
-    rb_ary_store(res,0,(VALUE)rport);
-    rb_ary_store(res,1,(VALUE)wport);
-    rb_ary_store(res,2,INT2FIX(info.child_pid));
-    thinfo.thread = rb_thread_create(pty_syswait, (void*)&info);
-    thinfo.child_pid = info.child_pid;
-    rb_thread_schedule();
-    if (rb_block_given_p()) {
-	rb_ensure(rb_yield, res, pty_finalize_syswait, (VALUE)&thinfo);
-	return Qnil;
-    }
-    return res;
-*/
-
-  return mrb_fixnum_value(master);
-}
-#endif
 
 int main(int argc, char** argv) {
   mrb_state *mrb;
@@ -1187,12 +1125,7 @@ int main(int argc, char** argv) {
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
-
-#ifdef PLATFORM_DESKTOP
   mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
-  struct RClass *cPTY = mrb_define_module(mrb, "PTY");
-  mrb_define_module_function(mrb, cPTY, "getpty", pty_getpty, MRB_ARGS_NONE());
-#endif
 
   // class PlatformBits
   struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);

@@ -4,8 +4,6 @@ def Integer(f)
   f.to_i
 end
 
-$stdout.write("WTF")
-
 ##TODO: move this somewhere
 $stdout = UV::Pipe.new
 $stdout.open(1)
@@ -27,7 +25,6 @@ class Server
     UV.disable_stdio_inheritance
     #required_prefix = "/home/jon/workspace/wkndr/public/"
     @required_prefix = required_prefix #"/var/lib/wkndr/public/"
-    log!(:wtf, self, @required_prefix)
 
     host = '0.0.0.0'
     port = 8000

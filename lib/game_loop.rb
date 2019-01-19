@@ -11,6 +11,26 @@ class GameLoop
     end
   end
 
+  def event(msg = nil, &block)
+    if block
+      @event_proc = block
+    else
+      if @event_proc
+        @event_proc.call(msg)
+      end
+    end
+  end
+
+  def emit(msg = nil, &block)
+    if block
+      @emit_proc = block
+    else
+      if @emit_proc
+        @emit_proc.call(msg)
+      end
+    end
+  end
+
   def running
     !@halting
   end

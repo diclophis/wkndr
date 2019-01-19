@@ -1,67 +1,51 @@
 #
 
 class Base < Thor
+  def server(*args)
+  end
 end
 
 class Wkndr < Base
-  def gameloop
-    gl = GameLoop.new(self)
-    gl
-  end
-
-  def window(name, x, y, fps)
-    wndw = Window.new("wkndr", x, y, fps)
-    yield wndw
-    wndw
-  end
-
   desc "client", ""
-  def client
+  def client(gl = nil)
+    log!(:create_client, gl)
+
     stack = StackBlocker.new
 
-    gl = gameloop
-    stack.up(gl)
-
     socket_stream = SocketStream.create_websocket_connection { |typed_msg|
-      log!(:ws, typed_msg)
+      gl.event(typed_msg)
     }
-    stack.up socket_stream
+    stack.up(socket_stream)
 
-    wlh = window("window", 512, 512, 60) { |wndw|
-      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-      cube = Cube.new(1.0, 1.0, 1.0, 5.0)
-      gl.update { |global_time, delta_time|
-        gl.drawmode {
-          gl.threed {
-            gl.draw_grid(10, 10.0)
-            cube.draw(true)
-          }
-          gl.twod {
-            gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time.inspect} #{delta_time.inspect}") {
-              socket_stream.write({"s" => "getCode"})
-            }
-          }
-        }
-      }
+    gl.emit { |msg|
+      socket_stream.write(msg)
     }
-    stack.up wlh
+
+    window = Window.new("wkndr", 512, 512, 60)
+    window.update { |gt, dt|
+      gl.update(gt, dt)
+    }
+
+    stack.up(window)
 
     stack
   end
 
-  def self.start(args)
-    log!(:START, args)
+  def self.start(args = nil, &block)
+    stack = StackBlocker.new
 
-    if args.empty?
-      args = ["client_and_server"]
+    gl = GameLoop.new(self)
+    stack.up(gl)
+
+    server = super(["server"])
+    stack.up(server)
+
+    if block
+      client = super(["client", gl])
+      block.call(gl)
+      stack.up(client)
     end
 
-    if run_loop_blocker = super(args)
-      log!(:rl, self, run_loop_blocker)
-
-      #if args[0] == "server"
-        self.show! run_loop_blocker
-      #end
-    end
+    self.show! stack
   end
 end

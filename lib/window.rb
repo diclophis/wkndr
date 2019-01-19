@@ -3,17 +3,17 @@ $count = 0
 
 class Window
   def initialize(name, x, y, fps)
-    should_raise = $count == 1
-    log!(:chees77777, self, $count)
-    $count += 1
     open(name, x, y, fps)
-
-    raise "wtd" if should_raise
   end
 
-  def update(gt, dt)
-    #TODO: reattach to game loop, multi-window support????
-    #@game_loop.update(global_time, delta_time)
+  def update(gt = 0, dt = 0, &block)
+    if block
+      @play_proc = block
+    else
+      if @play_proc
+        @play_proc.call(gt, dt)
+      end
+    end
   end
 
   def running
@@ -21,7 +21,6 @@ class Window
   end
 
   def halt!
-    log!(:halt_window)
     @halting = true
   end
 end

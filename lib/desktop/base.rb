@@ -8,10 +8,18 @@ class Base < Thor
     stack
   end
 
-  desc "continous", ""
-  def continous
-    if File.exists?("public")
-      Server.run!(File.realpath("public"))
+  #desc "continous", ""
+  #def continous
+  #  if File.exists?("public")
+  #    Server.run!(File.realpath("public"))
+  #  end
+  #end
+
+  desc "server [DIRECTORY]", "services given directory over http"
+  def server(directory = "public", gl = nil)
+    log!(:create_server, directory)
+    if File.exists?(directory)
+      Server.run!(directory)
     end
   end
 
@@ -57,11 +65,6 @@ class Base < Thor
     
       UV.run
     end
-  end
-
-  desc "server [DIRECTORY]", "services given directory over http"
-  def server(directory)
-    Server.run!(directory)
   end
 
   desc "changelog [CHANGELOG]", "appends changelog item to CHANGELOG.md"

@@ -292,7 +292,6 @@ class Thor
       arity = nil
       #TODO
       if private_method?(instance)
-      raise "wtf123"
         instance.class.handle_no_command_error(name)
       elsif public_method?(instance)
         #arity = instance.method(name).arity
@@ -2397,7 +2396,6 @@ class Thor
       #
       def commands
       #TODO
-      #raise "wtf"
         @commands ||= Thor::CoreExt::OrderedHash.new
       end
       alias_method :tasks, :commands
