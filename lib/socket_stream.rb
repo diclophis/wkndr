@@ -21,7 +21,16 @@ class SocketStream
 
   def process(bytes = nil)
     process_as_msgpack_stream(bytes).each { |typed_msg|
-      @got_bytes_block.call(typed_msg)
+      channels = typed_msg.keys
+      channels.each do |channel|
+        case channel
+          when 1,2
+            ######
+            write_tty(typed_msg[channel])
+        else
+          @got_bytes_block.call(typed_msg[channel])
+        end
+      end
     }
   end
 

@@ -303,8 +303,7 @@ class Connection
       self.write_typed({"c" => "ping"})
     }
 
-=begin
-    ps = UV::Process.new({
+    @ps = UV::Process.new({
       #'file' => 'factor',
       #'args' => [],
       'file' => 'sh',
@@ -320,13 +319,12 @@ class Connection
       #TODO: proper env cleanup!!
       'env' => ['TERM=xterm-256color'],
     })
-    @ps = ps
 
-    ps.stdin_pipe = @stdin_tty
-    ps.stdout_pipe = @stdout_tty
-    ps.stderr_pipe = @stderr_tty
+    @ps.stdin_pipe = @stdin_tty
+    @ps.stdout_pipe = @stdout_tty
+    @ps.stderr_pipe = @stderr_tty
 
-    ps.spawn do |sig|
+    @ps.spawn do |sig|
       log!("exit #{sig}")
     end
 
@@ -334,8 +332,7 @@ class Connection
       if bbbb.is_a?(UVError)
         log!(:baderr, bbbb)
       elsif bbbb && bbbb.length > 0
-        self.ws.queue_msg(bbbb, :binary_frame)
-        outg = self.ws.send
+        self.write_typed({2 => bbbb})
       end
     end
 
@@ -343,16 +340,12 @@ class Connection
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
-        self.ws.queue_msg(bout, :binary_frame)
-        outg = self.ws.send
-        log!(:outg, outg)
-        outg
+        self.write_typed({1 => bout})
       end
     end
 
     #TODO???
-    ps.kill(0)
-=end
+    @ps.kill(0)
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset
