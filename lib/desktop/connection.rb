@@ -174,7 +174,7 @@ class Connection
       end
     else
       if self.ws
-        self.last_buf = b
+        self.last_buf += b
         proto_ok = (self.ws.recv != :proto)
         unless proto_ok
           #self.socket.close
@@ -231,9 +231,19 @@ class Connection
       #log!("SDSD", self.last_buf, buf, len, buf.to_s)
 
       if self.last_buf
-        throw_away_buf = self.last_buf.dup
-        self.last_buf = nil
-        throw_away_buf
+        #throw_away_buf = self.last_buf.dup
+        #self.last_buf = nil
+        #throw_away_buf
+        #buf = self.last_buf
+        #buf
+        #log!(:wtf, buf.class)
+        #len.times do |i|
+        #  buf[i] = self.last_buf[i]
+        #end
+
+        s = self.last_buf.slice!(0, len)
+        log!(:sdsd, s, len)
+        s
       else
         nil
       end

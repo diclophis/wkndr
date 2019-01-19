@@ -27,10 +27,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal.open(document.getElementById("terminal"));
 
       window.terminal.on('data', function(termInputData) {
-        var outboudArrayBuffer = str2ab(termInputData);
-        var heapBuffer = Module._malloc(outboundArrayBuffer.length * outboudArrayBuffer.BYTES_PER_ELEMENT);
-        window.pack_outbound_tty(outboundArrayBuffer, heapBuffer);
-        Module._free(heapBuffer);
+        var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
+        window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+        console.log(mrbPointer, callbackPointer, ptr, termInputData.length);
+        Module._free(ptr);
       });
 
       window.onbeforeunload = function() {
@@ -44,11 +44,11 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
-      origData = event.data;
-      typedData = new Uint8Array(origData);
-      var heapBuffer = Module._malloc(typedData.length * typedData.BYTES_PER_ELEMENT);
+      var origData = event.data;
+      var typedData = new Uint8Array(origData);
+      var heapBuffer = Module._malloc(typedData.byteLength * origData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
-      debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.length);
+      window.debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
       Module._free(heapBuffer);
     };
 
@@ -57,7 +57,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     }
 
     window.writePackedPointer = addFunction(function(bytes, length) {
-
       var buf = new ArrayBuffer(length); // 2 bytes for each char
       var bufView = new Uint8Array(buf);
       for (var i=0; i < length; i++) {
@@ -71,8 +70,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       buf = null;
       bufView = null;
     }, 'vvi');
-
-    console.log(window.writePackedPointer);
 
     return window.writePackedPointer;
   } else {
@@ -88,7 +85,7 @@ var Module = {
     );
 
     window.pack_outbound_tty = Module.cwrap(
-      'pack_outbound_tty', 'number', ['number', 'number']
+      'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
     );
   })],
   postRun: [],

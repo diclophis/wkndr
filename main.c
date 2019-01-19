@@ -142,8 +142,18 @@ size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_
 }
 
 EMSCRIPTEN_KEEPALIVE
-size_t pack_outbound_tty(const char* buf, size_t n) {
-  fprintf(stdout,"pack_tty\n");
+size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
+  fprintf(stdout, "pack_tty %x %d\n", buf, n);
+
+  mrb_value empty_string = mrb_str_new_lit(mrb, "");
+  mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+
+  mrb_value outbound_tty_msg = mrb_ary_new(mrb);
+  mrb_ary_push(mrb, outbound_tty_msg, mrb_fixnum_value(0));
+  mrb_ary_push(mrb, outbound_tty_msg, clikestr_as_string);
+  mrb_ary_push(mrb, outbound_tty_msg, empty_string);
+
+  mrb_funcall(mrb,  mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
 
   return 0;
 }

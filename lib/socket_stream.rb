@@ -66,6 +66,7 @@ class SocketStream
   end
 
   def write_typed(*msg_typed)
+    log!(:outbound, msg_typed)
     #begin
       if connected
         msg = MessagePack.pack(*msg_typed)
