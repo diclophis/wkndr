@@ -187,8 +187,8 @@ mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
 
 #ifdef PLATFORM_WEB
   EM_ASM_({
-    return window.unpack_inbound_tty(Pointer_stringify($0), $1); // Convert message to JS string
-  }, foo, len);
+    return window.unpack_inbound_tty($0); //Pointer_stringify($0, $1)); // Convert message to JS string
+  }, foo);
 #endif
 
   return mrb_nil_value();
@@ -224,7 +224,8 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
   mrb_value packed_bytes;
   mrb_get_args(mrb, "o", &packed_bytes);
 
-  const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
+  //const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
+  const char *foo = mrb_string_value_cstr(mrb, &packed_bytes);
   int len = mrb_string_value_len(mrb, packed_bytes);
 
   write_packed_pointer(foo, len);

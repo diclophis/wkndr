@@ -53,6 +53,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.unpack_inbound_tty = function(stringBits) {
+      console.log(stringBits);
       window.terminal.write(stringBits);
     }
 

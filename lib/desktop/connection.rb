@@ -263,13 +263,19 @@ class Connection
       # to_str => returns the message revieced
 
       if msg[:opcode] == :binary_frame
-        process_as_msgpack_stream(msg.msg) { |inbound_msg|
-          log!("INBOUND", inbound_msg)
+        process_as_msgpack_stream(msg.msg) { |typed_msg|
+          channels = typed_msg.keys
+          channels.each do |channel|
+            case channel
+              when 0
+                @stdin_tty.write(msg.msg) {
+                  false
+                }
+            else
+              log!("INBOUND", typed_msg)
+            end
+          end
         }
-
-        #@stdin_tty.write(msg.msg) {
-        #  false
-        #}
       end
     end
 
