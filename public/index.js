@@ -29,7 +29,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal.on('data', function(termInputData) {
         var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
         window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-        console.log(mrbPointer, callbackPointer, ptr, termInputData.length);
+        console.log("123abc", mrbPointer, callbackPointer, ptr, termInputData.length);
         Module._free(ptr);
       });
 
@@ -49,25 +49,26 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       var heapBuffer = Module._malloc(typedData.byteLength * origData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
       window.debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
+      console.log("456");
       Module._free(heapBuffer);
     };
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-
       console.log(channel, bytes, length);
 
+      var buf = new ArrayBuffer(length); // 2 bytes for each char
+      var bufView = new Uint8Array(buf);
+      for (var i=0; i < length; i++) {
+        var ic = getValue(bytes + (i), 'i8');
+        bufView[i] = ic;
+      }
+
       if (channel == 0) {
-        //var stringBits = ab2str(bufView);
-        var stringBits = UTF8ToString(bytes);
-        console.log("WTFFFF", stringBits);
+        var stringBits = ab2str(bufView);
+        //var stringBits = UTF8ToString(bytes);
+        //console.log("WTFFFF", stringBits);
         window.terminal.write(stringBits);
       } else if (channel == 1) {
-        var buf = new ArrayBuffer(length); // 2 bytes for each char
-        var bufView = new Uint8Array(buf);
-        for (var i=0; i < length; i++) {
-          var ic = getValue(bytes + (i), 'i8');
-          bufView[i] = ic;
-        }
         var sent = window.conn.send(buf);
       }
 

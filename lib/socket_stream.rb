@@ -6,7 +6,7 @@ class SocketStream
 
     @outbound_messages = []
 
-    @left_over_bits = nil
+    @left_over_bits = ""
   end
 
   def self.socket_klass
@@ -21,15 +21,15 @@ class SocketStream
 
   def process(bytes = nil)
     process_as_msgpack_stream(bytes).each { |typed_msg|
-      log!(:typedm, typed_msg)
       channels = typed_msg.keys
       channels.each do |channel|
+        cmsg = typed_msg[channel]
+        log!(:cmsg, cmsg.class)
         case channel
           when 1,2
-            ######
-            write_tty(typed_msg[channel])
+            write_tty(cmsg)
         else
-          @got_bytes_block.call(typed_msg[channel])
+          @got_bytes_block.call(cmsg)
         end
       end
     }
@@ -52,19 +52,19 @@ class SocketStream
   end
 
   def process_as_msgpack_stream(bytes)
-    all_bits_to_consider = (@left_over_bits || "") + bytes
-    all_l = all_bits_to_consider.length
+    #all_bits_to_consider = (@left_over_bits || "") + bytes
+    #all_l = all_bits_to_consider.length
 
-    unpacked_typed = []
-    unpacked_length = MessagePack.unpack(all_bits_to_consider) do |result|
-      if result
-        unpacked_typed << result
-      end
-    end
+    #unpacked_typed = []
+    #unpacked_length = MessagePack.unpack(all_bits_to_consider) do |result|
+    #  if result
+    #    unpacked_typed << result
+    #  end
+    #end
 
-    @left_over_bits = all_bits_to_consider[unpacked_length, all_l]
+    #@left_over_bits = all_bits_to_consider[unpacked_length, all_l]
 
-    unpacked_typed
+    #unpacked_typed
   end
 
   def update(gt = nil, dt = nil)

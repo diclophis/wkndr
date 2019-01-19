@@ -137,8 +137,10 @@ static mrb_value pressedkeys;
 
 EMSCRIPTEN_KEEPALIVE
 size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
-  mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
-  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 1, cstrlikebuf);
+  //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
+  mrb_value empty_string = mrb_str_new_lit(mrb, "");
+  mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 1, clikestr_as_string);
   return 0;
 }
 
@@ -186,17 +188,17 @@ mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
 
   data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@client"));
 
+#ifdef PLATFORM_WEB
   mrb_int fp = mrb_int(mrb, data_value);
-
   void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
-
-  //const char *foo = mrb_string_value_ptr(mrb, tty_output);
-  const char *foo = mrb_string_value_cstr(mrb, &tty_output);
+  const char *foo = mrb_string_value_ptr(mrb, tty_output);
+  //const char *foo = mrb_string_value_cstr(mrb, &tty_output);
   int len = mrb_string_value_len(mrb, tty_output);
 
   mrb_p(mrb, tty_output);
 
   write_packed_pointer(0, foo, len);
+#endif
 
 //#ifdef PLATFORM_WEB
 //  EM_ASM_({
