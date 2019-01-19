@@ -55,6 +55,7 @@ class Connection
 
   def halt!
     log!(:halt_connection)
+
     @halting = true
   end
 
@@ -312,10 +313,10 @@ class Connection
     @ps = UV::Process.new({
       #'file' => 'factor',
       #'args' => [],
-      'file' => 'sh',
-      'args' => [],
-      #'file' => "/usr/sbin/chroot",
-      #'args' => ["/var/tmp/chroot", "/bin/sh"],
+      #'file' => 'sh',
+      #'args' => [],
+      'file' => "/usr/sbin/chroot",
+      'args' => ["/var/tmp/chroot", "/bin/bash"],
       #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
       #'file' => 'nc',
       #'args' => ["localhost", "12345"],
@@ -346,7 +347,7 @@ class Connection
       if bout.is_a?(UVError)
         log!(:badout, bout)
       elsif bout
-        outbits = {1 => bout.to_s}
+        outbits = {1 => bout}
         log!(:WEWEWEWEWE, outbits)
         self.write_typed(outbits)
       end

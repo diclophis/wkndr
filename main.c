@@ -161,7 +161,7 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   
   mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
 
-  mrb_free(mrb, mrb_obj_ptr(outbound_tty_msg));
+  //mrb_free(mrb, mrb_obj_ptr(outbound_tty_msg));
 
   return 0;
 }
@@ -195,9 +195,12 @@ mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
   //const char *foo = mrb_string_value_cstr(mrb, &tty_output);
   int len = mrb_string_value_len(mrb, tty_output);
 
-  mrb_p(mrb, tty_output);
+  //mrb_p(mrb, tty_output);
 
   write_packed_pointer(0, foo, len);
+
+  mrb_free(mrb, mrb_obj_ptr(tty_output));
+
 #endif
 
 //#ifdef PLATFORM_WEB
@@ -207,7 +210,6 @@ mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
 //#endif
 
   return mrb_nil_value();
-
 }
 
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {

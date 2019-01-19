@@ -15,10 +15,6 @@ class Wkndr < Base
     wndw
   end
 
-  #def web
-  #  #log!(:in_web)
-  #end
-
   desc "client", ""
   def client
     stack = StackBlocker.new

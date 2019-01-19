@@ -29,7 +29,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal.on('data', function(termInputData) {
         var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
         window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-        console.log("123abc", mrbPointer, callbackPointer, ptr, termInputData.length);
         Module._free(ptr);
       });
 
@@ -46,16 +45,13 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.onmessage = function (event) {
       var origData = event.data;
       var typedData = new Uint8Array(origData);
-      var heapBuffer = Module._malloc(typedData.byteLength * origData.BYTES_PER_ELEMENT);
+      var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
       window.debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
-      console.log("456");
       Module._free(heapBuffer);
     };
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-      console.log(channel, bytes, length);
-
       var buf = new ArrayBuffer(length); // 2 bytes for each char
       var bufView = new Uint8Array(buf);
       for (var i=0; i < length; i++) {
@@ -65,8 +61,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       if (channel == 0) {
         var stringBits = ab2str(bufView);
-        //var stringBits = UTF8ToString(bytes);
-        //console.log("WTFFFF", stringBits);
         window.terminal.write(stringBits);
       } else if (channel == 1) {
         var sent = window.conn.send(buf);

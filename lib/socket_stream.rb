@@ -24,15 +24,16 @@ class SocketStream
       channels = typed_msg.keys
       channels.each do |channel|
         cmsg = typed_msg[channel]
-        log!(:cmsg, cmsg.class)
         case channel
           when 1,2
-            write_tty(cmsg)
+            self.write_tty(cmsg.dup)
         else
           @got_bytes_block.call(cmsg)
         end
       end
     }
+
+    #GC.start
   end
 
   def write(msg_typed)
@@ -44,7 +45,6 @@ class SocketStream
   end
 
   def halt!
-    log!(:halt_socket_stream)
     @halting = true
   end
 
@@ -52,19 +52,24 @@ class SocketStream
   end
 
   def process_as_msgpack_stream(bytes)
-    #all_bits_to_consider = (@left_over_bits || "") + bytes
-    #all_l = all_bits_to_consider.length
+    if bytes && bytes.length
+      @left_over_bits += bytes
 
-    #unpacked_typed = []
-    #unpacked_length = MessagePack.unpack(all_bits_to_consider) do |result|
-    #  if result
-    #    unpacked_typed << result
-    #  end
-    #end
+      #all_bits_to_consider = (@left_over_bits || "") + bytes
+      #all_l = all_bits_to_consider.length
 
-    #@left_over_bits = all_bits_to_consider[unpacked_length, all_l]
+      unpacked_typed = []
+      unpacked_length = MessagePack.unpack(@left_over_bits) do |result|
+        if result
+          unpacked_typed << result
+        end
+      end
 
-    #unpacked_typed
+      #@left_over_bits = all_bits_to_consider[unpacked_length, all_l]
+      @left_over_bits.slice!(0, unpacked_length)
+
+      unpacked_typed
+    end
   end
 
   def update(gt = nil, dt = nil)
@@ -76,7 +81,7 @@ class SocketStream
   end
 
   def write_typed(*msg_typed)
-    log!(:outbound, msg_typed)
+    #log!(:outbound, msg_typed)
     #begin
       if connected
         msg = MessagePack.pack(*msg_typed)
