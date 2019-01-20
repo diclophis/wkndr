@@ -155,6 +155,8 @@ class Connection
 
           requested_path = "#{@required_prefix}#{filename}"
           UV::FS.realpath(requested_path) { |resolved_filename|
+            log!(resolved_filename, @required_prefix)
+
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
                 #self.socket.close
@@ -340,6 +342,11 @@ class Connection
 
     #TODO???
     @ps.kill(0)
+
+    @f = UV::FS::open("Wkndrfile", UV::FS::O_RDONLY, UV::FS::S_IREAD)
+    #wkread = @f.read
+    #log!(:wkread, wkread)
+    #@f.close
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset

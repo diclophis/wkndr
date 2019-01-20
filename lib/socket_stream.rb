@@ -27,6 +27,8 @@ class SocketStream
         case channel
           when 1,2
             self.write_tty(cmsg.dup)
+          when "p"
+            Wkndr.parse!(cmsg.dup)
         else
           @got_bytes_block.call(cmsg)
         end

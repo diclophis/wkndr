@@ -1,13 +1,12 @@
 #
 
-class Base < Thor
-  def server(*args)
-  end
-end
+#class Base < Thor
+#  def server(*args)
+#  end
+#end
 
-class Wkndr < Base
-  desc "client", ""
-  def client(gl = nil)
+class Wkndr
+  def self.client(gl = nil)
     log!(:create_client, gl)
 
     stack = StackBlocker.new
@@ -31,21 +30,24 @@ class Wkndr < Base
     stack
   end
 
-  def self.start(args = nil, &block)
-    stack = StackBlocker.new
+  #def self.start(args = nil, &block)
+  #  #server = super(["server"])
+  #  #stack.up(server)
+  #  if args == nil && block
+  #  else
+  #    stack = super(args)
+  #    self.show! stack
+  #  end
+  #end
 
-    gl = GameLoop.new(self)
-    stack.up(gl)
+  def self.play(stack = nil, gl = nil, &block)
+    if block && @gl
+      block.call(@gl)
+    else
+      @stack = stack
+      @gl = gl
 
-    server = super(["server"])
-    stack.up(server)
-
-    if block
-      client = super(["client", gl])
-      block.call(gl)
-      stack.up(client)
+      Wkndr.show! @stack
     end
-
-    self.show! stack
   end
 end

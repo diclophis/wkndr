@@ -62,9 +62,10 @@
 #include "main_menu.h"
 #include "socket_stream.h"
 #include "window.h"
-#include "thor.h"
+//#include "thor.h"
 #include "stack_blocker.h"
 #include "start.h"
+#include "client.h"
 #include "wkndr.h"
 
 
@@ -250,12 +251,13 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 
 
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
-#ifdef PLATFORM_DESKTOP
-  if (WindowShouldClose()) {
-    mrb_funcall(mrb, self, "halt!", 0, NULL);
-    return mrb_nil_value();
-  }
-#endif
+
+//#ifdef PLATFORM_DESKTOP
+//  if (WindowShouldClose()) {
+//    mrb_funcall(mrb, self, "halt!", 0, NULL);
+//    return mrb_nil_value();
+//  }
+//#endif
 
   double time;
   float dt;
@@ -298,6 +300,29 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 #endif
+
+  return self;
+}
+
+
+mrb_value global_parse(mrb_state* mrb, mrb_value self) {
+  mrb_value mruby_code;
+
+  mrb_get_args(mrb, "o", &mruby_code);
+
+  const char *foo = mrb_string_value_ptr(mrb, mruby_code);
+  int len = mrb_string_value_len(mrb, mruby_code);
+
+/*
+  mrbc_context *detective_file = mrbc_context_new(mrb);
+  mrbc_filename(mrb, detective_file, "Wkndrfile");
+  mrb_value ret;
+  ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in %s", detective_file);
+    mrb_print_error(mrb);
+  }
+*/
 
   return self;
 }
@@ -1171,10 +1196,11 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, window, NULL);
 
-  eval_static_libs(mrb, thor, NULL);
+  //eval_static_libs(mrb, thor, NULL);
 
-  struct RClass *thor_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
   mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   mrb_define_method(mrb, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
@@ -1203,25 +1229,33 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
 
-  FILE *f = 0;
-  char *config = "Wkndrfile";
-
-  f = fopen(config, "r");
-  if (0 == f) {
-    fprintf(stderr,"could not find %s\n", config);
-    return 1;
-  }
-
-  mrbc_context *detective_file = mrbc_context_new(mrb);
-  mrbc_filename(mrb, detective_file, config);
-  mrb_value ret2;
-  ret2 = mrb_load_file_cxt(mrb, f, detective_file);
-  mrbc_context_free(mrb, detective_file);
-  fclose(f);
-  if_exception_error_and_exit(mrb, config);
+  //if (i == 1) {
+  //  // FILE *f = 0;
+  //  // char *config = "Wkndrfile";
+  //  // f = fopen(config, "r");
+  //  // if (0 == f) {
+  //  //   fprintf(stderr,"could not find %s\n", config);
+  //  //   return 1;
+  //  // }
+  //  // mrbc_context *detective_file = mrbc_context_new(mrb);
+  //  // mrbc_filename(mrb, detective_file, config);
+  //  // mrb_value ret2;
+  //  // ret2 = mrb_load_file_cxt(mrb, f, detective_file);
+  //  // mrbc_context_free(mrb, detective_file);
+  //  // fclose(f);
+  //  // if_exception_error_and_exit(mrb, config);
+  //} else {
+  //  eval_static_libs(mrb, start, NULL);
+  //}
 #endif
 
-  eval_static_libs(mrb, start, NULL);
+  if (i == 1) {
+    eval_static_libs(mrb, client, NULL);
+  } else {
+#ifdef PLATFORM_DESKTOP
+    mrb_funcall(mrb, mrb_obj_value(thor_class), "backend", 1, args);
+#endif    
+  }
 
   mrb_close(mrb);
 
