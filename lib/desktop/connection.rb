@@ -202,7 +202,9 @@ class Connection
   def write_ws_response!(sec_websocket_key)
     key = WebSocket.create_accept(sec_websocket_key)
 
-    self.socket.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: #{key}\r\n\r\n")
+    self.socket.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: #{key}\r\n\r\n") {
+      yield
+    }
   end
 
   def read_bytes_safely(b)
@@ -291,79 +293,64 @@ class Connection
       k == "sec-websocket-key"
     }[1]
 
-    self.write_ws_response!(sec_websocket_key)
-
-read_file = false
-
-    @t = UV::Timer.new
-    @t.start(1000, 1000) {
-      self.write_typed({"c" => "ping"})
-
-if read_file == false
-read_file = true
-
-log!(:sending_wkdrfile, "!!!!!!")
+    self.write_ws_response!(sec_websocket_key) {
 
       ffff = UV::FS::open("Wkndrfile", UV::FS::O_RDONLY, 0)
-      #do #, UV::FS::S_IREAD)
-      #do |ffff|
-        wkread = ffff.read
-        #log!(:ff, ffff, wkread)
-        self.write_typed({"p" => wkread})
-        #log!(:wkread, wkread)
-        ffff.close
-      #end
-      #end
-end
+      wkread = ffff.read
+      self.write_typed({"p" => wkread})
+      ffff.close
 
+      @t = UV::Timer.new
+      @t.start(1000, 1000) {
+        self.write_typed({"c" => "ping"})
+      }
+
+
+      @ps = UV::Process.new({
+        #'file' => 'factor',
+        #'args' => [],
+        #'file' => 'sh',
+        #'args' => [],
+        'file' => "/usr/sbin/chroot",
+        'args' => ["/var/tmp/chroot", "/bin/bash", "-i", "-l"],
+        #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
+        #'file' => 'nc',
+        #'args' => ["localhost", "12345"],
+        #'args' => ["towel.blinkenlights.nl", "23"],
+        #'file' => 'htop',
+        #'args' => ["-d0.1"],
+        #TODO: proper env cleanup!!
+        'env' => ['TERM=xterm-256color'],
+      })
+
+      @ps.stdin_pipe = @stdin_tty
+      @ps.stdout_pipe = @stdout_tty
+      @ps.stderr_pipe = @stderr_tty
+
+      @ps.spawn do |sig|
+        log!("exit #{sig}")
+      end
+
+      @stderr_tty.read_start do |bbbb|
+        if bbbb.is_a?(UVError)
+          log!(:baderr, bbbb)
+        elsif bbbb && bbbb.length > 0
+          self.write_typed({2 => bbbb})
+        end
+      end
+
+      @stdout_tty.read_start do |bout|
+        if bout.is_a?(UVError)
+          log!(:badout, bout)
+        elsif bout
+          outbits = {1 => bout}
+          self.write_typed(outbits)
+        end
+      end
+
+      #TODO???
+      @ps.kill(0)
     }
-
-if false
-    @ps = UV::Process.new({
-      #'file' => 'factor',
-      #'args' => [],
-      #'file' => 'sh',
-      #'args' => [],
-      'file' => "/usr/sbin/chroot",
-      'args' => ["/var/tmp/chroot", "/bin/bash", "-i", "-l"],
-      #'args' => ["/var/tmp/chroot", "/bin/vim-static"],
-      #'file' => 'nc',
-      #'args' => ["localhost", "12345"],
-      #'args' => ["towel.blinkenlights.nl", "23"],
-      #'file' => 'htop',
-      #'args' => ["-d0.1"],
-      #TODO: proper env cleanup!!
-      'env' => ['TERM=xterm-256color'],
-    })
-
-    @ps.stdin_pipe = @stdin_tty
-    @ps.stdout_pipe = @stdout_tty
-    @ps.stderr_pipe = @stderr_tty
-
-    @ps.spawn do |sig|
-      log!("exit #{sig}")
-    end
-
-    @stderr_tty.read_start do |bbbb|
-      if bbbb.is_a?(UVError)
-        log!(:baderr, bbbb)
-      elsif bbbb && bbbb.length > 0
-        self.write_typed({2 => bbbb})
-      end
-    end
-
-    @stdout_tty.read_start do |bout|
-      if bout.is_a?(UVError)
-        log!(:badout, bout)
-      elsif bout
-        outbits = {1 => bout}
-        self.write_typed(outbits)
-      end
-    end
-
-    #TODO???
-    @ps.kill(0)
-end
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset

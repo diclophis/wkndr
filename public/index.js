@@ -78,7 +78,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var Module = {
-  arguments: ['client'],
+  arguments: [],
   preRun: [(function() {
     window.debug_print = Module.cwrap(
       'debug_print', 'number', ['number', 'number', 'number', 'number']

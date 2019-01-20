@@ -20,7 +20,8 @@ log!(:WkndrfileParsedPlay, gl)
       }
 
       gl.twod {
-        gl.button(0.0, 0.0, 250.0, 20.0, "start #{global_time.inspect} #{delta_time.inspect}") {
+        gl.draw_fps(0.0, 0.0)
+        gl.button(50.0, 50.0, 250.0, 20.0, "start %06.2f, %0.4f" % [global_time, delta_time]) { #} #{delta_time.round(4)}") {
           gl.emit({"s" => "getCode"})
         }
       }
