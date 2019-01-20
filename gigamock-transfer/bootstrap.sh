@@ -14,6 +14,7 @@ apt-get update \
        libssl-dev \
        bash-static \
        busybox-static \
+       rungetty \
        automake build-essential libtool curl bison libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev xinit openbox \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
