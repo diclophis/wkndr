@@ -2,7 +2,6 @@
 
 class WslaySocketStream < SocketStream
   def shutdown
-    log!(:wslay_shutdown)
     if @socket
       #&& @socket.has_ref?
       #@socket.read_stop 
@@ -18,7 +17,6 @@ class WslaySocketStream < SocketStream
   end
 
   def halt!
-    log!(:wslay_halt)
     @halting = super
   end
 
@@ -54,7 +52,8 @@ class WslaySocketStream < SocketStream
       if msg[:opcode] == :binary_frame
         process(msg[:msg])
       else
-        log!(msg[:opcode])
+        #TODO: log!(msg[:opcode])
+        #??????
       end
     end
 
@@ -68,7 +67,7 @@ class WslaySocketStream < SocketStream
           0
         end
       rescue UVError => e
-        log!(e)
+        log!(:wsla_send_callback_err, e)
         0
       end
     end
@@ -81,7 +80,6 @@ class WslaySocketStream < SocketStream
 
     on_read_start = Proc.new { |b|
       if b && b.is_a?(UVError)
-        log!(:retry, b, @halting)
         if @halting
           shutdown
         else
@@ -110,11 +108,6 @@ class WslaySocketStream < SocketStream
     }
 
     @try_connect = Proc.new {
-      #if @socket
-      #  @socket.close
-      #  @socket = nil
-      #end
-
       @socket = UV::TCP.new
       address = UV.ip4_addr(@host, @port)
       @socket.connect(address, &on_connect)
@@ -124,8 +117,6 @@ class WslaySocketStream < SocketStream
   end
 
   def restart_connection!
-    log!(:restart_con!)
-
     @t = UV::Timer.new
     @t.start(1000, 0) {
       @try_connect.call
@@ -133,14 +124,12 @@ class WslaySocketStream < SocketStream
   end
 
   def handle_bytes!(b)
-    #@gl.log!([:raw, b.length])
-
     if @processing_handshake
       @ss += b
       offset = @phr.parse_response(@ss)
       case offset
       when Fixnum
-        log!(@phr.headers)
+        #log!(@phr.headers)
         #TODO???
         #unless WebSocket.create_accept(key).securecmp(phr.headers.to_h.fetch('sec-websocket-accept'))
         #   raise Error, "Handshake failure"
@@ -174,11 +163,8 @@ class WslaySocketStream < SocketStream
   end
 
   def write_ws_request!
-    log!(:write_ws_request_as_desk_client)
-
     path = "/ws"
     key = B64.encode(Sysrandom.buf(16)).chomp!
-    #log!(@address)
     @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@host}:#{@port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
       yield
     }

@@ -1,31 +1,14 @@
 #
 
 class Wkndr
-  #def client_and_server
-  #  stack = StackBlocker.new
-  #  stack.up client
-  #  stack.up continous
-  #  stack
-  #end
-
-  #desc "continous", ""
-  #def continous
-  #  if File.exists?("public")
-  #    Server.run!(File.realpath("public"))
-  #  end
-  #end
-
   ##desc "server [DIRECTORY]", "services given directory over http"
   def self.server(directory = "public")
     if File.exists?(directory)
-      log!(:create_server, directory)
       Server.run!(directory)
     end
   end
 
   def self.backend(argv)
-    log!(:backend, argv)
-
     run_loop_blocker = server(argv[1])
 
     show!(run_loop_blocker)
@@ -50,8 +33,6 @@ class Wkndr
         run_loop_blocker.up(server)
       end
 
-      log!(:rl, running, run_loop_blocker.running, run_loop_blocker)
-
       timer = UV::Timer.new
       timer.start(tick_interval_ms, tick_interval_ms) { |x|
         #log!(:ticking, running, run_loop_blocker.running, ticks, exit_counter)
@@ -61,12 +42,9 @@ class Wkndr
             log!(:idle, ticks)
           end
 
-          #log!(:signaling,  run_loop_blocker)
-
           run_loop_blocker.signal
         else
           if exit_counter > 0
-            #log!(:shutdown, ticks, exit_counter)
             timer.stop
             run_loop_blocker.shutdown
             #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
@@ -74,7 +52,6 @@ class Wkndr
             UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
           else
             all_halting = run_loop_blocker.halt!
-            #log!(:all_halting, ticks, exit_counter, all_halting)
             exit_counter += 1
           end
         end

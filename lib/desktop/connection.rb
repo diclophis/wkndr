@@ -60,9 +60,6 @@ class Connection
   end
 
   def serve_static_file!(filename)
-    #log!(:get, self.object_id, filename)
-
-    #TODO: close opened files
     fd = UV::FS::open(filename, UV::FS::O_RDONLY, UV::FS::S_IREAD)
     file_size =  fd.stat.size
     sent = 0
@@ -294,7 +291,6 @@ class Connection
     }[1]
 
     self.write_ws_response!(sec_websocket_key) {
-
       ffff = UV::FS::open("Wkndrfile", UV::FS::O_RDONLY, 0)
       wkread = ffff.read
       self.write_typed({"p" => wkread})
@@ -372,6 +368,7 @@ class Connection
       end
     rescue Wslay::Err => e
       log!(:server_out_err, e)
+
       self.halt!
       self.shutdown
     end

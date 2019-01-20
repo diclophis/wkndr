@@ -1,5 +1,4 @@
-##
-$count = 0
+#
 
 class Window
   def initialize(name, x, y, fps)

@@ -43,7 +43,6 @@ class Server
   end
 
   def shutdown
-    log!(:server_shutdown)
     @all_connections.each { |cn|
       cn.shutdown
     }
@@ -56,7 +55,6 @@ class Server
   end
 
   def halt!
-    log!(:halt_server)
     @halting = @all_connections.all? { |cn| cn.halt! }
   end
 

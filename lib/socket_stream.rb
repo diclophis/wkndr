@@ -21,18 +21,20 @@ class SocketStream
 
   def process(bytes = nil)
     process_as_msgpack_stream(bytes).each { |typed_msg|
-    log!(:raw_typed, typed_msg)
-
       channels = typed_msg.keys
       channels.each do |channel|
         cmsg = typed_msg[channel]
+        #NOTE: channels are as follows
+        #
+        #  1 stdout of connected tty
+        #  2 stderr of connected tty
+        #  p is the Wkndrfile code stream
+        #  * everything else gets sent to user-defined handler
         case channel
           when 1,2
             self.write_tty(cmsg)
           when "p"
-            #did_parse = Wkndr.parse!(cmsg)
             did_parse = Kernel.eval(cmsg)
-            log!(:DidTheParseWkndr, did_parse)
         else
           @got_bytes_block.call(cmsg)
         end
@@ -61,9 +63,6 @@ class SocketStream
     if bytes && bytes.length
       @left_over_bits += bytes
 
-      #all_bits_to_consider = (@left_over_bits || "") + bytes
-      #all_l = all_bits_to_consider.length
-
       unpacked_typed = []
       unpacked_length = MessagePack.unpack(@left_over_bits) do |result|
         if result
@@ -71,7 +70,6 @@ class SocketStream
         end
       end
 
-      #@left_over_bits = all_bits_to_consider[unpacked_length, all_l]
       @left_over_bits.slice!(0, unpacked_length)
 
       unpacked_typed
@@ -87,16 +85,10 @@ class SocketStream
   end
 
   def write_typed(*msg_typed)
-    #log!(:outbound, msg_typed)
-    #begin
-      if connected
-        msg = MessagePack.pack(*msg_typed)
-
-        write_packed(msg)
-      end
-    #rescue Wslay::Err => e
-    #  log!(e)
-    #end
+    if connected
+      msg = MessagePack.pack(*msg_typed)
+      write_packed(msg)
+    end
   end
 
   def connected

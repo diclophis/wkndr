@@ -1,27 +1,28 @@
 #!/usr/bin/env ruby
 
-log!(:WkndrfileParsed)
-
 Wkndr.play { |gl|
-log!(:WkndrfileParsedPlay, gl)
   gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
 
-  cube = Cube.new(1.0, 1.0, 1.0, 5.0)
+  cube = Cube.new(1.0, 1.0, 1.0, 20.0)
 
   gl.event { |typed_msg|
     log!(:ws, typed_msg)
   }
 
+  cube_r = 0.0
+
   gl.update { |global_time, delta_time|
     gl.drawmode {
       gl.threed {
-        gl.draw_grid(10, 10.0)
+        gl.draw_grid(20.0, 20.0)
+        cube.deltar(10.0 * Math.sin(global_time), 20.0, 30.0, cube_r)
+        cube_r += (66.0 * delta_time)
         cube.draw(true)
       }
 
       gl.twod {
-        gl.draw_fps(0.0, 0.0)
-        gl.button(50.0, 50.0, 250.0, 20.0, "start %06.2f, %0.4f" % [global_time, delta_time]) { #} #{delta_time.round(4)}") {
+        gl.draw_fps(0, 0)
+        gl.button(50.0, 50.0, 250.0, 20.0, "start %06.2f, %0.4f" % [global_time, delta_time]) {
           gl.emit({"s" => "getCode"})
         }
       }

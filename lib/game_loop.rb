@@ -15,8 +15,6 @@ class GameLoop
     if block
       @event_proc = block
     else
-      log!(:event, msg)
-
       if @event_proc
         @event_proc.call(msg)
       end
@@ -38,11 +36,9 @@ class GameLoop
   end
 
   def halt!
-    log!(:game_loop_halt)
     @halting = true
   end
 
   def shutdown
   end
 end
-

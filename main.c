@@ -251,13 +251,12 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 
 
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
-
-//#ifdef PLATFORM_DESKTOP
-//  if (WindowShouldClose()) {
-//    mrb_funcall(mrb, self, "halt!", 0, NULL);
-//    return mrb_nil_value();
-//  }
-//#endif
+#ifdef PLATFORM_DESKTOP
+  if (WindowShouldClose()) {
+    mrb_funcall(mrb, self, "halt!", 0, NULL);
+    return mrb_nil_value();
+  }
+#endif
 
   double time;
   float dt;
