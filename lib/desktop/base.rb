@@ -59,6 +59,8 @@ class Wkndr
         ticks += 1
       }
 
+      log!(:uv_handle, UV.guess_handle(0))
+
       UV.run
     end
   end

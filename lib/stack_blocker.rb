@@ -10,6 +10,7 @@ class StackBlocker
   end
 
   def running
+    log!(:stack, @stack)
     @stack.all? { |srb| srb.running }
   end
 

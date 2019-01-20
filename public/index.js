@@ -23,13 +23,26 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      window.terminal = new Terminal({rows: 20, cols: 80});
-      window.terminal.open(document.getElementById("terminal"));
+      var cols = 80;
+      var rows = 20;
+
+      var terminalContainer = document.getElementById("wkndr-terminal");
+      window.terminal = new Terminal({cursorBlink: true, scrollback: 100, tabStopWidth: 2, rows: rows, cols: cols});
+      window.terminal.open(terminalContainer);
+
+      var width = (cols * window.terminal._core.renderer.dimensions.actualCellWidth + window.terminal._core.viewport.scrollBarWidth).toString() + "px";
+      var height = (rows * window.terminal._core.renderer.dimensions.actualCellHeight).toString() + "px";
+      terminalContainer.style.width = width;
+      terminalContainer.style.height = height;
 
       window.terminal.on('data', function(termInputData) {
         var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
         window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
         Module._free(ptr);
+      });
+
+      window.terminal.on('resize', function(newSize) {
+        console.log('resize', newSize);
       });
 
       window.onbeforeunload = function() {
@@ -100,12 +113,12 @@ var Module = {
     console.error(text);
   },
   canvas: (function() {
-    var primary = document.getElementById('primary');
+    var graphicsContainer = document.getElementById('wkndr-graphics');
     // As a default initial behavior, pop up an alert when webgl context is lost. To make your
     // application robust, you may want to override this behavior before shipping!
     // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-    primary.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-    return primary;
+    graphicsContainer.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+    return graphicsContainer;
   })(),
   setStatus: function(text) {
     if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
