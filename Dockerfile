@@ -14,6 +14,7 @@ ENV APACHE_LOG_DIR /var/log/apache2
 ENV APACHE_PID_FILE /var/run/apache2.pid
 ENV APACHE_LOCK_DIR /var/lock/apache2
 ENV APACHE_RUN_DIR /var/run/apache2
+ENV VIMRUNTIME /usr/share/vim
 
 USER root
 
@@ -74,7 +75,9 @@ COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
 
 RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
-RUN mkdir -p /var/tmp/chroot/bin
+RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share
+COPY Wkndrfile /var/tmp/chroot
+RUN cp -R /usr/share/vim /var/tmp/chroot/usr/share
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
 RUN cp /bin/bash-static /var/tmp/chroot/bin/bash
 RUN cd /var/tmp/chroot/bin && ln -s bash sh
