@@ -310,21 +310,29 @@ mrb_value global_parse(mrb_state* mrb, mrb_value self) {
 
   mrb_get_args(mrb, "o", &mruby_code);
 
-  const char *foo = mrb_string_value_ptr(mrb, mruby_code);
+  const char *foo = mrb_string_value_cstr(mrb, &mruby_code);
   int len = mrb_string_value_len(mrb, mruby_code);
 
-/*
-  mrbc_context *detective_file = mrbc_context_new(mrb);
-  mrbc_filename(mrb, detective_file, "Wkndrfile");
+  fprintf(stderr, "gonna parse this %d\n", len);
+
+  //mrbc_context *detective_file = mrbc_context_new(mrb);
+  //mrbc_filename(mrb, detective_file, "Wkndrfile");
   mrb_value ret;
-  ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
+  //ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
+  //ret = mrb_load_string(mrb, foo);
+  ret = mrb_load_string(mrb, "");
+  //ret = mrb_load_string_cxt(mrb, "", detective_file);
+  fprintf(stderr, "DONNNNNE %d\n", len);
+
   if (mrb->exc) {
-    fprintf(stderr, "Exception in %s", detective_file);
+    fprintf(stderr, "Exception in XXX");
     mrb_print_error(mrb);
   }
-*/
+  //mrbc_context_free(mrb, detective_file);
 
-  return self;
+  fprintf(stderr, "BIIIIP %d\n", len);
+
+  return mrb_fixnum_value(len);
 }
 
 

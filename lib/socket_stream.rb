@@ -21,14 +21,18 @@ class SocketStream
 
   def process(bytes = nil)
     process_as_msgpack_stream(bytes).each { |typed_msg|
+    log!(:raw_typed, typed_msg)
+
       channels = typed_msg.keys
       channels.each do |channel|
         cmsg = typed_msg[channel]
         case channel
           when 1,2
-            self.write_tty(cmsg.dup)
+            self.write_tty(cmsg)
           when "p"
-            Wkndr.parse!(cmsg.dup)
+            #did_parse = Wkndr.parse!(cmsg)
+            did_parse = Kernel.eval(cmsg)
+            log!(:DidTheParseWkndr, did_parse)
         else
           @got_bytes_block.call(cmsg)
         end

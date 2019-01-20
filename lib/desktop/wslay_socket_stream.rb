@@ -2,7 +2,7 @@
 
 class WslaySocketStream < SocketStream
   def shutdown
-    log!(:wslay_shutdown, @socket)
+    log!(:wslay_shutdown)
     if @socket
       #&& @socket.has_ref?
       #@socket.read_stop 
@@ -76,10 +76,8 @@ class WslaySocketStream < SocketStream
     @client = Wslay::Event::Context::Client.new wslay_callbacks
     @phr = Phr.new
 
-    host = '127.0.0.1'
-    port = 8000
-
-    @address = UV.ip4_addr(host, port)
+    @host = '127.0.0.1'
+    @port = 8000
 
     on_read_start = Proc.new { |b|
       if b && b.is_a?(UVError)
@@ -118,7 +116,8 @@ class WslaySocketStream < SocketStream
       #end
 
       @socket = UV::TCP.new
-      @socket.connect(@address, &on_connect)
+      address = UV.ip4_addr(@host, @port)
+      @socket.connect(address, &on_connect)
     }
 
     restart_connection!
@@ -175,10 +174,12 @@ class WslaySocketStream < SocketStream
   end
 
   def write_ws_request!
+    log!(:write_ws_request_as_desk_client)
+
     path = "/ws"
     key = B64.encode(Sysrandom.buf(16)).chomp!
-    log!(@address)
-    @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@address.sin_addr}:#{@address.sin_port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
+    #log!(@address)
+    @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@host}:#{@port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
       yield
     }
   end

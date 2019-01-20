@@ -17,6 +17,7 @@ MRuby::Build.new do |conf|
   conf.gem :core => "mruby-metaprog"
   conf.gem :core => "mruby-sprintf"
   conf.gem :core => "mruby-string-ext"
+  conf.gem :core => "mruby-eval"
 
   conf.gem :github => "h2so5/mruby-pure-regexp"
   conf.gem :github => "yui-knk/mruby-set"

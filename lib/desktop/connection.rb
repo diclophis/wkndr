@@ -60,7 +60,7 @@ class Connection
   end
 
   def serve_static_file!(filename)
-    log!(:get, self.object_id, filename)
+    #log!(:get, self.object_id, filename)
 
     #TODO: close opened files
     fd = UV::FS::open(filename, UV::FS::O_RDONLY, UV::FS::S_IREAD)
@@ -155,7 +155,7 @@ class Connection
 
           requested_path = "#{@required_prefix}#{filename}"
           UV::FS.realpath(requested_path) { |resolved_filename|
-            log!(resolved_filename, @required_prefix)
+            #log!(resolved_filename, @required_prefix)
 
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
@@ -293,11 +293,32 @@ class Connection
 
     self.write_ws_response!(sec_websocket_key)
 
+read_file = false
+
     @t = UV::Timer.new
     @t.start(1000, 1000) {
       self.write_typed({"c" => "ping"})
+
+if read_file == false
+read_file = true
+
+log!(:sending_wkdrfile, "!!!!!!")
+
+      ffff = UV::FS::open("Wkndrfile", UV::FS::O_RDONLY, 0)
+      #do #, UV::FS::S_IREAD)
+      #do |ffff|
+        wkread = ffff.read
+        #log!(:ff, ffff, wkread)
+        self.write_typed({"p" => wkread})
+        #log!(:wkread, wkread)
+        ffff.close
+      #end
+      #end
+end
+
     }
 
+if false
     @ps = UV::Process.new({
       #'file' => 'factor',
       #'args' => [],
@@ -342,11 +363,7 @@ class Connection
 
     #TODO???
     @ps.kill(0)
-
-    @f = UV::FS::open("Wkndrfile", UV::FS::O_RDONLY, UV::FS::S_IREAD)
-    #wkread = @f.read
-    #log!(:wkread, wkread)
-    #@f.close
+end
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset
