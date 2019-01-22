@@ -222,9 +222,6 @@ class Connection
   end
 
   def upgrade_to_websocket!
-
-    
-
     self.wslay_callbacks = Wslay::Event::Callbacks.new
 
     self.wslay_callbacks.recv_callback do |buf, len|
@@ -259,6 +256,11 @@ class Connection
         process_as_msgpack_stream(msg.msg) { |typed_msg|
           channels = typed_msg.keys
           channels.each do |channel|
+            #NOTE: channels are as follows
+            #
+            #  0 stdin of connected tty
+            #  c is stuff from the client
+            #  * everything else gets sent to user-defined handler
             case channel
               when 0
                 @stdout_tty && @stdout_tty.write(typed_msg[channel]) {
@@ -269,11 +271,11 @@ class Connection
                 dispatch_req = typed_msg[channel]
                 if dispatch_req == "tty"
                   unless @ps
-                    $ftty ||= FastTTY.fd
+                    @ftty = FastTTY.fd
 
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
-                      'file' => 'sh',
+                      'file' => 'false',
                       'args' => [],
                       'env' => []
                     })
@@ -281,24 +283,34 @@ class Connection
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
                       #@stdout_tty.close
-                      @stdout_tty = nil
+                      #@stdout_tty = nil
                       @ps = nil
+                      a = UV::Async.new do
+                        log!(:scopeq, @ps)
+                        FastTTY.close(*@ftty)
+                      end
+                      a.send
                     end
 
-                    @stdout_tty = UV::Pipe.new(false)
-                    @stdout_tty.open(@ftty[0])
+                    @stdout_tty ||= begin
+                      b = UV::Pipe.new(false)
+                      b.open(@ftty[0])
 
-                    @stdout_tty.read_start do |bout|
-                      if bout.is_a?(UVError)
-                        log!(:badout, bout)
-                      elsif bout
-                        outbits = {1 => bout}
-                        self.write_typed(outbits)
+                      b.read_start do |bout|
+                        if bout.is_a?(UVError)
+                          log!(:badout, bout)
+                        elsif bout
+                          outbits = {1 => bout}
+                          self.write_typed(outbits)
+                        end
                       end
+
+                      b
                     end
 
                     @ps.kill(0)
                   else
+                    log!(:ps_exists, @ps)
                     @ps.kill(0)
                   end
                 end

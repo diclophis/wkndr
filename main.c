@@ -1148,6 +1148,18 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
 }
 
 
+static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
+{
+  mrb_int a,b;
+  mrb_get_args(mrb, "ii", &a, &b);
+
+  close(a);
+  close(b);
+
+  return mrb_nil_value();
+}
+
+
 static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 {
   struct winsize w = {21, 82, 0, 0};
@@ -1164,7 +1176,7 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 
   if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
     fprintf(stderr, "wtf no SCTTY\n");
-    exit(1);
+    //exit(1);
   }
 
   mrb_value mrb_mr = mrb_fixnum_value(mr);
@@ -1203,6 +1215,7 @@ int main(int argc, char** argv) {
 
   struct RClass *fast_tty = mrb_define_class(mrb, "FastTTY", mrb->object_class);
   mrb_define_class_method(mrb, fast_tty, "fd", fast_tty_fd, MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, fast_tty, "close", fast_tty_close, MRB_ARGS_REQ(2));
 
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
