@@ -266,37 +266,41 @@ class Connection
                 }
 
               when "c"
-                dispatch_req = channels[channel]
+                dispatch_req = typed_msg[channel]
                 if dispatch_req == "tty"
-                  log!("TTYYYYY")
+                  unless @ps
+                    $ftty ||= FastTTY.fd
 
-                  ftty = FastTTY.fd
-                  log!(:ftty, ftty)
-                  @ps = UV::Process.new({
-                    'stdio' => [ftty[1], ftty[1], ftty[1]],
-                    'file' => 'sh',
-                    'args' => [],
-                    'env' => []
-                  })
+                    @ps = UV::Process.new({
+                      'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
+                      'file' => 'sh',
+                      'args' => [],
+                      'env' => []
+                    })
 
-                  @ps.spawn do |sig|
-                    log!("exit #{sig}")
-                  end
-
-                  @stdout_tty = UV::Pipe.new(false)
-                  @stdout_tty.open(ftty[0])
-
-                  @stdout_tty.read_start do |bout|
-                    if bout.is_a?(UVError)
-                      log!(:badout, bout)
-                    elsif bout
-                      outbits = {1 => bout}
-                      self.write_typed(outbits)
+                    @ps.spawn do |sig|
+                      log!("exit #{sig}")
+                      #@stdout_tty.close
+                      @stdout_tty = nil
+                      @ps = nil
                     end
+
+                    @stdout_tty = UV::Pipe.new(false)
+                    @stdout_tty.open(@ftty[0])
+
+                    @stdout_tty.read_start do |bout|
+                      if bout.is_a?(UVError)
+                        log!(:badout, bout)
+                      elsif bout
+                        outbits = {1 => bout}
+                        self.write_typed(outbits)
+                      end
+                    end
+
+                    @ps.kill(0)
+                  else
+                    @ps.kill(0)
                   end
-
-                  @ps.kill(0)
-
                 end
             else
               log!("INBOUND", typed_msg)
@@ -319,7 +323,7 @@ class Connection
 
     self.ws = Wslay::Event::Context::Server.new self.wslay_callbacks
 
-    #TODO??? !!!
+    #TODO??? !!! !!!!
     #unless WebSocket.create_accept(key).securecmp(phr.headers.to_h.fetch('sec-websocket-accept'))
     #   raise Error, "Handshake failure"
     #end
@@ -329,7 +333,6 @@ class Connection
     }[1]
 
     self.write_ws_response!(sec_websocket_key) {
-
       write_wkndr_file = Proc.new {
         ffff = UV::FS::open("/var/tmp/chroot/Wkndrfile", UV::FS::O_RDONLY, 0)
         wkread = ffff.read

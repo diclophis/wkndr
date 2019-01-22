@@ -36,6 +36,12 @@ KEY_Y = 89
 KEY_Z = 90
 
 def log!(*args, &block)
+  if args.include? :got_local_remote_c
+    raise "wtf"
+  end
+
+  args += ["cheeese"]
+
   $stdout.write(args.inspect)
   $stdout.write("\n")
   yield if block

@@ -1160,11 +1160,6 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
     exit(1);
   }
 
-  //if (login_tty(sl) < 0) {
-  //  fprintf(stderr, "no login\n");
-  //  exit(1);
-  //}
-
   setsid();
 
   if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
@@ -1181,53 +1176,7 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   mrb_ary_push(mrb, rets, mrb_sl);
 
   return rets;
-
-  //mrb_fixnum_value(sl);
-
-/*
-  /////mr = posix_openpt(O_RDWR);
-
-	mr = open("/dev/ptmx", O_RDWR);
-	if (mr < 0) {
-    fprintf(stderr, "no open\n");
-		exit(1);
-	}
-
-	if (grantpt(mr) < 0) {
-    fprintf(stderr, "no grantpt\n");
-		exit(1);
-	}
-
-	if (unlockpt(mr) < 0) {
-    fprintf(stderr, "no unlockpt\n");
-		exit(1);
-	}
-
-  static char ptyname[FILENAME_MAX];
-  ptyname[FILENAME_MAX-1] = '\0';
-  strncpy(ptyname, ptsname(mr), FILENAME_MAX-1);
-
-  sl = open(ptyname, O_RDWR);
-  if (sl < 0) {
-    fprintf(stderr, "no sl\n");
-    exit(1);
-  }
-
-  //setsid();
-  tcsetpgrp(0, getpgrp());
-
-  int i = 0;
-
-  if (ioctl(mr, TIOCSCTTY, &i) < 0) {
-    fprintf(stderr, "wtf no SCTTY\n");
-    perror("casd");
-    exit(1);
-  }
-
-  return mrb_fixnum_value(mr);
-*/
 }
-
 
 
 int main(int argc, char** argv) {

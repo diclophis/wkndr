@@ -10,6 +10,8 @@ $stdout.open(1)
 $stdout.read_stop
 
 def log!(*args, &block)
+raise "wtf" if args.include?(:got_local_remote_c)
+
   $stdout.write(args.inspect + "\n") {
     yield if block
   }
