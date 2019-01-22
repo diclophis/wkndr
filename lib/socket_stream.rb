@@ -29,12 +29,14 @@ class SocketStream
         #  1 stdout of connected tty
         #  2 stderr of connected tty
         #  p is the Wkndrfile code stream
+        #  c is the control channel
         #  * everything else gets sent to user-defined handler
         case channel
           when 1,2
             self.write_tty(cmsg)
           when "p"
             did_parse = Kernel.eval(cmsg)
+
         else
           @got_bytes_block.call(cmsg)
         end

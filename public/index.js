@@ -100,6 +100,10 @@ var Module = {
     window.pack_outbound_tty = Module.cwrap(
       'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
     );
+
+    //window.pop_editor = Module.cwrap(
+    //  'pop_editor', 'number', []
+    //);
   })],
   postRun: [],
   print: (function() {

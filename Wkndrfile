@@ -24,7 +24,7 @@ Wkndr.play { |gl|
       gl.twod {
         gl.draw_fps(0, 0)
         gl.button(50.0, 50.0, 250.0, 20.0, "start %06.2f, %0.4f %d" % [global_time, delta_time, total_msg]) {
-          gl.emit({"s" => "getCode"})
+          gl.emit({"c" => "tty"})
         }
       }
     }

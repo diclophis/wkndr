@@ -60,7 +60,7 @@ class Server
 
   def on_connection(connection_error)
     if connection_error
-      log!(connection_error)
+      log!(:wtf_con_err, connection_error)
     else
       self.create_connection!
     end
