@@ -174,10 +174,11 @@ spec:
             cpu: 2000m
         ports:
         - containerPort: 8000
-        tty: true
-        stdin: true
 ...
 HEREDOC
+
+        #tty: true
+        #stdin: true
 
       apply_node_port = ["kubectl", "apply", "-f", "-"]
       options = {:stdin_data => deploy_wkndr_run_node_port}

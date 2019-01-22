@@ -1167,10 +1167,10 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 
   setsid();
 
-  //if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
-  //  fprintf(stderr, "wtf no SCTTY\n");
-  //  exit(1);
-  //}
+  if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
+    fprintf(stderr, "wtf no SCTTY\n");
+    exit(1);
+  }
 
   mrb_value mrb_mr = mrb_fixnum_value(mr);
   mrb_value mrb_sl = mrb_fixnum_value(sl);

@@ -23,8 +23,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      var cols = 80;
-      var rows = 20;
+      var cols = 82;
+      var rows = 21;
 
       var terminalContainer = document.getElementById("wkndr-terminal");
       window.terminal = new Terminal({cursorBlink: true, scrollback: 100, tabStopWidth: 2, rows: rows, cols: cols});
