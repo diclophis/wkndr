@@ -565,6 +565,7 @@ HEREDOC
 
   desc "test", ""
   option "with-bootstrap", :type => :string, :default => nil
+  option "dry-run", :type => :boolean, :default => false
   def test(just_this_job=nil, version=nil)
     #system("echo cheese")
     #system("mkdir -p /var/tmp/wkndr-scratch-dir/#{APP}/current && chmod -Rv 777 /var/tmp/wkndr-scratch-dir")
@@ -608,7 +609,7 @@ HEREDOC
     }
 
     build_job = lambda { |job_to_build|
-      execute_ci(version, circle_yaml, job_to_build, circle_env, options["with-bootstrap"]) #((job_to_build == first_job) ? options["with-bootstrap"] : nil))
+      execute_ci(version, circle_yaml, job_to_build, circle_env, options["with-bootstrap"], options["dry-run"]) #((job_to_build == first_job) ? options["with-bootstrap"] : nil))
     }
 
     find_ready_jobs = lambda {
@@ -656,6 +657,8 @@ HEREDOC
     trap 'INT' do
       exiting = true
     end
+
+    phases = []
 
     loop do
       found_jobs = find_ready_jobs.call
@@ -750,7 +753,7 @@ HEREDOC
 
   private
 
-  def execute_ci(version, circle_yaml, job_to_bootstrap, circle_env, image_override = nil)
+  def execute_ci(version, circle_yaml, job_to_bootstrap, circle_env, image_override = nil, dry_run = false)
     job = circle_yaml["jobs"][job_to_bootstrap]
 
     raise "unknown job #{job_to_bootstrap}" unless job
@@ -826,9 +829,8 @@ HEREDOC
             "workingDir" => job["working_directory"] || "/home/app/current",
             #"securityContext" => {
             #},
-            "args" => [
+            "args" => dry_run ? ["cat", run_shell] : [
               "bash", "-e", "-o", "pipefail", run_shell
-              #"cat", run_shell
             ],
             "volumeMounts" => [
               {
