@@ -174,6 +174,8 @@ spec:
             cpu: 2000m
         ports:
         - containerPort: 8000
+        tty: true
+        stdin: true
 ...
 HEREDOC
 

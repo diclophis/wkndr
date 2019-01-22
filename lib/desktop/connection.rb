@@ -32,9 +32,9 @@ class Connection
       @ps.close
       @ps = nil
 
-      @stdin_tty.close
+      #@stdin_tty.close
       @stdout_tty.close
-      @stderr_tty.close
+      #@stderr_tty.close
 
       @stderr = nil
       @stdout = nil
@@ -222,12 +222,10 @@ class Connection
   end
 
   def upgrade_to_websocket!
-    @stdin_tty = UV::Pipe.new(false)
-    #stdin_tty = UV::Pipe.new(false)
 
-
-    @stdout_tty = UV::Pipe.new(false)
-    @stderr_tty = UV::Pipe.new(false)
+    ftty = FastTTY.fd
+    log!(:ftty, ftty)
+    
 
     self.wslay_callbacks = Wslay::Event::Callbacks.new
 
@@ -265,7 +263,7 @@ class Connection
           channels.each do |channel|
             case channel
               when 0
-                @stdin_tty.write(typed_msg[channel]) {
+                @stdout_tty.write(typed_msg[channel]) {
                   false
                 }
             else
@@ -326,14 +324,15 @@ class Connection
       }
 
       @ps = UV::Process.new({
-        #'file' => 'factor',
+        'stdio' => [ftty[1], ftty[1], ftty[1]],
+        #'file' => '/usr/bin/factor',
         #'args' => [],
         #'file' => 'sh',
         #'args' => [],
-        #'file' => "/usr/sbin/rungetty",
-        #'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
-        'file' => '/sbin/agetty',
-        'args' => ["-a", "root", "-n", "115200", "tty", "xterm-256color"],
+        'file' => "/usr/sbin/rungetty",
+        'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
+        #'file' => '/sbin/agetty',
+        #'args' => ["-a", "root", "-n", "115200", "tty", "xterm-256color"],
 
         #'args' => ["/var/tmp/chroot", "/bin/vi", "Wkndrfile"],
         #'file' => 'nc',
@@ -352,21 +351,31 @@ class Connection
         #]
       })
 
-      @ps.stdin_pipe = @stdin_tty
-      @ps.stdout_pipe = @stdout_tty
-      @ps.stderr_pipe = @stderr_tty
+
+      #@ps.stdin_pipe = @stdin_tty
+      #@ps.stdout_pipe = @stdout_tty
+      #@ps.stderr_pipe = @stderr_tty
 
       @ps.spawn do |sig|
         log!("exit #{sig}")
       end
 
-      @stderr_tty.read_start do |bbbb|
-        if bbbb.is_a?(UVError)
-          log!(:baderr, bbbb)
-        elsif bbbb && bbbb.length > 0
-          self.write_typed({2 => bbbb})
-        end
-      end
+    #@stdin_tty = UV::Pipe.new(false)
+    #@stdin_tty.open(ftty[0])
+    #stdin_tty = UV::Pipe.new(false)
+    @stdout_tty = UV::Pipe.new(false)
+    @stdout_tty.open(ftty[0])
+
+    #@stderr_tty = UV::Pipe.new(false)
+    #@stderr_tty.open(ffty[0])
+
+      #@stderr_tty.read_start do |bbbb|
+      #  if bbbb.is_a?(UVError)
+      #    log!(:baderr, bbbb)
+      #  elsif bbbb && bbbb.length > 0
+      #    self.write_typed({2 => bbbb})
+      #  end
+      #end
 
       @stdout_tty.read_start do |bout|
         if bout.is_a?(UVError)

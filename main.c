@@ -1,4 +1,6 @@
 // stdlib stuff
+#define _XOPEN_SOURCE 500
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -8,6 +10,20 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pty.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 
 
 // mruby stuff
@@ -1132,6 +1148,87 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
 }
 
 
+static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
+{
+  struct winsize w = {21, 82, 0, 0};
+
+  int mr;
+  int sl;
+
+  if (openpty(&mr, &sl, NULL, NULL, &w) < 0) {
+    fprintf(stderr, "wtf no pty\n");
+    exit(1);
+  }
+
+  //if (login_tty(sl) < 0) {
+  //  fprintf(stderr, "no login\n");
+  //  exit(1);
+  //}
+
+  setsid();
+
+  //if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
+  //  fprintf(stderr, "wtf no SCTTY\n");
+  //  exit(1);
+  //}
+
+  mrb_value mrb_mr = mrb_fixnum_value(mr);
+  mrb_value mrb_sl = mrb_fixnum_value(sl);
+
+  mrb_value rets = mrb_ary_new(mrb);
+
+  mrb_ary_push(mrb, rets, mrb_mr);
+  mrb_ary_push(mrb, rets, mrb_sl);
+
+  return rets;
+
+  //mrb_fixnum_value(sl);
+
+/*
+  /////mr = posix_openpt(O_RDWR);
+
+	mr = open("/dev/ptmx", O_RDWR);
+	if (mr < 0) {
+    fprintf(stderr, "no open\n");
+		exit(1);
+	}
+
+	if (grantpt(mr) < 0) {
+    fprintf(stderr, "no grantpt\n");
+		exit(1);
+	}
+
+	if (unlockpt(mr) < 0) {
+    fprintf(stderr, "no unlockpt\n");
+		exit(1);
+	}
+
+  static char ptyname[FILENAME_MAX];
+  ptyname[FILENAME_MAX-1] = '\0';
+  strncpy(ptyname, ptsname(mr), FILENAME_MAX-1);
+
+  sl = open(ptyname, O_RDWR);
+  if (sl < 0) {
+    fprintf(stderr, "no sl\n");
+    exit(1);
+  }
+
+  //setsid();
+  tcsetpgrp(0, getpgrp());
+
+  int i = 0;
+
+  if (ioctl(mr, TIOCSCTTY, &i) < 0) {
+    fprintf(stderr, "wtf no SCTTY\n");
+    perror("casd");
+    exit(1);
+  }
+
+  return mrb_fixnum_value(mr);
+*/
+}
+
+
 
 int main(int argc, char** argv) {
   mrb_state *mrb;
@@ -1154,6 +1251,10 @@ int main(int argc, char** argv) {
   }
 
   mrb_define_global_const(mrb, "ARGV", args);
+
+  struct RClass *fast_tty = mrb_define_class(mrb, "FastTTY", mrb->object_class);
+  mrb_define_class_method(mrb, fast_tty, "fd", fast_tty_fd, MRB_ARGS_NONE());
+
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
