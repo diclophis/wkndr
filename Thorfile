@@ -751,6 +751,22 @@ HEREDOC
     puts all_ok
   end
 
+  desc "login", ""
+  def login(username)
+    username = username.gsub(/[^a-z]/, "") #TODO: better username support??
+    chroot_root = File.join("/", "var", "tmp", "chroot")
+    user_chroot = File.join(chroot_root, "home", username)
+
+    unless Dir.exists?(user_chroot)
+      #userdel????
+      system("useradd", "--password", "*", "--no-user-group", "--create-home", "--skel", "/var/tmp/chroot/etc/skel", "--shell", "/var/tmp/wkndr-chroot.sh",  username) || exit(1)
+      system("passwd", username) || exit(1)
+      system("mv", File.join("/", "home", username), user_chroot)
+    end
+
+    exec("login", username)
+  end
+
   private
 
   def execute_ci(version, circle_yaml, job_to_bootstrap, circle_env, image_override = nil, dry_run = false)

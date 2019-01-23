@@ -32,13 +32,13 @@ class Connection
       @ps.close
       @ps = nil
 
-      #@stdin_tty.close
+      @stdin_tty.close
       @stdout_tty.close
-      #@stderr_tty.close
+      @stderr_tty.close
 
-      @stderr = nil
-      @stdout = nil
-      @stderr = nil
+      @stdin_tty = nil
+      @stdout_tty = nil
+      @stderr_tty = nil
     end
 
     if @t
@@ -263,7 +263,7 @@ class Connection
             #  * everything else gets sent to user-defined handler
             case channel
               when 0
-                @stdout_tty && @stdout_tty.write(typed_msg[channel]) {
+                @stdin_tty && @stdin_tty.write(typed_msg[channel]) {
                   false
                 }
 
@@ -273,39 +273,64 @@ class Connection
                   unless @ps
                     @ftty = FastTTY.fd
 
+                    @stdin_tty = UV::Pipe.new(false)
+                    @stdin_tty.open(@ftty[0])
+
+                    @stdout_tty = UV::Pipe.new(false)
+                    @stdout_tty.open(@ftty[1])
+
+                    @stderr_tty = UV::Pipe.new(false)
+                    @stderr_tty.open(@ftty[1])
+
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
-                      'file' => 'false',
-                      'args' => [],
+                      #'stdio' => [@stdin_tty, @stdout_tty, @stderr_tty],
+                      'file' => '/sbin/agetty',
+                      'args' => ["--login-program", "/usr/local/bin/wkndr", "--login-options", "login -- \u", "115200", "tty", "xterm-256color"],
+                      #'file' => "/usr/sbin/rungetty",
+                      #'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
+                      #'file' => 'sh',
+                      #'args' => [],
                       'env' => []
                     })
 
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
-                      #@stdout_tty.close
-                      #@stdout_tty = nil
+
+                      #@stdout_tty.read_stop
+                      #@stdin_tty.shutdown
+                      @stdin_tty = nil
+                      #@stdout_tty.shutdown
+                      @stdout_tty = nil
+                      #@stderr_tty.shutdown
+                      @stderr_tty = nil
+
+                      log!("closed tty #{sig}")
+
+                      #@ps.stdin_pipe.stop
+                      #@ps.stdout_pipe.stop
+                      #@ps.stderr_pipe.stop
+
                       @ps = nil
-                      a = UV::Async.new do
-                        log!(:scopeq, @ps)
-                        FastTTY.close(*@ftty)
-                      end
-                      a.send
+
+                      log!("nilled ps #{sig}")
+
+                      #a = UV::Async.new do
+
+                      #  log!(:scopeq, @ps, *@ftty)
+                      #  FastTTY.close(*@ftty)
+
+                      #end
+                      #a.send
                     end
 
-                    @stdout_tty ||= begin
-                      b = UV::Pipe.new(false)
-                      b.open(@ftty[0])
-
-                      b.read_start do |bout|
-                        if bout.is_a?(UVError)
-                          log!(:badout, bout)
-                        elsif bout
-                          outbits = {1 => bout}
-                          self.write_typed(outbits)
-                        end
+                    @stdin_tty.read_start do |bout|
+                      if bout.is_a?(UVError)
+                        log!(:badout, bout)
+                      elsif bout
+                        outbits = {1 => bout}
+                        self.write_typed(outbits)
                       end
-
-                      b
                     end
 
                     @ps.kill(0)

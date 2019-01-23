@@ -1155,6 +1155,7 @@ static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
 
   close(a);
   close(b);
+  fprintf(stderr, "wtf %d, %d\n", a, b);
 
   return mrb_nil_value();
 }

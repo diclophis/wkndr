@@ -75,8 +75,11 @@ COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
 
 RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
-RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share
-COPY Wkndrfile /var/tmp/chroot
+RUN setcap cap_sys_chroot+ep /usr/sbin/chroot 
+
+RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share /var/tmp/chroot/etc/skel /var/tmp/chroot/home
+COPY Wkndrfile /var/tmp/chroot/etc/skel
+COPY gigamock-transfer/wkndr-chroot.sh /var/tmp
 RUN cp -R /usr/share/vim /var/tmp/chroot/usr/share
 RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
 RUN cp /bin/bash-static /var/tmp/chroot/bin/bash
