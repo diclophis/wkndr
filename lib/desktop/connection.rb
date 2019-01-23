@@ -285,8 +285,10 @@ class Connection
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
                       #'stdio' => [@stdin_tty, @stdout_tty, @stderr_tty],
-                      'file' => '/sbin/agetty',
-                      'args' => ["--login-program", "/usr/local/bin/wkndr", "--login-options", "login -- \u", "115200", "tty", "xterm-256color"],
+                      'file' => '/usr/bin/wkndr',
+                      'args' => 'login',
+                      #'file' => '/sbin/agetty',
+                      #'args' => ["--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/wkndr", "--login-options", 'login -- \u', "115200", "tty", "xterm-256color"],
                       #'file' => "/usr/sbin/rungetty",
                       #'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
                       #'file' => 'sh',
@@ -333,6 +335,25 @@ class Connection
                       end
                     end
 
+                    @stdout_tty.read_start do |bout|
+                      if bout.is_a?(UVError)
+                        log!(:badout, bout)
+                      elsif bout
+                        outbits = {1 => bout}
+                        self.write_typed(outbits)
+                      end
+                    end
+
+
+                    @stderr_tty.read_start do |bout|
+                      if bout.is_a?(UVError)
+                        log!(:badout, bout)
+                      elsif bout
+                        outbits = {2 => bout}
+                        self.write_typed(outbits)
+                      end
+                    end
+
                     @ps.kill(0)
                   else
                     log!(:ps_exists, @ps)
@@ -371,13 +392,13 @@ class Connection
 
     self.write_ws_response!(sec_websocket_key) {
       write_wkndr_file = Proc.new {
-        ffff = UV::FS::open("/var/tmp/chroot/Wkndrfile", UV::FS::O_RDONLY, 0)
+        ffff = UV::FS::open("/var/tmp/chroot/etc/skel/Wkndrfile", UV::FS::O_RDONLY, 0)
         wkread = ffff.read
         self.write_typed({"p" => wkread})
         ffff.close
 
         @fsev = UV::FS::Event.new
-        @fsev.start("/var/tmp/chroot/Wkndrfile", 0) do |path, event|
+        @fsev.start("/var/tmp/chroot/etc/skel/Wkndrfile", 0) do |path, event|
           log!(:fswatch, path, event)
 
           if event == :change

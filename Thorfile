@@ -753,16 +753,28 @@ HEREDOC
 
   desc "login", ""
   def login(username)
+                      #'file' => '/sbin/agetty',
+                      #'args' => ["--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/wkndr", "--login-options", 'login -- \u', "115200", "tty", "xterm-256color"],
     username = username.gsub(/[^a-z]/, "") #TODO: better username support??
+    unless username.length > 0
+      puts "no good username"
+      exit(1)
+    end
+
+    puts "Hello #{username}, checking for account..."
+
     chroot_root = File.join("/", "var", "tmp", "chroot")
     user_chroot = File.join(chroot_root, "home", username)
 
     unless Dir.exists?(user_chroot)
       #userdel????
+      puts "Please create a new account"
       system("useradd", "--password", "*", "--no-user-group", "--create-home", "--skel", "/var/tmp/chroot/etc/skel", "--shell", "/var/tmp/wkndr-chroot.sh",  username) || exit(1)
       system("passwd", username) || exit(1)
       system("mv", File.join("/", "home", username), user_chroot)
     end
+
+    puts "Please login now..."
 
     exec("login", username)
   end
