@@ -1153,9 +1153,10 @@ static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
   mrb_int a,b;
   mrb_get_args(mrb, "ii", &a, &b);
 
+  fprintf(stderr, "wtf %d, %d\n", a, b);
+
   close(a);
   close(b);
-  fprintf(stderr, "wtf %d, %d\n", a, b);
 
   return mrb_nil_value();
 }
@@ -1175,18 +1176,18 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
     exit(1);
   }
 
-  if (login_tty(sl) < 0) {
-    fprintf(stderr, "no logintty\n");
+  //if (login_tty(sl) < 0) {
+  //  fprintf(stderr, "no logintty\n");
+  //}
+
+  if (setsid() < 0) {
+    fprintf(stderr, "wtf no setsid\n");
   }
 
-  //if (setsid() < 0) {
-  //  fprintf(stderr, "wtf no setsid\n");
-  //}
-
-  //if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
-  //  fprintf(stderr, "wtf no SCTTY\n");
-  //  //exit(1);
-  //}
+  if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
+    fprintf(stderr, "wtf no SCTTY\n");
+    //exit(1);
+  }
 
   mrb_value mrb_mr = mrb_fixnum_value(mr);
   mrb_value mrb_sl = mrb_fixnum_value(sl);

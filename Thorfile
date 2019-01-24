@@ -765,11 +765,12 @@ HEREDOC
 
   desc "getty", ""
   def getty
-    exec("/sbin/agetty", "--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/ruby", "--login-options", '/var/lib/wkndr/Thorfile login -- \u', "115200", "tty", "xterm-256color")
+    exec("/sbin/agetty", "--timeout", "10", "--noreset", "--noclear", "--login-program", "/usr/bin/ruby", "--login-options", "/var/lib/wkndr/Thorfile login -- \\u", "115200", "tty", "xterm-256color")
+    #exec("/sbin/agetty", "--timeout", "10", "--noreset", "--noclear", "115200", "tty", "xterm-256color")
   end
 
   desc "login", ""
-  def login(username)
+  def login(username = $stdin.gets)
     username = username.gsub(/[^a-z]/, "") #TODO: better username support??
     unless username.length > 0
       puts "no good username"
@@ -780,18 +781,31 @@ HEREDOC
 
     chroot_root = File.join("/", "var", "tmp", "chroot")
     user_chroot = File.join(chroot_root, "home", username)
+    user_home = File.join("/", "home", username)
 
     unless Dir.exists?(user_chroot)
       #userdel????
       puts "Please create a new account"
-      system("useradd", "--password", "*", "--no-user-group", "--create-home", "--skel", "/var/tmp/chroot/etc/skel", "--shell", "/var/tmp/wkndr-chroot.sh",  username) || exit(1)
-      system("passwd", username) || exit(1)
-      system("mv", File.join("/", "home", username), user_chroot)
+      user_add = ["/usr/sbin/useradd", "--password", "*", "--no-user-group", "--create-home", "--home-dir", user_home, "--skel", "/var/tmp/chroot/etc/skel", "--shell", "/var/tmp/wkndr-chroot.sh",  username]
+      unless system(*user_add)
+        $stderr.write("bad useradd")
+        exit(1)
+      end
+
+      unless system("/usr/bin/passwd", username)
+        $stderr.write("bad passwd")
+        exit(1)
+      end
+
+      unless system("/bin/mv", user_home, user_chroot)
+        $stderr.write("bad mv")
+        exit(1)
+      end
     end
 
     puts "Please login now..."
 
-    exec("login", username)
+    exec("/bin/login", username)
   end
 
   private
