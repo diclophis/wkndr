@@ -284,17 +284,29 @@ class Connection
 
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
-                      #'stdio' => [@stdin_tty, @stdout_tty, @stderr_tty],
-                      'file' => '/usr/bin/wkndr',
-                      'args' => 'login',
+                      #'stdio' => [@stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno],
+                      #'stdio' => [@stdin_tty, @stdout_tty, @stderr_tty]
+
+                      'file' => '/usr/bin/ruby',
+                      'args' => ['Thorfile', 'stdio-test'],
+
+                      #'file' => '/usr/local/bin/wkndr',
+                      #'args' => ['stdio-test'],
+
                       #'file' => '/sbin/agetty',
                       #'args' => ["--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/wkndr", "--login-options", 'login -- \u', "115200", "tty", "xterm-256color"],
                       #'file' => "/usr/sbin/rungetty",
                       #'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
+                      
                       #'file' => 'sh',
                       #'args' => [],
+
                       'env' => []
                     })
+
+                    #@ps.stdin_pipe = @stdin_tty
+                    #@ps.stdout_pipe = @stdout_tty
+                    #@ps.stderr_pipe = @stderr_tty
 
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
@@ -326,7 +338,10 @@ class Connection
                       #a.send
                     end
 
+
                     @stdin_tty.read_start do |bout|
+                      log!(:a, bout)
+
                       if bout.is_a?(UVError)
                         log!(:badout, bout)
                       elsif bout
@@ -335,24 +350,27 @@ class Connection
                       end
                     end
 
-                    @stdout_tty.read_start do |bout|
-                      if bout.is_a?(UVError)
-                        log!(:badout, bout)
-                      elsif bout
-                        outbits = {1 => bout}
-                        self.write_typed(outbits)
-                      end
-                    end
+                    #@stdout_tty.read_start do |bout|
+                    #  log!(:b, bout)
 
+                    #  if bout.is_a?(UVError)
+                    #    log!(:badout, bout)
+                    #  elsif bout
+                    #    outbits = {1 => bout}
+                    #    self.write_typed(outbits)
+                    #  end
+                    #end
 
-                    @stderr_tty.read_start do |bout|
-                      if bout.is_a?(UVError)
-                        log!(:badout, bout)
-                      elsif bout
-                        outbits = {2 => bout}
-                        self.write_typed(outbits)
-                      end
-                    end
+                    #@stderr_tty.read_start do |bout|
+                    #  log!(:c, bout)
+
+                    #  if bout.is_a?(UVError)
+                    #    log!(:badout, bout)
+                    #  elsif bout
+                    #    outbits = {2 => bout}
+                    #    self.write_typed(outbits)
+                    #  end
+                    #end
 
                     @ps.kill(0)
                   else

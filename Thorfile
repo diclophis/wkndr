@@ -751,10 +751,22 @@ HEREDOC
     puts all_ok
   end
 
+  desc "stdio-test", ""
+  def stdio_test
+    $stdout.write("sout")
+    $stderr.write("serr")
+    $stdout.flush
+    $stderr.flush
+    sleep 5
+  end
+
+  desc "getty", ""
+  def getty
+    exec("/sbin/agetty", "--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/ruby", "--login-options", '/var/lib/wkndr/Thorfile login -- \u', "115200", "tty", "xterm-256color")
+  end
+
   desc "login", ""
   def login(username)
-                      #'file' => '/sbin/agetty',
-                      #'args' => ["--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/wkndr", "--login-options", 'login -- \u', "115200", "tty", "xterm-256color"],
     username = username.gsub(/[^a-z]/, "") #TODO: better username support??
     unless username.length > 0
       puts "no good username"

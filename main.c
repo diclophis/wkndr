@@ -1173,7 +1173,9 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
     exit(1);
   }
 
-  setsid();
+  if (setsid() < 0) {
+    fprintf(stderr, "wtf no setsid\n");
+  }
 
   if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
     fprintf(stderr, "wtf no SCTTY\n");
