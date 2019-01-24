@@ -269,23 +269,28 @@ class Connection
                   unless @ps
                     @ftty = FastTTY.fd
 
+                    log!(:ftty, @ftty)
+
                     @stdin_tty = UV::Pipe.new(false)
                     @stdin_tty.open(@ftty[0])
 
-                    #@stdout_tty = UV::Pipe.new(false)
+                    @stdout_tty = UV::Pipe.new(false)
+                    @stdout_tty.open(@ftty[1])
+
                     #@stderr_tty = UV::Pipe.new(false)
                     #@stderr_tty.open(@ftty[1])
 
-                    #@stdout_tty.open(@ftty[1])
+                    #log!(:fds, @stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno)
+                    #raise "wtf"
 
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
                       #'stdio' => [@stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno],
                       #'stdio' => [@stdin_tty, @stdout_tty],
 
-                      #'file' => '/usr/bin/ruby',
+                      'file' => '/usr/bin/ruby',
                       #'args' => ['/var/lib/wkndr/Thorfile', 'login'],
-                      ##'args' => ['Thorfile', 'stdio-test'],
+                      'args' => ['Thorfile', 'stdio-test'],
 
                       #'file' => '/usr/local/bin/wkndr',
                       #'args' => ['stdio-test'],
@@ -295,27 +300,25 @@ class Connection
                       #'file' => "/usr/sbin/rungetty",
                       #'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
                       
-                      'file' => '/bin/bash',
-                      #'args' => ["-c", "exec wkndr getty"],
-                      'args' => [],
+                      #'file' => '/bin/bash',
+                      #'args' => ["-c", "exec wkndr getty #{@ftty[2]}"],
+
+                      #'args' => [],
 
                       'env' => []
                     })
 
-                    #@ps.stdin_pipe = @stdin_tty
-                    #@ps.stdout_pipe = @stdout_tty
-                    #@ps.stderr_pipe = @stderr_tty
 
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
 
                       ##@stdout_tty.read_stop
-                      ##@stdin_tty.shutdown
-                      @stdin_tty = nil
-                      ##@stdout_tty.shutdown
-                      @stdout_tty = nil
+                      @stdin_tty.close
+                      #@stdin_tty = nil
+                      @stdout_tty.close
+                      #@stdout_tty = nil
                       ##@stderr_tty.shutdown
-                      #@stderr_tty = nil
+                      @stderr_tty = nil
 
                       log!("closed tty #{sig}")
 
@@ -330,11 +333,15 @@ class Connection
                       #a = UV::Async.new do
 
                       #  log!(:scopeq, @ps, *@ftty)
-                      FastTTY.close(@ftty[0])
+                      #FastTTY.close(@ftty[0])
 
                       #end
                       #a.send
                     end
+                    
+                    #@ps.stdin_pipe = @stdin_tty
+                    #@ps.stdout_pipe = @stdout_tty
+                    #@ps.stderr_pipe = @stderr_tty
 
                     @stdin_tty.read_start do |bout|
                       log!(:AAA, bout)
@@ -347,16 +354,16 @@ class Connection
                       end
                     end
 
-                    #@stdout_tty.read_start do |bout|
-                    #  log!(:b, bout)
+                    @stdout_tty.read_start do |bout|
+                      log!(:b, bout)
 
-                    #  if bout.is_a?(UVError)
-                    #    log!(:badout, bout)
-                    #  elsif bout
-                    #    outbits = {1 => bout}
-                    #    self.write_typed(outbits)
-                    #  end
-                    #end
+                      if bout.is_a?(UVError)
+                        log!(:badout, bout)
+                      elsif bout
+                        outbits = {1 => bout}
+                        self.write_typed(outbits)
+                      end
+                    end
                     
 
                     #@stderr_tty.read_start do |bout|

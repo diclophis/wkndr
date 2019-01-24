@@ -1,5 +1,5 @@
 // stdlib stuff
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 600
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -1153,7 +1154,7 @@ static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
   mrb_int a,b;
   mrb_get_args(mrb, "ii", &a, &b);
 
-  fprintf(stderr, "wtf %d, %d\n", a, b);
+  //fprintf(stderr, "wtf %d, %d\n", a, b);
 
   close(a);
   close(b);
@@ -1168,9 +1169,10 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 
   struct winsize w = {21, 82, 0, 0};
 
-  int mr;
-  int sl;
+  //int mr;
+  //int sl;
 
+/*
   if (openpty(&mr, &sl, NULL, NULL, &w) < 0) {
     fprintf(stderr, "wtf no pty\n");
     exit(1);
@@ -1188,14 +1190,54 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
     fprintf(stderr, "wtf no SCTTY\n");
     //exit(1);
   }
+*/
 
-  mrb_value mrb_mr = mrb_fixnum_value(mr);
-  mrb_value mrb_sl = mrb_fixnum_value(sl);
+	int fdm, fds, rc;
+  static char ptyname[FILENAME_MAX];
+
+	fdm = posix_openpt(O_RDWR);
+	if (fdm < 0)
+	{
+		fprintf(stderr, "Error %d on posix_openpt()\n", errno);
+		return mrb_nil_value();
+	}
+
+	rc = grantpt(fdm);
+	if (rc != 0)
+	{
+		fprintf(stderr, "Error %d on grantpt()\n", errno);
+		return mrb_nil_value();
+	}
+
+	rc = unlockpt(fdm);
+	if (rc != 0)
+	{
+		fprintf(stderr, "Error %d on unlockpt()\n", errno);
+		return mrb_nil_value();
+	}
+
+  int foo = FILENAME_MAX;
+  ptyname[FILENAME_MAX-1] = '\0';
+  
+  ptsname_r(fdm, ptyname, foo);
+
+  //strncpy(ptyname, ptsname(fdm, ), FILENAME_MAX-1);
+  //ptsname
+
+	//// Open the slave PTY
+	fds = open(ptyname, O_RDWR);
+
+  //ptsname(fdm), O_RDWR);
 
   mrb_value rets = mrb_ary_new(mrb);
 
+  mrb_value mrb_mr = mrb_fixnum_value(fdm);
+  mrb_value mrb_sl = mrb_fixnum_value(fds);
+  mrb_value empty_string = mrb_str_new_cstr(mrb, ptyname);
+
   mrb_ary_push(mrb, rets, mrb_mr);
   mrb_ary_push(mrb, rets, mrb_sl);
+  mrb_ary_push(mrb, rets, empty_string);
 
   return rets;
 #else
