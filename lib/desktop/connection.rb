@@ -32,10 +32,6 @@ class Connection
       @ps.close
       @ps = nil
 
-      @stdin_tty.close
-      @stdout_tty.close
-      @stderr_tty.close
-
       @stdin_tty = nil
       @stdout_tty = nil
       @stderr_tty = nil
@@ -274,19 +270,19 @@ class Connection
                     @ftty = FastTTY.fd
 
                     @stdin_tty = UV::Pipe.new(false)
-                    #@stdin_tty.open(@ftty[0])
 
                     @stdout_tty = UV::Pipe.new(false)
-                    #@stdout_tty.open(@ftty[1])
 
                     #@stderr_tty = UV::Pipe.new(false)
                     #@stderr_tty.open(@ftty[1])
 
+                    @stdin_tty.open(@ftty[0])
+                    @stdout_tty.open(@ftty[1])
 
                     @ps = UV::Process.new({
-                      #'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
+                      'stdio' => [@ftty[1], @ftty[1], nil],
                       #'stdio' => [@stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno],
-                      'stdio' => [@stdin_tty, @stdout_tty],
+                      #'stdio' => [@stdin_tty, @stdout_tty],
 
                       'file' => '/usr/bin/ruby',
                       'args' => ['Thorfile', 'stdio-test'],
@@ -305,7 +301,6 @@ class Connection
                       'env' => []
                     })
 
-
                     #@ps.stdin_pipe = @stdin_tty
                     #@ps.stdout_pipe = @stdout_tty
                     #@ps.stderr_pipe = @stderr_tty
@@ -313,13 +308,13 @@ class Connection
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
 
-                      #@stdout_tty.read_stop
-                      #@stdin_tty.shutdown
+                      ##@stdout_tty.read_stop
+                      ##@stdin_tty.shutdown
                       @stdin_tty = nil
-                      #@stdout_tty.shutdown
+                      ##@stdout_tty.shutdown
                       @stdout_tty = nil
-                      #@stderr_tty.shutdown
-                      @stderr_tty = nil
+                      ##@stderr_tty.shutdown
+                      #@stderr_tty = nil
 
                       log!("closed tty #{sig}")
 
@@ -340,7 +335,9 @@ class Connection
                       #a.send
                     end
 
-                    @stdin_tty.read_stop
+
+
+                    #@stdin_tty.read_stop
                     @stdout_tty.read_start do |bout|
                       log!(:b, bout)
 
@@ -351,6 +348,7 @@ class Connection
                         self.write_typed(outbits)
                       end
                     end
+                    
 
                     #@stderr_tty.read_start do |bout|
                     #  log!(:c, bout)

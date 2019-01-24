@@ -1163,6 +1163,8 @@ static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
 
 static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 {
+#ifdef PLATFORM_DESKTOP
+
   struct winsize w = {21, 82, 0, 0};
 
   int mr;
@@ -1173,14 +1175,18 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
     exit(1);
   }
 
-  if (setsid() < 0) {
-    fprintf(stderr, "wtf no setsid\n");
+  if (login_tty(sl) < 0) {
+    fprintf(stderr, "no logintty\n");
   }
 
-  if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
-    fprintf(stderr, "wtf no SCTTY\n");
-    //exit(1);
-  }
+  //if (setsid() < 0) {
+  //  fprintf(stderr, "wtf no setsid\n");
+  //}
+
+  //if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
+  //  fprintf(stderr, "wtf no SCTTY\n");
+  //  //exit(1);
+  //}
 
   mrb_value mrb_mr = mrb_fixnum_value(mr);
   mrb_value mrb_sl = mrb_fixnum_value(sl);
@@ -1191,6 +1197,9 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   mrb_ary_push(mrb, rets, mrb_sl);
 
   return rets;
+#else
+  return mrb_nil_value();
+#endif
 }
 
 

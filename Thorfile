@@ -754,10 +754,13 @@ HEREDOC
   desc "stdio-test", ""
   def stdio_test
     $stdout.write($stdin.tty? ? "tty" : "notty")
-    $stdout.write("sout")
-    $stdout.flush
-    $stderr.write("serr")
-    $stderr.flush
+    10.times {
+      $stdout.write("sout")
+      $stdout.flush
+      $stderr.write("serr")
+      $stderr.flush
+    }
+    exit(99)
   end
 
   desc "getty", ""
