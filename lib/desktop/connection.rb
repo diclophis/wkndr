@@ -290,7 +290,8 @@ class Connection
 
                       'file' => '/usr/bin/ruby',
                       #'args' => ['/var/lib/wkndr/Thorfile', 'login'],
-                      'args' => ['Thorfile', 'stdio-test'],
+                      'args' => ['/var/lib/wkndr/Thorfile', 'getty', @ftty[2].gsub("/dev/", "")],
+                      #'args' => ['Thorfile', 'stdio-test'],
 
                       #'file' => '/usr/local/bin/wkndr',
                       #'args' => ['stdio-test'],
