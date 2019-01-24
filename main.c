@@ -1196,11 +1196,14 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   static char ptyname[FILENAME_MAX];
 
 	fdm = posix_openpt(O_RDWR);
+	//fdm = open("/dev/pts/ptmx", O_RDWR);
 	if (fdm < 0)
 	{
 		fprintf(stderr, "Error %d on posix_openpt()\n", errno);
 		return mrb_nil_value();
 	}
+
+  ioctl(fdm, TIOCSWINSZ, &w);
 
 	rc = grantpt(fdm);
 	if (rc != 0)
@@ -1225,7 +1228,16 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   //ptsname
 
 	//// Open the slave PTY
+	//fds = open(ptyname, O_RDWR | O_NOCTTY);
 	fds = open(ptyname, O_RDWR);
+
+	//pid_t result = setsid();
+	//if (result < 0)
+	//{
+	//  //fprintf(stderr, "%s\n", explain_setsid());
+	//	fprintf(stderr, "Error %d on setsid()\n", errno);
+	//	fprintf(stderr, "Error %s on setsid()\n", strerror(errno));
+  //}
 
   //ptsname(fdm), O_RDWR);
 
