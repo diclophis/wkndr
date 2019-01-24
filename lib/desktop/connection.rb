@@ -274,18 +274,19 @@ class Connection
                     @ftty = FastTTY.fd
 
                     @stdin_tty = UV::Pipe.new(false)
-                    @stdin_tty.open(@ftty[0])
+                    #@stdin_tty.open(@ftty[0])
 
                     @stdout_tty = UV::Pipe.new(false)
-                    @stdout_tty.open(@ftty[1])
+                    #@stdout_tty.open(@ftty[1])
 
-                    @stderr_tty = UV::Pipe.new(false)
-                    @stderr_tty.open(@ftty[1])
+                    #@stderr_tty = UV::Pipe.new(false)
+                    #@stderr_tty.open(@ftty[1])
+
 
                     @ps = UV::Process.new({
-                      'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
+                      #'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
                       #'stdio' => [@stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno],
-                      #'stdio' => [@stdin_tty, @stdout_tty, @stderr_tty]
+                      'stdio' => [@stdin_tty, @stdout_tty],
 
                       'file' => '/usr/bin/ruby',
                       'args' => ['Thorfile', 'stdio-test'],
@@ -303,6 +304,7 @@ class Connection
 
                       'env' => []
                     })
+
 
                     #@ps.stdin_pipe = @stdin_tty
                     #@ps.stdout_pipe = @stdout_tty
@@ -338,9 +340,9 @@ class Connection
                       #a.send
                     end
 
-
-                    @stdin_tty.read_start do |bout|
-                      log!(:a, bout)
+                    @stdin_tty.read_stop
+                    @stdout_tty.read_start do |bout|
+                      log!(:b, bout)
 
                       if bout.is_a?(UVError)
                         log!(:badout, bout)
@@ -350,8 +352,20 @@ class Connection
                       end
                     end
 
-                    #@stdout_tty.read_start do |bout|
-                    #  log!(:b, bout)
+                    #@stderr_tty.read_start do |bout|
+                    #  log!(:c, bout)
+
+                    #  #if bout.is_a?(UVError)
+                    #  #  log!(:badout, bout)
+                    #  #elsif bout
+                    #  #  outbits = {2 => bout}
+                    #  #  self.write_typed(outbits)
+                    #  #end
+                    #end
+
+
+                    #@stdin_tty.read_start do |bout|
+                    #  log!(:a, bout)
 
                     #  if bout.is_a?(UVError)
                     #    log!(:badout, bout)
@@ -361,16 +375,6 @@ class Connection
                     #  end
                     #end
 
-                    #@stderr_tty.read_start do |bout|
-                    #  log!(:c, bout)
-
-                    #  if bout.is_a?(UVError)
-                    #    log!(:badout, bout)
-                    #  elsif bout
-                    #    outbits = {2 => bout}
-                    #    self.write_typed(outbits)
-                    #  end
-                    #end
 
                     @ps.kill(0)
                   else

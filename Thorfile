@@ -753,11 +753,11 @@ HEREDOC
 
   desc "stdio-test", ""
   def stdio_test
+    $stdout.write($stdin.tty? ? "tty" : "notty")
     $stdout.write("sout")
-    $stderr.write("serr")
     $stdout.flush
+    $stderr.write("serr")
     $stderr.flush
-    sleep 5
   end
 
   desc "getty", ""
