@@ -308,35 +308,34 @@ class Connection
                       'env' => []
                     })
 
-
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
 
-                      ##@stdout_tty.read_stop
-                      @stdin_tty.close
-                      #@stdin_tty = nil
-                      @stdout_tty.close
-                      #@stdout_tty = nil
-                      ##@stderr_tty.shutdown
-                      @stderr_tty = nil
+                      ###@stdout_tty.read_stop
+                      #@stdin_tty.close
+                      ##@stdin_tty = nil
+                      #@stdout_tty.close
+                      ##@stdout_tty = nil
+                      ###@stderr_tty.shutdown
+                      #@stderr_tty = nil
 
-                      log!("closed tty #{sig}")
+                      #log!("closed tty #{sig}")
 
-                      #@ps.stdin_pipe.stop
-                      #@ps.stdout_pipe.stop
-                      #@ps.stderr_pipe.stop
+                      ##@ps.stdin_pipe.stop
+                      ##@ps.stdout_pipe.stop
+                      ##@ps.stderr_pipe.stop
 
                       @ps = nil
 
-                      log!("nilled ps #{sig}")
+                      #log!("nilled ps #{sig}")
 
-                      #a = UV::Async.new do
+                      ##a = UV::Async.new do
 
-                      #  log!(:scopeq, @ps, *@ftty)
-                      #FastTTY.close(@ftty[0])
+                      ##  log!(:scopeq, @ps, *@ftty)
+                      ##FastTTY.close(@ftty[0])
 
-                      #end
-                      #a.send
+                      ##end
+                      ##a.send
                     end
                     
                     #@ps.stdin_pipe = @stdin_tty
@@ -354,16 +353,16 @@ class Connection
                       end
                     end
 
-                    @stdout_tty.read_start do |bout|
-                      log!(:b, bout)
+                    #@stdout_tty.read_start do |bout|
+                    #  log!(:b, bout)
 
-                      if bout.is_a?(UVError)
-                        log!(:badout, bout)
-                      elsif bout
-                        outbits = {1 => bout}
-                        self.write_typed(outbits)
-                      end
-                    end
+                    #  if bout.is_a?(UVError)
+                    #    log!(:badout, bout)
+                    #  elsif bout
+                    #    outbits = {1 => bout}
+                    #    self.write_typed(outbits)
+                    #  end
+                    #end
                     
 
                     #@stderr_tty.read_start do |bout|
