@@ -1228,8 +1228,8 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   //ptsname
 
 	//// Open the slave PTY
-	//fds = open(ptyname, O_RDWR | O_NOCTTY);
-	fds = open(ptyname, O_RDWR);
+	fds = open(ptyname, O_RDWR | O_NOCTTY);
+	//fds = open(ptyname, O_RDWR);
 
 	//pid_t result = setsid();
 	//if (result < 0)
