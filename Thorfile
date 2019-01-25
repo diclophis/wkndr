@@ -128,6 +128,18 @@ class Wkndr < Thor
       #puts http_proxy_service_ip
     deploy_wkndr_run_node_port=<<-HEREDOC
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wkndr-deny-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: #{APP}-app
+  policyTypes:
+  - Egress
+  egress: []
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -783,7 +795,9 @@ HEREDOC
     user_chroot = File.join(chroot_root, "home", username)
     user_home = File.join("/", "home", username)
 
-    unless Dir.exists?(user_chroot)
+    if Dir.exists?(user_chroot)
+      exec("/bin/login", username)
+    else
       #userdel????
       puts "Please create a new account"
       user_add = ["/usr/sbin/useradd", "--password", "*", "--no-user-group", "--create-home", "--home-dir", user_home, "--skel", "/var/tmp/chroot/etc/skel", "--shell", "/var/tmp/wkndr-chroot.sh",  username]
@@ -801,11 +815,14 @@ HEREDOC
         $stderr.write("bad mv")
         exit(1)
       end
+
+      unless system("/bin/mkdir", user_home)
+        $stderr.write("bad mkdir")
+        exit(1)
+      end
+
+      exec("/bin/login", "-f", username)
     end
-
-    puts "Please login now..."
-
-    exec("/bin/login", username)
   end
 
   private
