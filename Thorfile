@@ -222,7 +222,7 @@ HEREDOC
     ifconfig lo:0 10.2.0.1 netmask 255.0.0.0 up
     KUBECONFIG=~/.kube/kubeadm_config kubeadm reset -f
     iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
-    kubeadm init --apiserver-advertise-address=10.2.0.1 --apiserver-bind-port=6443
+    kubeadm init --config kubeadm.yaml
     mkdir -p /home/#{ENV['SUDO_USER']}/.kube
     chown #{ENV['SUDO_USER']}. /home/#{ENV['SUDO_USER']}/.kube
     cp /etc/kubernetes/admin.conf /home/#{ENV['SUDO_USER']}/.kube/kubeadm_config
