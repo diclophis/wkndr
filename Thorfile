@@ -765,8 +765,8 @@ HEREDOC
 
   desc "getty", ""
   def getty(tty = "tty")
-    #exec("/sbin/agetty", "--timeout", "10", "--noreset", "--noclear", "--login-program", "/usr/bin/ruby", "--login-options", "/var/lib/wkndr/Thorfile login -- \\u", "115200", tty, "xterm-256color")
-    exec("/sbin/agetty", "--autologin", "root", "--timeout", "10", "--noreset", "--noclear", "115200", tty, "xterm-256color")
+    exec("/sbin/agetty", "--timeout", "10", "--noreset", "--noclear", "--login-program", "/usr/bin/ruby", "--login-options", "/var/lib/wkndr/Thorfile login -- \\u", "115200", tty, "xterm-256color")
+    #exec("/sbin/agetty", "--autologin", "root", "--timeout", "10", "--noreset", "--noclear", "115200", tty, "xterm-256color")
   end
 
   desc "login", ""

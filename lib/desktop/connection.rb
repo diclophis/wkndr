@@ -305,6 +305,7 @@ class Connection
                       #'args' => ["-c", "exec wkndr getty #{@ftty[2]}"],
 
                       #'args' => [],
+                      'detached' => true,
 
                       'env' => []
                     })
