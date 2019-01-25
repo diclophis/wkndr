@@ -29,8 +29,9 @@ apt-get update \
        apache2 apache2-utils \
        docker-registry \
        curl \
-       vim \
+       vim vim-common vim-runtime vim-tiny \
        nginx \
+       libglfw3-dev \
        jq \
        strace \
        htop \

@@ -185,7 +185,7 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
 
 
 EMSCRIPTEN_KEEPALIVE
-size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows) {
+size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int w, int h) {
 
   mrb_value outbound_resize_msg = mrb_ary_new(mrb);
   mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(cols));
@@ -195,6 +195,10 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows) {
   mrb_hash_set(mrb, outbound_msg, mrb_fixnum_value(3), outbound_resize_msg);
   
   mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
+
+  if (IsWindowReady()) {
+    SetWindowSize(w, h);
+  }
 
   return 0;
 }

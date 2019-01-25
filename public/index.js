@@ -51,8 +51,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       });
 
       window.terminal.on('resize', function(newSize) {
-        console.log('resize', newSize);
-        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows);
+        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, Module.canvas.offsetWidth, Module.canvas.offsetHeight);
       });
 
       window.terminal.fit();
@@ -113,12 +112,8 @@ var Module = {
       'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
     );
 
-    //window.pop_editor = Module.cwrap(
-    //  'pop_editor', 'number', []
-    //);
-
     window.resize_tty = Module.cwrap(
-      'resize_tty', 'number', ['number', 'number', 'number', 'number']
+      'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
     );
   })],
   postRun: [],
