@@ -184,6 +184,20 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
 }
 
 
+EMSCRIPTEN_KEEPALIVE
+size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows) {
+
+  mrb_value outbound_resize_msg = mrb_ary_new(mrb);
+  mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(cols));
+  mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(rows));
+
+  mrb_value outbound_msg = mrb_hash_new(mrb);
+  mrb_hash_set(mrb, outbound_msg, mrb_fixnum_value(3), outbound_resize_msg);
+  
+  mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
+
+  return 0;
+}
 
 
 // Function to trigger alerts straight from C++
@@ -1163,6 +1177,21 @@ static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
 }
 
 
+static mrb_value fast_tty_resize(mrb_state* mrb, mrb_value self)
+{
+  mrb_int a,cols,rows;
+  mrb_get_args(mrb, "iii", &a, &cols, &rows);
+
+  fprintf(stderr, "resize %d %d %d\n", a, cols, rows);
+  
+  struct winsize w = {rows, cols, 0, 0};
+
+  ioctl(a, TIOCSWINSZ, &w);
+
+  return mrb_true_value();
+}
+
+
 static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 {
 #ifdef PLATFORM_DESKTOP
@@ -1283,6 +1312,7 @@ int main(int argc, char** argv) {
   struct RClass *fast_tty = mrb_define_class(mrb, "FastTTY", mrb->object_class);
   mrb_define_class_method(mrb, fast_tty, "fd", fast_tty_fd, MRB_ARGS_NONE());
   mrb_define_class_method(mrb, fast_tty, "close", fast_tty_close, MRB_ARGS_REQ(2));
+  mrb_define_class_method(mrb, fast_tty, "resize", fast_tty_resize, MRB_ARGS_REQ(3));
 
 
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");

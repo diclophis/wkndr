@@ -23,17 +23,22 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      var cols = 82;
-      var rows = 21;
+      console.log("connected");
+
+      //var cols = 82;
+      //var rows = 21;
 
       var terminalContainer = document.getElementById("wkndr-terminal");
-      window.terminal = new Terminal({cursorBlink: true, scrollback: 100, tabStopWidth: 2, rows: rows, cols: cols});
+
+      Terminal.applyAddon(fit);
+
+      window.terminal = new Terminal({cursorBlink: true, scrollback: 100, tabStopWidth: 2});
       window.terminal.open(terminalContainer);
 
-      var width = (cols * window.terminal._core.renderer.dimensions.actualCellWidth + window.terminal._core.viewport.scrollBarWidth).toString() + "px";
-      var height = (rows * window.terminal._core.renderer.dimensions.actualCellHeight).toString() + "px";
-      terminalContainer.style.width = width;
-      terminalContainer.style.height = height;
+      //var width = (cols * window.terminal._core.renderer.dimensions.actualCellWidth + window.terminal._core.viewport.scrollBarWidth).toString() + "px";
+      //var height = (rows * window.terminal._core.renderer.dimensions.actualCellHeight).toString() + "px";
+      //terminalContainer.style.width = width;
+      //terminalContainer.style.height = height;
 
       window.terminal.on('data', function(termInputData) {
         var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
@@ -41,9 +46,16 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         Module._free(ptr);
       });
 
+      window.addEventListener('resize', function(resizeEvent) {
+        window.terminal.fit();
+      });
+
       window.terminal.on('resize', function(newSize) {
         console.log('resize', newSize);
+        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows);
       });
+
+      window.terminal.fit();
 
       window.onbeforeunload = function() {
         window.conn.onclose = function () {};
@@ -104,6 +116,10 @@ var Module = {
     //window.pop_editor = Module.cwrap(
     //  'pop_editor', 'number', []
     //);
+
+    window.resize_tty = Module.cwrap(
+      'resize_tty', 'number', ['number', 'number', 'number', 'number']
+    );
   })],
   postRun: [],
   print: (function() {

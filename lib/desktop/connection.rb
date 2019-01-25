@@ -263,6 +263,15 @@ class Connection
                   false
                 }
 
+              when 3
+                log!(:resize, typed_msg)
+
+                if @ftty
+                  FastTTY.resize(@ftty[0], typed_msg[channel][0], typed_msg[channel][1])
+                else
+                  @pending_resize = typed_msg[channel]
+                end
+
               when "c"
                 dispatch_req = typed_msg[channel]
                 if dispatch_req == "tty"
@@ -309,6 +318,13 @@ class Connection
 
                       'env' => []
                     })
+
+                    if @pending_resize
+                      log!(:gonna_resize, @pending_resize)
+
+                      FastTTY.resize(@ftty[0], @pending_resize[0], @pending_resize[1])
+                      @pending_resize = nil
+                    end
 
                     @ps.spawn do |sig|
                       log!("exit #{sig}")

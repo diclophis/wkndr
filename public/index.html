@@ -7,14 +7,15 @@
     <link rel="stylesheet" href="xterm-dist/xterm.css" />
     <style>
       #wkndr-body { background-color: black; margin: 0; }
-      #wkndr-graphics { width: 512px; height: 512px; position: absolute; }
-      #wkndr-terminal { left: 512px; top: 0; position: absolute; }
+      #wkndr-graphics { width: 512px; height: 512px; }
+      #wkndr-terminal { position: absolute; left: 50%; width: 50%; height: 100%; }
     </style>
   </head>
   <body id="wkndr-body">
     <div id="wkndr-terminal"></div>
     <canvas id="wkndr-graphics" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript' src='xterm-dist/xterm.js'></script>
+    <script type='text/javascript' src='xterm-dist/fit/fit.js'></script>
     <script type='text/javascript' src='index.js'></script>
     <script async type="text/javascript" src="wkndr.js"></script>
   </body>

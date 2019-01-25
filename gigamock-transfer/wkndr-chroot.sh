@@ -2,4 +2,4 @@
 
 #LOL
 
-exec chroot /var/tmp/chroot /bin/bash -c "cd $HOME && exec /bin/bash -i -l -r"
+exec chroot /var/tmp/chroot /bin/bash -c "cd $HOME && exec /bin/bash -i -l -r -O checkwinsize"
