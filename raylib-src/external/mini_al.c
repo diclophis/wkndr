@@ -4,5 +4,5 @@
 #define MAL_NO_JACK
 #define MAL_NO_OPENAL
 #define MAL_NO_SDL
-#define MAL_NO_NULL
+//#define MAL_NO_NULL
 #include "mini_al.h"

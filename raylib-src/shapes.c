@@ -9,7 +9,7 @@
 *       Allows drawing rectangles and text with a single draw call, very useful for GUI systems!
 *
 *   #define SUPPORT_QUADS_DRAW_MODE
-*       Use QUADS instead of TRIANGLES for drawing when possible. 
+*       Use QUADS instead of TRIANGLES for drawing when possible.
 *       Some lines-based shapes could still use lines
 *
 *   LICENSE: zlib/libpng
@@ -33,8 +33,12 @@
 *
 **********************************************************************************************/
 
-#include "config.h"     // Defines module configuration flags
 #include "raylib.h"     // Declares module functions
+
+// Check if config flags have been externally provided on compilation line
+#if !defined(EXTERNAL_CONFIG_FLAGS)
+    #include "config.h"         // Defines module configuration flags
+#endif
 
 #include "rlgl.h"       // raylib OpenGL abstraction layer to OpenGL 1.1, 2.1, 3.3+ or ES2
 
@@ -54,12 +58,14 @@
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-// ...
+static Texture2D texShapes = { 0 };
+static Rectangle recTexShapes = { 0 };
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
 static float EaseCubicInOut(float t, float b, float c, float d);    // Cubic easing
+static Texture2D GetShapesTexture(void);                            // Get texture to draw shapes
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition
@@ -114,27 +120,34 @@ void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color)
         startPos = endPos;
         endPos = tempPos;
     }
-    
+
     float dx = endPos.x - startPos.x;
     float dy = endPos.y - startPos.y;
-    
+
     float d = sqrtf(dx*dx + dy*dy);
     float angle = asinf(dy/d);
-    
-    rlEnableTexture(GetTextureDefault().id);
+
+    rlEnableTexture(GetShapesTexture().id);
 
     rlPushMatrix();
-        rlTranslatef((float)startPos.x, (float)startPos.y, 0);
-        rlRotatef(RAD2DEG*angle, 0, 0, 1);
-        rlTranslatef(0, -thick/2.0f, 0);
+        rlTranslatef((float)startPos.x, (float)startPos.y, 0.0f);
+        rlRotatef(RAD2DEG*angle, 0.0f, 0.0f, 1.0f);
+        rlTranslatef(0, (thick > 1.0f) ? -thick/2.0f : -1.0f, 0.0f);
 
         rlBegin(RL_QUADS);
             rlColor4ub(color.r, color.g, color.b, color.a);
             rlNormal3f(0.0f, 0.0f, 1.0f);
 
+            rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
             rlVertex2f(0.0f, 0.0f);
+
+            rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
             rlVertex2f(0.0f, thick);
+            
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
             rlVertex2f(d, thick);
+
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
             rlVertex2f(d, 0.0f);
         rlEnd();
     rlPopMatrix();
@@ -153,12 +166,12 @@ void DrawLineBezier(Vector2 startPos, Vector2 endPos, float thick, Color color)
     for (int i = 1; i <= LINE_DIVISIONS; i++)
     {
         // Cubic easing in-out
-        // NOTE: Easing is calculated only for y position value 
+        // NOTE: Easing is calculated only for y position value
         current.y = EaseCubicInOut((float)i, startPos.y, endPos.y - startPos.y, (float)LINE_DIVISIONS);
         current.x = previous.x + (endPos.x - startPos.x)/ (float)LINE_DIVISIONS;
-        
+
         DrawLineEx(previous, current, thick, color);
-        
+
         previous = current;
     }
 }
@@ -173,8 +186,8 @@ void DrawCircle(int centerX, int centerY, float radius, Color color)
 // NOTE: Gradient goes from center (color1) to border (color2)
 void DrawCircleGradient(int centerX, int centerY, float radius, Color color1, Color color2)
 {
-    if (rlCheckBufferLimit(RL_TRIANGLES, 3*36)) rlglDraw();
-    
+    if (rlCheckBufferLimit(3*36)) rlglDraw();
+
     rlBegin(RL_TRIANGLES);
         for (int i = 0; i < 360; i += 10)
         {
@@ -191,33 +204,40 @@ void DrawCircleGradient(int centerX, int centerY, float radius, Color color1, Co
 // Draw a color-filled circle (Vector version)
 // NOTE: On OpenGL 3.3 and ES2 we use QUADS to avoid drawing order issues (view rlglDraw)
 void DrawCircleV(Vector2 center, float radius, Color color)
-{   
+{
 #if defined(SUPPORT_QUADS_DRAW_MODE)
-    if (rlCheckBufferLimit(RL_QUADS, 4*(36/2))) rlglDraw();
-    
-    rlEnableTexture(GetTextureDefault().id);    // Default white texture
+    if (rlCheckBufferLimit(4*(36/2))) rlglDraw();
+
+    rlEnableTexture(GetShapesTexture().id);
 
     rlBegin(RL_QUADS);
         for (int i = 0; i < 360; i += 20)
         {
             rlColor4ub(color.r, color.g, color.b, color.a);
-            
+
+            rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
             rlVertex2f(center.x, center.y);
+
+            rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
             rlVertex2f(center.x + sinf(DEG2RAD*i)*radius, center.y + cosf(DEG2RAD*i)*radius);
+
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
             rlVertex2f(center.x + sinf(DEG2RAD*(i + 10))*radius, center.y + cosf(DEG2RAD*(i + 10))*radius);
+
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
             rlVertex2f(center.x + sinf(DEG2RAD*(i + 20))*radius, center.y + cosf(DEG2RAD*(i + 20))*radius);
         }
     rlEnd();
-        
+
     rlDisableTexture();
 #else
-    if (rlCheckBufferLimit(RL_TRIANGLES, 3*(36/2))) rlglDraw();
+    if (rlCheckBufferLimit(3*(36/2))) rlglDraw();
 
     rlBegin(RL_TRIANGLES);
         for (int i = 0; i < 360; i += 10)
         {
             rlColor4ub(color.r, color.g, color.b, color.a);
-            
+
             rlVertex2f(center.x, center.y);
             rlVertex2f(center.x + sinf(DEG2RAD*i)*radius, center.y + cosf(DEG2RAD*i)*radius);
             rlVertex2f(center.x + sinf(DEG2RAD*(i + 10))*radius, center.y + cosf(DEG2RAD*(i + 10))*radius);
@@ -229,8 +249,8 @@ void DrawCircleV(Vector2 center, float radius, Color color)
 // Draw circle outline
 void DrawCircleLines(int centerX, int centerY, float radius, Color color)
 {
-    if (rlCheckBufferLimit(RL_LINES, 2*36)) rlglDraw();
-    
+    if (rlCheckBufferLimit(2*36)) rlglDraw();
+
     rlBegin(RL_LINES);
         rlColor4ub(color.r, color.g, color.b, color.a);
 
@@ -246,103 +266,46 @@ void DrawCircleLines(int centerX, int centerY, float radius, Color color)
 // Draw a color-filled rectangle
 void DrawRectangle(int posX, int posY, int width, int height, Color color)
 {
-    Vector2 position = { (float)posX, (float)posY };
-    Vector2 size = { (float)width, (float)height };
-
-    DrawRectangleV(position, size, color);
+    DrawRectangleV((Vector2){ (float)posX, (float)posY }, (Vector2){ (float)width, (float)height }, color);
 }
 
 // Draw a color-filled rectangle (Vector version)
 // NOTE: On OpenGL 3.3 and ES2 we use QUADS to avoid drawing order issues (view rlglDraw)
 void DrawRectangleV(Vector2 position, Vector2 size, Color color)
 {
-#if defined(SUPPORT_QUADS_DRAW_MODE)
-    #if defined(SUPPORT_FONT_TEXTURE)
-    // Draw rectangle using font texture white character
-    rlEnableTexture(GetFontDefault().texture.id);
-
-    rlBegin(RL_QUADS);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-        rlNormal3f(0.0f, 0.0f, 1.0f);
-
-        // NOTE: Default raylib font character 95 is a white square
-        rlTexCoord2f((float)GetFontDefault().chars[95].rec.x/GetFontDefault().texture.width, 
-                     (float)GetFontDefault().chars[95].rec.y/GetFontDefault().texture.height);
-        rlVertex2f(position.x, position.y);
-        
-        rlTexCoord2f((float)GetFontDefault().chars[95].rec.x/GetFontDefault().texture.width, 
-                     (float)(GetFontDefault().chars[95].rec.y + GetFontDefault().chars[95].rec.height)/GetFontDefault().texture.height);
-        rlVertex2f(position.x, position.y + size.y);
-        
-        rlTexCoord2f((float)(GetFontDefault().chars[95].rec.x + GetFontDefault().chars[95].rec.width)/GetFontDefault().texture.width, 
-                     (float)(GetFontDefault().chars[95].rec.y + GetFontDefault().chars[95].rec.height)/GetFontDefault().texture.height);
-        rlVertex2f(position.x + size.x, position.y + size.y);
-        
-        rlTexCoord2f((float)(GetFontDefault().chars[95].rec.x + GetFontDefault().chars[95].rec.width)/GetFontDefault().texture.width, 
-                     (float)GetFontDefault().chars[95].rec.y/GetFontDefault().texture.height);
-        rlVertex2f(position.x + size.x, position.y);
-    rlEnd();
-    
-    rlDisableTexture();
-    #else
-    rlEnableTexture(GetTextureDefault().id); // Default white texture
-
-    rlBegin(RL_QUADS);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-        rlNormal3f(0.0f, 0.0f, 1.0f);
-
-        rlTexCoord2f(0.0f, 0.0f);
-        rlVertex2f(position.x, position.y);
-
-        rlTexCoord2f(0.0f, 1.0f);
-        rlVertex2f(position.x, position.y + size.y);
-
-        rlTexCoord2f(1.0f, 1.0f);
-        rlVertex2f(position.x + size.x, position.y + size.y);
-
-        rlTexCoord2f(1.0f, 0.0f);
-        rlVertex2f(position.x + size.x, position.y);
-    rlEnd();
-
-    rlDisableTexture();
-    #endif      // SUPPORT_FONT_TEXTURE
-#else
-    rlBegin(RL_TRIANGLES);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-
-        rlVertex2i(position.x, position.y);
-        rlVertex2i(position.x, position.y + size.y);
-        rlVertex2i(position.x + size.x, position.y + size.y);
-
-        rlVertex2i(position.x, position.y);
-        rlVertex2i(position.x + size.x, position.y + size.y);
-        rlVertex2i(position.x + size.x, position.y);
-    rlEnd();
-#endif      // SUPPORT_QUADS_DRAW_MODE
+    DrawRectanglePro((Rectangle){ position.x, position.y, size.x, size.y }, (Vector2){ 0.0f, 0.0f }, 0.0f, color);
 }
 
 // Draw a color-filled rectangle
 void DrawRectangleRec(Rectangle rec, Color color)
 {
-    DrawRectangle((int)rec.x, (int)rec.y, (int)rec.width, (int)rec.height, color);
+    DrawRectanglePro(rec, (Vector2){ 0.0f, 0.0f }, 0.0f, color);
 }
 
+// Draw a color-filled rectangle with pro parameters
 void DrawRectanglePro(Rectangle rec, Vector2 origin, float rotation, Color color)
 {
-    rlEnableTexture(GetTextureDefault().id);
+    rlEnableTexture(GetShapesTexture().id);
 
     rlPushMatrix();
-        rlTranslatef(rec.x, rec.y, 0);
-        rlRotatef(rotation, 0, 0, 1);
-        rlTranslatef(-origin.x, -origin.y, 0);
+        rlTranslatef(rec.x, rec.y, 0.0f);
+        rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
+        rlTranslatef(-origin.x, -origin.y, 0.0f);
 
         rlBegin(RL_QUADS);
+            rlNormal3f(0.0f, 0.0f, 1.0f);
             rlColor4ub(color.r, color.g, color.b, color.a);
-            rlNormal3f(0.0f, 0.0f, 1.0f);                          // Normal vector pointing towards viewer
 
+            rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
             rlVertex2f(0.0f, 0.0f);
+            
+            rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
             rlVertex2f(0.0f, rec.height);
+            
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
             rlVertex2f(rec.width, rec.height);
+
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
             rlVertex2f(rec.width, 0.0f);
         rlEnd();
     rlPopMatrix();
@@ -368,67 +331,38 @@ void DrawRectangleGradientH(int posX, int posY, int width, int height, Color col
 // NOTE: Colors refer to corners, starting at top-lef corner and counter-clockwise
 void DrawRectangleGradientEx(Rectangle rec, Color col1, Color col2, Color col3, Color col4)
 {
-#if defined(SUPPORT_FONT_TEXTURE)
-    // Draw rectangle using font texture white character
-    rlEnableTexture(GetFontDefault().texture.id);
+    rlEnableTexture(GetShapesTexture().id);
 
-    rlBegin(RL_QUADS);
-        rlNormal3f(0.0f, 0.0f, 1.0f);
+    rlPushMatrix();
+        rlBegin(RL_QUADS);
+            rlNormal3f(0.0f, 0.0f, 1.0f);
 
-        // NOTE: Default raylib font character 95 is a white square
-        rlColor4ub(col1.r, col1.g, col1.b, col1.a);
-        rlTexCoord2f(GetFontDefault().chars[95].rec.x/GetFontDefault().texture.width, 
-                     GetFontDefault().chars[95].rec.y/GetFontDefault().texture.height);
-        rlVertex2f(rec.x, rec.y);
-        
-        rlColor4ub(col2.r, col2.g, col2.b, col2.a);
-        rlTexCoord2f(GetFontDefault().chars[95].rec.x/GetFontDefault().texture.width, 
-                     (GetFontDefault().chars[95].rec.y + GetFontDefault().chars[95].rec.height)/GetFontDefault().texture.height);
-        rlVertex2f(rec.x, rec.y + rec.height);
-        
-        rlColor4ub(col3.r, col3.g, col3.b, col3.a);
-        rlTexCoord2f((GetFontDefault().chars[95].rec.x + GetFontDefault().chars[95].rec.width)/GetFontDefault().texture.width, 
-                     (GetFontDefault().chars[95].rec.y + GetFontDefault().chars[95].rec.height)/GetFontDefault().texture.height);
-        rlVertex2f(rec.x + rec.width, rec.y + rec.height);
-        
-        rlColor4ub(col4.r, col4.g, col4.b, col4.a);
-        rlTexCoord2f((GetFontDefault().chars[95].rec.x + GetFontDefault().chars[95].rec.width)/GetFontDefault().texture.width, 
-                     GetFontDefault().chars[95].rec.y/GetFontDefault().texture.height);
-        rlVertex2f(rec.x + rec.width, rec.y);
-    rlEnd();
-    
-    rlDisableTexture();
-#else
-    rlEnableTexture(GetTextureDefault().id);    // Default white texture
+            // NOTE: Default raylib font character 95 is a white square
+            rlColor4ub(col1.r, col1.g, col1.b, col1.a);
+            rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
+            rlVertex2f(rec.x, rec.y);
 
-    rlBegin(RL_QUADS);
-        rlNormal3f(0.0f, 0.0f, 1.0f);
+            rlColor4ub(col2.r, col2.g, col2.b, col2.a);
+            rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
+            rlVertex2f(rec.x, rec.y + rec.height);
 
-        rlColor4ub(col1.r, col1.g, col1.b, col1.a);
-        rlTexCoord2f(0.0f, 0.0f);
-        rlVertex2f(rec.x, rec.y);
+            rlColor4ub(col3.r, col3.g, col3.b, col3.a);
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
+            rlVertex2f(rec.x + rec.width, rec.y + rec.height);
 
-        rlColor4ub(col2.r, col2.g, col2.b, col2.a);
-        rlTexCoord2f(0.0f, 1.0f);
-        rlVertex2f(rec.x, rec.y + rec.height);
-
-        rlColor4ub(col3.r, col3.g, col3.b, col3.a);
-        rlTexCoord2f(1.0f, 1.0f);
-        rlVertex2f(rec.x + rec.width, rec.y + rec.height);
-
-        rlColor4ub(col4.r, col4.g, col4.b, col4.a);
-        rlTexCoord2f(1.0f, 0.0f);
-        rlVertex2f(rec.x + rec.width, rec.y);
-    rlEnd();
+            rlColor4ub(col4.r, col4.g, col4.b, col4.a);
+            rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
+            rlVertex2f(rec.x + rec.width, rec.y);
+        rlEnd();
+    rlPopMatrix();
 
     rlDisableTexture();
-#endif
 }
 
 // Draw rectangle outline
 // NOTE: On OpenGL 3.3 and ES2 we use QUADS to avoid drawing order issues (view rlglDraw)
 void DrawRectangleLines(int posX, int posY, int width, int height, Color color)
-{   
+{
 #if defined(SUPPORT_QUADS_DRAW_MODE)
     DrawRectangle(posX, posY, width, 1, color);
     DrawRectangle(posX + width - 1, posY + 1, 1, height - 2, color);
@@ -454,13 +388,13 @@ void DrawRectangleLines(int posX, int posY, int width, int height, Color color)
 
 // Draw rectangle outline with extended parameters
 void DrawRectangleLinesEx(Rectangle rec, int lineThick, Color color)
-{   
+{
     if (lineThick > rec.width || lineThick > rec.height)
     {
         if(rec.width > rec.height) lineThick = (int)rec.height/2;
         else if (rec.width < rec.height) lineThick = (int)rec.width/2;
-    }        
-    
+    }
+
     DrawRectangle( (int)rec.x, (int)rec.y, (int)rec.width, lineThick, color);
     DrawRectangle( (int)(rec.x - lineThick + rec.width), (int)(rec.y + lineThick), lineThick, (int)(rec.height - lineThick*2.0f), color);
     DrawRectangle( (int)rec.x, (int)(rec.y + rec.height - lineThick), (int)rec.width, lineThick, color);
@@ -471,16 +405,24 @@ void DrawRectangleLinesEx(Rectangle rec, int lineThick, Color color)
 void DrawTriangle(Vector2 v1, Vector2 v2, Vector2 v3, Color color)
 {
 #if defined(SUPPORT_QUADS_DRAW_MODE)
-    rlEnableTexture(GetTextureDefault().id); // Default white texture
+    rlEnableTexture(GetShapesTexture().id);
 
     rlBegin(RL_QUADS);
         rlColor4ub(color.r, color.g, color.b, color.a);
+
+        rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
         rlVertex2f(v1.x, v1.y);
+
+        rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
         rlVertex2f(v2.x, v2.y);
+
+        rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
         rlVertex2f(v2.x, v2.y);
+
+        rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
         rlVertex2f(v3.x, v3.y);
     rlEnd();
-    
+
     rlDisableTexture();
 #else
     rlBegin(RL_TRIANGLES);
@@ -512,29 +454,36 @@ void DrawTriangleLines(Vector2 v1, Vector2 v2, Vector2 v3, Color color)
 void DrawPoly(Vector2 center, int sides, float radius, float rotation, Color color)
 {
     if (sides < 3) sides = 3;
-    
-    if (rlCheckBufferLimit(RL_QUADS, 4*(360/sides))) rlglDraw();
+
+    if (rlCheckBufferLimit(4*(360/sides))) rlglDraw();
 
     rlPushMatrix();
-        rlTranslatef(center.x, center.y, 0.0);
-        rlRotatef(rotation, 0, 0, 1);
-    
-    #if defined(SUPPORT_QUADS_DRAW_MODE)
-        rlEnableTexture(GetTextureDefault().id); // Default white texture
+        rlTranslatef(center.x, center.y, 0.0f);
+        rlRotatef(rotation, 0.0f, 0.0f, 1.0f);
+
+#if defined(SUPPORT_QUADS_DRAW_MODE)
+        rlEnableTexture(GetShapesTexture().id);
 
         rlBegin(RL_QUADS);
             for (int i = 0; i < 360; i += 360/sides)
             {
                 rlColor4ub(color.r, color.g, color.b, color.a);
 
+                rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
                 rlVertex2f(0, 0);
+
+                rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
                 rlVertex2f(sinf(DEG2RAD*i)*radius, cosf(DEG2RAD*i)*radius);
+
+                rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
                 rlVertex2f(sinf(DEG2RAD*i)*radius, cosf(DEG2RAD*i)*radius);
+
+                rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
                 rlVertex2f(sinf(DEG2RAD*(i + 360/sides))*radius, cosf(DEG2RAD*(i + 360/sides))*radius);
             }
         rlEnd();
         rlDisableTexture();
-    #else
+#else
         rlBegin(RL_TRIANGLES);
             for (int i = 0; i < 360; i += 360/sides)
             {
@@ -545,7 +494,7 @@ void DrawPoly(Vector2 center, int sides, float radius, float rotation, Color col
                 rlVertex2f(sinf(DEG2RAD*(i + 360/sides))*radius, cosf(DEG2RAD*(i + 360/sides))*radius);
             }
         rlEnd();
-    #endif
+#endif
     rlPopMatrix();
 }
 
@@ -554,35 +503,28 @@ void DrawPolyEx(Vector2 *points, int pointsCount, Color color)
 {
     if (pointsCount >= 3)
     {
-        if (rlCheckBufferLimit(RL_QUADS, pointsCount)) rlglDraw();
-        
-    #if defined(SUPPORT_QUADS_DRAW_MODE)
-        rlEnableTexture(GetTextureDefault().id); // Default white texture
+        if (rlCheckBufferLimit((pointsCount - 2)*4)) rlglDraw();
 
+        rlEnableTexture(GetShapesTexture().id);
         rlBegin(RL_QUADS);
             rlColor4ub(color.r, color.g, color.b, color.a);
 
             for (int i = 1; i < pointsCount - 1; i++)
             {
+                rlTexCoord2f(recTexShapes.x/texShapes.width, recTexShapes.y/texShapes.height);
                 rlVertex2f(points[0].x, points[0].y);
+
+                rlTexCoord2f(recTexShapes.x/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
                 rlVertex2f(points[i].x, points[i].y);
-                rlVertex2f(points[i].x, points[i].y);
+
+                rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, (recTexShapes.y + recTexShapes.height)/texShapes.height);
+                rlVertex2f(points[i + 1].x, points[i + 1].y);
+
+                rlTexCoord2f((recTexShapes.x + recTexShapes.width)/texShapes.width, recTexShapes.y/texShapes.height);
                 rlVertex2f(points[i + 1].x, points[i + 1].y);
             }
         rlEnd();
         rlDisableTexture();
-    #else
-        rlBegin(RL_TRIANGLES);
-            rlColor4ub(color.r, color.g, color.b, color.a);
-
-            for (int i = 1; i < pointsCount - 1; i++)
-            {
-                rlVertex2f(points[0].x, points[0].y);
-                rlVertex2f(points[i].x, points[i].y);
-                rlVertex2f(points[i + 1].x, points[i + 1].y);
-            }
-        rlEnd();
-    #endif
     }
 }
 
@@ -591,7 +533,7 @@ void DrawPolyExLines(Vector2 *points, int pointsCount, Color color)
 {
     if (pointsCount >= 2)
     {
-        if (rlCheckBufferLimit(RL_LINES, pointsCount)) rlglDraw();
+        if (rlCheckBufferLimit(pointsCount)) rlglDraw();
 
         rlBegin(RL_LINES);
             rlColor4ub(color.r, color.g, color.b, color.a);
@@ -603,6 +545,13 @@ void DrawPolyExLines(Vector2 *points, int pointsCount, Color color)
             }
         rlEnd();
     }
+}
+
+// Define default texture used to draw shapes
+void SetShapesTexture(Texture2D texture, Rectangle source)
+{
+    texShapes = texture;
+    recTexShapes = source;
 }
 
 //----------------------------------------------------------------------------------
@@ -647,7 +596,7 @@ bool CheckCollisionPointTriangle(Vector2 point, Vector2 p1, Vector2 p2, Vector2 
 bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2)
 {
     bool collision = false;
-    
+
     if ((rec1.x <= (rec2.x + rec2.width) && (rec1.x + rec1.width) >= rec2.x) &&
         (rec1.y <= (rec2.y + rec2.height) && (rec1.y + rec1.height) >= rec2.y)) collision = true;
 
@@ -675,7 +624,7 @@ bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec)
 {
     int recCenterX = (int)(rec.x + rec.width/2.0f);
     int recCenterY = (int)(rec.y + rec.height/2.0f);
-    
+
     float dx = (float)fabs(center.x - recCenterX);
     float dy = (float)fabs(center.y - recCenterY);
 
@@ -685,7 +634,7 @@ bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec)
     if (dx <= (rec.width/2.0f)) { return true; }
     if (dy <= (rec.height/2.0f)) { return true; }
 
-    float cornerDistanceSq = (dx - rec.width/2.0f)*(dx - rec.width/2.0f) + 
+    float cornerDistanceSq = (dx - rec.width/2.0f)*(dx - rec.width/2.0f) +
 						     (dy - rec.height/2.0f)*(dy - rec.height/2.0f);
 
     return (cornerDistanceSq <= (radius*radius));
@@ -744,7 +693,7 @@ Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2)
         {
             if (retRec.width >= rec1.width) retRec.width = rec1.width;
         }
-        
+
         if (rec1.height > rec2.height)
         {
             if (retRec.height >= rec2.height) retRec.height = rec2.height;
@@ -762,12 +711,31 @@ Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2)
 // Module specific Functions Definition
 //----------------------------------------------------------------------------------
 
-// Cubic easing in-out 
+// Cubic easing in-out
 // NOTE: Required for DrawLineBezier()
-static float EaseCubicInOut(float t, float b, float c, float d) 
-{ 
+static float EaseCubicInOut(float t, float b, float c, float d)
+{
     if ((t /= 0.5f*d) < 1)
         return 0.5f*c*t*t*t + b;
     t -= 2;
     return 0.5f*c*(t*t*t + 2.0f) + b;
+}
+
+// Get texture to draw shapes (RAII)
+static Texture2D GetShapesTexture(void)
+{
+    if (texShapes.id <= 0)
+    {
+#if defined(SUPPORT_FONT_TEXTURE)
+        texShapes = GetFontDefault().texture;           // Use font texture white character
+        Rectangle rec = GetFontDefault().chars[95].rec;
+        // NOTE: We setup a 1px padding on char rectangle to avoid texture bleeding on MSAA filtering
+        recTexShapes = (Rectangle){ rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2 };
+#else
+        texShapes = GetTextureDefault();                // Use default white texture
+        recTexShapes = { 0.0f, 0.0f, 1.0f, 1.0f };
+#endif
+    }
+
+    return texShapes;
 }

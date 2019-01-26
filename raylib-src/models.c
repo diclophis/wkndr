@@ -36,8 +36,12 @@
 *
 **********************************************************************************************/
 
-#include "config.h"         // Defines module configuration flags
 #include "raylib.h"         // Declares module functions
+
+// Check if config flags have been externally provided on compilation line
+#if !defined(EXTERNAL_CONFIG_FLAGS)
+    #include "config.h"         // Defines module configuration flags
+#endif
 
 #include "utils.h"          // Required for: fopen() Android mapping
 
@@ -111,6 +115,8 @@ void DrawLine3D(Vector3 startPos, Vector3 endPos, Color color)
 // Draw a circle in 3D world space
 void DrawCircle3D(Vector3 center, float radius, Vector3 rotationAxis, float rotationAngle, Color color)
 {
+    if (rlCheckBufferLimit(2*36)) rlglDraw();
+    
     rlPushMatrix();
         rlTranslatef(center.x, center.y, center.z);
         rlRotatef(rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z);
@@ -134,6 +140,8 @@ void DrawCube(Vector3 position, float width, float height, float length, Color c
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    
+    if (rlCheckBufferLimit(36)) rlglDraw();
 
     rlPushMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
@@ -213,6 +221,8 @@ void DrawCubeWires(Vector3 position, float width, float height, float length, Co
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    
+    if (rlCheckBufferLimit(36)) rlglDraw();
 
     rlPushMatrix();
         rlTranslatef(position.x, position.y, position.z);
@@ -516,14 +526,11 @@ void DrawPlane(Vector3 centerPos, Vector2 size, Color color)
         rlTranslatef(centerPos.x, centerPos.y, centerPos.z);
         rlScalef(size.x, 1.0f, size.y);
 
-        rlBegin(RL_TRIANGLES);
+        rlBegin(RL_QUADS);
             rlColor4ub(color.r, color.g, color.b, color.a);
             rlNormal3f(0.0f, 1.0f, 0.0f);
 
-            rlVertex3f(0.5f, 0.0f, -0.5f);
             rlVertex3f(-0.5f, 0.0f, -0.5f);
-            rlVertex3f(-0.5f, 0.0f, 0.5f);
-
             rlVertex3f(-0.5f, 0.0f, 0.5f);
             rlVertex3f(0.5f, 0.0f, 0.5f);
             rlVertex3f(0.5f, 0.0f, -0.5f);
@@ -715,6 +722,68 @@ void ExportMesh(Mesh mesh, const char *fileName)
 }
 
 #if defined(SUPPORT_MESH_GENERATION)
+// Generate polygonal mesh
+Mesh GenMeshPoly(int sides, float radius)
+{
+    Mesh mesh = { 0 };
+    int vertexCount = sides*3;
+    
+    // Vertices definition
+    Vector3 *vertices = (Vector3 *)malloc(vertexCount*sizeof(Vector3));
+    for (int i = 0, v = 0; i < 360; i += 360/sides, v += 3)
+    {
+        vertices[v] = (Vector3){ 0.0f, 0.0f, 0.0f };
+        vertices[v + 1] = (Vector3){ sinf(DEG2RAD*i)*radius, 0.0f, cosf(DEG2RAD*i)*radius };
+        vertices[v + 2] = (Vector3){ sinf(DEG2RAD*(i + 360/sides))*radius, 0.0f, cosf(DEG2RAD*(i + 360/sides))*radius };
+    }    
+        
+    // Normals definition
+    Vector3 *normals = (Vector3 *)malloc(vertexCount*sizeof(Vector3));
+    for (int n = 0; n < vertexCount; n++) normals[n] = (Vector3){ 0.0f, 1.0f, 0.0f };   // Vector3.up;
+
+    // TexCoords definition        
+    Vector2 *texcoords = (Vector2 *)malloc(vertexCount*sizeof(Vector2));
+    for (int n = 0; n < vertexCount; n++) texcoords[n] = (Vector2){ 0.0f, 0.0f };
+
+    mesh.vertexCount = vertexCount;
+    mesh.triangleCount = sides;
+    mesh.vertices = (float *)malloc(mesh.vertexCount*3*sizeof(float));
+    mesh.texcoords = (float *)malloc(mesh.vertexCount*2*sizeof(float));
+    mesh.normals = (float *)malloc(mesh.vertexCount*3*sizeof(float));
+    
+    // Mesh vertices position array
+    for (int i = 0; i < mesh.vertexCount; i++)
+    {
+        mesh.vertices[3*i] = vertices[i].x;
+        mesh.vertices[3*i + 1] = vertices[i].y;
+        mesh.vertices[3*i + 2] = vertices[i].z;
+    }
+    
+    // Mesh texcoords array
+    for (int i = 0; i < mesh.vertexCount; i++)
+    {
+        mesh.texcoords[2*i] = texcoords[i].x;
+        mesh.texcoords[2*i + 1] = texcoords[i].y;
+    }
+    
+    // Mesh normals array
+    for (int i = 0; i < mesh.vertexCount; i++)
+    {
+        mesh.normals[3*i] = normals[i].x;
+        mesh.normals[3*i + 1] = normals[i].y;
+        mesh.normals[3*i + 2] = normals[i].z;
+    }
+    
+    free(vertices);
+    free(normals);
+    free(texcoords);
+
+    // Upload vertex data to GPU (static mesh)
+    rlLoadMesh(&mesh, false);  
+    
+    return mesh;
+}
+
 // Generate plane mesh (with subdivisions)
 Mesh GenMeshPlane(float width, float length, int resX, int resZ)
 {
@@ -2525,8 +2594,6 @@ static Material LoadMTL(const char *fileName)
             {
                 // TODO: Support multiple materials in a single .mtl
                 sscanf(buffer, "newmtl %127s", mapFileName);
-
-                TraceLog(LOG_INFO, "[%s] Loading material...", mapFileName);
             }
             case 'i':   // illum int        Illumination model
             {
