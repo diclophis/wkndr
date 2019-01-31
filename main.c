@@ -79,7 +79,7 @@
 #include "main_menu.h"
 #include "socket_stream.h"
 #include "window.h"
-//#include "thor.h"
+#include "thor.h"
 #include "stack_blocker.h"
 #include "start.h"
 #include "client.h"
@@ -190,15 +190,22 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int
   mrb_value outbound_resize_msg = mrb_ary_new(mrb);
   mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(cols));
   mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(rows));
+  mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(w));
+  mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(h));
 
   mrb_value outbound_msg = mrb_hash_new(mrb);
   mrb_hash_set(mrb, outbound_msg, mrb_fixnum_value(3), outbound_resize_msg);
   
-  mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
+  mrb_funcall(mrb, mrb_obj_value(selfP), "resize_bits", 1, outbound_msg);
 
   if (IsWindowReady()) {
     SetWindowSize(w, h);
   }
+
+  //mrb_iv_set(
+  //    mrb, , mrb_intern_lit(mrb, "@pointer"), // set @data
+  //    mrb_obj_value(                           // with value hold in struct
+  //        Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
 
   return 0;
 }
@@ -493,30 +500,29 @@ static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
 }
 
 
-static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
-{
-  play_data_s *p_data;
-
-  p_data = malloc(sizeof(play_data_s));
-  memset(p_data, 0, sizeof(play_data_s));
-  if (!p_data) {
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate @data");
-  }
-
-  //p_data->buffer_target = LoadRenderTexture(screenWidth, screenHeight);
-
-  mrb_iv_set(
-      mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
-      mrb_obj_value(                           // with value hold in struct
-          Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
-
-  return self;
-}
+// static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
+// {
+//   play_data_s *p_data;
+// 
+//   p_data = malloc(sizeof(play_data_s));
+//   memset(p_data, 0, sizeof(play_data_s));
+//   if (!p_data) {
+//     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate @data");
+//   }
+// 
+//   //p_data->buffer_target = LoadRenderTexture(screenWidth, screenHeight);
+// 
+//   mrb_iv_set(
+//       mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
+//       mrb_obj_value(                           // with value hold in struct
+//           Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
+// 
+//   return self;
+// }
 
 
 static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 {
-
   // Initialization
   mrb_value game_name = mrb_nil_value();
   mrb_int screenWidth,screenHeight,screenFps;
@@ -524,6 +530,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   mrb_get_args(mrb, "oiii", &game_name, &screenWidth, &screenHeight, &screenFps);
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
+
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
@@ -1199,31 +1207,7 @@ static mrb_value fast_tty_resize(mrb_state* mrb, mrb_value self)
 static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 {
 #ifdef PLATFORM_DESKTOP
-
   struct winsize w = {21, 82, 0, 0};
-
-  //int mr;
-  //int sl;
-
-/*
-  if (openpty(&mr, &sl, NULL, NULL, &w) < 0) {
-    fprintf(stderr, "wtf no pty\n");
-    exit(1);
-  }
-
-  //if (login_tty(sl) < 0) {
-  //  fprintf(stderr, "no logintty\n");
-  //}
-
-  if (setsid() < 0) {
-    fprintf(stderr, "wtf no setsid\n");
-  }
-
-  if (ioctl(sl, TIOCSCTTY, NULL) < 0) {
-    fprintf(stderr, "wtf no SCTTY\n");
-    //exit(1);
-  }
-*/
 
 	int fdm, fds, rc;
   static char ptyname[FILENAME_MAX];
@@ -1333,7 +1317,7 @@ int main(int argc, char** argv) {
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
-  mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
+  //mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
   mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
@@ -1367,9 +1351,13 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, window, NULL);
 
-  //eval_static_libs(mrb, thor, NULL);
+  eval_static_libs(mrb, thor, NULL);
 
-  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
+  eval_static_libs(mrb, wkndr, NULL);
+
+  struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+
+  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
   mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
@@ -1392,7 +1380,6 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, stack_blocker, NULL);
 
-  eval_static_libs(mrb, wkndr, NULL);
 
 #ifdef PLATFORM_DESKTOP
   eval_static_libs(mrb, base, NULL);
@@ -1400,37 +1387,25 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
 
-  //if (i == 1) {
-  //  // FILE *f = 0;
-  //  // char *config = "Wkndrfile";
-  //  // f = fopen(config, "r");
-  //  // if (0 == f) {
-  //  //   fprintf(stderr,"could not find %s\n", config);
-  //  //   return 1;
-  //  // }
-  //  // mrbc_context *detective_file = mrbc_context_new(mrb);
-  //  // mrbc_filename(mrb, detective_file, config);
-  //  // mrb_value ret2;
-  //  // ret2 = mrb_load_file_cxt(mrb, f, detective_file);
-  //  // mrbc_context_free(mrb, detective_file);
-  //  // fclose(f);
-  //  // if_exception_error_and_exit(mrb, config);
-  //} else {
-  //  eval_static_libs(mrb, start, NULL);
-  //}
 #endif
 
+//  if (i == 1) {
+//    eval_static_libs(mrb, client, NULL);
+//  } else {
+//#ifdef PLATFORM_DESKTOP
+//    mrb_funcall(mrb, mrb_obj_value(thor_class), "backend", 1, args);
+//#endif    
+//  }
+
   if (i == 1) {
-    eval_static_libs(mrb, client, NULL);
+    mrb_funcall(mrb, mrb_obj_value(thor_class), "start", 0);
   } else {
-#ifdef PLATFORM_DESKTOP
-    mrb_funcall(mrb, mrb_obj_value(thor_class), "backend", 1, args);
-#endif    
+    mrb_funcall(mrb, mrb_obj_value(thor_class), "start", 1, args);
   }
 
   mrb_close(mrb);
 
-  //complete shitshow bug with bash on linux
+  //NOTE: when libuv binds to fd=0 it sets modes that cause /usr/bin/read to break
   fcntl(0, F_SETFL, fcntl(0, F_GETFL) & ~O_NONBLOCK);
 
   fprintf(stderr, "exiting ... \n");

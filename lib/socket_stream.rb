@@ -34,6 +34,7 @@ class SocketStream
           when 1,2
             self.write_tty(cmsg)
           when "p"
+            log!(:cmsg, cmsg)
             did_parse = Kernel.eval(cmsg)
 
         else
