@@ -2,12 +2,12 @@
 *
 *   raylib.core - Basic functions to manage windows, OpenGL context and input on multiple platforms
 *
-*   PLATFORMS SUPPORTED: 
+*   PLATFORMS SUPPORTED:
 *       - PLATFORM_DESKTOP: Windows (Win32, Win64)
 *       - PLATFORM_DESKTOP: Linux (X11 desktop mode)
 *       - PLATFORM_DESKTOP: FreeBSD, OpenBSD, NetBSD, DragonFly (X11 desktop)
 *       - PLATFORM_DESKTOP: OSX/macOS
-*       - PLATFORM_ANDROID: Android 4.0 (ARM, ARM64) 
+*       - PLATFORM_ANDROID: Android 4.0 (ARM, ARM64)
 *       - PLATFORM_RPI:     Raspberry Pi 0,1,2,3 (Raspbian)
 *       - PLATFORM_WEB:     HTML5 with asm.js (Chrome, Firefox)
 *       - PLATFORM_UWP:     Windows 10 App, Windows Phone, Xbox One
@@ -23,7 +23,7 @@
 *       NOTE: OpenGL ES 2.0 is required and graphic device is managed by EGL
 *
 *   #define PLATFORM_RPI
-*       Windowing and input system configured for Raspberry Pi i native mode (no X.org required, tested on Raspbian), 
+*       Windowing and input system configured for Raspberry Pi i native mode (no X.org required, tested on Raspbian),
 *       graphic device is managed by EGL and inputs are processed is raw mode, reading from /dev/input/
 *
 *   #define PLATFORM_WEB
@@ -49,6 +49,9 @@
 *
 *   #define SUPPORT_BUSY_WAIT_LOOP
 *       Use busy wait loop for timing sync, if not defined, a high-resolution timer is setup and used
+*
+*   #define SUPPORT_EVENTS_WAITING
+*       Wait for events passively (sleeping while no events) instead of polling them actively every frame
 *
 *   #define SUPPORT_SCREEN_CAPTURE
 *       Allow automatic screen capture of current screen pressing F12, defined in KeyCallback()
@@ -84,8 +87,12 @@
 *
 **********************************************************************************************/
 
-#include "config.h"             // Defines module configuration flags
 #include "raylib.h"             // Declares module functions
+
+// Check if config flags have been externally provided on compilation line
+#if !defined(EXTERNAL_CONFIG_FLAGS)
+    #include "config.h"         // Defines module configuration flags
+#endif
 
 #if (defined(__linux__) || defined(PLATFORM_WEB)) && _POSIX_C_SOURCE < 199309L
     #undef _POSIX_C_SOURCE
@@ -125,7 +132,7 @@
 #include <ctype.h>          // Required for: tolower() [Used in IsFileExtension()]
 #include <sys/stat.h>       // Required for stat() [Used in GetLastWriteTime()]
 
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(PLATFORM_DESKTOP) && defined(_WIN32) && (defined(_MSC_VER) || defined(__TINYC__))
     #include "external/dirent.h"    // Required for: DIR, opendir(), closedir() [Used in GetDirectoryFiles()]
 #else
     #include <dirent.h>             // Required for: DIR, opendir(), closedir() [Used in GetDirectoryFiles()]
@@ -152,27 +159,34 @@
     #if defined(_WIN32)
         #define GLFW_EXPOSE_NATIVE_WIN32
         #include <GLFW/glfw3native.h>       // WARNING: It requires customization to avoid windows.h inclusion!
-        
+
         #if !defined(SUPPORT_BUSY_WAIT_LOOP)
             // NOTE: Those functions require linking with winmm library
             unsigned int __stdcall timeBeginPeriod(unsigned int uPeriod);
             unsigned int __stdcall timeEndPeriod(unsigned int uPeriod);
         #endif
+
     #elif defined(__linux__)
         #include <sys/time.h>           // Required for: timespec, nanosleep(), select() - POSIX
-        
+
         //#define GLFW_EXPOSE_NATIVE_X11        // WARNING: Exposing Xlib.h > X.h results in dup symbols for Font type
         //#define GLFW_EXPOSE_NATIVE_WAYLAND
         //#define GLFW_EXPOSE_NATIVE_MIR
         #include <GLFW/glfw3native.h>   // Required for: glfwGetX11Window()
     #elif defined(__APPLE__)
         #include <unistd.h>             // Required for: usleep()
-        #include <objc/message.h>       // Required for: objc_msgsend(), sel_registerName()
-        
+
         //#define GLFW_EXPOSE_NATIVE_COCOA      // WARNING: Fails due to type redefinition
-        #define GLFW_EXPOSE_NATIVE_NSGL
-        #include <GLFW/glfw3native.h>   // Required for: glfwGetCocoaWindow(), glfwGetNSGLContext()
+        #include <GLFW/glfw3native.h>   // Required for: glfwGetCocoaWindow()
+
     #endif
+#endif
+
+#if defined(__linux__)
+        #include <linux/limits.h> // for NAME_MAX and PATH_MAX defines
+        #define MAX_FILEPATH_LENGTH PATH_MAX // Use Linux define (4096)
+#else
+        #define MAX_FILEPATH_LENGTH 256 // Use common value
 #endif
 
 #if defined(PLATFORM_ANDROID)
@@ -189,6 +203,7 @@
     #include <unistd.h>         // POSIX standard function definitions - read(), close(), STDIN_FILENO
     #include <termios.h>        // POSIX terminal control definitions - tcgetattr(), tcsetattr()
     #include <pthread.h>        // POSIX threads management (mouse input)
+    #include <dirent.h>         // POSIX directory browsing
 
     #include <sys/ioctl.h>      // UNIX System call for device-specific input/output operations - ioctl()
     #include <linux/kd.h>       // Linux: KDSKBMODE, K_MEDIUMRAM constants definition
@@ -212,7 +227,7 @@
     #define GLFW_INCLUDE_ES2        // GLFW3: Enable OpenGL ES 2.0 (translated to WebGL)
     #include <GLFW/glfw3.h>         // GLFW3 library: Windows, OpenGL context and Input management
     #include <sys/time.h>           // Required for: timespec, nanosleep(), select() - POSIX
- 
+
     #include <emscripten/emscripten.h>  // Emscripten library - LLVM to JavaScript compiler
     #include <emscripten/html5.h>       // Emscripten HTML5 library
 #endif
@@ -221,11 +236,12 @@
 // Defines and Macros
 //----------------------------------------------------------------------------------
 #if defined(PLATFORM_RPI)
+    #define USE_LAST_TOUCH_DEVICE       // When multiple touchscreens are connected, only use the one with the highest event<N> number
+
     // Old device inputs system
     #define DEFAULT_KEYBOARD_DEV      STDIN_FILENO              // Standard input
-    #define DEFAULT_MOUSE_DEV         "/dev/input/mouse0"       // Mouse input
-    #define DEFAULT_TOUCH_DEV         "/dev/input/event4"       // Touch input virtual device (created by ts_uinput)
     #define DEFAULT_GAMEPAD_DEV       "/dev/input/js"           // Gamepad input (base dev for all gamepads: js0, js1, ...)
+    #define DEFAULT_EVDEV_PATH        "/dev/input/"             // Path to the linux input events
 
     // New device input events (evdev) (must be detected)
     //#define DEFAULT_KEYBOARD_DEV    "/dev/input/eventN"
@@ -259,10 +275,6 @@ static bool windowReady = false;                // Check if window has been init
 static bool windowMinimized = false;            // Check if window has been minimized
 static const char *windowTitle = NULL;          // Window text title...
 
-#if defined(__APPLE__)
-static int windowNeedsUpdating = 2;             // Times the Cocoa window needs to be updated initially
-#endif
-
 static unsigned int displayWidth, displayHeight;// Display width and height (monitor, device-screen, LCD, ...)
 static int screenWidth, screenHeight;           // Screen width and height (used render area)
 static int renderWidth, renderHeight;           // Framebuffer width and height (render area, including black bars if required)
@@ -293,7 +305,7 @@ extern EGLNativeWindowType uwpWindow;           // Native EGL window handler for
 static struct android_app *androidApp;          // Android activity
 static struct android_poll_source *source;      // Android events polling source
 static int ident, events;                       // Android ALooper_pollAll() variables
-static const char *internalDataPath;            // Android internal data path to write data (/data/data/<package>/files)
+static const char *internalDataPath = NULL;     // Android internal data path to write data (/data/data/<package>/files)
 
 static bool appEnabled = true;                  // Used to detec if app is active
 static bool contextRebindRequired = false;      // Used to know context rebind required
@@ -314,8 +326,9 @@ static int defaultKeyboardMode;                 // Used to store default keyboar
 #endif
 
 // Mouse states
-static Vector2 mousePosition;                   // Mouse position on screen
-static float mouseScale = 1.0f;                 // Mouse default scale
+static Vector2 mousePosition = { 0.0f, 0.0f };  // Mouse position on screen
+static Vector2 mouseScale = { 1.0f, 1.0f };     // Mouse scaling
+static Vector2 mouseOffset = { 0.0f, 0.0f };    // Mouse offset
 static bool cursorHidden = false;               // Track if cursor is hidden
 static bool cursorOnScreen = false;             // Tracks if cursor is inside client area
 static Vector2 touchPosition[MAX_TOUCH_POINTS]; // Touch position on screen
@@ -328,12 +341,23 @@ static int currentMouseWheelY = 0;              // Registers current mouse wheel
 #endif
 
 #if defined(PLATFORM_RPI)
-static int mouseStream = -1;                    // Mouse device file descriptor
-static bool mouseReady = false;                 // Flag to know if mouse is ready
-static pthread_t mouseThreadId;                 // Mouse reading thread id
-static int touchStream = -1;                    // Touch device file descriptor
-static bool touchReady = false;                 // Flag to know if touch interface is ready
-static pthread_t touchThreadId;                 // Touch reading thread id
+static char currentMouseStateEvdev[3] = { 0 };  // Holds the new mouse state for the next polling event to grab (Can't be written directly due to multithreading, app could miss the update)
+
+typedef struct {
+    pthread_t threadId;                         // Event reading thread id
+    int fd;                                     // File descriptor to the device it is assigned to
+    int eventNum;                               // Number of 'event<N>' device
+    Rectangle absRange;                         // Range of values for absolute pointing devices (touchscreens)
+    int touchSlot;                              // Hold the touch slot number of the currently being sent multitouch block
+    bool isMouse;                               // True if device supports relative X Y movements
+    bool isTouch;                               // True if device supports absolute X Y movements and has BTN_TOUCH
+    bool isMultitouch;                          // True if device supports multiple absolute movevents and has BTN_TOUCH
+    bool isKeyboard;                            // True if device has letter keycodes
+    bool isGamepad;                             // True if device has gamepad buttons
+} InputEventWorker;
+
+static InputEventWorker eventWorkers[10];       // List of worker threads for every monitored "/dev/input/event<N>"
+
 #endif
 #if defined(PLATFORM_WEB)
 static bool toggleCursorLock = false;           // Ask for cursor pointer lock on next click
@@ -372,10 +396,9 @@ static double targetTime = 0.0;             // Desired time for one frame, if 0 
 static unsigned char configFlags = 0;       // Configuration flags (bit based)
 static bool showLogo = false;               // Track if showing logo at init is enabled
 
-#if defined(PLATFORM_DESKTOP)
 static char **dropFilesPath;                // Store dropped files paths as strings
 static int dropFilesCount = 0;              // Count dropped files strings
-#endif
+
 static char **dirFilesPath;                 // Store directory files paths as strings
 static int dirFilesCount = 0;               // Count directory files strings
 
@@ -424,8 +447,6 @@ static void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset); 
 static void CursorEnterCallback(GLFWwindow *window, int enter);                            // GLFW3 Cursor Enter Callback, cursor enters client area
 static void WindowSizeCallback(GLFWwindow *window, int width, int height);                 // GLFW3 WindowSize Callback, runs when window is resized
 static void WindowIconifyCallback(GLFWwindow *window, int iconified);                      // GLFW3 WindowIconify Callback, runs when window is minimized/restored
-#endif
-#if defined(PLATFORM_DESKTOP)
 static void WindowDropCallback(GLFWwindow *window, int count, const char **paths);         // GLFW3 Window Drop Callback, runs when drop files into window
 #endif
 
@@ -447,9 +468,8 @@ static void InitKeyboard(void);                         // Init raw keyboard sys
 static void ProcessKeyboard(void);                      // Process keyboard events
 static void RestoreKeyboard(void);                      // Restore keyboard system
 static void InitMouse(void);                            // Mouse initialization (including mouse thread)
-static void *MouseThread(void *arg);                    // Mouse reading thread
-static void InitTouch(void);                            // Touch device initialization (including touch thread)
-static void *TouchThread(void *arg);                    // Touch device reading thread
+static void EventThreadSpawn(char *device);             // Identifies a input device and spawns a thread to handle it if needed
+static void *EventThread(void *arg);                    // Input device events reading thread
 static void InitGamepad(void);                          // Init raw gamepad input
 static void *GamepadThread(void *arg);                  // Mouse reading thread
 #endif
@@ -468,7 +488,7 @@ static void *GamepadThread(void *arg);                  // Mouse reading thread
 //----------------------------------------------------------------------------------
 
 #if defined(PLATFORM_ANDROID)
-// To allow easier porting to android, we allow the user to define a 
+// To allow easier porting to android, we allow the user to define a
 // main function which we call from android_main, defined by ourselves
 extern int main(int argc, char *argv[]);
 
@@ -478,7 +498,7 @@ void android_main(struct android_app *app)
     androidApp = app;
 
     // TODO: Should we maybe report != 0 return codes somewhere?
-    (void)main(1, (char*[]) { arg0, NULL });
+    (void)main(1, (char *[]) { arg0, NULL });
 }
 
 // TODO: Add this to header (if apps really need it)
@@ -566,17 +586,16 @@ void InitWindow(int width, int height, const char *title)
 #if defined(PLATFORM_RPI)
     // Init raw input system
     InitMouse();        // Mouse init
-    InitTouch();        // Touch init
     InitKeyboard();     // Keyboard init
     InitGamepad();      // Gamepad init
 #endif
 
 #if defined(PLATFORM_WEB)
     emscripten_set_fullscreenchange_callback(0, 0, 1, EmscriptenFullscreenChangeCallback);
-    
+
     // Support keyboard events
     emscripten_set_keypress_callback("#canvas", NULL, 1, EmscriptenKeyboardCallback);
-    
+
     // Support mouse events
     emscripten_set_click_callback("#canvas", NULL, 1, EmscriptenMouseCallback);
 
@@ -615,7 +634,7 @@ void CloseWindow(void)
         gifRecording = false;
     }
 #endif
-    
+
 #if defined(SUPPORT_DEFAULT_FONT)
     UnloadDefaultFont();
 #endif
@@ -661,8 +680,13 @@ void CloseWindow(void)
 
     windowShouldClose = true;   // Added to force threads to exit when the close window is called
 
-    pthread_join(mouseThreadId, NULL);
-    pthread_join(touchThreadId, NULL);
+    for (int i = 0; i < sizeof(eventWorkers)/sizeof(InputEventWorker); ++i)
+    {
+        if (eventWorkers[i].threadId == 0)
+        {
+            pthread_join(eventWorkers[i].threadId, NULL);
+        }
+    }
     pthread_join(gamepadThreadId, NULL);
 #endif
 
@@ -687,7 +711,7 @@ bool WindowShouldClose(void)
     emscripten_sleep(16);
     return false;
 #endif
-    
+
 #if defined(PLATFORM_DESKTOP)
     if (windowReady)
     {
@@ -715,6 +739,15 @@ bool IsWindowMinimized(void)
 #endif
 }
 
+// Check if window is currently hidden
+bool IsWindowHidden(void)
+{
+#if defined(PLATFORM_DESKTOP)
+    return (glfwGetWindowAttrib(window, GLFW_VISIBLE) == GL_FALSE);
+#endif
+    return false;
+}
+
 // Toggle fullscreen mode (only PLATFORM_DESKTOP)
 void ToggleFullscreen(void)
 {
@@ -735,18 +768,21 @@ void ToggleFullscreen(void)
 void SetWindowIcon(Image image)
 {
 #if defined(PLATFORM_DESKTOP)
-    ImageFormat(&image, UNCOMPRESSED_R8G8B8A8);
+    Image imicon = ImageCopy(image);
+    ImageFormat(&imicon, UNCOMPRESSED_R8G8B8A8);
 
-    GLFWimage icon[1];
-    
-    icon[0].width = image.width;
-    icon[0].height = image.height;
-    icon[0].pixels = (unsigned char *)image.data;
+    GLFWimage icon[1] = { 0 };
 
-    // NOTE: We only support one image icon
+    icon[0].width = imicon.width;
+    icon[0].height = imicon.height;
+    icon[0].pixels = (unsigned char *)imicon.data;
+
+    // NOTE 1: We only support one image icon
+    // NOTE 2: The specified image data is copied before this function returns
     glfwSetWindowIcon(window, 1, icon);
 
     // TODO: Support multi-image icons --> image.mipmaps
+    UnloadImage(imicon);
 #endif
 }
 
@@ -771,9 +807,9 @@ void SetWindowMonitor(int monitor)
 {
 #if defined(PLATFORM_DESKTOP)
     int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    
-    if ((monitor >= 0) && (monitor < monitorCount)) 
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+
+    if ((monitor >= 0) && (monitor < monitorCount))
     {
         //glfwSetWindowMonitor(window, monitors[monitor], 0, 0, screenWidth, screenHeight, GLFW_DONT_CARE);
         TraceLog(LOG_INFO, "Selected fullscreen monitor: [%i] %s", monitor, glfwGetMonitorName(monitors[monitor]));
@@ -794,8 +830,24 @@ void SetWindowMinSize(int width, int height)
 // Set window dimensions
 void SetWindowSize(int width, int height)
 {
-#if defined(PLATFORM_DESKTOP)
+//#if defined(PLATFORM_DESKTOP)
     glfwSetWindowSize(window, width, height);
+//#endif
+}
+
+// Show the window
+void UnhideWindow(void)
+{
+#if defined(PLATFORM_DESKTOP)
+    glfwShowWindow(window);
+#endif
+}
+
+// Hide the window
+void HideWindow(void)
+{
+#if defined(PLATFORM_DESKTOP)
+    glfwHideWindow(window);
 #endif
 }
 
@@ -845,12 +897,12 @@ int GetMonitorCount(void)
 
 // Get primary monitor width
 int GetMonitorWidth(int monitor)
-{   
+{
 #if defined(PLATFORM_DESKTOP)
     int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    
-    if ((monitor >= 0) && (monitor < monitorCount)) 
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+
+    if ((monitor >= 0) && (monitor < monitorCount))
     {
         const GLFWvidmode *mode = glfwGetVideoMode(monitors[monitor]);
         return mode->width;
@@ -862,12 +914,12 @@ int GetMonitorWidth(int monitor)
 
 // Get primary monitor width
 int GetMonitorHeight(int monitor)
-{   
+{
 #if defined(PLATFORM_DESKTOP)
     int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    
-    if ((monitor >= 0) && (monitor < monitorCount)) 
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+
+    if ((monitor >= 0) && (monitor < monitorCount))
     {
         const GLFWvidmode *mode = glfwGetVideoMode(monitors[monitor]);
         return mode->height;
@@ -882,9 +934,9 @@ int GetMonitorPhysicalWidth(int monitor)
 {
 #if defined(PLATFORM_DESKTOP)
     int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    
-    if ((monitor >= 0) && (monitor < monitorCount)) 
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+
+    if ((monitor >= 0) && (monitor < monitorCount))
     {
         int physicalWidth;
         glfwGetMonitorPhysicalSize(monitors[monitor], &physicalWidth, NULL);
@@ -900,9 +952,9 @@ int GetMonitorPhysicalHeight(int monitor)
 {
 #if defined(PLATFORM_DESKTOP)
     int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    
-    if ((monitor >= 0) && (monitor < monitorCount)) 
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+
+    if ((monitor >= 0) && (monitor < monitorCount))
     {
         int physicalHeight;
         glfwGetMonitorPhysicalSize(monitors[monitor], NULL, &physicalHeight);
@@ -916,11 +968,11 @@ int GetMonitorPhysicalHeight(int monitor)
 // Get the human-readable, UTF-8 encoded name of the primary monitor
 const char *GetMonitorName(int monitor)
 {
-#if defined(PLATFORM_DESKTOP) 
+#if defined(PLATFORM_DESKTOP)
     int monitorCount;
-    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-    
-    if ((monitor >= 0) && (monitor < monitorCount)) 
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+
+    if ((monitor >= 0) && (monitor < monitorCount))
     {
         return glfwGetMonitorName(monitors[monitor]);
     }
@@ -930,7 +982,7 @@ const char *GetMonitorName(int monitor)
 }
 
 // Show mouse cursor
-void ShowCursor()
+void ShowCursor(void)
 {
 #if defined(PLATFORM_DESKTOP)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -939,7 +991,7 @@ void ShowCursor()
 }
 
 // Hides mouse cursor
-void HideCursor()
+void HideCursor(void)
 {
 #if defined(PLATFORM_DESKTOP)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -948,13 +1000,13 @@ void HideCursor()
 }
 
 // Check if cursor is not visible
-bool IsCursorHidden()
+bool IsCursorHidden(void)
 {
     return cursorHidden;
 }
 
 // Enables cursor (unlock cursor)
-void EnableCursor()
+void EnableCursor(void)
 {
 #if defined(PLATFORM_DESKTOP)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -966,7 +1018,7 @@ void EnableCursor()
 }
 
 // Disables cursor (lock cursor)
-void DisableCursor()
+void DisableCursor(void)
 {
 #if defined(PLATFORM_DESKTOP)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -1010,7 +1062,7 @@ void EndDrawing(void)
     if (gifRecording)
     {
         gifFramesCounter++;
-        
+
         // NOTE: We record one gif frame every 10 game frames
         if ((gifFramesCounter%GIF_RECORD_FRAMERATE) == 0)
         {
@@ -1018,20 +1070,20 @@ void EndDrawing(void)
             // NOTE: This process is very slow... :(
             unsigned char *screenData = rlReadScreenPixels(screenWidth, screenHeight);
             GifWriteFrame(screenData, screenWidth, screenHeight, 10, 8, false);
-            
+
             free(screenData);   // Free image data
         }
-        
+
         if (((gifFramesCounter/15)%2) == 1)
         {
             DrawCircle(30, screenHeight - 20, 10, RED);
             DrawText("RECORDING", 50, screenHeight - 25, 10, MAROON);
         }
-        
+
         rlglDraw();                 // Draw RECORDING message
     }
 #endif
-   
+
     SwapBuffers();                  // Copy back buffer to front buffer
     PollInputEvents();              // Poll user events
 
@@ -1039,7 +1091,7 @@ void EndDrawing(void)
     currentTime = GetTime();
     drawTime = currentTime - previousTime;
     previousTime = currentTime;
-    
+
     frameTime = updateTime + drawTime;
 
     // Wait for some milliseconds...
@@ -1085,14 +1137,14 @@ void EndMode2D(void)
 void BeginMode3D(Camera3D camera)
 {
     rlglDraw();                         // Draw Buffers (Only OpenGL 3+ and ES2)
-    
+
     rlMatrixMode(RL_PROJECTION);        // Switch to projection matrix
     rlPushMatrix();                     // Save previous matrix, which contains the settings for the 2d ortho projection
     rlLoadIdentity();                   // Reset current matrix (PROJECTION)
 
     float aspect = (float)screenWidth/(float)screenHeight;
 
-    if (camera.type == CAMERA_PERSPECTIVE) 
+    if (camera.type == CAMERA_PERSPECTIVE)
     {
         // Setup perspective projection
         double top = 0.01*tan(camera.fovy*0.5*DEG2RAD);
@@ -1141,8 +1193,6 @@ void BeginTextureMode(RenderTexture2D target)
     rlglDraw();                         // Draw Buffers (Only OpenGL 3+ and ES2)
 
     rlEnableRenderTexture(target.id);   // Enable render target
-    
-    rlClearScreenBuffers();             // Clear render texture buffers
 
     // Set viewport to framebuffer size
     rlViewport(0, 0, target.texture.width, target.texture.height);
@@ -1195,14 +1245,12 @@ Ray GetMouseRay(Vector2 mousePosition, Camera camera)
     // Store values in a vector
     Vector3 deviceCoords = { x, y, z };
 
-    TraceLog(LOG_DEBUG, "Device coordinates: (%f, %f, %f)", deviceCoords.x, deviceCoords.y, deviceCoords.z);
-
     // Calculate view matrix from camera look at
     Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
 
     Matrix matProj = MatrixIdentity();
 
-    if (camera.type == CAMERA_PERSPECTIVE) 
+    if (camera.type == CAMERA_PERSPECTIVE)
     {
         // Calculate projection matrix from perspective
         matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)GetScreenWidth()/(double)GetScreenHeight()), 0.01, 1000.0);
@@ -1212,7 +1260,7 @@ Ray GetMouseRay(Vector2 mousePosition, Camera camera)
         float aspect = (float)screenWidth/(float)screenHeight;
         double top = camera.fovy/2.0;
         double right = top*aspect;
-        
+
         // Calculate projection matrix from orthographic
         matProj = MatrixOrtho(-right, right, -top, top, 0.01, 1000.0);
     }
@@ -1222,7 +1270,7 @@ Ray GetMouseRay(Vector2 mousePosition, Camera camera)
     Vector3 farPoint = rlUnproject((Vector3){ deviceCoords.x, deviceCoords.y, 1.0f }, matProj, matView);
 
     // Unproject the mouse cursor in the near plane.
-    // We need this as the source position because orthographic projects, compared to perspect doesn't have a 
+    // We need this as the source position because orthographic projects, compared to perspect doesn't have a
     // convergence point, meaning that the "eye" of the camera is more like a plane than a point.
     Vector3 cameraPlanePointerPos = rlUnproject((Vector3){ deviceCoords.x, deviceCoords.y, -1.0f }, matProj, matView);
 
@@ -1254,7 +1302,7 @@ Vector2 GetWorldToScreen(Vector3 position, Camera camera)
         float aspect = (float)screenWidth/(float)screenHeight;
         double top = camera.fovy/2.0;
         double right = top*aspect;
-        
+
         // Calculate projection matrix from orthographic
         matProj = MatrixOrtho(-right, right, -top, top, 0.01, 1000.0);
     }
@@ -1341,7 +1389,7 @@ Vector4 ColorNormalize(Color color)
     result.y = (float)color.g/255.0f;
     result.z = (float)color.b/255.0f;
     result.w = (float)color.a/255.0f;
-    
+
     return result;
 }
 
@@ -1361,27 +1409,27 @@ Vector3 ColorToHSV(Color color)
 
     hsv.z = max;            // Value
     delta = max - min;
-    
+
     if (delta < 0.00001f)
     {
         hsv.y = 0.0f;
         hsv.x = 0.0f;       // Undefined, maybe NAN?
         return hsv;
     }
-    
-    if (max > 0.0f) 
+
+    if (max > 0.0f)
     {
         // NOTE: If max is 0, this divide would cause a crash
         hsv.y = (delta/max);    // Saturation
-    } 
-    else 
+    }
+    else
     {
         // NOTE: If max is 0, then r = g = b = 0, s = 0, h is undefined
         hsv.y = 0.0f;
         hsv.x = NAN;        // Undefined
         return hsv;
     }
-    
+
     // NOTE: Comparing float values could not work properly
     if (rgb.x >= max) hsv.x = (rgb.y - rgb.z)/delta;    // Between yellow & magenta
     else
@@ -1389,12 +1437,47 @@ Vector3 ColorToHSV(Color color)
         if (rgb.y >= max) hsv.x = 2.0f + (rgb.z - rgb.x)/delta;  // Between cyan & yellow
         else hsv.x = 4.0f + (rgb.x - rgb.y)/delta;      // Between magenta & cyan
     }
-    
+
     hsv.x *= 60.0f;     // Convert to degrees
 
     if (hsv.x < 0.0f) hsv.x += 360.0f;
 
     return hsv;
+}
+
+// Returns a Color from HSV values
+// Implementation reference: https://en.wikipedia.org/wiki/HSL_and_HSV#Alternative_HSV_conversion
+// NOTE: Color->HSV->Color conversion will not yield exactly the same color due to rounding errors
+Color ColorFromHSV(Vector3 hsv)
+{
+    Color color = { 0, 0, 0, 255 };
+    float h = hsv.x, s = hsv.y, v = hsv.z;
+
+    // Red channel
+    float k = fmod((5.0f + h/60.0f), 6);
+    float t = 4.0f - k;
+    k = (t < k) ? t : k;
+    k = (k < 1) ? k : 1;
+    k = (k > 0) ? k : 0;
+    color.r = (v - v*s*k)*255;
+
+    // Green channel
+    k = fmod((3.0f + h/60.0f), 6);
+    t = 4.0f - k;
+    k = (t < k) ? t : k;
+    k = (k < 1) ? k : 1;
+    k = (k > 0) ? k : 0;
+    color.g = (v - v*s*k)*255;
+
+    // Blue channel
+    k = fmod((1.0f + h/60.0f), 6);
+    t = 4.0f - k;
+    k = (t < k) ? t : k;
+    k = (k < 1) ? k : 1;
+    k = (k > 0) ? k : 0;
+    color.b = (v - v*s*k)*255;
+
+    return color;
 }
 
 // Returns a Color struct from hexadecimal value
@@ -1410,8 +1493,6 @@ Color GetColor(int hexValue)
     return color;
 }
 
-
-
 // Returns a random value between min and max (both included)
 int GetRandomValue(int min, int max)
 {
@@ -1422,7 +1503,7 @@ int GetRandomValue(int min, int max)
         min = tmp;
     }
 
-    return (rand()%(abs(max-min)+1) + min);
+    return (rand()%(abs(max - min) + 1) + min);
 }
 
 // Color fade-in or fade-out, alpha goes from 0.0f to 1.0f
@@ -1432,12 +1513,6 @@ Color Fade(Color color, float alpha)
     else if (alpha > 1.0f) alpha = 1.0f;
 
     return (Color){color.r, color.g, color.b, (unsigned char)(255.0f*alpha)};
-}
-
-// Activate raylib logo at startup (can be done with flags)
-void ShowLogo(void)
-{
-    showLogo = true;
 }
 
 // Setup window configuration flags (view FLAGS)
@@ -1452,17 +1527,32 @@ void SetConfigFlags(unsigned char flags)
 // NOTE TraceLog() function is located in [utils.h]
 
 // Takes a screenshot of current screen (saved a .png)
+// NOTE: This function could work in any platform but some platforms: PLATFORM_ANDROID and PLATFORM_WEB
+// have their own internal file-systems, to dowload image to user file-system some additional mechanism is required
 void TakeScreenshot(const char *fileName)
 {
-#if defined(PLATFORM_DESKTOP) || defined(PLATFORM_RPI)
     unsigned char *imgData = rlReadScreenPixels(renderWidth, renderHeight);
-
     Image image = { imgData, renderWidth, renderHeight, 1, UNCOMPRESSED_R8G8B8A8 };
-    ExportImage(image, fileName);
+
+    char path[512] = { 0 };
+#if defined(PLATFORM_ANDROID)
+    strcpy(path, internalDataPath);
+    strcat(path, "/");
+    strcat(path, fileName);
+#else
+    strcpy(path, fileName);
+#endif
+
+    ExportImage(image, path);
     free(imgData);
 
-    TraceLog(LOG_INFO, "Screenshot taken: %s", fileName);
+#if defined(PLATFORM_WEB)
+    // Download file from MEMFS (emscripten memory filesystem)
+    // SaveFileFromMEMFSToDisk() function is defined in raylib/templates/web_shel/shell.html
+    emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", GetFileName(path), GetFileName(path)));
 #endif
+
+    TraceLog(LOG_INFO, "Screenshot taken: %s", path);
 }
 
 // Check if the file exists
@@ -1471,11 +1561,10 @@ bool FileExists(const char *fileName)
     bool result = false;
 
 #if defined(_WIN32)
-    if (_access(fileName, 0) != -1)
+    if (_access(fileName, 0) != -1) result = true;
 #else
-    if (access(fileName, F_OK) != -1)
+    if (access(fileName, F_OK) != -1) result = true;
 #endif
-        result = true;
 
     return result;
 }
@@ -1488,10 +1577,10 @@ bool IsFileExtension(const char *fileName, const char *ext)
 
     if ((fileExt = strrchr(fileName, '.')) != NULL)
     {
-    #if defined(_WIN32)
+#if defined(_WIN32)
         result = true;
         int extLen = strlen(ext);
-        
+
         if (strlen(fileExt) == extLen)
         {
             for (int i = 0; i < extLen; i++)
@@ -1504,9 +1593,9 @@ bool IsFileExtension(const char *fileName, const char *ext)
             }
         }
         else result = false;
-    #else
+#else
         if (strcmp(fileExt, ext) == 0) result = true;
-    #endif
+#endif
     }
 
     return result;
@@ -1516,9 +1605,9 @@ bool IsFileExtension(const char *fileName, const char *ext)
 const char *GetExtension(const char *fileName)
 {
     const char *dot = strrchr(fileName, '.');
-    
+
     if (!dot || dot == fileName) return NULL;
-    
+
     return (dot + 1);
 }
 
@@ -1544,19 +1633,19 @@ const char *GetFileName(const char *filePath)
 const char *GetFileNameWithoutExt(const char *filePath)
 {
     char *result, *lastDot, *lastSep;
-    
+
     char nameDot = '.';     // Default filename to extension separator character
     char pathSep = '/';     // Default filepath separator character
 
     // Error checks and allocate string
     if (filePath == NULL) return NULL;
-    
+
     // Try to allocate new string, same size as original
     // NOTE: By default strlen() does not count the '\0' character
-    if ((result = malloc(strlen(filePath) + 1)) == NULL) return NULL;
-    
+    if ((result = (char *)malloc(strlen(filePath) + 1)) == NULL) return NULL;
+
     strcpy(result, filePath);   // Make a copy of the string
-    
+
     // NOTE: strrchr() returns a pointer to the last occurrence of character
     lastDot = strrchr(result, nameDot);
     lastSep = (pathSep == 0) ? NULL : strrchr(result, pathSep);
@@ -1565,11 +1654,11 @@ const char *GetFileNameWithoutExt(const char *filePath)
     {
         if (lastSep != NULL)        // ...and it's before the extenstion separator...
         {
-            if (lastSep < lastDot) 
+            if (lastSep < lastDot)
             {
                 *lastDot = '\0';    // ...then remove it
             }
-        } 
+        }
         else *lastDot = '\0';       // Has extension separator with no path separator
     }
 
@@ -1580,8 +1669,8 @@ const char *GetFileNameWithoutExt(const char *filePath)
 const char *GetDirectoryPath(const char *fileName)
 {
     const char *lastSlash = NULL;
-    static char filePath[256];      // MAX_DIRECTORY_PATH_SIZE = 256
-    memset(filePath, 0, 256);
+    static char filePath[MAX_FILEPATH_LENGTH];
+    memset(filePath, 0, MAX_FILEPATH_LENGTH);
 
     lastSlash = strprbrk(fileName, "\\/");
     if (!lastSlash) return NULL;
@@ -1596,50 +1685,49 @@ const char *GetDirectoryPath(const char *fileName)
 // Get current working directory
 const char *GetWorkingDirectory(void)
 {
-    static char currentDir[256];    // MAX_DIRECTORY_PATH_SIZE = 256
-    memset(currentDir, 0, 256);
-    
-    GETCWD(currentDir, 256 - 1);
-    
+    static char currentDir[MAX_FILEPATH_LENGTH];
+    memset(currentDir, 0, MAX_FILEPATH_LENGTH);
+
+    GETCWD(currentDir, MAX_FILEPATH_LENGTH - 1);
+
     return currentDir;
 }
 
-// Get filenames in a directory path (max 256 files)
+// Get filenames in a directory path (max 512 files)
 // NOTE: Files count is returned by parameters pointer
 char **GetDirectoryFiles(const char *dirPath, int *fileCount)
 {
-    #define MAX_FILEPATH_LENGTH     256
     #define MAX_DIRECTORY_FILES     512
-    
+
     ClearDirectoryFiles();
 
     // Memory allocation for MAX_DIRECTORY_FILES
     dirFilesPath = (char **)malloc(sizeof(char *)*MAX_DIRECTORY_FILES);
-    for (int i = 0; i < MAX_DIRECTORY_FILES; i++) dirFilesPath[i] = (char *)malloc(sizeof(char)*MAX_FILEPATH_LENGTH);   
-    
+    for (int i = 0; i < MAX_DIRECTORY_FILES; i++) dirFilesPath[i] = (char *)malloc(sizeof(char)*MAX_FILEPATH_LENGTH);
+
     int counter = 0;
     struct dirent *ent;
     DIR *dir = opendir(dirPath);
-    
+
     if (dir != NULL)  // It's a directory
     {
-        // TODO: Reading could be done in two passes, 
+        // TODO: Reading could be done in two passes,
         // first one to count files and second one to read names
         // That way we can allocate required memory, instead of a limited pool
-        
+
         while ((ent = readdir(dir)) != NULL)
         {
             strcpy(dirFilesPath[counter], ent->d_name);
             counter++;
         }
-        
+
         closedir(dir);
     }
     else TraceLog(LOG_WARNING, "Can not open directory...\n"); // Maybe it's a file...
 
     dirFilesCount = counter;
     *fileCount = dirFilesCount;
-    
+
     return dirFilesPath;
 }
 
@@ -1664,29 +1752,20 @@ bool ChangeDirectory(const char *dir)
 // Check if a file has been dropped into window
 bool IsFileDropped(void)
 {
-#if defined(PLATFORM_DESKTOP)
     if (dropFilesCount > 0) return true;
     else return false;
-#else
-    return false;
-#endif
 }
 
 // Get dropped files names
 char **GetDroppedFiles(int *count)
 {
-#if defined(PLATFORM_DESKTOP)
     *count = dropFilesCount;
     return dropFilesPath;
-#else
-    return NULL;
-#endif
 }
 
 // Clear dropped files paths buffer
 void ClearDroppedFiles(void)
 {
-#if defined(PLATFORM_DESKTOP)
     if (dropFilesCount > 0)
     {
         for (int i = 0; i < dropFilesCount; i++) free(dropFilesPath[i]);
@@ -1695,21 +1774,20 @@ void ClearDroppedFiles(void)
 
         dropFilesCount = 0;
     }
-#endif
 }
 
 // Get file modification time (last write time)
-RLAPI long GetFileModTime(const char *fileName)
+long GetFileModTime(const char *fileName)
 {
     struct stat result = { 0 };
-    
+
     if (stat(fileName, &result) == 0)
     {
         time_t mod = result.st_mtime;
-        
+
         return (long)mod;
     }
-    
+
     return 0;
 }
 
@@ -1719,7 +1797,7 @@ void StorageSaveValue(int position, int value)
 {
     FILE *storageFile = NULL;
 
-    char path[128];
+    char path[512] = { 0 };
 #if defined(PLATFORM_ANDROID)
     strcpy(path, internalDataPath);
     strcat(path, "/");
@@ -1742,11 +1820,11 @@ void StorageSaveValue(int position, int value)
         int fileSize = ftell(storageFile);  // Size in bytes
         fseek(storageFile, 0, SEEK_SET);
 
-        if (fileSize < (position*4)) TraceLog(LOG_WARNING, "Storage position could not be found");
+        if (fileSize < (position*sizeof(int))) TraceLog(LOG_WARNING, "Storage position could not be found");
         else
         {
-            fseek(storageFile, (position*4), SEEK_SET);
-            fwrite(&value, 1, 4, storageFile);
+            fseek(storageFile, (position*sizeof(int)), SEEK_SET);
+            fwrite(&value, 1, sizeof(int), storageFile);
         }
 
         fclose(storageFile);
@@ -1759,7 +1837,7 @@ int StorageLoadValue(int position)
 {
     int value = 0;
 
-    char path[128];
+    char path[512] = { 0 };
 #if defined(PLATFORM_ANDROID)
     strcpy(path, internalDataPath);
     strcat(path, "/");
@@ -1790,6 +1868,36 @@ int StorageLoadValue(int position)
     }
 
     return value;
+}
+
+// Open URL with default system browser (if available)
+// NOTE: This function is onlyl safe to use if you control the URL given.
+// A user could craft a malicious string performing another action.
+// Only call this function yourself not with user input or make sure to check the string yourself.
+// CHECK: https://github.com/raysan5/raylib/issues/686
+void OpenURL(const char *url)
+{
+    // Small security check trying to avoid (partially) malicious code...
+    // sorry for the inconvenience when you hit this point...
+    if (strchr(url, '\'') != NULL)
+    {
+        TraceLog(LOG_WARNING, "Provided URL does not seem to be valid.");
+    }
+    else
+    {
+        char *cmd = (char *)calloc(strlen(url) + 10, sizeof(char));
+
+#if defined(_WIN32)
+        sprintf(cmd, "explorer '%s'", url);
+#elif defined(__linux__)
+        sprintf(cmd, "xdg-open '%s'", url); // Alternatives: firefox, x-www-browser
+#elif defined(__APPLE__)
+        sprintf(cmd, "open '%s'", url);
+#endif
+        system(cmd);
+
+        free(cmd);
+    }
 }
 
 //----------------------------------------------------------------------------------
@@ -2032,7 +2140,7 @@ int GetMouseX(void)
 #if defined(PLATFORM_ANDROID)
     return (int)touchPosition[0].x;
 #else
-    return (int)(mousePosition.x*mouseScale);
+    return (int)((mousePosition.x + mouseOffset.x)*mouseScale.x);
 #endif
 }
 
@@ -2042,7 +2150,7 @@ int GetMouseY(void)
 #if defined(PLATFORM_ANDROID)
     return (int)touchPosition[0].x;
 #else
-    return (int)(mousePosition.y*mouseScale);
+    return (int)((mousePosition.y + mouseOffset.y)*mouseScale.y);
 #endif
 }
 
@@ -2052,27 +2160,32 @@ Vector2 GetMousePosition(void)
 #if defined(PLATFORM_ANDROID)
     return GetTouchPosition(0);
 #else
-    return (Vector2){ mousePosition.x*mouseScale, mousePosition.y*mouseScale };
+    return (Vector2){ (mousePosition.x + mouseOffset.x)*mouseScale.x, (mousePosition.y + mouseOffset.y)*mouseScale.y };
 #endif
 }
 
 // Set mouse position XY
-void SetMousePosition(Vector2 position)
+void SetMousePosition(int x, int y)
 {
-    mousePosition = position;
+    mousePosition = (Vector2){ (float)x, (float)y };
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
     // NOTE: emscripten not implemented
-    glfwSetCursorPos(window, position.x, position.y);
+    glfwSetCursorPos(window, mousePosition.x, mousePosition.y);
 #endif
+}
+
+// Set mouse offset
+// NOTE: Useful when rendering to different size targets
+void SetMouseOffset(int offsetX, int offsetY)
+{
+    mouseOffset = (Vector2){ (float)offsetX, (float)offsetY };
 }
 
 // Set mouse scaling
 // NOTE: Useful when rendering to different size targets
-void SetMouseScale(float scale)
+void SetMouseScale(float scaleX, float scaleY)
 {
-#if !defined(PLATFORM_ANDROID)
-    mouseScale = scale;
-#endif
+	mouseScale = (Vector2){ scaleX, scaleY };
 }
 
 // Returns mouse wheel movement Y
@@ -2128,7 +2241,9 @@ Vector2 GetTouchPosition(int index)
         position.x = position.x*((float)renderWidth/(float)displayWidth) - renderOffsetX/2;
         position.y = position.y*((float)renderHeight/(float)displayHeight) - renderOffsetY/2;
     }
-#else   // PLATFORM_DESKTOP, PLATFORM_RPI
+#elif defined(PLATFORM_RPI)
+    position = touchPosition[index];
+#else   // PLATFORM_DESKTOP
     if (index == 0) position = GetMousePosition();
 #endif
 
@@ -2202,11 +2317,14 @@ static bool InitGraphicsDevice(int width, int height)
     //glfwWindowHint(GLFW_AUX_BUFFERS, 0);          // Number of auxiliar buffers
 
     // Check some Window creation flags
+    if (configFlags & FLAG_WINDOW_HIDDEN) glfwWindowHint(GLFW_VISIBLE, GL_FALSE);           // Visible window
+    else glfwWindowHint(GLFW_VISIBLE, GL_TRUE);     // Window initially hidden
+
     if (configFlags & FLAG_WINDOW_RESIZABLE) glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);       // Resizable window
     else glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);  // Avoid window being resizable
 
-    if (configFlags & FLAG_WINDOW_UNDECORATED) glfwWindowHint(GLFW_DECORATED, GL_FALSE);    // Border and buttons on Window
-    else glfwWindowHint(GLFW_DECORATED, GL_TRUE);   // Decorated window
+    if (configFlags & FLAG_WINDOW_UNDECORATED) glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);  // Border and buttons on Window
+    else glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);   // Decorated window
     // FLAG_WINDOW_TRANSPARENT not supported on HTML5 and not included in any released GLFW version yet
 #if defined(GLFW_TRANSPARENT_FRAMEBUFFER)
     if (configFlags & FLAG_WINDOW_TRANSPARENT) glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);     // Transparent framebuffer
@@ -2222,21 +2340,28 @@ static bool InitGraphicsDevice(int width, int height)
     // Check selection OpenGL version
     if (rlGetVersion() == OPENGL_21)
     {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);        // Choose OpenGL major version (just hint)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);        // Choose OpenGL minor version (just hint)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);          // Choose OpenGL major version (just hint)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);          // Choose OpenGL minor version (just hint)
     }
     else if (rlGetVersion() == OPENGL_33)
     {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);        // Choose OpenGL major version (just hint)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);        // Choose OpenGL minor version (just hint)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);          // Choose OpenGL major version (just hint)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);          // Choose OpenGL minor version (just hint)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Profiles Hint: Only 3.3 and above!
-                                                                       // Other values: GLFW_OPENGL_ANY_PROFILE, GLFW_OPENGL_COMPAT_PROFILE
+                                                                       // Values: GLFW_OPENGL_CORE_PROFILE, GLFW_OPENGL_ANY_PROFILE, GLFW_OPENGL_COMPAT_PROFILE
 #if defined(__APPLE__)
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // OSX Requires fordward compatibility
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);  // OSX Requires fordward compatibility
 #else
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE); // Fordward Compatibility Hint: Only 3.3 and above!
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE); // Fordward Compatibility Hint: Only 3.3 and above!
 #endif
-        //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Request OpenGL DEBUG context
+        //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE); // Request OpenGL DEBUG context
+    }
+    else if (rlGetVersion() == OPENGL_ES_20)                    // Request OpenGL ES 2.0 context
+    {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);     // Alternative: GLFW_EGL_CONTEXT_API (ANGLE)
     }
 
     if (fullscreen)
@@ -2323,15 +2448,15 @@ static bool InitGraphicsDevice(int width, int height)
     glfwSetCharCallback(window, CharCallback);
     glfwSetScrollCallback(window, ScrollCallback);
     glfwSetWindowIconifyCallback(window, WindowIconifyCallback);
-#if defined(PLATFORM_DESKTOP)
     glfwSetDropCallback(window, WindowDropCallback);
-#endif
 
     glfwMakeContextCurrent(window);
-    
+
     // Try to disable GPU V-Sync by default, set framerate using SetTargetFPS()
     // NOTE: V-Sync can be enabled by graphic driver configuration
-    //TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! glfwSwapInterval(0);                
+#if !defined(PLATFORM_WEB)
+    glfwSwapInterval(0);
+#endif
 
 #if defined(PLATFORM_DESKTOP)
     // Load OpenGL 3.3 extensions
@@ -2343,6 +2468,7 @@ static bool InitGraphicsDevice(int width, int height)
     // NOTE: V-Sync can be enabled by graphic driver configuration
     if (configFlags & FLAG_VSYNC_HINT)
     {
+        // WARNING: It seems to hits a critical render path in Intel HD Graphics
         glfwSwapInterval(1);
         TraceLog(LOG_INFO, "Trying to enable VSYNC");
     }
@@ -2415,14 +2541,14 @@ static bool InitGraphicsDevice(int width, int height)
         // EGL_ANGLE_DISPLAY_ALLOW_RENDER_TO_BACK_BUFFER is an optimization that can have large performance benefits on mobile devices.
         // Its syntax is subject to change, though. Please update your Visual Studio templates if you experience compilation issues with it.
         EGL_ANGLE_DISPLAY_ALLOW_RENDER_TO_BACK_BUFFER, EGL_TRUE,
-        
-        // EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE is an option that enables ANGLE to automatically call 
-        // the IDXGIDevice3::Trim method on behalf of the application when it gets suspended. 
+
+        // EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE is an option that enables ANGLE to automatically call
+        // the IDXGIDevice3::Trim method on behalf of the application when it gets suspended.
         // Calling IDXGIDevice3::Trim when an application is suspended is a Windows Store application certification requirement.
         EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE, EGL_TRUE,
         EGL_NONE,
     };
-    
+
     const EGLint fl9_3DisplayAttributes[] =
     {
         // These can be used to request ANGLE's D3D11 renderer, with D3D11 Feature Level 9_3.
@@ -2445,7 +2571,7 @@ static bool InitGraphicsDevice(int width, int height)
         EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE, EGL_TRUE,
         EGL_NONE,
     };
-    
+
     EGLConfig config = NULL;
 
     // eglGetPlatformDisplayEXT is an alternative to eglGetDisplay. It allows us to pass in display attributes, used to configure D3D11.
@@ -2457,15 +2583,15 @@ static bool InitGraphicsDevice(int width, int height)
     }
 
     //
-    // To initialize the display, we make three sets of calls to eglGetPlatformDisplayEXT and eglInitialize, with varying 
+    // To initialize the display, we make three sets of calls to eglGetPlatformDisplayEXT and eglInitialize, with varying
     // parameters passed to eglGetPlatformDisplayEXT:
     // 1) The first calls uses "defaultDisplayAttributes" as a parameter. This corresponds to D3D11 Feature Level 10_0+.
-    // 2) If eglInitialize fails for step 1 (e.g. because 10_0+ isn't supported by the default GPU), then we try again 
+    // 2) If eglInitialize fails for step 1 (e.g. because 10_0+ isn't supported by the default GPU), then we try again
     //    using "fl9_3DisplayAttributes". This corresponds to D3D11 Feature Level 9_3.
-    // 3) If eglInitialize fails for step 2 (e.g. because 9_3+ isn't supported by the default GPU), then we try again 
+    // 3) If eglInitialize fails for step 2 (e.g. because 9_3+ isn't supported by the default GPU), then we try again
     //    using "warpDisplayAttributes".  This corresponds to D3D11 Feature Level 11_0 on WARP, a D3D11 software rasterizer.
     //
-    
+
     // This tries to initialize EGL to D3D11 Feature Level 10_0+. See above comment for details.
     display = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, defaultDisplayAttributes);
     if (display == EGL_NO_DISPLAY)
@@ -2473,7 +2599,7 @@ static bool InitGraphicsDevice(int width, int height)
         TraceLog(LOG_WARNING, "Failed to initialize EGL display");
         return false;
     }
-        
+
     if (eglInitialize(display, NULL, NULL) == EGL_FALSE)
     {
         // This tries to initialize EGL to D3D11 Feature Level 9_3, if 10_0+ is unavailable (e.g. on some mobile devices).
@@ -2488,7 +2614,7 @@ static bool InitGraphicsDevice(int width, int height)
         {
             // This initializes EGL to D3D11 Feature Level 11_0 on WARP, if 9_3+ is unavailable on the default GPU.
             display = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, warpDisplayAttributes);
-            if (display == EGL_NO_DISPLAY) 
+            if (display == EGL_NO_DISPLAY)
             {
                 TraceLog(LOG_WARNING, "Failed to initialize EGL display");
                 return false;
@@ -2516,7 +2642,7 @@ static bool InitGraphicsDevice(int width, int height)
     //PropertySet^ surfaceCreationProperties = ref new PropertySet();
     //surfaceCreationProperties->Insert(ref new String(EGLNativeWindowTypeProperty), window);     // CoreWindow^ window
 
-    // You can configure the surface to render at a lower resolution and be scaled up to 
+    // You can configure the surface to render at a lower resolution and be scaled up to
     // the full window size. The scaling is often free on mobile hardware.
     //
     // One way to configure the SwapChainPanel is to specify precisely which resolution it should render at.
@@ -2528,20 +2654,20 @@ static bool InitGraphicsDevice(int width, int height)
     // float customResolutionScale = 0.5f;
     // surfaceCreationProperties->Insert(ref new String(EGLRenderResolutionScaleProperty), PropertyValue::CreateSingle(customResolutionScale));
 
-    
-    // eglCreateWindowSurface() requires a EGLNativeWindowType parameter, 
+
+    // eglCreateWindowSurface() requires a EGLNativeWindowType parameter,
     // In Windows platform: typedef HWND EGLNativeWindowType;
-    
-    
+
+
     // Property: EGLNativeWindowTypeProperty
     // Type: IInspectable
     // Description: Set this property to specify the window type to use for creating a surface.
     //              If this property is missing, surface creation will fail.
     //
     //const wchar_t EGLNativeWindowTypeProperty[] = L"EGLNativeWindowTypeProperty";
-    
+
     //https://stackoverflow.com/questions/46550182/how-to-create-eglsurface-using-c-winrt-and-angle
-    
+
     //surface = eglCreateWindowSurface(display, config, reinterpret_cast<IInspectable*>(surfaceCreationProperties), surfaceAttributes);
     surface = eglCreateWindowSurface(display, config, uwpWindow, surfaceAttributes);
     if (surface == EGL_NO_SURFACE)
@@ -2557,16 +2683,16 @@ static bool InitGraphicsDevice(int width, int height)
         return false;
     }
 
-    // Get EGL display window size 
+    // Get EGL display window size
     eglQuerySurface(display, surface, EGL_WIDTH, &screenWidth);
     eglQuerySurface(display, surface, EGL_HEIGHT, &screenHeight);
-    
+
 #else   // PLATFORM_ANDROID, PLATFORM_RPI
     EGLint numConfigs;
 
     // Get an EGL display connection
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    if (display == EGL_NO_DISPLAY) 
+    if (display == EGL_NO_DISPLAY)
     {
         TraceLog(LOG_WARNING, "Failed to initialize EGL display");
         return false;
@@ -2799,7 +2925,7 @@ static void SetupFramebuffer(int width, int height)
 static void InitTimer(void)
 {
     srand((unsigned int)time(NULL));              // Initialize random seed
-    
+
 #if !defined(SUPPORT_BUSY_WAIT_LOOP) && defined(_WIN32)
     timeBeginPeriod(1);             // Setup high-resolution timer to 1ms (granularity of 1-2 ms)
 #endif
@@ -2895,6 +3021,20 @@ static void PollInputEvents(void)
     gamepadAxisCount = 0;
 #endif
 
+#if defined(PLATFORM_RPI)
+    // Register previous keys states
+    for (int i = 0; i < 512; i++) previousKeyState[i] = currentKeyState[i];
+
+    // Register previous mouse states
+    previousMouseWheelY = currentMouseWheelY;
+    currentMouseWheelY = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        previousMouseState[i] = currentMouseState[i];
+        currentMouseState[i] = currentMouseStateEvdev[i];
+    }
+#endif
+
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
     // Mouse input polling
     double mouseX;
@@ -2966,8 +3106,12 @@ static void PollInputEvents(void)
         }
     }
 
+#if defined(SUPPORT_EVENTS_WAITING)
+    glfwWaitEvents();
+#else
     glfwPollEvents();       // Register keyboard/mouse events (callbacks)... and window events!
 #endif
+#endif      //defined(PLATFORM_DESKTOP)
 
 // Gamepad support using emscripten API
 // NOTE: GLFW3 joystick functionality not available in web
@@ -3048,16 +3192,6 @@ static void SwapBuffers(void)
 {
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB)
     glfwSwapBuffers(window);
-#if __APPLE__
-    // Workaround for missing/erroneous initial rendering on macOS
-    if (windowNeedsUpdating) 
-    {
-        // Desugared version of Objective C: [glfwGetNSGLContext(window) update]
-        ((id (*)(id, SEL))objc_msgSend)(glfwGetNSGLContext(window), sel_registerName("update"));
-        
-        windowNeedsUpdating--;
-    }
-#endif
 #endif
 
 #if defined(PLATFORM_ANDROID) || defined(PLATFORM_RPI) || defined(PLATFORM_UWP)
@@ -3083,50 +3217,62 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
 {
     if (key == exitKey && action == GLFW_PRESS)
     {
-        glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
 
         // NOTE: Before closing window, while loop must be left!
     }
-#if defined(PLATFORM_DESKTOP)
     else if (key == GLFW_KEY_F12 && action == GLFW_PRESS)
     {
-    #if defined(SUPPORT_GIF_RECORDING)
+#if defined(SUPPORT_GIF_RECORDING)
         if (mods == GLFW_MOD_CONTROL)
         {
             if (gifRecording)
             {
                 GifEnd();
                 gifRecording = false;
-                
+
+            #if defined(PLATFORM_WEB)
+                // Download file from MEMFS (emscripten memory filesystem)
+                // SaveFileFromMEMFSToDisk() function is defined in raylib/templates/web_shel/shell.html
+                emscripten_run_script(TextFormat("SaveFileFromMEMFSToDisk('%s','%s')", TextFormat("screenrec%03i.gif", screenshotCounter - 1), TextFormat("screenrec%03i.gif", screenshotCounter - 1)));
+            #endif
+
                 TraceLog(LOG_INFO, "End animated GIF recording");
             }
-            else 
+            else
             {
                 gifRecording = true;
                 gifFramesCounter = 0;
-                
+
+                char path[512] = { 0 };
+            #if defined(PLATFORM_ANDROID)
+                strcpy(path, internalDataPath);
+                strcat(path, TextFormat("/screenrec%03i.gif", screenshotCounter));
+            #else
+                strcpy(path, TextFormat("/screenrec%03i.gif", screenshotCounter));
+            #endif
+
                 // NOTE: delay represents the time between frames in the gif, if we capture a gif frame every
                 // 10 game frames and each frame trakes 16.6ms (60fps), delay between gif frames should be ~16.6*10.
-                GifBegin(FormatText("screenrec%03i.gif", screenshotCounter), screenWidth, screenHeight, (int)(GetFrameTime()*10.0f), 8, false);
+                GifBegin(path, screenWidth, screenHeight, (int)(GetFrameTime()*10.0f), 8, false);
                 screenshotCounter++;
-                
-                TraceLog(LOG_INFO, "Begin animated GIF recording: %s", FormatText("screenrec%03i.gif", screenshotCounter));
+
+                TraceLog(LOG_INFO, "Begin animated GIF recording: %s", TextFormat("screenrec%03i.gif", screenshotCounter));
             }
         }
         else
-    #endif  // SUPPORT_GIF_RECORDING
-    #if defined(SUPPORT_SCREEN_CAPTURE)
+#endif  // SUPPORT_GIF_RECORDING
+#if defined(SUPPORT_SCREEN_CAPTURE)
         {
-            TakeScreenshot(FormatText("screenshot%03i.png", screenshotCounter));
+            TakeScreenshot(TextFormat("screenshot%03i.png", screenshotCounter));
             screenshotCounter++;
         }
-    #endif  // SUPPORT_SCREEN_CAPTURE
+#endif  // SUPPORT_SCREEN_CAPTURE
     }
-#endif  // PLATFORM_DESKTOP
     else
     {
         currentKeyState[key] = action;
-        
+
         // NOTE: lastKeyPressed already registered on CharCallback()
         //if (action == GLFW_PRESS) lastKeyPressed = key;
     }
@@ -3196,12 +3342,12 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 
 // GLFW3 Char Key Callback, runs on key down (get unicode char value)
 static void CharCallback(GLFWwindow *window, unsigned int key)
-{  
+{
     // NOTE: Registers any key down considering OS keyboard layout but
     // do not detects action events, those should be managed by user...
     // https://github.com/glfw/glfw/issues/668#issuecomment-166794907
     // http://www.glfw.org/docs/latest/input_guide.html#input_char
-    
+
     lastKeyPressed = key;
 }
 
@@ -3237,14 +3383,12 @@ static void WindowSizeCallback(GLFWwindow *window, int width, int height)
 }
 
 // GLFW3 WindowIconify Callback, runs when window is minimized/restored
-static void WindowIconifyCallback(GLFWwindow* window, int iconified)
+static void WindowIconifyCallback(GLFWwindow *window, int iconified)
 {
     if (iconified) windowMinimized = true;  // The window was iconified
     else windowMinimized = false;           // The window was restored
 }
-#endif
 
-#if defined(PLATFORM_DESKTOP)
 // GLFW3 Window Drop Callback, runs when drop files into window
 // NOTE: Paths are stored in dinamic memory for further retrieval
 // Everytime new files are dropped, old ones are discarded
@@ -3256,7 +3400,7 @@ static void WindowDropCallback(GLFWwindow *window, int count, const char **paths
 
     for (int i = 0; i < count; i++)
     {
-        dropFilesPath[i] = (char *)malloc(sizeof(char)*256);     // Max path length set to 256 char
+        dropFilesPath[i] = (char *)malloc(sizeof(char)*MAX_FILEPATH_LENGTH);     // Max path length using MAX_FILEPATH_LENGTH set to 256 char
         strcpy(dropFilesPath[i], paths[i]);
     }
 
@@ -3302,15 +3446,15 @@ static void AndroidCommandCallback(struct android_app *app, int32_t cmd)
                 {
                     // Init graphics device (display device and OpenGL context)
                     InitGraphicsDevice(screenWidth, screenHeight);
-                    
+
                     // Init hi-res timer
                     InitTimer();
 
-                    #if defined(SUPPORT_DEFAULT_FONT)
+                #if defined(SUPPORT_DEFAULT_FONT)
                     // Load default font
                     // NOTE: External function (defined in module: text)
                     LoadDefaultFont();
-                    #endif
+                #endif
 
                     // TODO: GPU assets reload in case of lost focus (lost context)
                     // NOTE: This problem has been solved just unbinding and rebinding context from display
@@ -3410,15 +3554,15 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
         // Get second touch position
         touchPosition[1].x = AMotionEvent_getX(event, 1);
         touchPosition[1].y = AMotionEvent_getY(event, 1);
-        
+
         // Useful functions for gamepad inputs:
         //AMotionEvent_getAction()
         //AMotionEvent_getAxisValue()
         //AMotionEvent_getButtonState()
-        
+
         // Gamepad dpad button presses capturing
         // TODO: That's weird, key input (or button)
-        // shouldn't come as a TYPE_MOTION event... 
+        // shouldn't come as a TYPE_MOTION event...
         int32_t keycode = AKeyEvent_getKeyCode(event);
         if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN)
         {
@@ -3494,7 +3638,7 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
         // Normalize gestureEvent.position[x] for screenWidth and screenHeight
         gestureEvent.position[0].x /= (float)GetScreenWidth();
         gestureEvent.position[0].y /= (float)GetScreenHeight();
-        
+
         gestureEvent.position[1].x /= (float)GetScreenWidth();
         gestureEvent.position[1].y /= (float)GetScreenHeight();
 
@@ -3502,14 +3646,14 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
         ProcessGestureEvent(gestureEvent);
     }
 #else
-    
+
     // Support only simple touch position
     if (flags == AMOTION_EVENT_ACTION_DOWN)
     {
         // Get first touch position
         touchPosition[0].x = AMotionEvent_getX(event, 0);
         touchPosition[0].y = AMotionEvent_getY(event, 0);
-        
+
         touchPosition[0].x /= (float)GetScreenWidth();
         touchPosition[0].y /= (float)GetScreenHeight();
     }
@@ -3572,10 +3716,10 @@ static EM_BOOL EmscriptenMouseCallback(int eventType, const EmscriptenMouseEvent
             emscripten_get_pointerlock_status(&plce);
             //if (plce.isActive) TraceLog(LOG_WARNING, "Pointer lock exit did not work!");
         }
-        
+
         toggleCursorLock = false;
     }
-    
+
     return 0;
 }
 
@@ -3690,7 +3834,7 @@ static void InitKeyboard(void)
     // Set new keyboard settings (change occurs immediately)
     tcsetattr(STDIN_FILENO, TCSANOW, &keyboardNewSettings);
 
-    // NOTE: Reading directly from stdin will give chars already key-mapped by kernel to ASCII or UNICODE, we change that! -> WHY???
+    // NOTE: Reading directly from stdin will give chars already key-mapped by kernel to ASCII or UNICODE
 
     // Save old keyboard mode to restore it at the end
     if (ioctl(STDIN_FILENO, KDGKBMODE, &defaultKeyboardMode) < 0)
@@ -3722,11 +3866,11 @@ static void ProcessKeyboard(void)
     int bufferByteCount = 0;                // Bytes available on the buffer
     char keysBuffer[MAX_KEYBUFFER_SIZE];    // Max keys to be read at a time
 
-    // Reset pressed keys array
-    for (int i = 0; i < 512; i++) currentKeyState[i] = 0;
-
     // Read availables keycodes from stdin
     bufferByteCount = read(STDIN_FILENO, keysBuffer, MAX_KEYBUFFER_SIZE);     // POSIX system call
+
+    // Reset pressed keys array (it will be filled below)
+    for (int i = 0; i < 512; i++) currentKeyState[i] = 0;
 
     // Fill all read bytes (looking for keys)
     for (int i = 0; i < bufferByteCount; i++)
@@ -3788,8 +3932,8 @@ static void ProcessKeyboard(void)
                 }
             }
         }
-        else if (keysBuffer[i] == 0x0a) currentKeyState[257] = 1;     // raylib KEY_ENTER (don't mix with <linux/input.h> KEY_*)
-        else if (keysBuffer[i] == 0x7f) currentKeyState[259] = 1;     // raylib KEY_BACKSPACE
+        else if (keysBuffer[i] == 0x0a) { lastKeyPressed = 257; currentKeyState[257] = 1; }    // raylib KEY_ENTER (don't mix with <linux/input.h> KEY_*)
+        else if (keysBuffer[i] == 0x7f) { lastKeyPressed = 259; currentKeyState[259] = 1; }    // raylib KEY_BACKSPACE
         else
         {
             TraceLog(LOG_DEBUG, "Pressed key (ASCII): 0x%02x", keysBuffer[i]);
@@ -3800,6 +3944,8 @@ static void ProcessKeyboard(void)
                 currentKeyState[(int)keysBuffer[i] - 32] = 1;
             }
             else currentKeyState[(int)keysBuffer[i]] = 1;
+
+            lastKeyPressed = keysBuffer[i];     // Register last key pressed
         }
     }
 
@@ -3829,184 +3975,365 @@ static void RestoreKeyboard(void)
 // Mouse initialization (including mouse thread)
 static void InitMouse(void)
 {
-    // NOTE: We can use /dev/input/mice to read from all available mice
-    if ((mouseStream = open(DEFAULT_MOUSE_DEV, O_RDONLY|O_NONBLOCK)) < 0)
+    char path[MAX_FILEPATH_LENGTH];
+    DIR *directory;
+    struct dirent *entity;
+
+    // Reset variables
+    for (int i = 0; i < MAX_TOUCH_POINTS; ++i)
     {
-        TraceLog(LOG_WARNING, "Mouse device could not be opened, no mouse available");
+        touchPosition[i].x = -1;
+        touchPosition[i].y = -1;
     }
-    else
+
+    // Open the linux directory of "/dev/input"
+    directory = opendir(DEFAULT_EVDEV_PATH);
+    if (directory)
     {
-        mouseReady = true;
-
-        int error = pthread_create(&mouseThreadId, NULL, &MouseThread, NULL);
-
-        if (error != 0) TraceLog(LOG_WARNING, "Error creating mouse input event thread");
-        else TraceLog(LOG_INFO, "Mouse device initialized successfully");
-    }
-}
-
-// Mouse reading thread
-// NOTE: We need a separate thread to avoid loosing mouse events,
-// if too much time passes between reads, queue gets full and new events override older ones...
-static void *MouseThread(void *arg)
-{
-    const unsigned char XSIGN = (1 << 4);
-    const unsigned char YSIGN = (1 << 5);
-
-    typedef struct {
-        char buttons;
-        char dx, dy;
-    } MouseEvent;
-
-    MouseEvent mouse;
-
-    int mouseRelX = 0;
-    int mouseRelY = 0;
-
-    while (!windowShouldClose)
-    {
-        if (read(mouseStream, &mouse, sizeof(MouseEvent)) == (int)sizeof(MouseEvent))
+        while ((entity = readdir(directory)) != NULL)
         {
-            if ((mouse.buttons & 0x08) == 0) break;   // This bit should always be set
+            if (strncmp("event", entity->d_name, strlen("event")) == 0)         // Search for devices named "event*"
+            {
+                sprintf(path, "%s%s", DEFAULT_EVDEV_PATH, entity->d_name);
+                EventThreadSpawn(path);                                         // Identify the device and spawn a thread for it
+            }
+        }
 
-            // Check Left button pressed
-            if ((mouse.buttons & 0x01) > 0) currentMouseState[0] = 1;
-            else currentMouseState[0] = 0;
-
-            // Check Right button pressed
-            if ((mouse.buttons & 0x02) > 0) currentMouseState[1] = 1;
-            else currentMouseState[1] = 0;
-
-            // Check Middle button pressed
-            if ((mouse.buttons & 0x04) > 0) currentMouseState[2] = 1;
-            else currentMouseState[2] = 0;
-
-            mouseRelX = (int)mouse.dx;
-            mouseRelY = (int)mouse.dy;
-
-            if ((mouse.buttons & XSIGN) > 0) mouseRelX = -1*(255 - mouseRelX);
-            if ((mouse.buttons & YSIGN) > 0) mouseRelY = -1*(255 - mouseRelY);
-
-            // NOTE: Mouse movement is normalized to not be screen resolution dependant
-            // We suppose 2*255 (max relative movement) is equivalent to screenWidth (max pixels width)
-            // Result after normalization is multiplied by MOUSE_SENSITIVITY factor
-
-            mousePosition.x += (float)mouseRelX*((float)screenWidth/(2*255))*MOUSE_SENSITIVITY;
-            mousePosition.y -= (float)mouseRelY*((float)screenHeight/(2*255))*MOUSE_SENSITIVITY;
-
-            if (mousePosition.x < 0) mousePosition.x = 0;
-            if (mousePosition.y < 0) mousePosition.y = 0;
-
-            if (mousePosition.x > screenWidth) mousePosition.x = screenWidth;
-            if (mousePosition.y > screenHeight) mousePosition.y = screenHeight;
-       }
-       //else read(mouseStream, &mouse, 1);   // Try to sync up again
+        closedir(directory);
     }
-
-    return NULL;
+    else TraceLog(LOG_WARNING, "Unable to open linux event directory: %s", DEFAULT_EVDEV_PATH);
 }
 
-// Touch initialization (including touch thread)
-static void InitTouch(void)
+// Identifies a input device and spawns a thread to handle it if needed
+static void EventThreadSpawn(char *device)
 {
-    if ((touchStream = open(DEFAULT_TOUCH_DEV, O_RDONLY|O_NONBLOCK)) < 0)
+    #define BITS_PER_LONG   (sizeof(long)*8)
+    #define NBITS(x)        ((((x) - 1)/BITS_PER_LONG) + 1)
+    #define OFF(x)          ((x)%BITS_PER_LONG)
+    #define BIT(x)          (1UL<<OFF(x))
+    #define LONG(x)         ((x)/BITS_PER_LONG)
+    #define TEST_BIT(array, bit) ((array[LONG(bit)] >> OFF(bit)) & 1)
+
+    struct input_absinfo absinfo;
+    unsigned long evBits[NBITS(EV_MAX)];
+    unsigned long absBits[NBITS(ABS_MAX)];
+    unsigned long relBits[NBITS(REL_MAX)];
+    unsigned long keyBits[NBITS(KEY_MAX)];
+    bool hasAbs = false;
+    bool hasRel = false;
+    bool hasAbsMulti = false;
+    int freeWorkerId = -1;
+    int fd = -1;
+
+    InputEventWorker *worker;
+
+    // Open the device and allocate worker
+    //-------------------------------------------------------------------------------------------------------
+    // Find a free spot in the workers array
+    for (int i = 0; i < sizeof(eventWorkers)/sizeof(InputEventWorker); ++i)
     {
-        TraceLog(LOG_WARNING, "Touch device could not be opened, no touchscreen available");
-    }
-    else
-    {
-        touchReady = true;
-
-        int error = pthread_create(&touchThreadId, NULL, &TouchThread, NULL);
-
-        if (error != 0) TraceLog(LOG_WARNING, "Error creating touch input event thread");
-        else TraceLog(LOG_INFO, "Touch device initialized successfully");
-    }
-}
-
-// Touch reading thread.
-// This reads from a Virtual Input Event /dev/input/event4 which is
-// created by the ts_uinput daemon. This takes, filters and scales
-// raw input from the Touchscreen (which appears in /dev/input/event3)
-// based on the Calibration data referenced by tslib.
-static void *TouchThread(void *arg)
-{
-    struct input_event ev;
-    GestureEvent gestureEvent;
-
-    while (!windowShouldClose)
-    {
-        if (read(touchStream, &ev, sizeof(ev)) == (int)sizeof(ev))
+        if (eventWorkers[i].threadId == 0)
         {
-            // if pressure > 0 then simulate left mouse button click
-            if (ev.type == EV_ABS && ev.code == 24 && ev.value == 0 && currentMouseState[0] == 1)
-            {
-                currentMouseState[0] = 0;
-                gestureEvent.touchAction = TOUCH_UP;
-                gestureEvent.pointCount = 1;
-                gestureEvent.pointerId[0] = 0;
-                gestureEvent.pointerId[1] = 1;
-                gestureEvent.position[0] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[1] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[0].x /= (float)GetScreenWidth();
-                gestureEvent.position[0].y /= (float)GetScreenHeight();
-                gestureEvent.position[1].x /= (float)GetScreenWidth();
-                gestureEvent.position[1].y /= (float)GetScreenHeight();
-                ProcessGestureEvent(gestureEvent);
-            }
-            if (ev.type == EV_ABS && ev.code == 24 && ev.value > 0 && currentMouseState[0] == 0)
-            {
-                currentMouseState[0] = 1;
-                gestureEvent.touchAction = TOUCH_DOWN;
-                gestureEvent.pointCount = 1;
-                gestureEvent.pointerId[0] = 0;
-                gestureEvent.pointerId[1] = 1;
-                gestureEvent.position[0] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[1] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[0].x /= (float)GetScreenWidth();
-                gestureEvent.position[0].y /= (float)GetScreenHeight();
-                gestureEvent.position[1].x /= (float)GetScreenWidth();
-                gestureEvent.position[1].y /= (float)GetScreenHeight();
-                ProcessGestureEvent(gestureEvent);
-            }
-            // x & y values supplied by event4 have been scaled & de-jittered using tslib calibration data
-            if (ev.type == EV_ABS && ev.code == 0)
-            {
-                mousePosition.x = ev.value;
-                if (mousePosition.x < 0) mousePosition.x = 0;
-                if (mousePosition.x > screenWidth) mousePosition.x = screenWidth;
-                gestureEvent.touchAction = TOUCH_MOVE;
-                gestureEvent.pointCount = 1;
-                gestureEvent.pointerId[0] = 0;
-                gestureEvent.pointerId[1] = 1;
-                gestureEvent.position[0] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[1] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[0].x /= (float)GetScreenWidth();
-                gestureEvent.position[0].y /= (float)GetScreenHeight();
-                gestureEvent.position[1].x /= (float)GetScreenWidth();
-                gestureEvent.position[1].y /= (float)GetScreenHeight();
-                ProcessGestureEvent(gestureEvent);
-            }
-            if (ev.type == EV_ABS && ev.code == 1)
-            {
-                mousePosition.y = ev.value;
-                if (mousePosition.y < 0) mousePosition.y = 0;
-                if (mousePosition.y > screenHeight) mousePosition.y = screenHeight;
-                gestureEvent.touchAction = TOUCH_MOVE;
-                gestureEvent.pointCount = 1;
-                gestureEvent.pointerId[0] = 0;
-                gestureEvent.pointerId[1] = 1;
-                gestureEvent.position[0] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[1] = (Vector2){ mousePosition.x, mousePosition.y };
-                gestureEvent.position[0].x /= (float)GetScreenWidth();
-                gestureEvent.position[0].y /= (float)GetScreenHeight();
-                gestureEvent.position[1].x /= (float)GetScreenWidth();
-                gestureEvent.position[1].y /= (float)GetScreenHeight();
-                ProcessGestureEvent(gestureEvent);
-            }
-
+            freeWorkerId = i;
+            break;
         }
     }
+
+    // Select the free worker from array
+    if (freeWorkerId >= 0)
+    {
+        worker = &(eventWorkers[freeWorkerId]);       // Grab a pointer to the worker
+        memset(worker, 0, sizeof(InputEventWorker));  // Clear the worker
+    }
+    else
+    {
+        TraceLog(LOG_WARNING, "Error creating input device thread for [%s]: Out of worker slots", device);
+        return;
+    }
+
+    // Open the device
+    fd = open(device, O_RDONLY | O_NONBLOCK);
+    if (fd < 0)
+    {
+        TraceLog(LOG_WARNING, "Error creating input device thread for [%s]: Can't open device (Error: %d)", device, worker->fd);
+        return;
+    }
+    worker->fd = fd;
+
+    // Grab number on the end of the devices name "event<N>"
+    int devNum = 0;
+    char *ptrDevName = strrchr(device, 't');
+    worker->eventNum = -1;
+
+    if (ptrDevName != NULL)
+    {
+        if (sscanf(ptrDevName, "t%d", &devNum) == 1)
+            worker->eventNum = devNum;
+    }
+
+    // At this point we have a connection to the device, but we don't yet know what the device is.
+    // It could be many things, even as simple as a power button...
+    //-------------------------------------------------------------------------------------------------------
+
+    // Identify the device
+    //-------------------------------------------------------------------------------------------------------
+    ioctl(fd, EVIOCGBIT(0, sizeof(evBits)), evBits);    // Read a bitfield of the avalable device properties
+
+    // Check for absolute input devices
+    if (TEST_BIT(evBits, EV_ABS))
+    {
+        ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absBits)), absBits);
+
+        // Check for absolute movement support (usualy touchscreens, but also joysticks)
+        if (TEST_BIT(absBits, ABS_X) && TEST_BIT(absBits, ABS_Y))
+        {
+            hasAbs = true;
+
+            // Get the scaling values
+            ioctl(fd, EVIOCGABS(ABS_X), &absinfo);
+            worker->absRange.x = absinfo.minimum;
+            worker->absRange.width = absinfo.maximum - absinfo.minimum;
+            ioctl(fd, EVIOCGABS(ABS_Y), &absinfo);
+            worker->absRange.y = absinfo.minimum;
+            worker->absRange.height = absinfo.maximum - absinfo.minimum;
+        }
+
+        // Check for multiple absolute movement support (usualy multitouch touchscreens)
+        if (TEST_BIT(absBits, ABS_MT_POSITION_X) && TEST_BIT(absBits, ABS_MT_POSITION_Y))
+        {
+            hasAbsMulti = true;
+
+            // Get the scaling values
+            ioctl(fd, EVIOCGABS(ABS_X), &absinfo);
+            worker->absRange.x = absinfo.minimum;
+            worker->absRange.width = absinfo.maximum - absinfo.minimum;
+            ioctl(fd, EVIOCGABS(ABS_Y), &absinfo);
+            worker->absRange.y = absinfo.minimum;
+            worker->absRange.height = absinfo.maximum - absinfo.minimum;
+        }
+    }
+
+    // Check for relative movement support (usualy mouse)
+    if (TEST_BIT(evBits, EV_REL))
+    {
+        ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relBits)), relBits);
+
+        if (TEST_BIT(relBits, REL_X) && TEST_BIT(relBits, REL_Y)) hasRel = true;
+    }
+
+    // Check for button support to determine the device type(usualy on all input devices)
+    if (TEST_BIT(evBits, EV_KEY))
+    {
+        ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keyBits)), keyBits);
+
+        if (hasAbs || hasAbsMulti)
+        {
+            if (TEST_BIT(keyBits, BTN_TOUCH)) worker->isTouch = true;          // This is a touchscreen
+            if (TEST_BIT(keyBits, BTN_TOOL_FINGER)) worker->isTouch = true;    // This is a drawing tablet
+            if (TEST_BIT(keyBits, BTN_TOOL_PEN)) worker->isTouch = true;       // This is a drawing tablet
+            if (TEST_BIT(keyBits, BTN_STYLUS)) worker->isTouch = true;         // This is a drawing tablet
+            if (worker->isTouch || hasAbsMulti) worker->isMultitouch = true;   // This is a multitouch capable device
+        }
+
+        if (hasRel)
+        {
+            if (TEST_BIT(keyBits, BTN_LEFT)) worker->isMouse = true;           // This is a mouse
+            if (TEST_BIT(keyBits, BTN_RIGHT)) worker->isMouse = true;          // This is a mouse
+        }
+
+        if (TEST_BIT(keyBits, BTN_A)) worker->isGamepad = true;                // This is a gamepad
+        if (TEST_BIT(keyBits, BTN_TRIGGER)) worker->isGamepad = true;          // This is a gamepad
+        if (TEST_BIT(keyBits, BTN_START)) worker->isGamepad = true;            // This is a gamepad
+        if (TEST_BIT(keyBits, BTN_TL)) worker->isGamepad = true;               // This is a gamepad
+        if (TEST_BIT(keyBits, BTN_TL)) worker->isGamepad = true;               // This is a gamepad
+
+        if (TEST_BIT(keyBits, KEY_SPACE)) worker->isKeyboard = true;           // This is a keyboard
+    }
+    //-------------------------------------------------------------------------------------------------------
+
+    // Decide what to do with the device
+    //-------------------------------------------------------------------------------------------------------
+    if (worker->isTouch || worker->isMouse)
+    {
+        // Looks like a interesting device
+        TraceLog(LOG_INFO, "Opening input device [%s] (%s%s%s%s%s)", device,
+            worker->isMouse ? "mouse " : "",
+            worker->isMultitouch ? "multitouch " : "",
+            worker->isTouch ? "touchscreen " : "",
+            worker->isGamepad ? "gamepad " : "",
+            worker->isKeyboard ? "keyboard " : "");
+
+        // Create a thread for this device
+        int error = pthread_create(&worker->threadId, NULL, &EventThread, (void *)worker);
+        if (error != 0)
+        {
+            TraceLog(LOG_WARNING, "Error creating input device thread for [%s]: Can't create thread (Error: %d)", device, error);
+            worker->threadId = 0;
+            close(fd);
+        }
+
+#if defined(USE_LAST_TOUCH_DEVICE)
+        // Find touchscreen with the highest index
+        int maxTouchNumber = -1;
+
+        for (int i = 0; i < sizeof(eventWorkers)/sizeof(InputEventWorker); ++i)
+        {
+            if (eventWorkers[i].isTouch && (eventWorkers[i].eventNum > maxTouchNumber)) maxTouchNumber = eventWorkers[i].eventNum;
+        }
+
+        // Find toucnscreens with lower indexes
+        for (int i = 0; i < sizeof(eventWorkers)/sizeof(InputEventWorker); ++i)
+        {
+            if (eventWorkers[i].isTouch && (eventWorkers[i].eventNum < maxTouchNumber))
+            {
+                if (eventWorkers[i].threadId != 0)
+                {
+                    TraceLog(LOG_WARNING, "Duplicate touchscreen found, killing touchscreen on event: %d", i);
+                    pthread_cancel(eventWorkers[i].threadId);
+                    close(eventWorkers[i].fd);
+                }
+            }
+        }
+#endif
+    }
+    else close(fd);  // We are not interested in this device
+    //-------------------------------------------------------------------------------------------------------
+}
+
+// Input device events reading thread
+static void *EventThread(void *arg)
+{
+    struct input_event event;
+    GestureEvent gestureEvent;
+    InputEventWorker *worker = (InputEventWorker *)arg;
+    bool GestureNeedsUpdate = false;
+
+    while (!windowShouldClose)
+    {
+        if (read(worker->fd, &event, sizeof(event)) == (int)sizeof(event))
+        {
+            // Relative movement parsing
+            if (event.type == EV_REL)
+            {
+                if (event.code == REL_X)
+                {
+                    mousePosition.x += event.value;
+                    touchPosition[0].x = mousePosition.x;
+                    gestureEvent.touchAction = TOUCH_MOVE;
+                    GestureNeedsUpdate = true;
+                }
+
+                if (event.code == REL_Y)
+                {
+                    mousePosition.y += event.value;
+                    touchPosition[0].y = mousePosition.y;
+                    gestureEvent.touchAction = TOUCH_MOVE;
+                    GestureNeedsUpdate = true;
+                }
+
+                if (event.code == REL_WHEEL)
+                {
+                    currentMouseWheelY += event.value;
+                }
+            }
+
+            // Absolute movement parsing
+            if (event.type == EV_ABS)
+            {
+                // Basic movement
+                if (event.code == ABS_X)
+                {
+                    mousePosition.x = (event.value - worker->absRange.x)*screenWidth/worker->absRange.width;   // Scale acording to absRange
+                    gestureEvent.touchAction = TOUCH_MOVE;
+                    GestureNeedsUpdate = true;
+                }
+
+                if (event.code == ABS_Y)
+                {
+                    mousePosition.y = (event.value - worker->absRange.y)*screenHeight/worker->absRange.height; // Scale acording to absRange
+                    gestureEvent.touchAction = TOUCH_MOVE;
+                    GestureNeedsUpdate = true;
+                }
+
+                // Multitouch movement
+                if (event.code == ABS_MT_SLOT)
+                {
+                    worker->touchSlot = event.value;   // Remeber the slot number for the folowing events
+                }
+
+                if (event.code == ABS_MT_POSITION_X)
+                {
+                    if (worker->touchSlot < MAX_TOUCH_POINTS)
+                        touchPosition[worker->touchSlot].x = (event.value - worker->absRange.x)*screenWidth/worker->absRange.width;    // Scale acording to absRange
+                }
+
+                if (event.code == ABS_MT_POSITION_Y)
+                {
+                    if (worker->touchSlot < MAX_TOUCH_POINTS)
+                        touchPosition[worker->touchSlot].y = (event.value - worker->absRange.y)*screenHeight/worker->absRange.height;  // Scale acording to absRange
+                }
+
+                if (event.code == ABS_MT_TRACKING_ID)
+                {
+                    if ( (event.value < 0) && (worker->touchSlot < MAX_TOUCH_POINTS) )
+                    {
+                        // Touch has ended for this point
+                        touchPosition[worker->touchSlot].x = -1;
+                        touchPosition[worker->touchSlot].y = -1;
+                    }
+                }
+            }
+
+            // Button parsing
+            if (event.type == EV_KEY)
+            {
+                if((event.code == BTN_TOUCH) || (event.code == BTN_LEFT))
+                {
+                    currentMouseStateEvdev[MOUSE_LEFT_BUTTON] = event.value;
+                    if (event.value > 0) gestureEvent.touchAction = TOUCH_DOWN;
+                    else gestureEvent.touchAction = TOUCH_UP;
+                    GestureNeedsUpdate = true;
+                }
+
+                if (event.code == BTN_RIGHT) currentMouseStateEvdev[MOUSE_RIGHT_BUTTON] =  event.value;
+
+                if (event.code == BTN_MIDDLE) currentMouseStateEvdev[MOUSE_MIDDLE_BUTTON] =  event.value;
+            }
+
+            // Screen confinement
+            if (mousePosition.x < 0) mousePosition.x = 0;
+            if (mousePosition.x > screenWidth/mouseScale.x) mousePosition.x = screenWidth/mouseScale.x;
+
+            if (mousePosition.y < 0) mousePosition.y = 0;
+            if (mousePosition.y > screenHeight/mouseScale.y) mousePosition.y = screenHeight/mouseScale.y;
+
+            // Gesture update
+            if (GestureNeedsUpdate)
+            {
+                gestureEvent.pointCount = 0;
+                if (touchPosition[0].x >= 0) gestureEvent.pointCount++;
+                if (touchPosition[1].x >= 0) gestureEvent.pointCount++;
+                if (touchPosition[2].x >= 0) gestureEvent.pointCount++;
+                if (touchPosition[3].x >= 0) gestureEvent.pointCount++;
+                gestureEvent.pointerId[0] = 0;
+                gestureEvent.pointerId[1] = 1;
+                gestureEvent.pointerId[2] = 2;
+                gestureEvent.pointerId[3] = 3;
+                gestureEvent.position[0] = touchPosition[0];
+                gestureEvent.position[1] = touchPosition[1];
+                gestureEvent.position[2] = touchPosition[2];
+                gestureEvent.position[3] = touchPosition[3];
+                ProcessGestureEvent(gestureEvent);
+            }
+        }
+        else
+        {
+            usleep(5000); // Sleep for 5ms to avoid hogging CPU time
+        }
+    }
+
+    close(worker->fd);
+
     return NULL;
 }
 
@@ -4089,6 +4416,10 @@ static void *GamepadThread(void *arg)
                         gamepadAxisState[i][gamepadEvent.number] = (float)gamepadEvent.value/32768;
                     }
                 }
+            }
+            else
+            {
+                usleep(1000); //Sleep for 1ms to avoid hogging CPU time
             }
         }
     }
@@ -4200,7 +4531,7 @@ static void LogoAnimation(void)
 
                 DrawRectangle(screenWidth/2 - 112, screenHeight/2 - 112, 224, 224, Fade(RAYWHITE, alpha));
 
-                DrawText(SubText("raylib", 0, lettersCount), screenWidth/2 - 44, screenHeight/2 + 48, 50, Fade(BLACK, alpha));
+                DrawText(TextSubtext("raylib", 0, lettersCount), screenWidth/2 - 44, screenHeight/2 + 48, 50, Fade(BLACK, alpha));
             }
 
         EndDrawing();

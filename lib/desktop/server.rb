@@ -17,6 +17,8 @@ raise "wtf" if args.include?(:got_local_remote_c)
   }
 end
 
+log!(:argv, ARGV)
+
 class Server
   def self.run!(directory)
     server = Server.new(directory)

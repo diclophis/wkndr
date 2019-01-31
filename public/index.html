@@ -6,15 +6,23 @@
     <title>kit1zx</title>
     <link rel="stylesheet" href="xterm-dist/xterm.css" />
     <style>
+      div, canvas { margin: 0; padding: 0; }
       #wkndr-body { background-color: black; margin: 0; }
-      #wkndr-graphics { width: 512px; height: 512px; position: absolute; }
-      #wkndr-terminal { left: 512px; top: 0; position: absolute; }
+      #wkndr-graphics-container { position: absolute; left: 0; width: calc(50% - 2em); height: calc(100% - 2em); margin: 1em; }
+      #wkndr-terminal-container { position: absolute; left: 50%; width: calc(50% - 1em); height: calc(100% - 2em); margin: 1em 0 1em 1em; }
+      #wkndr-graphics { width: 100%; height: 100%; position: absolute; }
+      #wkndr-terminal { width: 100%; height: 100%; position: absolute; }
     </style>
   </head>
   <body id="wkndr-body">
-    <div id="wkndr-terminal"></div>
-    <canvas id="wkndr-graphics" oncontextmenu="event.preventDefault()"></canvas>
+    <div id="wkndr-terminal-container">
+      <div id="wkndr-terminal"></div>
+    </div>
+    <div id="wkndr-graphics-container" oncontextmenu="event.preventDefault()">
+      <canvas id="wkndr-graphics"></canvas>
+    </div>
     <script type='text/javascript' src='xterm-dist/xterm.js'></script>
+    <script type='text/javascript' src='xterm-dist/fit/fit.js'></script>
     <script type='text/javascript' src='index.js'></script>
     <script async type="text/javascript" src="wkndr.js"></script>
   </body>

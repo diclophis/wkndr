@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
+#LOL
 
-env
-
-exec chroot /var/tmp/chroot /bin/bash
+exec chroot /var/tmp/chroot /bin/bash -c "cd $HOME && exec /bin/bash -i -l -r -O checkwinsize"
