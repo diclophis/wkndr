@@ -1,12 +1,36 @@
 ---
-apiVersion: kubeadm.k8s.io/v1beta1
-kind: ClusterConfiguration
-kubernetesVersion: v1.13.0
-apiServer:
-  extraArgs:
-    advertise-address: "10.2.0.1"
-    anonymous-auth: "false"
-controllerManager:
-  extraArgs:
-    horizontal-pod-autoscaler-use-rest-clients: "true"
-    horizontal-pod-autoscaler-sync-period: "10s"
+apiVersion: v1
+data:
+  ClusterConfiguration: |
+    apiServer:
+      extraArgs:
+        authorization-mode: Node,RBAC
+    apiVersion: kubeadm.k8s.io/v1beta1
+    certificatesDir: /etc/kubernetes/pki
+    clusterName: kubernetes
+    controlPlaneEndpoint: ""
+    controllerManager: {}
+    dns:
+      type: CoreDNS
+    etcd:
+      local:
+        dataDir: /var/lib/etcd
+    imageRepository: k8s.gcr.io
+    kind: ClusterConfiguration
+    kubernetesVersion: v1.13.2
+    networking:
+      dnsDomain: cluster.local
+      podSubnet: ""
+      serviceSubnet: 10.96.0.0/12
+    scheduler: {}
+  ClusterStatus: |
+    apiEndpoints:
+      bootstrap-workstation:
+        advertiseAddress: 10.2.0.1
+        bindPort: 6443
+    apiVersion: kubeadm.k8s.io/v1beta1
+    kind: ClusterStatus
+kind: ConfigMap
+metadata:
+  name: kubeadm-config
+  namespace: kube-system
