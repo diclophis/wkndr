@@ -225,44 +225,50 @@ class Connection
     end
   end
 
-  def upgrade_to_websocket!
-    write_wkndr_file = Proc.new { |wkndrfile_path|
-      begin
-        log!(:readfile, wkndrfile_path)
-        wkparts = wkndrfile_path.split("~", 2)  
-        if wkparts.length == 1
-          reqd_wkfile = "Wkndrfile"
-        else
-          #TODO: move this higher up to avoid reprocessing
-          reqd_wkfile = wkparts[1].gsub(/[^a-z]/, "") #TODO: better username support??
-        end
-        log!(:readfile, reqd_wkfile)
-        UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
-          begin
-            log!(:resolved_filename, actual_wkndrfile)
-            if actual_wkndrfile.is_a?(UVError)
-              log!(:wtfreadfileer, actual_wkndrfile)
-            else
-              ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, 0)
-              wkread = ffff.read
-              self.write_typed({"p" => wkread})
-              ffff.close
-              @fsev = UV::FS::Event.new
-              @fsev.start(actual_wkndrfile, 0) do |path, event|
-                log!(:fswatch, path, event)
-                if event == :change
-                  @fsev.stop
-                  write_wkndr_file.call(wkndrfile_path)
-                end
+  def subscribe_to_wkndrfile(wkndrfile_path)
+    begin
+      log!(:readfile, wkndrfile_path)
+      wkparts = wkndrfile_path.split("~", 2)  
+      if wkparts.length == 1
+        reqd_wkfile = "Wkndrfile"
+      else
+        #TODO: move this higher up to avoid reprocessing
+        reqd_wkfile = wkparts[1].gsub(/[^a-z]/, "") #TODO: better username support??
+      end
+      log!(:readfile, reqd_wkfile)
+      UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
+        begin
+          log!(:resolved_filename, actual_wkndrfile)
+          if actual_wkndrfile.is_a?(UVError)
+            log!(:wtfreadfileer, actual_wkndrfile)
+          else
+            ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, 0)
+            wkread = ffff.read
+            self.write_typed({"p" => wkread})
+            ffff.close
+            @fsev = UV::FS::Event.new
+            @fsev.start(actual_wkndrfile, 0) do |path, event|
+              log!(:fswatch, path, event)
+              if event == :change
+                @fsev.stop
+                yield wkndrfile_path
               end
             end
-          rescue => e
-          log!(:wtfe, e, e.backtrace)
           end
-        }
-      rescue => e
+        rescue => e
+          log!(:wtfe, e, e.backtrace)
+        end
+      }
+    rescue => e
       log!(:wtfe, e, e.backtrace)
-      end
+    end
+  end
+
+  def upgrade_to_websocket!
+    write_wkndr_file = Proc.new { |wkndrfile_path|
+      subscribe_to_wkndrfile {
+        write_wkndr_file.call(wkndrfile_path)
+      }
     }
 
     self.wslay_callbacks = Wslay::Event::Callbacks.new
