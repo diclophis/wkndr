@@ -558,9 +558,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
-  fprintf(stderr, "InitWindow\n");
+  fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
-  //SetExitKey(0);
+  SetExitKey(0);
 
 //#ifdef PLATFORM_DESKTOP
   //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
@@ -707,8 +707,6 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 
   mrb_get_args(mrb, "ii", &a, &b);
 
-  fprintf(stderr, "draw_fps\n");
-
   DrawFPS(a, b);
 
   DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
@@ -741,14 +739,11 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   mrb_value data_value;     // this IV holds the data
   data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
 
-
   Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
-  return mrb_nil_value();
 
   if (!p_data) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
-
 
   // Camera mode type
   switch(type) {
@@ -817,6 +812,8 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   EndMode3D();
 
+  //fprintf(stderr, "endmode3\n");
+
   return mrb_nil_value();
 }
 
@@ -862,6 +859,8 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   mrb_yield_argv(mrb, block, 0, NULL);
 
   EndDrawing();
+
+  //fprintf(stderr, "end_draw\n");
 
   return mrb_nil_value();
 }
