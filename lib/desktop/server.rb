@@ -29,6 +29,7 @@ class Server
     UV.disable_stdio_inheritance
 
     @all_connections = []
+    @idents = -1
 
     @closing = false
     @closed = false
@@ -45,6 +46,33 @@ class Server
       @server.listen(32) { |connection_error|
         self.on_connection(connection_error)
       }
+
+      #s = UV::Pipe.new(true)
+      #s.bind('/var/run/wkndr.sock')
+      #s.listen(5) {|x|
+      #  c = s.accept()
+      #  read_from = c.read
+      #  log!(:cread, read_from)
+      #}
+
+      update_utmp = Proc.new {
+        utmp_file = "/var/run/utmp"
+        @fsev = UV::FS::Event.new
+        @fsev.start(utmp_file, 0) do |path, event|
+          log!(:fswatch, path, event)
+          if event == :change
+            @fsev.stop
+
+            #map ident???
+
+            FastUTMP.idents.each { |pid, username|
+              
+            }
+
+            update_utmp.call
+          end
+        end
+      }
     }
   end
 
@@ -54,6 +82,11 @@ class Server
     }
 
     @server.close
+
+    if @fsev
+      @fsev.stop
+      @fsev = nil
+    end
   end
 
   def running
@@ -74,7 +107,9 @@ class Server
   end
 
   def create_connection!
-    http = Connection.new(@server.accept, @required_prefix)
+    @idents -= 1
+
+    http = Connection.new(@server.accept, @idents, @required_prefix)
 
     @all_connections << http
 

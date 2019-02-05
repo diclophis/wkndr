@@ -68,7 +68,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       };
 
       var ptr = allocate(intArrayFromString(window.location.pathname), 'i8', ALLOC_NORMAL);
-      window.socket_connected(mrbPointer, callbackPointer, ptr, termInputData.length);
+      window.socket_connected(mrbPointer, callbackPointer, ptr, window.location.pathname.length);
     };
 
     window.conn.onclose = function (event) {
