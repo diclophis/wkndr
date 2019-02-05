@@ -9,6 +9,11 @@ class Wkndr < Thor
     socket_stream = SocketStream.create_websocket_connection { |typed_msg|
       gl.event(typed_msg)
     }
+
+    stack.did_connect {
+      socket_stream.did_connect
+    }
+
     stack.up(socket_stream)
 
     gl.emit { |msg|

@@ -152,8 +152,9 @@ class Connection
           end
 
           requested_path = "#{@required_prefix}#{filename}"
+            log!(:reqd, requested_path)
           UV::FS.realpath(requested_path) { |resolved_filename|
-            #log!(resolved_filename, @required_prefix)
+            log!(resolved_filename, @required_prefix)
 
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {

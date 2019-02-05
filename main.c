@@ -709,8 +709,6 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 
   DrawFPS(a, b);
 
-  DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
-
   return mrb_nil_value();
 }
 

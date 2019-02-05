@@ -16,6 +16,16 @@ class StackBlocker
     }
   end
 
+  def did_connect(&block)
+    if block
+      @did_connect_proc = block
+    else
+      if @did_connect_proc
+        @did_connect_proc.call
+      end
+    end
+  end
+
   def halt!
     log!(:sb_halt!)
     @stack.each { |srb| srb.halt! }

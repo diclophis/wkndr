@@ -3,7 +3,7 @@
 Wkndr.play { |gl|
   log!(:gllll, gl)
 
-  #gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+  gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
  
   total_msg = 0
   cube = Cube.new(1.0, 1.0, 1.0, 20.0)
@@ -19,10 +19,10 @@ Wkndr.play { |gl|
         cube.draw(true)
       }
       gl.twod {
-        gl.draw_fps(200, 200)
-        #gl.button(50.0, 50.0, 250.0, 20.0, "start %06.2f, %0.4f %d" % [global_time, delta_time, total_msg]) {
-        #  gl.emit({"c" => "tty"})
-        #}
+        gl.draw_fps(0, 0)
+        gl.button(50.0, 50.0, 250.0, 20.0, "start %06.2f, %0.4f %d" % [global_time, delta_time, total_msg]) {
+          gl.emit({"c" => "tty"})
+        }
       }
     }
   }

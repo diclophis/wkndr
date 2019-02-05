@@ -27,23 +27,25 @@ class Server
   def initialize(required_prefix)
     #TODO: where does this go????
     UV.disable_stdio_inheritance
-    #required_prefix = "/home/jon/workspace/wkndr/public/"
-    @required_prefix = required_prefix #"/var/lib/wkndr/public/"
-
-    host = '0.0.0.0'
-    port = 8000
-    @address = UV.ip4_addr(host, port)
-
-    @server = UV::TCP.new
-    @server.bind(@address)
-    @server.listen(32) { |connection_error|
-      self.on_connection(connection_error)
-    }
 
     @all_connections = []
 
     @closing = false
     @closed = false
+
+    UV::FS.realpath(required_prefix) { |resolved_prefix|
+      @required_prefix = resolved_prefix
+
+      host = '0.0.0.0'
+      port = 8000
+      @address = UV.ip4_addr(host, port)
+
+      @server = UV::TCP.new
+      @server.bind(@address)
+      @server.listen(32) { |connection_error|
+        self.on_connection(connection_error)
+      }
+    }
   end
 
   def shutdown
