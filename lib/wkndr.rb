@@ -1,8 +1,23 @@
 #
 
 class Wkndr < Thor
-  def self.client(gl = nil)
-    log!(:client)
+  desc "client", ""
+  def client(w, h)
+    log!(:outerclient, w, h)
+
+    stack = StackBlocker.new
+
+    gl = GameLoop.new
+    stack.up(gl)
+
+    client = Wkndr.client(gl, w.to_i, h.to_i)
+    stack.up(client)
+
+    Wkndr.play(stack, gl)
+  end
+
+  def self.client(gl = nil, w = 512, h = 512)
+    log!(:client, w, h)
 
     stack = StackBlocker.new
 
@@ -20,7 +35,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", 512, 512, 120)
+    gl.open("wkndr", w, h, 120)
 
     #window.update { |gt, dt|
     #  gl.update(gt, dt)
@@ -43,18 +58,18 @@ end
       @stack = stack
       @gl = gl
 
-      #play { |_gl|
-      #  gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-      #  gl.update { |global_time, delta_time|
-      #    gl.drawmode {
-      #      gl.threed {
-      #      }
-      #      gl.twod {
-      #        gl.draw_fps(0, 0)
-      #      }
-      #    }
-      #  }
-      #}
+      play { |_gl|
+        gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+        gl.update { |global_time, delta_time|
+          gl.drawmode {
+            gl.threed {
+            }
+            gl.twod {
+              gl.draw_fps(0, 0)
+            }
+          }
+        }
+      }
 
       log!(:show!)
       Wkndr.show! @stack

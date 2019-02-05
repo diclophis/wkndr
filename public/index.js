@@ -1,5 +1,11 @@
 /* */
 
+var graphicsContainer = document.getElementById('wkndr-graphics');
+// As a default initial behavior, pop up an alert when webgl context is lost. To make your
+// application robust, you may want to override this behavior before shipping!
+// See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+graphicsContainer.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
 function ab2str(buf) {
   return String.fromCharCode.apply(null, buf); //new Uint8Array(buf));
 }
@@ -51,7 +57,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       });
 
       window.terminal.on('resize', function(newSize) {
-        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, Module.canvas.offsetWidth, Module.canvas.offsetHeight);
+        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
       });
 
       window.terminal.fit();
@@ -105,7 +111,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var Module = {
-  arguments: [],
+  arguments: ['client', graphicsContainer.offsetWidth.toString(), graphicsContainer.offsetHeight.toString()],
   preRun: [(function() {
     window.debug_print = Module.cwrap(
       'debug_print', 'number', ['number', 'number', 'number', 'number']
@@ -135,11 +141,6 @@ var Module = {
     console.error(text);
   },
   canvas: (function() {
-    var graphicsContainer = document.getElementById('wkndr-graphics');
-    // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-    // application robust, you may want to override this behavior before shipping!
-    // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-    graphicsContainer.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
     return graphicsContainer;
   })(),
   setStatus: function(text) {
