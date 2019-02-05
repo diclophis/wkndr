@@ -21,7 +21,7 @@ log!(:argv, ARGV)
 
 class Server
   def self.run!(directory)
-    server = Server.new(directory)
+    Server.new(directory)
   end
 
   def initialize(required_prefix)
@@ -59,6 +59,7 @@ class Server
   end
 
   def halt!
+    log!(:server_halt)
     @halting = @all_connections.all? { |cn| cn.halt! }
   end
 

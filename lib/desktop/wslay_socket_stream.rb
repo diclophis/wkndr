@@ -101,8 +101,17 @@ class WslaySocketStream < SocketStream
       else
         log!(:connected!, connection_broken_status)
         write_ws_request! {
+begin
+          log!(:did_connect_pre, @socket)
           reset_handshake!
+          log!(:did_connect_b, @socket)
           @socket.read_start(&on_read_start)
+          log!(:did_connect_c, @socket)
+          did_connect("/")
+          log!(:did_connect_desk, @socket)
+rescue => e
+log!(:wtfde, e, e.backtrace)
+end
         }
       end
     }

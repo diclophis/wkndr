@@ -60,6 +60,9 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         window.conn.onclose = function () {};
         window.conn.close();
       };
+
+      var ptr = allocate(intArrayFromString(window.location.pathname), 'i8', ALLOC_NORMAL);
+      window.socket_connected(mrbPointer, callbackPointer, ptr, termInputData.length);
     };
 
     window.conn.onclose = function (event) {
@@ -110,6 +113,10 @@ var Module = {
 
     window.pack_outbound_tty = Module.cwrap(
       'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
+    );
+
+    window.socket_connected = Module.cwrap(
+      'socket_connected', 'number', ['number', 'number', 'number', 'number']
     );
 
     window.resize_tty = Module.cwrap(

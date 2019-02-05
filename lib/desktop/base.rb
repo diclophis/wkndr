@@ -4,15 +4,15 @@ class Wkndr
   ##desc "server [DIRECTORY]", "services given directory over http"
   def self.server(directory = "public")
     if File.exists?(directory)
+      log!(:StartServer)
       Server.run!(directory)
     end
   end
 
-  def self.backend(argv)
-    run_loop_blocker = server(argv[1])
-
-    show!(run_loop_blocker)
-  end
+  #def self.backend(argv)
+  #  run_loop_blocker = server(argv[1])
+  #  show!(run_loop_blocker)
+  #end
 
   def self.show!(run_loop_blocker = nil)
     running = true
@@ -27,15 +27,15 @@ class Wkndr
     }
 
     if running
-      if run_loop_blocker.is_a?(Server)
-
-      else
-        run_loop_blocker.up(server)
-      end
+      #if run_loop_blocker.is_a?(Server)
+      #else
+      #  run_loop_blocker.up(server)
+      #end
 
       timer = UV::Timer.new
       timer.start(tick_interval_ms, tick_interval_ms) { |x|
-        #log!(:ticking, running, run_loop_blocker.running, ticks, exit_counter)
+begin
+       #log!(:ticking, running, run_loop_blocker)
 
         if running && run_loop_blocker.running
           if ((ticks) % 100) == 0
@@ -57,6 +57,10 @@ class Wkndr
         end
 
         ticks += 1
+rescue => e
+log!(:wtfe, e, e.backtrace)
+end
+
       }
 
       log!(:uv_handle, UV.guess_handle(0))

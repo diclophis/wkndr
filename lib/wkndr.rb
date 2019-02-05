@@ -15,12 +15,12 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    window = Window.new("wkndr", 512, 512, 120)
-    window.update { |gt, dt|
-      gl.update(gt, dt)
-    }
+    gl.open("wkndr", 512, 512, 120)
 
-    stack.up(window)
+    #window.update { |gt, dt|
+    #  gl.update(gt, dt)
+    #}
+    #stack.up(window)
 
     stack
   end
@@ -28,14 +28,12 @@ class Wkndr < Thor
   def self.play(stack = nil, gl = nil, &block)
     log!(:play, stack, gl, block)
 
-begin
-raise "wtF"
-rescue => e
-  log!(:e, e.backtrace)
-end
-
     if block && @gl
+begin
       block.call(@gl)
+rescue => e
+  log!(:e, e, e.backtrace)
+end
     elsif !@gl && !@stack
       @stack = stack
       @gl = gl
@@ -58,6 +56,22 @@ end
     end
   end
 
+  desc "server", ""
+  def server(directory = "public")
+    stack = StackBlocker.new
+
+    #gl = GameLoop.new
+    #stack.up(gl)
+
+    #client = Wkndr.client(gl)
+    #stack.up(client)
+
+    server = Wkndr.server
+    stack.up(server)
+
+    Wkndr.play(stack, nil)
+  end
+
   desc "something", ""
   def something
     log!(:something)
@@ -69,6 +83,9 @@ end
 
     client = Wkndr.client(gl)
     stack.up(client)
+
+    server = Wkndr.server
+    stack.up(server)
 
     Wkndr.play(stack, gl)
   end

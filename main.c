@@ -196,16 +196,37 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int
   mrb_value outbound_msg = mrb_hash_new(mrb);
   mrb_hash_set(mrb, outbound_msg, mrb_fixnum_value(3), outbound_resize_msg);
   
-  mrb_funcall(mrb, mrb_obj_value(selfP), "resize_bits", 1, outbound_msg);
+  mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
 
   if (IsWindowReady()) {
     SetWindowSize(w, h);
   }
 
+  //TODO: set window size here
   //mrb_iv_set(
   //    mrb, , mrb_intern_lit(mrb, "@pointer"), // set @data
   //    mrb_obj_value(                           // with value hold in struct
   //        Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
+
+  return 0;
+}
+
+
+EMSCRIPTEN_KEEPALIVE
+size_t socket_connected(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
+  mrb_value empty_string = mrb_str_new_lit(mrb, "");
+  mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+
+  /*
+  mrb_value outbound_tty_msg = mrb_ary_new(mrb);
+  mrb_ary_push(mrb, outbound_tty_msg, mrb_fixnum_value(0));
+  mrb_ary_push(mrb, outbound_tty_msg, clikestr_as_string);
+  mrb_ary_push(mrb, outbound_tty_msg, empty_string);
+  */
+
+  mrb_funcall(mrb, mrb_obj_value(selfP), "did_connect", 1, clikestr_as_string);
+
+  //mrb_free(mrb, mrb_obj_ptr(outbound_tty_msg));
 
   return 0;
 }
@@ -294,10 +315,12 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef PLATFORM_DESKTOP
-  if (WindowShouldClose()) {
-    mrb_funcall(mrb, self, "halt!", 0, NULL);
-    return mrb_nil_value();
-  }
+  //fprintf(stderr, "shouldclose???\n");
+  //if (WindowShouldClose()) {
+  //  fprintf(stderr, "halt!!!!!!???\n");
+  //  mrb_funcall(mrb, self, "halt!", 0, NULL);
+  //  return mrb_nil_value();
+  //}
 #endif
 
   double time;
@@ -500,25 +523,25 @@ static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
 }
 
 
-// static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
-// {
-//   play_data_s *p_data;
-// 
-//   p_data = malloc(sizeof(play_data_s));
-//   memset(p_data, 0, sizeof(play_data_s));
-//   if (!p_data) {
-//     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate @data");
-//   }
-// 
-//   //p_data->buffer_target = LoadRenderTexture(screenWidth, screenHeight);
-// 
-//   mrb_iv_set(
-//       mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
-//       mrb_obj_value(                           // with value hold in struct
-//           Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
-// 
-//   return self;
-// }
+static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
+{
+  play_data_s *p_data;
+
+  p_data = malloc(sizeof(play_data_s));
+  memset(p_data, 0, sizeof(play_data_s));
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate @data");
+  }
+
+  //p_data->buffer_target = LoadRenderTexture(screenWidth, screenHeight);
+
+  mrb_iv_set(
+      mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
+      mrb_obj_value(                           // with value hold in struct
+          Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
+
+  return self;
+}
 
 
 static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
@@ -534,6 +557,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(screenWidth, screenHeight, c_game_name);
+
+  fprintf(stderr, "InitWindow\n");
 
   //SetExitKey(0);
 
@@ -682,7 +707,11 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 
   mrb_get_args(mrb, "ii", &a, &b);
 
+  fprintf(stderr, "draw_fps\n");
+
   DrawFPS(a, b);
+
+  DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
   return mrb_nil_value();
 }
@@ -712,10 +741,14 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   mrb_value data_value;     // this IV holds the data
   data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
 
+
   Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  return mrb_nil_value();
+
   if (!p_data) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
+
 
   // Camera mode type
   switch(type) {
@@ -851,7 +884,7 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
   BeginMode2D(p_data->cameraTwo);
 
   mrb_yield_argv(mrb, block, 0, NULL);
-
+  
   EndMode2D();
 
   return mrb_nil_value();
@@ -1308,16 +1341,14 @@ int main(int argc, char** argv) {
   mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
 
   // class PlatformBits
-  struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
-  mrb_define_method(mrb, platform_bits_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
-  mrb_define_method(mrb, platform_bits_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
+  //struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
 
   struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
   mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
-  //mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
   mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
@@ -1330,6 +1361,8 @@ int main(int argc, char** argv) {
   mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
+  mrb_define_method(mrb, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
+  mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
 
   // class Model
   struct RClass *model_class = mrb_define_class(mrb, "Model", mrb->object_class);

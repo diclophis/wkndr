@@ -17,6 +17,7 @@ class StackBlocker
   end
 
   def halt!
+    log!(:sb_halt!)
     @stack.each { |srb| srb.halt! }
   end
 

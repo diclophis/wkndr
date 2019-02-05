@@ -218,6 +218,45 @@ class Connection
   end
 
   def upgrade_to_websocket!
+    write_wkndr_file = Proc.new { |wkndrfile_path|
+begin
+      log!(:readfile, wkndrfile_path)
+      wkparts = wkndrfile_path.split("~", 2)  
+      if wkparts.length == 1
+        reqd_wkfile = "Wkndrfile"
+      else
+        #TODO: move this higher up to avoid reprocessing
+        reqd_wkfile = wkparts[1].gsub(/[^a-z]/, "") #TODO: better username support??
+      end
+      log!(:readfile, reqd_wkfile)
+      UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
+begin
+        log!(:resolved_filename, actual_wkndrfile)
+        if actual_wkndrfile.is_a?(UVError)
+          log!(:wtfreadfileer, actual_wkndrfile)
+        else
+          ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, 0)
+          wkread = ffff.read
+          self.write_typed({"p" => wkread})
+          ffff.close
+          @fsev = UV::FS::Event.new
+          @fsev.start(actual_wkndrfile, 0) do |path, event|
+            log!(:fswatch, path, event)
+            if event == :change
+              @fsev.stop
+              write_wkndr_file.call(wkndrfile_path)
+            end
+          end
+        end
+rescue => e
+log!(:wtfe, e, e.backtrace)
+end
+      }
+rescue => e
+log!(:wtfe, e, e.backtrace)
+end
+    }
+
     self.wslay_callbacks = Wslay::Event::Callbacks.new
 
     self.wslay_callbacks.recv_callback do |buf, len|
@@ -251,6 +290,9 @@ class Connection
       if msg[:opcode] == :binary_frame
         process_as_msgpack_stream(msg.msg) { |typed_msg|
           channels = typed_msg.keys
+
+          log!("INBOUND", typed_msg, channels)
+
           channels.each do |channel|
             #NOTE: channels are as follows
             #
@@ -271,6 +313,10 @@ class Connection
                 else
                   @pending_resize = typed_msg[channel]
                 end
+
+              when "p"
+                wkndrfile_req = typed_msg[channel]
+                write_wkndr_file.call(wkndrfile_req)
 
               when "c"
                 dispatch_req = typed_msg[channel]
@@ -413,8 +459,6 @@ class Connection
                     @ps.kill(0)
                   end
                 end
-            else
-              log!("INBOUND", typed_msg)
             end
           end
         }
@@ -443,29 +487,13 @@ class Connection
       k == "sec-websocket-key"
     }[1]
 
+    #NOTE: this is the server to client side
     self.write_ws_response!(sec_websocket_key) {
-      write_wkndr_file = Proc.new {
-        ffff = UV::FS::open("/var/tmp/chroot/etc/skel/Wkndrfile", UV::FS::O_RDONLY, 0)
-        wkread = ffff.read
-        self.write_typed({"p" => wkread})
-        ffff.close
-
-        @fsev = UV::FS::Event.new
-        @fsev.start("/var/tmp/chroot/etc/skel/Wkndrfile", 0) do |path, event|
-          log!(:fswatch, path, event)
-
-          if event == :change
-            @fsev.stop
-
-            write_wkndr_file.call
-          end
-        end
-      }
-
-      write_wkndr_file.call
+      #write_wkndr_file.call
 
       @t = UV::Timer.new
       @t.start(1000, 1000) {
+        log!(:send_ping)
         self.write_typed({"c" => "ping"})
       }
     }

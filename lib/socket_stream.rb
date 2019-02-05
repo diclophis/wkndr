@@ -86,6 +86,11 @@ class SocketStream
     end
   end
 
+  def did_connect(wkndrfile_path)
+    write_typed({"p" => wkndrfile_path})
+    log!(:did_connect, wkndrfile_path)
+  end
+
   def write_typed(*msg_typed)
     if connected
       msg = MessagePack.pack(*msg_typed)
