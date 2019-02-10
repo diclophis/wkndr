@@ -20,6 +20,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <utmp.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -1205,6 +1206,55 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
 }
 
 
+static mrb_value fast_utmp_utmps(mrb_state* mrb, mrb_value self)
+{
+#ifdef PLATFORM_DESKTOP
+
+  //mrb_value rets = mrb_ary_new(mrb);
+  mrb_value outbound_utmp = mrb_hash_new(mrb);
+
+  struct utmp *utmp_buf;
+  size_t entries = 0;
+  time_t boot_time;
+
+  utmpname(UTMP_FILE);
+
+  setutent();
+
+  while ((utmp_buf = getutent()) != NULL) {
+    if (utmp_buf->ut_name[0] && utmp_buf->ut_line[0] && utmp_buf->ut_type == USER_PROCESS) {
+      ++entries;
+
+			//mrb_value mrb_login_pid = mrb_fixnum_value(utmp_buf->ut_pid);
+
+      mrb_value empty_string = mrb_str_new_lit(mrb, "");
+      mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, utmp_buf->ut_line, UT_LINESIZE);
+      mrb_funcall(mrb, clikestr_as_string, "strip!", 0);
+
+      mrb_value nempty_string = mrb_str_new_lit(mrb, "");
+      mrb_value nclikestr_as_string = mrb_str_cat(mrb, nempty_string, utmp_buf->ut_name, UT_NAMESIZE);
+      mrb_funcall(mrb, nclikestr_as_string, "strip!", 0);
+
+      mrb_hash_set(mrb, outbound_utmp, clikestr_as_string, nclikestr_as_string);
+
+      //mrb_ary_push(mrb, rets, outbound_utmp);
+    }
+
+    if (utmp_buf->ut_type == BOOT_TIME) {
+      boot_time = utmp_buf->ut_time;
+    }
+  }
+
+  endutent();
+
+  return outbound_utmp;
+
+#else
+  return mrb_nil_value();
+#endif
+}
+
+
 static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
 {
   mrb_int a,b;
@@ -1327,6 +1377,9 @@ int main(int argc, char** argv) {
   }
 
   mrb_define_global_const(mrb, "ARGV", args);
+
+  struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
+  mrb_define_class_method(mrb, fast_utmp, "utmps", fast_utmp_utmps, MRB_ARGS_NONE());
 
   struct RClass *fast_tty = mrb_define_class(mrb, "FastTTY", mrb->object_class);
   mrb_define_class_method(mrb, fast_tty, "fd", fast_tty_fd, MRB_ARGS_NONE());

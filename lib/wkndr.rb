@@ -48,32 +48,55 @@ class Wkndr < Thor
   def self.play(stack = nil, gl = nil, &block)
     log!(:play, stack, gl, block)
 
-    if block && @gl
-begin
-      block.call(@gl)
-rescue => e
-  log!(:e, e, e.backtrace)
-end
-    elsif !@gl && !@stack
+    if stack && !@stack
       @stack = stack
-      @gl = gl
+    end
 
-      play { |_gl|
-        gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-        gl.update { |global_time, delta_time|
-          gl.drawmode {
-            gl.threed {
-            }
-            gl.twod {
-              gl.draw_fps(0, 0)
-            }
+    if gl && !@gl
+      @gl = gl
+      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+      gl.update { |global_time, delta_time|
+        gl.drawmode {
+          gl.threed {
+          }
+          gl.twod {
+            gl.draw_fps(0, 0)
           }
         }
       }
-
-      log!(:show!)
-      Wkndr.show! @stack
     end
+
+    if !block && @stack && @ql
+    elsif block && @gl
+begin
+      block.call(@gl)
+rescue => e
+  #log!(:e, e, e.backtrace)
+  @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+  @gl.update { |global_time, delta_time|
+    @gl.drawmode {
+      @gl.threed {
+      }
+      @gl.twod {
+        @gl.draw_fps(0, 0)
+        @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
+          @gl.emit({"c" => "tty"})
+        }
+      }
+    }
+  }
+end
+  else
+    
+    #default_play = Proc.new { |gl|
+      #play { |_gl|
+      #}
+    #}
+
+    log!(:show!)
+    Wkndr.show! @stack
+  end
+
   end
 
   desc "server", ""

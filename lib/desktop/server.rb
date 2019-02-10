@@ -56,23 +56,35 @@ class Server
       #}
 
       update_utmp = Proc.new {
+
         utmp_file = "/var/run/utmp"
         @fsev = UV::FS::Event.new
         @fsev.start(utmp_file, 0) do |path, event|
-          log!(:fswatch, path, event)
+          log!(:fswatch_for_utmp, path, event)
           if event == :change
             @fsev.stop
 
-            #map ident???
+            connections_by_pid = {}
+            @all_connections.each { |cn|
+              if cn.pid
+                connections_by_pid[cn.pid] = cn
+              end
+            }
 
-            FastUTMP.idents.each { |pid, username|
-              
+            FastUTMP.utmps.each { |pts, username|
+              if fcn = connections_by_pid[pts]
+                logged_in_users_wkndrfile_path = ("~" + username)
+                log!(:UTMPS, fcn, pts, username, logged_in_users_wkndrfile_path)
+                fcn.subscribe_to_wkndrfile(logged_in_users_wkndrfile_path)
+              end
             }
 
             update_utmp.call
           end
         end
       }
+
+      update_utmp.call
     }
   end
 

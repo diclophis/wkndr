@@ -34,6 +34,9 @@ MRuby::Build.new do |conf|
   conf.gem :github => "Asmod4n/mruby-phr"
 
   conf.cc do |cc|
-    cc.flags = ["-lm"] #ENV['CFLAGS'], "-lm"].join(" ")
+    cc.flags = ["-lm"]
   end
+
+  #conf.enable_cxx_exception
+  conf.disable_cxx_exception
 end

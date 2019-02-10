@@ -1,6 +1,6 @@
 #
 
-EMSDK_VERSION="1.38.25"
+EMSDK_VERSION="1.38.26"
 
 require_relative './mruby.rb'
 
@@ -30,4 +30,5 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.archiver.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emar"
 
   #conf.enable_cxx_exception
+  conf.disable_cxx_exception
 end

@@ -150,7 +150,7 @@ class Connection
         else
           filename = phr.path
 
-          if filename == "/"
+          if filename == "/" || filename[0, 2] == "/~"
             filename = "/index.html"
           end
 
@@ -190,7 +190,7 @@ class Connection
   end
 
   def pid
-    @ps && @ps.pid
+    @pid
   end
 
   #TODO: include module maybe?????
@@ -227,15 +227,19 @@ class Connection
 
   def subscribe_to_wkndrfile(wkndrfile_path)
     begin
-      log!(:readfile, wkndrfile_path)
+      log!(:readfileAAA, wkndrfile_path)
       wkparts = wkndrfile_path.split("~", 2)  
-      if wkparts.length == 1
+      if wkndrfile_path == "/"
         reqd_wkfile = "Wkndrfile"
       else
         #TODO: move this higher up to avoid reprocessing
-        reqd_wkfile = wkparts[1].gsub(/[^a-z]/, "") #TODO: better username support??
+        reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??
+        log!(:readfileFFFFFF, wkparts, reqd_wkfile_user)
+        reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
       end
-      log!(:readfile, reqd_wkfile)
+      #[:readfile, ["", "a"], "/var/tmp/chroot/home//Wkndrfile"]
+      log!(:readfile, wkparts, reqd_wkfile)
+
       UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
         begin
           log!(:resolved_filename, actual_wkndrfile)
@@ -244,14 +248,15 @@ class Connection
           else
             ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, 0)
             wkread = ffff.read
+            log!(:wtf_write_typed_p, wkread)
             self.write_typed({"p" => wkread})
             ffff.close
             @fsev = UV::FS::Event.new
             @fsev.start(actual_wkndrfile, 0) do |path, event|
-              log!(:fswatch, path, event)
+              log!(:fswatch_for_given_wkndrfile, path, event)
               if event == :change
                 @fsev.stop
-                yield wkndrfile_path
+                subscribe_to_wkndrfile(wkndrfile_path)
               end
             end
           end
@@ -265,11 +270,11 @@ class Connection
   end
 
   def upgrade_to_websocket!
-    write_wkndr_file = Proc.new { |wkndrfile_path|
-      subscribe_to_wkndrfile {
-        write_wkndr_file.call(wkndrfile_path)
-      }
-    }
+    #write_wkndr_file = Proc.new { |wkndrfile_path|
+    #  subscribe_to_wkndrfile(wkndrfile_path) {
+    #    write_wkndr_file.call(wkndrfile_path)
+    #  }
+    #}
 
     self.wslay_callbacks = Wslay::Event::Callbacks.new
 
@@ -329,8 +334,12 @@ class Connection
                 end
 
               when "p"
+                log!(:WTFP, typed_msg)
+
                 wkndrfile_req = typed_msg[channel]
-                write_wkndr_file.call(wkndrfile_req)
+                subscribe_to_wkndrfile(wkndrfile_req)
+                #log!(:did_connect, wkndrfile_path)
+                #write_wkndr_file.call(wkndrfile_req)
 
               when "c"
                 dispatch_req = typed_msg[channel]
@@ -351,6 +360,7 @@ class Connection
 
                     #log!(:fds, @stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno)
                     #raise "wtf"
+                    this_pid_id = @ftty[2].gsub("/dev/", "")
 
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
@@ -359,7 +369,7 @@ class Connection
 
                       'file' => '/usr/bin/ruby',
                       #'args' => ['/var/lib/wkndr/Thorfile', 'login'],
-                      'args' => ['/var/lib/wkndr/Thorfile', 'getty', @ftty[2].gsub("/dev/", "")],
+                      'args' => ['/var/lib/wkndr/Thorfile', 'getty', this_pid_id],
                       #'args' => ['Thorfile', 'stdio-test'],
 
                       #'file' => '/usr/local/bin/wkndr',
@@ -403,6 +413,7 @@ class Connection
                       ##@ps.stdout_pipe.stop
                       ##@ps.stderr_pipe.stop
 
+                      @pid = nil
                       @ps = nil
 
                       #log!("nilled ps #{sig}")
@@ -415,6 +426,10 @@ class Connection
                       ##end
                       ##a.send
                     end
+
+                    #utmps = FastUTMP.utmps
+                    #log!(:UTMPS, utmps, pid, this_pid_id)
+                    @pid = this_pid_id
                     
                     #@ps.stdin_pipe = @stdin_tty
                     #@ps.stdout_pipe = @stdout_tty

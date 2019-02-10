@@ -14,7 +14,6 @@ ENV APACHE_LOG_DIR /var/log/apache2
 ENV APACHE_PID_FILE /var/run/apache2.pid
 ENV APACHE_LOCK_DIR /var/lock/apache2
 ENV APACHE_RUN_DIR /var/run/apache2
-ENV VIMRUNTIME /usr/share/vim
 
 USER root
 
@@ -35,6 +34,7 @@ COPY Gemfile Gemfile.lock wkndr.gemspec /var/lib/wkndr/
 RUN cd /var/lib/wkndr && ls -l && bundle
 
 COPY --from=0 /var/tmp/build/vim-src/src/vim /var/lib/vim-static
+COPY --from=0 /var/tmp/build/vim-src/runtime /var/lib/vim-runtime
 
 COPY gigamock-transfer/emscripten.sh /var/tmp/emscripten.sh
 RUN /var/tmp/emscripten.sh
@@ -77,11 +77,11 @@ RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
 RUN setcap cap_sys_chroot+ep /usr/sbin/chroot 
 
-RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share /var/tmp/chroot/etc/skel /var/tmp/chroot/home
-COPY Wkndrfile /var/tmp/chroot/etc/skel
+RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share /var/tmp/chroot/etc/skel /var/tmp/chroot/home /var/tmp/chroot/usr/share/vim
+COPY gigamock-transfer/home-dir-template /var/tmp/chroot/etc/skel
 COPY gigamock-transfer/wkndr-chroot.sh /var/tmp
-RUN cp -R /usr/share/vim /var/tmp/chroot/usr/share
-RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vi
+RUN cp -R /var/lib/vim-runtime /var/tmp/chroot/usr/share/vim/runtime
+RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vim
 RUN cp /bin/bash-static /var/tmp/chroot/bin/bash
 RUN cd /var/tmp/chroot/bin && ln -s bash sh
 RUN cp /bin/busybox /var/tmp/chroot/bin/busybox && \

@@ -128,6 +128,10 @@ var Module = {
     window.resize_tty = Module.cwrap(
       'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
     );
+
+    GLFW.exitFullscreen = function() {
+      console.log("moot");
+    };
   })],
   postRun: [],
   print: (function() {
