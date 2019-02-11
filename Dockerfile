@@ -89,6 +89,10 @@ RUN cp /bin/busybox /var/tmp/chroot/bin/busybox && \
 #RUN mkdir -p /var/tmp/chroot/usr/bin /var/tmp/chroot/sbin /var/tmp/chroot/usr/sbin
 #RUN chroot /var/tmp/chroot /bin/busybox --install -s
 
+#-rwxr-xr-x 1 root root 1220 Apr  9  2018 00-header
+COPY gigamock-transfer/iterate-motd.sh /var/lib/wkndr/iterate-motd.sh
+RUN rm /etc/legal /etc/update-motd.d/* && mv /var/lib/wkndr/iterate-motd.sh /etc/update-motd.d/00-wkndr
+COPY gigamock-transfer/issue /etc/issue
 WORKDIR /var/lib/wkndr
 
 CMD ["/var/lib/wkndr/release/wkndr.mruby", "server", "/var/lib/wkndr/public"]
