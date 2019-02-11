@@ -36,7 +36,6 @@ class GameLoop
   end
 
   def halt!
-    log!(:gl_halt!)
     @halting = true
   end
 

@@ -47,12 +47,9 @@ class WslaySocketStream < SocketStream
       # :abnormal_closure, :invalid_frame_payload_data, :policy_violation, :message_too_big, :mandatory_ext,
       # :internal_server_error, :tls_handshake
       # to_str => returns the message revieced
-      #@gl.log!(:msg, msg)
-
       if msg[:opcode] == :binary_frame
         process(msg[:msg])
       else
-        #TODO: log!(msg[:opcode])
         #??????
       end
     end
@@ -67,7 +64,7 @@ class WslaySocketStream < SocketStream
           0
         end
       rescue UVError => e
-        log!(:wsla_send_callback_err, e)
+        log!(:wslay_send_callback_err, e)
         0
       end
     end
@@ -94,24 +91,17 @@ class WslaySocketStream < SocketStream
 
     on_connect = Proc.new { |connection_broken_status|
       if @halting
-        log!(:halting, connection_broken_status)
       elsif connection_broken_status
-        log!(:broken, connection_broken_status)
         restart_connection!
       else
-        log!(:connected!, connection_broken_status)
         write_ws_request! {
-begin
-          log!(:did_connect_pre, @socket)
-          reset_handshake!
-          log!(:did_connect_b, @socket)
-          @socket.read_start(&on_read_start)
-          log!(:did_connect_c, @socket)
-          did_connect("/")
-          log!(:did_connect_desk, @socket)
-rescue => e
-log!(:wtfde, e, e.backtrace)
-end
+          begin
+            reset_handshake!
+            @socket.read_start(&on_read_start)
+            did_connect("/")
+          rescue => e
+            log!(:wslay_socket_stream_write_ws_request_error, e, e.backtrace)
+          end
         }
       end
     }
@@ -138,8 +128,7 @@ end
       offset = @phr.parse_response(@ss)
       case offset
       when Fixnum
-        #log!(@phr.headers)
-        #TODO???
+        #TODO??? !!!!! !!!!
         #unless WebSocket.create_accept(key).securecmp(phr.headers.to_h.fetch('sec-websocket-accept'))
         #   raise Error, "Handshake failure"
         #end

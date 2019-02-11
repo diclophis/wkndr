@@ -28,8 +28,6 @@ class Connection
   end
 
   def shutdown
-    log!(:connection_shutdown)
-
     if @ps
       @ps.kill(UV::Signal::SIGINT)
       @ps.close
@@ -58,8 +56,6 @@ class Connection
   end
 
   def halt!
-    log!(:halt_connection)
-
     @halting = true
   end
 
@@ -155,13 +151,9 @@ class Connection
           end
 
           requested_path = "#{@required_prefix}#{filename}"
-            log!(:reqd, requested_path)
           UV::FS.realpath(requested_path) { |resolved_filename|
-            log!(resolved_filename, @required_prefix)
-
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
               self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
-                #self.socket.close
                 self.halt!
               }
             else
@@ -173,16 +165,15 @@ class Connection
           }
         end
       when :incomplete
-        log!("incomplete")
+        log!("desktop_connection_incomplete")
       when :parser_error
-        log!(:parser_error, @offset)
+        log!(:desktop_connection_parser_error, @offset)
       end
     else
       if self.ws
         self.last_buf += b
         proto_ok = (self.ws.recv != :proto)
         unless proto_ok
-          #self.socket.close
           self.halt!
         end
       end
@@ -227,33 +218,26 @@ class Connection
 
   def subscribe_to_wkndrfile(wkndrfile_path)
     begin
-      log!(:readfileAAA, wkndrfile_path)
       wkparts = wkndrfile_path.split("~", 2)  
+
       if wkndrfile_path == "/"
         reqd_wkfile = "Wkndrfile"
       else
-        #TODO: move this higher up to avoid reprocessing
         reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??
-        log!(:readfileFFFFFF, wkparts, reqd_wkfile_user)
         reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
       end
-      #[:readfile, ["", "a"], "/var/tmp/chroot/home//Wkndrfile"]
-      log!(:readfile, wkparts, reqd_wkfile)
 
       UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
         begin
-          log!(:resolved_filename, actual_wkndrfile)
           if actual_wkndrfile.is_a?(UVError)
-            log!(:wtfreadfileer, actual_wkndrfile)
+            log!(:desktop_connection_wkndrfile_path_error, actual_wkndrfile)
           else
             ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, 0)
             wkread = ffff.read
-            log!(:wtf_write_typed_p, wkread)
             self.write_typed({"p" => wkread})
             ffff.close
             @fsev = UV::FS::Event.new
             @fsev.start(actual_wkndrfile, 0) do |path, event|
-              log!(:fswatch_for_given_wkndrfile, path, event)
               if event == :change
                 @fsev.stop
                 subscribe_to_wkndrfile(wkndrfile_path)
@@ -261,21 +245,15 @@ class Connection
             end
           end
         rescue => e
-          log!(:wtfe, e, e.backtrace)
+          log!(:desktop_connection_wkndrfile_realpath_error, e, e.backtrace)
         end
       }
     rescue => e
-      log!(:wtfe, e, e.backtrace)
+      log!(:desktop_connection_wkndrfile_subscribe_error, e, e.backtrace)
     end
   end
 
   def upgrade_to_websocket!
-    #write_wkndr_file = Proc.new { |wkndrfile_path|
-    #  subscribe_to_wkndrfile(wkndrfile_path) {
-    #    write_wkndr_file.call(wkndrfile_path)
-    #  }
-    #}
-
     self.wslay_callbacks = Wslay::Event::Callbacks.new
 
     self.wslay_callbacks.recv_callback do |buf, len|
@@ -310,8 +288,6 @@ class Connection
         process_as_msgpack_stream(msg.msg) { |typed_msg|
           channels = typed_msg.keys
 
-          log!("INBOUND", typed_msg, channels)
-
           channels.each do |channel|
             #NOTE: channels are as follows
             #
@@ -325,8 +301,6 @@ class Connection
                 }
 
               when 3
-                log!(:resize, typed_msg)
-
                 if @ftty
                   FastTTY.resize(@ftty[0], typed_msg[channel][0], typed_msg[channel][1])
                 else
@@ -334,12 +308,8 @@ class Connection
                 end
 
               when "p"
-                log!(:WTFP, typed_msg)
-
                 wkndrfile_req = typed_msg[channel]
                 subscribe_to_wkndrfile(wkndrfile_req)
-                #log!(:did_connect, wkndrfile_path)
-                #write_wkndr_file.call(wkndrfile_req)
 
               when "c"
                 dispatch_req = typed_msg[channel]
@@ -347,51 +317,23 @@ class Connection
                   unless @ps
                     @ftty = FastTTY.fd
 
-                    log!(:ftty, @ftty)
-
                     @stdin_tty = UV::Pipe.new(false)
                     @stdin_tty.open(@ftty[0])
 
                     @stdout_tty = UV::Pipe.new(false)
                     @stdout_tty.open(@ftty[1])
 
-                    #@stderr_tty = UV::Pipe.new(false)
-                    #@stderr_tty.open(@ftty[1])
-
-                    #log!(:fds, @stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno)
-                    #raise "wtf"
-                    this_pid_id = @ftty[2].gsub("/dev/", "")
+                    @pid = @ftty[2].gsub("/dev/", "")
 
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
-                      #'stdio' => [@stdin_tty.fileno, @stdout_tty.fileno, @stderr_tty.fileno],
-                      #'stdio' => [@stdin_tty, @stdout_tty],
-
                       'file' => '/usr/bin/ruby',
-                      #'args' => ['/var/lib/wkndr/Thorfile', 'login'],
-                      'args' => ['/var/lib/wkndr/Thorfile', 'getty', this_pid_id],
-                      #'args' => ['Thorfile', 'stdio-test'],
-
-                      #'file' => '/usr/local/bin/wkndr',
-                      #'args' => ['stdio-test'],
-
-                      #'file' => '/sbin/agetty',
-                      #'args' => ["--timeout", "10", "--login-pause", "--noreset", "--noclear", "--login-program", "/usr/bin/wkndr", "--login-options", 'login -- \u', "115200", "tty", "xterm-256color"],
-                      #'file' => "/usr/sbin/rungetty",
-                      #'args' => ["--prompt=ok", "--autologin", "root", "--", "/usr/sbin/chroot", "/var/tmp/chroot", "/bin/bash", "-i", "-l"],
-                      
-                      #'file' => '/bin/bash',
-                      #'args' => ["-c", "exec wkndr getty #{@ftty[2]}"],
-
-                      #'args' => [],
+                      'args' => ['/var/lib/wkndr/Thorfile', 'getty', @pid],
                       'detached' => true,
-
                       'env' => []
                     })
 
                     if @pending_resize
-                      log!(:gonna_resize, @pending_resize)
-
                       FastTTY.resize(@ftty[0], @pending_resize[0], @pending_resize[1])
                       @pending_resize = nil
                     end
@@ -399,41 +341,9 @@ class Connection
                     @ps.spawn do |sig|
                       log!("exit #{sig}")
 
-                      ###@stdout_tty.read_stop
-                      #@stdin_tty.close
-                      ##@stdin_tty = nil
-                      #@stdout_tty.close
-                      ##@stdout_tty = nil
-                      ###@stderr_tty.shutdown
-                      #@stderr_tty = nil
-
-                      #log!("closed tty #{sig}")
-
-                      ##@ps.stdin_pipe.stop
-                      ##@ps.stdout_pipe.stop
-                      ##@ps.stderr_pipe.stop
-
                       @pid = nil
                       @ps = nil
-
-                      #log!("nilled ps #{sig}")
-
-                      ##a = UV::Async.new do
-
-                      ##  log!(:scopeq, @ps, *@ftty)
-                      ##FastTTY.close(@ftty[0])
-
-                      ##end
-                      ##a.send
                     end
-
-                    #utmps = FastUTMP.utmps
-                    #log!(:UTMPS, utmps, pid, this_pid_id)
-                    @pid = this_pid_id
-                    
-                    #@ps.stdin_pipe = @stdin_tty
-                    #@ps.stdout_pipe = @stdout_tty
-                    #@ps.stderr_pipe = @stderr_tty
 
                     @stdin_tty.read_start do |bout|
                       log!(:AAA, bout)
@@ -445,43 +355,7 @@ class Connection
                         self.write_typed(outbits)
                       end
                     end
-
-                    #@stdout_tty.read_start do |bout|
-                    #  log!(:b, bout)
-
-                    #  if bout.is_a?(UVError)
-                    #    log!(:badout, bout)
-                    #  elsif bout
-                    #    outbits = {1 => bout}
-                    #    self.write_typed(outbits)
-                    #  end
-                    #end
                     
-
-                    #@stderr_tty.read_start do |bout|
-                    #  log!(:c, bout)
-
-                    #  #if bout.is_a?(UVError)
-                    #  #  log!(:badout, bout)
-                    #  #elsif bout
-                    #  #  outbits = {2 => bout}
-                    #  #  self.write_typed(outbits)
-                    #  #end
-                    #end
-
-
-                    #@stdin_tty.read_start do |bout|
-                    #  log!(:a, bout)
-
-                    #  if bout.is_a?(UVError)
-                    #    log!(:badout, bout)
-                    #  elsif bout
-                    #    outbits = {1 => bout}
-                    #    self.write_typed(outbits)
-                    #  end
-                    #end
-
-
                     @ps.kill(0)
                   else
                     log!(:ps_exists, @ps)
@@ -507,7 +381,7 @@ class Connection
 
     self.ws = Wslay::Event::Context::Server.new self.wslay_callbacks
 
-    #TODO??? !!! !!!!
+    #TODO??? !!! !!!! !!!!
     #unless WebSocket.create_accept(key).securecmp(phr.headers.to_h.fetch('sec-websocket-accept'))
     #   raise Error, "Handshake failure"
     #end
@@ -518,8 +392,6 @@ class Connection
 
     #NOTE: this is the server to client side
     self.write_ws_response!(sec_websocket_key) {
-      #write_wkndr_file.call
-
       @t = UV::Timer.new
       @t.start(1000, 1000) {
         log!(:send_ping)

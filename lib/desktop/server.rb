@@ -10,14 +10,10 @@ $stdout.open(1)
 $stdout.read_stop
 
 def log!(*args, &block)
-raise "wtf" if args.include?(:got_local_remote_c)
-
   $stdout.write(args.inspect + "\n") {
     yield if block
   }
 end
-
-log!(:argv, ARGV)
 
 class Server
   def self.run!(directory)
@@ -47,20 +43,10 @@ class Server
         self.on_connection(connection_error)
       }
 
-      #s = UV::Pipe.new(true)
-      #s.bind('/var/run/wkndr.sock')
-      #s.listen(5) {|x|
-      #  c = s.accept()
-      #  read_from = c.read
-      #  log!(:cread, read_from)
-      #}
-
       update_utmp = Proc.new {
-
         utmp_file = "/var/run/utmp"
         @fsev = UV::FS::Event.new
         @fsev.start(utmp_file, 0) do |path, event|
-          log!(:fswatch_for_utmp, path, event)
           if event == :change
             @fsev.stop
 
@@ -74,7 +60,6 @@ class Server
             FastUTMP.utmps.each { |pts, username|
               if fcn = connections_by_pid[pts]
                 logged_in_users_wkndrfile_path = ("~" + username)
-                log!(:UTMPS, fcn, pts, username, logged_in_users_wkndrfile_path)
                 fcn.subscribe_to_wkndrfile(logged_in_users_wkndrfile_path)
               end
             }
@@ -106,13 +91,12 @@ class Server
   end
 
   def halt!
-    log!(:server_halt)
     @halting = @all_connections.all? { |cn| cn.halt! }
   end
 
   def on_connection(connection_error)
     if connection_error
-      log!(:wtf_con_err, connection_error)
+      log!(:server_on_connection_connection_error, connection_error)
     else
       self.create_connection!
     end

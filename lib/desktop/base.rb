@@ -9,15 +9,10 @@ class Wkndr
     end
   end
 
-  #def self.backend(argv)
-  #  run_loop_blocker = server(argv[1])
-  #  show!(run_loop_blocker)
-  #end
-
   def self.show!(run_loop_blocker = nil)
     running = true
     #TODO: server FPS
-    fps = 120.0
+    fps = 256.0
     exit_counter = 0
     tick_interval_ms = ((1.0/fps)*1000.0)
     ticks = 0
@@ -27,48 +22,39 @@ class Wkndr
     }
 
     if running
-      #if run_loop_blocker.is_a?(Server)
-      #else
-      #  run_loop_blocker.up(server)
-      #end
-
       timer = UV::Timer.new
       timer.start(tick_interval_ms, tick_interval_ms) { |x|
-begin
-       #log!(:ticking, running, run_loop_blocker)
+        begin
+          if running && run_loop_blocker.running
+            if ((ticks) % 1000) == 0
+              log!(:idle, ticks)
+            end
 
-        if running && run_loop_blocker.running
-          if ((ticks) % 100) == 0
-            log!(:idle, ticks)
-          end
-
-          run_loop_blocker.signal
-        else
-          if exit_counter > 0
-            timer.stop
-            run_loop_blocker.shutdown
-            #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
-            #UV.default_loop.close
-            UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
+            run_loop_blocker.signal
           else
-            all_halting = run_loop_blocker.halt!
-            exit_counter += 1
+            if exit_counter > 0
+              timer.stop
+              run_loop_blocker.shutdown
+              #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
+              #UV.default_loop.close
+              UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
+            else
+              all_halting = run_loop_blocker.halt!
+              exit_counter += 1
+            end
           end
+
+          ticks += 1
+        rescue => e
+          log!(:base_running_timer_tick_error, e, e.backtrace)
         end
-
-        ticks += 1
-rescue => e
-log!(:wtfe, e, e.backtrace)
-end
-
       }
-
-      log!(:uv_handle, UV.guess_handle(0))
 
       UV.run
     end
   end
 
+#NOTE: TODO
 #  desc "changelog [CHANGELOG]", "appends changelog item to CHANGELOG.md"
 #  def changelog(changelog = "CHANGELOG.md")
 #    #Dir.chdir(ENV['PWD'])

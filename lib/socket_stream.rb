@@ -87,7 +87,6 @@ class SocketStream
   end
 
   def did_connect(wkndrfile_path)
-    log!(:did_connect_write_p, wkndrfile_path)
     write_typed({"p" => wkndrfile_path})
   end
 

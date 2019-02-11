@@ -11,7 +11,6 @@ class StackBlocker
 
   def running
     @stack.all? { |srb| 
-      #log!(:running?, srb)
       srb.running
     }
   end
@@ -27,7 +26,6 @@ class StackBlocker
   end
 
   def halt!
-    log!(:sb_halt!)
     @stack.each { |srb| srb.halt! }
   end
 

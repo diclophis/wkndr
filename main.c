@@ -1355,6 +1355,32 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 }
 
 
+// MRB_API mrb_state*
+// mrb_empty_open_allocf(mrb_allocf f, void *ud)
+// {
+//   mrb_state *mrb = mrb_open_core(f, ud);
+//
+//   if (mrb == NULL) {
+//     return NULL;
+//   }
+//
+// //#ifndef DISABLE_GEMS
+// //  mrb_init_mrbgems(mrb);
+// //  mrb_gc_arena_restore(mrb, 0);
+// //#endif
+//   return mrb;
+// }
+//
+//
+// MRB_API mrb_state*
+// mrb_empty_open(void)
+// {
+//   mrb_state *mrb = mrb_empty_open_allocf(mrb_default_allocf, NULL);
+//
+//   return mrb;
+// }
+
+
 int main(int argc, char** argv) {
   mrb_state *mrb;
 

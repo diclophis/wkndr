@@ -87,13 +87,6 @@ rescue => e
   }
 end
   else
-    
-    #default_play = Proc.new { |gl|
-      #play { |_gl|
-      #}
-    #}
-
-    log!(:show!)
     Wkndr.show! @stack
   end
 
@@ -102,12 +95,6 @@ end
   desc "server", ""
   def server(directory = "public")
     stack = StackBlocker.new
-
-    #gl = GameLoop.new
-    #stack.up(gl)
-
-    #client = Wkndr.client(gl)
-    #stack.up(client)
 
     server = Wkndr.server
     stack.up(server)
