@@ -88,7 +88,7 @@
 
 
 //server stuff
-#ifdef PLATFORM_DESKTOP
+#ifdef TARGET_DESKTOP
 
 #include <openssl/sha.h>
 #include <mruby/string.h>
@@ -315,10 +315,9 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 
 
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
-#ifdef PLATFORM_DESKTOP
-  //fprintf(stderr, "shouldclose???\n");
+#ifdef TARGET_DESKTOP
+  //TODO: this should have logic on ruby side based on if is window or not
   //if (WindowShouldClose()) {
-  //  fprintf(stderr, "halt!!!!!!???\n");
   //  mrb_funcall(mrb, self, "halt!", 0, NULL);
   //  return mrb_nil_value();
   //}
@@ -563,7 +562,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   SetExitKey(0);
 
-//#ifdef PLATFORM_DESKTOP
+//#ifdef TARGET_DESKTOP
   //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
   //SetWindowMonitor(0);
   SetTargetFPS(screenFps);
@@ -1190,7 +1189,7 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
   mrb_value accept_key = mrb_str_new(mrb, NULL, 28);
   char *c = RSTRING_PTR(accept_key);
 
-#ifdef PLATFORM_DESKTOP
+#ifdef TARGET_DESKTOP
   uint8_t sha1buf[20];
   if (!SHA1((const unsigned char *) key_src, 60, sha1buf)) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "SHA1 failed");
@@ -1208,7 +1207,7 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
 
 static mrb_value fast_utmp_utmps(mrb_state* mrb, mrb_value self)
 {
-#ifdef PLATFORM_DESKTOP
+#ifdef TARGET_DESKTOP
 
   //mrb_value rets = mrb_ary_new(mrb);
   mrb_value outbound_utmp = mrb_hash_new(mrb);
@@ -1286,7 +1285,7 @@ static mrb_value fast_tty_resize(mrb_state* mrb, mrb_value self)
 
 static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 {
-#ifdef PLATFORM_DESKTOP
+#ifdef TARGET_DESKTOP
   struct winsize w = {21, 82, 0, 0};
 
 	int fdm, fds, rc;
@@ -1491,21 +1490,13 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, stack_blocker, NULL);
 
 
-#ifdef PLATFORM_DESKTOP
+#ifdef TARGET_DESKTOP
   eval_static_libs(mrb, base, NULL);
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
 
 #endif
-
-//  if (i == 1) {
-//    eval_static_libs(mrb, client, NULL);
-//  } else {
-//#ifdef PLATFORM_DESKTOP
-//    mrb_funcall(mrb, mrb_obj_value(thor_class), "backend", 1, args);
-//#endif    
-//  }
 
   if (i == 1) {
     mrb_funcall(mrb, mrb_obj_value(thor_class), "start", 0);

@@ -6,6 +6,7 @@ class Wkndr < Thor
     log!(:outerclient, w, h)
 
     stack = StackBlocker.new
+    stack.fps = 60
 
     gl = GameLoop.new
     stack.up(gl)
@@ -107,6 +108,7 @@ end
     log!(:something)
 
     stack = StackBlocker.new
+    stack.fps = 60
 
     gl = GameLoop.new
     stack.up(gl)

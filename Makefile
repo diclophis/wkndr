@@ -59,17 +59,11 @@ ifeq ($(TARGET),desktop)
   #LDFLAGS=-lm -lpthread -ldl -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
 endif
 
+RAYLIB_TARGET_DEFINED="PLATFORM_DESKTOP"
 ifeq ($(TARGET),desktop)
-  CFLAGS=-DPLATFORM_DESKTOP -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
-  #TODO: remove GL_SILENCE_DEPRECATION
-  #OSX  CFLAGS=-DPLATFORM_DESKTOP -DGL_SILENCE_DEPRECATION -Os -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
+  CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
 else
-  #EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s STACK_OVERFLOW_CHECK=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s SAFE_HEAP_LOG=0 -s WASM=1 -s EMTERPRETIFY=0
-  #EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s WASM=1 -s EMTERPRETIFY=0
-  #EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s WASM=0 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s WASM=1 -s DISABLE_EXCEPTION_CATCHING=0
   EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1
-  #EMSCRIPTEN_FLAGS=""
-  #CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -std=c99 -fdeclspec -Imruby/include -Iraylib-src -I$(build)
   CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -Imruby/include -Iraylib-src -I$(build)
 endif
 
@@ -89,7 +83,7 @@ $(build)/test.yml: $(target) config.ru
 
 clean:
 	cd mruby && make clean && rm -Rf build
-	cd raylib-src && make RAYLIB_RELEASE_PATH=../$(build) PLATFORM=PLATFORM_DESKTOP clean
+	cd raylib-src && make RAYLIB_RELEASE_PATH=../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) clean
 	rm -R $(build)
 
 $(build):
@@ -107,7 +101,7 @@ endif
 
 $(raylib_static_lib): $(raylib_static_lib_deps)
 ifeq ($(TARGET),desktop)
-	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) PLATFORM=PLATFORM_DESKTOP $(MAKE) -B -e -j
+	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) $(MAKE) -B -e -j
 else
 	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -B -e -j
 endif

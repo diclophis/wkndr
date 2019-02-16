@@ -1,8 +1,11 @@
 #
 
 class StackBlocker
+  attr_accessor :fps
+
   def initialize
     @stack = []
+    self.fps = 15
   end
 
   def up(o)

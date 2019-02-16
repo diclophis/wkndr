@@ -12,7 +12,7 @@ class Wkndr
   def self.show!(run_loop_blocker = nil)
     running = true
     #TODO: server FPS
-    fps = 1.0
+    fps = run_loop_blocker.fps
     exit_counter = 0
     tick_interval_ms = ((1.0/fps)*1000.0)
     ticks = 0
