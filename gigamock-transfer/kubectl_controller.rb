@@ -13,6 +13,8 @@ class Kube
   end
 
   def handle_descript(description)
+    @changed = true
+
     kind = description["kind"]
     name = description["metadata"]["name"]
     created_at = description["metadata"]["creationTimestamp"] ? DateTime.parse(description["metadata"]["creationTimestamp"]) : nil
@@ -51,14 +53,29 @@ class Kube
           end
         end
 
-        #pod(namespace, name, latest_condition, phase, ready, state_keys, created_at.to_time.to_i, exit_at, grace_time)
-        puts [kind, namespace, name, latest_condition, phase, ready, state_keys, created_at.to_time.to_i, exit_at, grace_time].inspect
+        @pods ||= {}
+
+        recalc_spec = {
+          "latest_condition" => latest_condition,
+          "phase" => phase,
+          "ready" => ready,
+          "state_keys" => state_keys,
+          "created_at" => created_at.to_time.to_i,
+          "exit_at" => exit_at,
+          "grace_time" => grace_time
+        }
+
+        @pods[name] = recalc_spec
 
       when "Service"
-        puts [kind, namespace, name].inspect
+        @services ||= {}
+        spec = description["spec"]
+        @services[name] = spec
 
       when "Ingress"
-        puts [kind, namespace, name].inspect
+        @ingresses ||= {}
+        spec = description["spec"]
+        @ingresses[name] = spec
 
     end
   end
@@ -89,21 +106,60 @@ class Kube
     begin
       begin
         loop do
-
+          @changed = false
           @watches.each do |io, parser|
             last_read_bit = io
             got_read = io.read_nonblock(1024)
             parser << got_read
           end
-
         end
-
       rescue IO::EAGAINWaitReadable => idle_spin_err
-        selectable_io = @watches.collect { |io, parser| io unless io.closed? }.compact
-        a,b,c = IO.select(selectable_io, nil, nil, 1.0)
+        selectable_io = @watches.collect { |io, parser| io }.compact
+        a,b,c = IO.select(selectable_io, [], [], 1.0)
         begin
-          #$stdout.write(nil.to_msgpack)
-          $stdout.flush
+          if a.nil? && @changed
+            upstream_map = ""
+            host_to_app_map = "" 
+            app_to_alias_map = ""
+
+            @ingresses && @ingresses.each { |ingress, ing_spec|
+              rules = ing_spec["rules"]
+              rules.each { |rule|
+                host = rule["host"]
+                http = rule["http"]
+                paths = http["paths"]
+                paths.each { |path|
+                  backend = path["backend"]
+                  service_name = backend["serviceName"]
+                  service_port = backend["servicePort"]
+
+                  if @services && found_service = @services[service_name] 
+                    if cluster_ip = found_service["clusterIP"]
+                      upstream_map += "upstream #{service_name} {\n  server #{cluster_ip}:#{service_port} fail_timeout=0;\n}\n"
+                      host_to_app_map += "#{host} #{service_name};\n"
+                      app_to_alias_map = "#{service_name} /usr/share/nginx/html/;\n"
+                    end
+                  end
+                }
+              }
+            }
+
+            confd_dir = ENV["MOCK_CONFD_DIR"] || "/etc/nginx/conf.d"
+
+            File.open("#{confd_dir}/hosts_app.conf", "w+") { |f|
+              f.write(upstream_map)
+            }
+
+            File.open("#{confd_dir}/hosts_app.map", "w+") { |f|
+              f.write(host_to_app_map)
+            }
+
+            File.open("#{confd_dir}/hosts_app_alias.map", "w+") {|f|
+              f.write(app_to_alias_map)
+            }
+
+            $stdout.flush
+          end
           retry
         rescue Errno::EPIPE
           $stderr.write("output closed...")
