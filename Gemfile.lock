@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     wkndr (0.0.0)
+      yajl-ruby
 
 GEM
   remote: https://rubygems.org/
@@ -9,6 +10,7 @@ GEM
     rake (10.5.0)
     rake-compiler (1.0.4)
       rake
+    yajl-ruby (1.4.1)
 
 PLATFORMS
   ruby
@@ -20,4 +22,4 @@ DEPENDENCIES
   wkndr!
 
 BUNDLED WITH
-   1.16.2
+   1.17.3

@@ -87,7 +87,7 @@ class Wkndr < Thor
   end
 
   desc "build", ""
-  option "run", :type => :boolean, :default => false
+  option "run", :type => :string, :default => nil
   option "cache", :type => :boolean, :default => true
   option "push", :type => :string, :default => nil
   def build
@@ -119,7 +119,12 @@ class Wkndr < Thor
       systemx(*push_dockerfile)
     end
 
-    if options["run"]
+    if run_domain = options["run"]
+      run_domain.strip!
+      if run_domain.length == 0
+        run_domain = WKNDR + ".computer"
+      end
+
       #run_dockerfile = ["docker", "run", "--rm", "-it", "-p", "8000:8000", APP + ":" + version]
       #exec(*run_dockerfile)
 
@@ -139,6 +144,17 @@ spec:
   policyTypes:
   - Egress
   egress: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "#{APP}-cluster-service"
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+  selector:
+    app: #{APP}-app
 ---
 apiVersion: v1
 kind: Service
@@ -186,6 +202,21 @@ spec:
             cpu: 2000m
         ports:
         - containerPort: 8000
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: #{APP}-vhost
+  annotations:
+    ingress.class: #{WKNDR}
+spec:
+  rules:
+  - host: #{run_domain}
+    http:
+      paths:
+      - backend:
+          serviceName: "#{APP}-cluster-service"
+          servicePort: 8000
 ...
 HEREDOC
 

@@ -71,10 +71,6 @@ COPY public/index.js /var/lib/wkndr/public/index.js
 COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
 RUN cd /var/lib/wkndr && ls -hl release && cp release/wkndr* public/
 
-COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
-
-RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
-
 RUN setcap cap_sys_chroot+ep /usr/sbin/chroot 
 
 RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share /var/tmp/chroot/etc/skel /var/tmp/chroot/home /var/tmp/chroot/usr/share/vim
@@ -93,6 +89,10 @@ RUN cp /bin/busybox /var/tmp/chroot/bin/busybox && \
 COPY gigamock-transfer/iterate-motd.sh /var/lib/wkndr/iterate-motd.sh
 RUN rm /etc/legal /etc/update-motd.d/* && mv /var/lib/wkndr/iterate-motd.sh /etc/update-motd.d/00-wkndr
 COPY gigamock-transfer/issue /etc/issue
+
+COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
+RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
+
 WORKDIR /var/lib/wkndr
 
 CMD ["/var/lib/wkndr/release/wkndr.mruby", "server", "/var/lib/wkndr/public"]

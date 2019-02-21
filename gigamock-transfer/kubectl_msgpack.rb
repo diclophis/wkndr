@@ -2,7 +2,7 @@
 
 require 'yajl'
 require 'date'
-require 'msgpack'
+#require 'msgpack'
 
 class Kube
   def pod(*args)
@@ -51,17 +51,14 @@ class Kube
           end
         end
 
-        #10.times do |i|
-        #  pod(namespace, name + i.to_s, latest_condition, phase, ready, state_keys, created_at.to_time.to_i, exit_at, grace_time)
-        #end
-
-        pod(namespace, name, latest_condition, phase, ready, state_keys, created_at.to_time.to_i, exit_at, grace_time)
+        #pod(namespace, name, latest_condition, phase, ready, state_keys, created_at.to_time.to_i, exit_at, grace_time)
+        puts [kind, namespace, name, latest_condition, phase, ready, state_keys, created_at.to_time.to_i, exit_at, grace_time].inspect
 
       when "Service"
-        puts [kind].inspect
+        puts [kind, namespace, name].inspect
 
       when "Ingress"
-        puts [kind, name].inspect
+        puts [kind, namespace, name].inspect
 
     end
   end
@@ -78,20 +75,34 @@ class Kube
     end
   end
 
+  def watch!(kubernetes_resource)
+    parser = Yajl::Parser.new
+    parser.on_parse_complete = method(:handle_event_list)
+    io = get_yaml_producer_io(kubernetes_resource)
+
+    @watches ||= []
+    @watches << [io, parser]
+  end
+
   def ingest!
+    last_read_bit = nil
     begin
-      parser = Yajl::Parser.new
-      parser.on_parse_complete = method(:handle_event_list)
-      io = get_yaml
       begin
         loop do
-          got_read = io.read_nonblock(1024)
-          parser << got_read
+
+          @watches.each do |io, parser|
+            last_read_bit = io
+            got_read = io.read_nonblock(1024)
+            parser << got_read
+          end
+
         end
+
       rescue IO::EAGAINWaitReadable => idle_spin_err
-        a,b,c = IO.select([io], nil, nil, 1.0)
+        selectable_io = @watches.collect { |io, parser| io unless io.closed? }.compact
+        a,b,c = IO.select(selectable_io, nil, nil, 1.0)
         begin
-          $stdout.write(nil.to_msgpack)
+          #$stdout.write(nil.to_msgpack)
           $stdout.flush
           retry
         rescue Errno::EPIPE
@@ -99,17 +110,21 @@ class Kube
         end
       end
     rescue EOFError => eof_err
-      retry
+      puts [last_read_bit, eof_err].inspect
+      exit(1)
+      #retry
     end
   rescue Interrupt => ctrlc_err
     exit(0)
   end
 
-  def get_yaml
-    IO.popen("kubectl get --all-namespaces --include-uninitialized=true --watch=true --output=json pods")
-    #IO.popen("kubectl get --namespace=audit-logs-beta --include-uninitialized=true --watch=true --output=json pods")
-    #IO.popen("kubectl get --include-uninitialized=true --watch=true --output=json pods")
+  def get_yaml_producer_io(kubernetes_resource)
+    IO.popen("kubectl get --all-namespaces --include-uninitialized=true --watch=true --output=json #{kubernetes_resource}")
   end
 end
 
-Kube.new.ingest!
+klient = Kube.new
+klient.watch!("pods")
+klient.watch!("services")
+klient.watch!("ingress")
+klient.ingest!
