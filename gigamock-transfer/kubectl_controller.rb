@@ -115,7 +115,7 @@ class Kube
         end
       rescue IO::EAGAINWaitReadable => idle_spin_err
         selectable_io = @watches.collect { |io, parser| io }.compact
-        a,b,c = IO.select(selectable_io, [], [], 1.0)
+        a,b,c = IO.select(selectable_io, [], [], 5.0)
         begin
           if a.nil? && @changed
             upstream_map = ""
@@ -157,7 +157,7 @@ class Kube
             File.open("#{confd_dir}/hosts_app_alias.map", "w+") {|f|
               f.write(app_to_alias_map)
             }
-
+            $stdout.write("updated vhost table\n")
             $stdout.flush
           end
           retry

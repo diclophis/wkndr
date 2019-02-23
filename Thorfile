@@ -120,7 +120,7 @@ class Wkndr < Thor
     end
 
     if run_domain = options["run"]
-      run_domain.strip!
+      run_domain = run_domain.strip
       if run_domain.length == 0
         run_domain = WKNDR + ".computer"
       end
