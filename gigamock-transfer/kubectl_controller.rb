@@ -145,11 +145,13 @@ class Kube
                         upstream_map += "upstream #{service_name} {\n  server 127.0.0.1:#{node_port["nodePort"]} fail_timeout=0;\n}\n"
                         host_to_app_map += "#{host} #{service_name};\n"
                         app_to_alias_map = "#{service_name} /usr/share/nginx/html/;\n"
+
                       when "ClusterIP"
                         cluster_ip = found_service["clusterIP"]
                         upstream_map += "upstream #{service_name} {\n  server #{cluster_ip}:#{service_port} fail_timeout=0;\n}\n"
                         host_to_app_map += "#{host} #{service_name};\n"
                         app_to_alias_map = "#{service_name} /usr/share/nginx/html/;\n"
+
                     end
                   end
                 }
