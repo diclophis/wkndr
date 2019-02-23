@@ -171,6 +171,12 @@ class Kube
             File.open("#{confd_dir}/hosts_app_alias.map", "w+") {|f|
               f.write(app_to_alias_map)
             }
+
+            unless system("systemctl", "reload", "nginx.service")
+              $stderr.write("bad nginx conf\n")
+	      exit(1)
+	    end
+
             $stdout.write("updated vhost table\n")
             $stdout.flush
           end
