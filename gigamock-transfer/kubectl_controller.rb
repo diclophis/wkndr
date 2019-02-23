@@ -134,6 +134,8 @@ class Kube
                   service_port = backend["servicePort"]
 
                   if @services && found_service = @services[service_name] 
+
+                    if nodePort = found_service["clusterIP"]
                     if cluster_ip = found_service["clusterIP"]
                       upstream_map += "upstream #{service_name} {\n  server #{cluster_ip}:#{service_port} fail_timeout=0;\n}\n"
                       host_to_app_map += "#{host} #{service_name};\n"

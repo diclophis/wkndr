@@ -164,7 +164,6 @@ spec:
   type: NodePort
   ports:
   - port: 8000
-    nodePort: 31588
     protocol: TCP
   selector:
     app: #{APP}-app
@@ -215,7 +214,7 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: "#{APP}-cluster-service"
+          serviceName: "#{APP}-node-service"
           servicePort: 8000
 ...
 HEREDOC
