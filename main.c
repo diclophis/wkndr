@@ -558,7 +558,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
-  fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
+  //fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
   SetExitKey(0);
 
@@ -1273,7 +1273,7 @@ static mrb_value fast_tty_resize(mrb_state* mrb, mrb_value self)
   mrb_int a,cols,rows;
   mrb_get_args(mrb, "iii", &a, &cols, &rows);
 
-  fprintf(stderr, "resize %d %d %d\n", a, cols, rows);
+  //fprintf(stderr, "resize %d %d %d\n", a, cols, rows);
   
   struct winsize w = {rows, cols, 0, 0};
 
