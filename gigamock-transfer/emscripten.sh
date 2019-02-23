@@ -14,4 +14,8 @@ cd emsdk
 
 ./emsdk update || git pull
 
-./emsdk install latest
+./emsdk list
+
+./emsdk install emscripten-1.38.27
+#./emsdk install sdk-master-64bit
+./emsdk install sdk-1.38.27-64bit

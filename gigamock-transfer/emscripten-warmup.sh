@@ -5,7 +5,9 @@ set -x
 
 cd /root/emsdk
 
-./emsdk activate latest
+./emsdk list
+./emsdk activate sdk-1.38.27-64bit
+#./emsdk activate latest
 
 . ./emsdk_env.sh
 
