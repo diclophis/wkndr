@@ -966,8 +966,6 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
 
 static void model_data_destructor(mrb_state *mrb, void *p_) {
-  fprintf(stderr, "!!!!!!!!!!! deconstruct!!!\n");
-
   //TODO
   //mrb_value data_value;
   //data_value = mrb_iv_get(mrb, (mrb_value)p_, mrb_intern_lit(mrb, "@pointer"));

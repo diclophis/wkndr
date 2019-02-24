@@ -31,9 +31,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.onopen = function (event) {
       console.log("connected");
 
-      //var cols = 82;
-      //var rows = 21;
-
       var terminalContainer = document.getElementById("wkndr-terminal");
 
       Terminal.applyAddon(fit);
@@ -41,20 +38,13 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal = new Terminal({cursorBlink: true, scrollback: 100, tabStopWidth: 2});
       window.terminal.open(terminalContainer);
 
-      //var width = (cols * window.terminal._core.renderer.dimensions.actualCellWidth + window.terminal._core.viewport.scrollBarWidth).toString() + "px";
-      //var height = (rows * window.terminal._core.renderer.dimensions.actualCellHeight).toString() + "px";
-      //terminalContainer.style.width = width;
-      //terminalContainer.style.height = height;
-
       window.terminal.on('data', function(termInputData) {
-        console.log('ondata');
         var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
         window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
         Module._free(ptr);
       });
 
       window.addEventListener('resize', function(resizeEvent) {
-        console.log('onresize');
         window.terminal.fit();
       });
 
@@ -70,10 +60,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         window.conn.close();
       };
 
-      console.log("aaa");
       var ptr = allocate(intArrayFromString(window.location.pathname), 'i8', ALLOC_NORMAL);
       window.socket_connected(mrbPointer, callbackPointer, ptr, window.location.pathname.length);
-      console.log("bbb");
     };
 
     window.conn.onclose = function (event) {
@@ -135,7 +123,7 @@ var Module = {
     );
 
     GLFW.exitFullscreen = function() {
-      console.log("moot");
+      //TODO: replace hack later
     };
   })],
   postRun: [],
