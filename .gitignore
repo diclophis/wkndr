@@ -9,7 +9,6 @@ release
 *.o
 *.cmake
 *CMake*
-.*
 *.in
 *.pbxuser
 *.perspectivev3
