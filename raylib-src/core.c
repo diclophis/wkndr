@@ -591,7 +591,7 @@ void InitWindow(int width, int height, const char *title)
 #endif
 
 #if defined(PLATFORM_WEB)
-    emscripten_set_fullscreenchange_callback(0, 0, 1, EmscriptenFullscreenChangeCallback);
+    emscripten_set_fullscreenchange_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, 0, 1, EmscriptenFullscreenChangeCallback);
 
     // Support keyboard events
     emscripten_set_keypress_callback("#canvas", NULL, 1, EmscriptenKeyboardCallback);
@@ -3675,14 +3675,14 @@ static EM_BOOL EmscriptenFullscreenChangeCallback(int eventType, const Emscripte
     //Current element size: (int) e->elementWidth, (int) e->elementHeight
     //Screen size:(int) e->screenWidth, (int) e->screenHeight
 
-    if (e->isFullscreen)
-    {
-        TraceLog(LOG_INFO, "Canvas scaled to fullscreen. ElementSize: (%ix%i), ScreenSize(%ix%i)", e->elementWidth, e->elementHeight, e->screenWidth, e->screenHeight);
-    }
-    else
-    {
-        TraceLog(LOG_INFO, "Canvas scaled to windowed. ElementSize: (%ix%i), ScreenSize(%ix%i)", e->elementWidth, e->elementHeight, e->screenWidth, e->screenHeight);
-    }
+    //if (e->isFullscreen)
+    //{
+    //    TraceLog(LOG_INFO, "Canvas scaled to fullscreen. ElementSize: (%ix%i), ScreenSize(%ix%i)", e->elementWidth, e->elementHeight, e->screenWidth, e->screenHeight);
+    //}
+    //else
+    //{
+    //    TraceLog(LOG_INFO, "Canvas scaled to windowed. ElementSize: (%ix%i), ScreenSize(%ix%i)", e->elementWidth, e->elementHeight, e->screenWidth, e->screenHeight);
+    //}
 
     // TODO: Depending on scaling factor (screen vs element), calculate factor to scale mouse/touch input
 
