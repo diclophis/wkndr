@@ -1395,7 +1395,7 @@ int main(int argc, char** argv) {
 
   // convert argv into mruby strings
   for (i=1; i<argc; i++) {
-    fprintf(stderr, "wtf: %s\n", argv[i]);
+    //fprintf(stderr, "wtf: %s\n", argv[i]);
     mrb_ary_push(mrb, args, mrb_str_new_cstr(mrb, argv[i]));
   }
 
