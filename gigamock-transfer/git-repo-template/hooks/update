@@ -10,6 +10,4 @@ set -x
 
 echo update ... $1 $2 $3
 
-git gc
-
 echo ... update
