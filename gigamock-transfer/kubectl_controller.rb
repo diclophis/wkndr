@@ -106,16 +106,15 @@ class Kube
     begin
       begin
         loop do
-          @changed = false
           @watches.each do |io, parser|
             last_read_bit = io
-            got_read = io.read_nonblock(1024)
+            got_read = io.read_nonblock(1)
             parser << got_read
           end
         end
       rescue IO::EAGAINWaitReadable => idle_spin_err
         selectable_io = @watches.collect { |io, parser| io }.compact
-        a,b,c = IO.select(selectable_io, [], [], 5.0)
+        a,b,c = IO.select(selectable_io, [], [], 0.001)
         begin
           if a.nil? && @changed
             upstream_map = ""
@@ -174,12 +173,15 @@ class Kube
 
             unless system("systemctl", "reload", "nginx.service")
               $stderr.write("bad nginx conf\n")
-	      exit(1)
-	    end
+              exit(1)
+            end
 
             $stdout.write("updated vhost table\n")
             $stdout.flush
+
+            @changed = false
           end
+
           retry
         rescue Errno::EPIPE
           $stderr.write("output closed...")
