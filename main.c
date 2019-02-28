@@ -113,6 +113,49 @@
 // other stuff
 #define FLT_MAX 3.40282347E+38F
 
+#define MAX_LIGHTS 8 // Max lights supported by standard shader
+// Light type
+typedef struct LightData {
+    unsigned int id;        // Light unique id
+    bool enabled;           // Light enabled
+    int type;               // Light type: LIGHT_POINT, LIGHT_DIRECTIONAL, LIGHT_SPOT
+
+    Vector3 position;       // Light position
+    Vector3 target;         // Light direction: LIGHT_DIRECTIONAL and LIGHT_SPOT (cone direction target)
+    float radius;           // Light attenuation radius light intensity reduced with distance (world distance)
+
+    Color diffuse;          // Light diffuse color
+    float intensity;        // Light intensity level
+
+    float coneAngle;        // Light cone max angle: LIGHT_SPOT
+} LightData, *Light;
+
+// Light types
+typedef enum { LIGHT_POINT, LIGHT_DIRECTIONAL, LIGHT_SPOT } LightType;
+
+//----------------------------------------------------------------------------------
+// Global Variables Definition
+//----------------------------------------------------------------------------------
+static Light lights[MAX_LIGHTS];            // Lights pool
+static int lightsCount = 0;                 // Enabled lights counter
+static int lightsLocs[MAX_LIGHTS][8];       // Lights location points in shader: 8 possible points per light: 
+                                            // enabled, type, position, target, radius, diffuse, intensity, coneAngle
+
+//----------------------------------------------------------------------------------
+// Module Functions Declaration
+//----------------------------------------------------------------------------------
+static Light CreateLight(int type, Vector3 position, Color diffuse); // Create a new light, initialize it and add to pool
+static void DestroyLight(Light light);     // Destroy a light and take it out of the list
+static void DrawLight(Light light);        // Draw light in 3D world
+
+static void GetShaderLightsLocations(Shader shader);    // Get shader locations for lights (up to MAX_LIGHTS)
+static void SetShaderLightsValues(Shader shader);       // Set shader uniform values for lights
+
+// Vector3 math functions
+static float VectorLength(const Vector3 v);             // Calculate vector length
+static void VectorNormalize(Vector3 *v);                // Normalize provided vector
+static Vector3 VectorSubtract(Vector3 v1, Vector3 v2); // Substract two vectors
+
 
 typedef struct {
   Camera3D camera;
