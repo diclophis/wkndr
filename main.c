@@ -113,7 +113,7 @@
 // other stuff
 #define FLT_MAX 3.40282347E+38F
 
-#define MAX_LIGHTS 8 // Max lights supported by standard shader
+#define MAX_LIGHTS 1 // Max lights supported by standard shader
 // Light type
 typedef struct LightData {
     unsigned int id;        // Light unique id
@@ -601,6 +601,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   InitWindow(screenWidth, screenHeight, c_game_name);
 
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
+  GetShaderLightsLocations(standardShader);
 
   //fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
@@ -1059,7 +1060,7 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
     
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 
-    DrawLight(p_data->light);
+    //DrawLight(p_data->light);
 
   //}
 
@@ -1126,8 +1127,6 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   //material.shader = GetShaderDefault();
   material.shader = standardShader;
 
-  GetShaderLightsLocations(material.shader);
-
   //material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
   //material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
   //material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
@@ -1135,23 +1134,23 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   material.maps[MAP_DIFFUSE].color = WHITE;
   material.maps[MAP_SPECULAR].color = WHITE;
 
-  Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
-  spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  spotLight->intensity = 5.0f;
-  spotLight->diffuse = (Color){255, 100, 100, 255};
-  spotLight->coneAngle = 2.0f;
-  p_data->light = spotLight;
+  //Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
+  //spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  //spotLight->intensity = 1.0f;
+  //spotLight->diffuse = (Color){255, 100, 100, 255};
+  //spotLight->coneAngle = 10.0f;
+  //p_data->light = spotLight;
 
-  //Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
-  //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  //dirLight->intensity = 0.5f;
-  //dirLight->diffuse = (Color){100, 255, 100, 255};
-  //p_data->light = dirLight;
+  Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
+  dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  dirLight->intensity = 1.0f;
+  dirLight->diffuse = (Color){100, 255, 100, 255};
+  p_data->light = dirLight;
 
-  //Light pointLight = CreateLight(LIGHT_POINT, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
-  //pointLight->intensity = 10.0f;
+  //Light pointLight = CreateLight(LIGHT_POINT, (Vector3){50.0f, 50.0f, 50.0f}, (Color){255, 255, 255, 255});
+  //pointLight->intensity = 30.0f;
   //pointLight->diffuse = (Color){100, 255, 100, 255};
-  //pointLight->radius = 5.0f;
+  //pointLight->radius = 15.0f;
   //p_data->light = pointLight;
 
   p_data->model.material = material;      // Apply material to model
@@ -1570,12 +1569,12 @@ void DrawLight(Light light)
 // Get shader locations for lights (up to MAX_LIGHTS)
 static void GetShaderLightsLocations(Shader shader)
 {
-    char locName[32] = "lights[x].\0";
+    char locName[32] = "lightsX.\0";
     char locNameUpdated[64];
     
     for (int i = 0; i < MAX_LIGHTS; i++)
     {
-        locName[7] = '0' + i;
+        locName[6] = '0' + i;
         
         strcpy(locNameUpdated, locName);
         strcat(locNameUpdated, "enabled\0");

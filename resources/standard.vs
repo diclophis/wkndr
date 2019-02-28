@@ -2,6 +2,8 @@
 
 //#version 330
 
+precision lowp float;
+
 attribute vec3 vertexPosition;
 attribute vec3 vertexNormal;
 attribute vec2 vertexTexCoord;

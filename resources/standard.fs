@@ -1,7 +1,11 @@
 #version 100
 
 //#version 330
-//precision mediump float;
+
+precision lowp float;
+
+const int maxLights = 1;
+const vec3 viewDir = vec3(1.0);
 
 varying vec3 fragPosition;
 varying vec2 fragTexCoord;
@@ -12,25 +16,18 @@ uniform sampler2D texture0;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
 
-uniform vec4 colAmbient;
+//uniform vec4 colAmbient;
+const vec4 colAmbient = vec4(0.125, 0.125, 0.125, 1.0);
 uniform vec4 colDiffuse;
 uniform vec4 colSpecular;
 uniform float glossiness;
 
-//const vec4 colAmbient = vec4(0.5, 0.5, 0.01, 1.0);
-//const vec4 colDiffuse = vec4(0.5, 0.5, 0.5, 1.0);
-//const vec4 colSpecular = vec4(0.5, 0.5, 0.5, 1.0);
+uniform int useNormal;
+uniform int useSpecular;
 
-//uniform int useNormal;
-//uniform int useSpecular;
-
-const int useNormal = 0;
-const int useSpecular = 0;
-
-//uniform mat4 modelMatrix;
-//uniform vec3 viewDir;
-const mat4 modelMatrix = mat4(1.0);
-const vec3 viewDir = vec3(1.0);
+uniform mat4 mvp;
+uniform mat4 projection;
+uniform mat4 view;
 
 struct Light {
     int enabled;
@@ -42,13 +39,12 @@ struct Light {
     float radius;
     float coneAngle;
 };
+uniform Light lights0;
 
-const int maxLights = 8;
-uniform Light lights[maxLights];
 
 vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, float s)
 {
-    vec3 surfacePos = vec3(modelMatrix*vec4(fragPosition, 1.0));
+    vec3 surfacePos = vec3(mvp*vec4(fragPosition, 1.0));
     vec3 surfaceToLight = l.position - surfacePos;
     
     // Diffuse shading
@@ -92,7 +88,7 @@ vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, float s)
 
 vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, float s)
 {
-    vec3 surfacePos = vec3(modelMatrix*vec4(fragPosition, 1));
+    vec3 surfacePos = vec3(mvp*vec4(fragPosition, 1));
     vec3 lightToSurface = normalize(surfacePos - l.position);
     vec3 lightDir = normalize(-l.direction);
     
@@ -126,7 +122,7 @@ void main()
 {
     // Calculate fragment normal in screen space
     // NOTE: important to multiply model matrix by fragment normal to apply model transformation (rotation and scale)
-    mat3 normalMatrix = mat3(modelMatrix);
+    mat3 normalMatrix = mat3(mvp);
     vec3 normal = normalize(normalMatrix*fragNormal);
 
     // Normalize normal and view direction vectors
@@ -150,27 +146,44 @@ void main()
     float spec = 1.0;
     if (useSpecular == 1) spec = texture2D(texture2, fragTexCoord).r;
 
-    for (int i = 0; i < maxLights; i++)
-    {
+    //for (int i = 0; i < maxLights; i++)
+    //{
+    //    // Check if light is enabled
+    //    if (lights[i].enabled == 1)
+    //    {
+    //        // Calculate lighting based on light type
+    //        if (lights[i].type == 0) {
+    //          lighting += ComputeLightPoint(lights[i], n, v, spec);
+    //        }
+    //        if (lights[i].type == 1) {
+    //          lighting += ComputeLightDirectional(lights[i], n, v, spec);
+    //        }
+    //        if (lights[i].type == 2) {
+    //          lighting += ComputeLightSpot(lights[i], n, v, spec);
+    //        }
+    //        
+    //        // NOTE: It seems that too many ComputeLight*() operations inside for loop breaks the shader on RPI
+    //    }
+    //}
+
         // Check if light is enabled
-        if (lights[i].enabled == 1)
+        if (lights0.enabled == 1)
         {
             // Calculate lighting based on light type
-            if (lights[i].type == 0) {
-              lighting += ComputeLightPoint(lights[i], n, v, spec);
+            if (lights0.type == 0) {
+              lighting += ComputeLightPoint(lights0, n, v, spec);
             }
 
-            if (lights[i].type == 1) {
-              lighting += ComputeLightDirectional(lights[i], n, v, spec);
+            if (lights0.type == 1) {
+              lighting += ComputeLightDirectional(lights0, n, v, spec);
             }
 
-            if (lights[i].type == 2) {
-              lighting += ComputeLightSpot(lights[i], n, v, spec);
+            if (lights0.type == 2) {
+              lighting += ComputeLightSpot(lights0, n, v, spec);
             }
             
             // NOTE: It seems that too many ComputeLight*() operations inside for loop breaks the shader on RPI
         }
-    }
 
     // Calculate final fragment color
     //gl_FragColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
