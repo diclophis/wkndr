@@ -1,10 +1,11 @@
 #
 
 Wkndr.play { |gl|
-  gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+  gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
  
   total_msg = 0
   cube = Cube.new(1.0, 1.0, 1.0, 20.0)
+  speed = 100.0
 
   gl.event { |typed_msg|
     total_msg += 1
@@ -14,6 +15,7 @@ Wkndr.play { |gl|
     gl.drawmode {
       gl.threed {
         gl.draw_grid(5.0, 25.0)
+        cube.deltar(1.0, 1.0, 1.0, global_time * speed)
         cube.draw(true)
       }
       gl.twod {

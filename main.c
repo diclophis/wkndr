@@ -140,6 +140,7 @@ static Light lights[MAX_LIGHTS];            // Lights pool
 static int lightsCount = 0;                 // Enabled lights counter
 static int lightsLocs[MAX_LIGHTS][8];       // Lights location points in shader: 8 possible points per light: 
                                             // enabled, type, position, target, radius, diffuse, intensity, coneAngle
+static Shader standardShader;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -175,6 +176,7 @@ typedef struct {
   Color label_color;
   Mesh mesh;
   Model model;
+  Light light;
 } model_data_s;
 
 typedef struct {
@@ -391,9 +393,6 @@ void platform_bits_update_void(void* arg) {
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
-  //TODO: FOOO lols
-  //SetCameraMode(global_p_data->camera, CAMERA_FIRST_PERSON);
-
 #ifdef PLATFORM_WEB
   mrb_value window_self;
 
@@ -601,6 +600,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
+  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
+
   //fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
   SetExitKey(0);
@@ -727,6 +728,7 @@ static mrb_value game_loop_draw_grid(mrb_state* mrb, mrb_value self)
   mrb_get_args(mrb, "if", &a, &b);
 
   DrawGrid(a, b);
+  DrawPlane((Vector3){0.0, -10.0, 0.0}, (Vector2){100.0, 100.0}, BLUE);                                       // Draw a plane XZ
 
   return mrb_nil_value();
 }
@@ -1046,14 +1048,19 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  if (draw_wires) {
-    DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
-  } 
+  //if (draw_wires) {
+  //  DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
+  //} 
 
   //TODO, mode switch
   //else {
     // Draw 3d model with texture
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
+    
+    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
+
+    DrawLight(p_data->light);
+
   //}
 
   return mrb_nil_value();
@@ -1113,6 +1120,45 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
+
+  Material material = { 0 };
+
+  //material.shader = GetShaderDefault();
+  material.shader = standardShader;
+
+  GetShaderLightsLocations(material.shader);
+
+  //material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+  //material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+  //material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+
+  material.maps[MAP_DIFFUSE].color = WHITE;
+  material.maps[MAP_SPECULAR].color = WHITE;
+
+  Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
+  spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  spotLight->intensity = 5.0f;
+  spotLight->diffuse = (Color){255, 100, 100, 255};
+  spotLight->coneAngle = 2.0f;
+  p_data->light = spotLight;
+
+  //Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
+  //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  //dirLight->intensity = 0.5f;
+  //dirLight->diffuse = (Color){100, 255, 100, 255};
+  //p_data->light = dirLight;
+
+  //Light pointLight = CreateLight(LIGHT_POINT, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
+  //pointLight->intensity = 10.0f;
+  //pointLight->diffuse = (Color){100, 255, 100, 255};
+  //pointLight->radius = 5.0f;
+  //p_data->light = pointLight;
+
+  p_data->model.material = material;      // Apply material to model
+
+  // Set shader lights values for enabled lights
+  // NOTE: If values are not changed in real time, they can be set at initialization!!!
+  SetShaderLightsValues(material.shader);
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1420,6 +1466,284 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 //   return mrb;
 // }
 
+//--------------------------------------------------------------------------------------------
+// Module Functions Definitions
+//--------------------------------------------------------------------------------------------
+
+// Create a new light, initialize it and add to pool
+Light CreateLight(int type, Vector3 position, Color diffuse)
+{
+    Light light = NULL;
+    
+    if (lightsCount < MAX_LIGHTS)
+    {
+        // Allocate dynamic memory
+        light = (Light)malloc(sizeof(LightData));
+        
+        // Initialize light values with generic values
+        light->id = lightsCount;
+        light->type = type;
+        light->enabled = true;
+        
+        light->position = position;
+        light->target = (Vector3){ 0.0f, 0.0f, 0.0f };
+        light->intensity = 1.0f;
+        light->diffuse = diffuse;
+        
+        // Add new light to the array
+        lights[lightsCount] = light;
+        
+        // Increase enabled lights count
+        lightsCount++;
+    }
+    else
+    {
+        // NOTE: Returning latest created light to avoid crashes
+        light = lights[lightsCount];
+    }
+
+    return light;
+}
+
+// Destroy a light and take it out of the list
+void DestroyLight(Light light)
+{
+    if (light != NULL)
+    {
+        int lightId = light->id;
+
+        // Free dynamic memory allocation
+        free(lights[lightId]);
+
+        // Remove *obj from the pointers array
+        for (int i = lightId; i < lightsCount; i++)
+        {
+            // Resort all the following pointers of the array
+            if ((i + 1) < lightsCount)
+            {
+                lights[i] = lights[i + 1];
+                lights[i]->id = lights[i + 1]->id;
+            }
+        }
+        
+        // Decrease enabled physic objects count
+        lightsCount--;
+    }
+}
+
+// Draw light in 3D world
+void DrawLight(Light light)
+{
+    switch (light->type)
+    {
+        case LIGHT_POINT:
+        {
+            DrawSphereWires(light->position, 0.3f*light->intensity, 8, 8, (light->enabled ? light->diffuse : GRAY));
+            
+            DrawCircle3D(light->position, light->radius, (Vector3){ 0, 0, 0 }, 0.0f, (light->enabled ? light->diffuse : GRAY));
+            DrawCircle3D(light->position, light->radius, (Vector3){ 1, 0, 0 }, 90.0f, (light->enabled ? light->diffuse : GRAY));
+            DrawCircle3D(light->position, light->radius, (Vector3){ 0, 1, 0 },90.0f, (light->enabled ? light->diffuse : GRAY));
+        } break;
+        case LIGHT_DIRECTIONAL:
+        {
+            DrawLine3D(light->position, light->target, (light->enabled ? light->diffuse : GRAY));
+            
+            DrawSphereWires(light->position, 0.3f*light->intensity, 8, 8, (light->enabled ? light->diffuse : GRAY));
+            DrawCubeWires(light->target, 0.3f, 0.3f, 0.3f, (light->enabled ? light->diffuse : GRAY));
+        } break;
+        case LIGHT_SPOT:
+        {
+            DrawLine3D(light->position, light->target, (light->enabled ? light->diffuse : GRAY));
+            
+            Vector3 dir = VectorSubtract(light->target, light->position);
+            VectorNormalize(&dir);
+            
+            DrawCircle3D(light->position, 0.5f, dir, 0.0f, (light->enabled ? light->diffuse : GRAY));
+            
+            //DrawCylinderWires(light->position, 0.0f, 0.3f*light->coneAngle/50, 0.6f, 5, (light->enabled ? light->diffuse : GRAY));
+            DrawCubeWires(light->target, 0.3f, 0.3f, 0.3f, (light->enabled ? light->diffuse : GRAY));
+        } break;
+        default: break;
+    }
+}
+
+// Get shader locations for lights (up to MAX_LIGHTS)
+static void GetShaderLightsLocations(Shader shader)
+{
+    char locName[32] = "lights[x].\0";
+    char locNameUpdated[64];
+    
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        locName[7] = '0' + i;
+        
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "enabled\0");
+        lightsLocs[i][0] = GetShaderLocation(shader, locNameUpdated);
+        
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "type\0");
+        lightsLocs[i][1] = GetShaderLocation(shader, locNameUpdated);
+
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "position\0");
+        lightsLocs[i][2] = GetShaderLocation(shader, locNameUpdated);
+        
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "direction\0");
+        lightsLocs[i][3] = GetShaderLocation(shader, locNameUpdated);
+        
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "radius\0");
+        lightsLocs[i][4] = GetShaderLocation(shader, locNameUpdated);
+        
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "diffuse\0");
+        lightsLocs[i][5] = GetShaderLocation(shader, locNameUpdated);
+        
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "intensity\0");
+        lightsLocs[i][6] = GetShaderLocation(shader, locNameUpdated);
+        
+        locNameUpdated[0] = '\0';
+        strcpy(locNameUpdated, locName);
+        strcat(locNameUpdated, "coneAngle\0");
+        lightsLocs[i][7] = GetShaderLocation(shader, locNameUpdated);
+    }
+}
+
+// Set shader uniform values for lights
+// NOTE: It would be far easier with shader UBOs but are not supported on OpenGL ES 2.0
+static void SetShaderLightsValues(Shader shader)
+{
+    int tempInt[8] = { 0 };
+    float tempFloat[8] = { 0.0f };
+   
+   fprintf(stderr, "wtf %d\n", lightsCount);
+
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        if (i < lightsCount)
+        {
+            tempInt[0] = lights[i]->enabled;
+            SetShaderValue(shader, lightsLocs[i][0], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][0], lights[i]->enabled);
+            
+            tempInt[0] = lights[i]->type;
+            SetShaderValue(shader, lightsLocs[i][1], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][1], lights[i]->type);
+            
+            tempFloat[0] = (float)lights[i]->diffuse.r/255.0f;
+            tempFloat[1] = (float)lights[i]->diffuse.g/255.0f;
+            tempFloat[2] = (float)lights[i]->diffuse.b/255.0f;
+            tempFloat[3] = (float)lights[i]->diffuse.a/255.0f;
+            SetShaderValue(shader, lightsLocs[i][5], tempFloat, UNIFORM_VEC4);
+            //glUniform4f(lightsLocs[i][5], (float)lights[i]->diffuse.r/255, (float)lights[i]->diffuse.g/255, (float)lights[i]->diffuse.b/255, (float)lights[i]->diffuse.a/255);
+            
+            tempFloat[0] = lights[i]->intensity;
+            SetShaderValue(shader, lightsLocs[i][6], tempFloat, UNIFORM_FLOAT);
+            
+            switch (lights[i]->type)
+            {
+                case LIGHT_POINT:
+                {
+                    tempFloat[0] = lights[i]->position.x;
+                    tempFloat[1] = lights[i]->position.y;
+                    tempFloat[2] = lights[i]->position.z;
+                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+
+                    tempFloat[0] = lights[i]->radius;
+                    SetShaderValue(shader, lightsLocs[i][4], tempFloat, UNIFORM_FLOAT);
+            
+                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+                    //glUniform1f(lightsLocs[i][4], lights[i]->radius);
+                } break;
+                case LIGHT_DIRECTIONAL:
+                {
+                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+                    VectorNormalize(&direction);
+                    
+                    tempFloat[0] = direction.x;
+                    tempFloat[1] = direction.y;
+                    tempFloat[2] = direction.z;
+                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+                    
+                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+                } break;
+                case LIGHT_SPOT:
+                {
+                    tempFloat[0] = lights[i]->position.x;
+                    tempFloat[1] = lights[i]->position.y;
+                    tempFloat[2] = lights[i]->position.z;
+                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+                    
+                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+                    
+                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+                    VectorNormalize(&direction);
+                    
+                    tempFloat[0] = direction.x;
+                    tempFloat[1] = direction.y;
+                    tempFloat[2] = direction.z;
+                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+                    
+                    tempFloat[0] = lights[i]->coneAngle;
+                    SetShaderValue(shader, lightsLocs[i][7], tempFloat, UNIFORM_FLOAT);
+                    //glUniform1f(lightsLocs[i][7], lights[i]->coneAngle);
+                } break;
+                default: break;
+            }
+        }
+        else
+        {
+            tempInt[0] = 0;
+            SetShaderValue(shader, lightsLocs[i][0], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][0], 0);   // Light disabled
+        }
+    }
+}
+
+// Calculate vector length
+float VectorLength(const Vector3 v)
+{
+    float length;
+
+    length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+
+    return length;
+}
+
+// Normalize provided vector
+void VectorNormalize(Vector3 *v)
+{
+    float length, ilength;
+
+    length = VectorLength(*v);
+
+    if (length == 0.0f) length = 1.0f;
+
+    ilength = 1.0f/length;
+
+    v->x *= ilength;
+    v->y *= ilength;
+    v->z *= ilength;
+}
+
+// Substract two vectors
+Vector3 VectorSubtract(Vector3 v1, Vector3 v2)
+{
+    Vector3 result;
+
+    result.x = v1.x - v2.x;
+    result.y = v1.y - v2.y;
+    result.z = v1.z - v2.z;
+
+    return result;
+}
 
 int main(int argc, char** argv) {
   mrb_state *mrb;
