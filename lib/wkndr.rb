@@ -111,15 +111,15 @@ end
       mab = Markaby::Builder.new
 
       mab.html5 do
-      #  head { title "Boats.com" }
-      #  body do
-      #    h1 "Boats.com has great deals"
-      #    ul do
-      #      li "$49 for a canoe"
-      #      li "$39 for a raft"
-      #      li "$29 for a huge boot that floats and can fit 5 people"
-      #    end
-      #  end
+        mab.head { mab.title "Boats.com" }
+        mab.body do
+          mab.h1 "Boats.com has great deals"
+          mab.ul do
+            mab.li "$49 for a canoe"
+            mab.li "$39 for a raft"
+            mab.li "$29 for a huge boot that floats and can fit 5 people"
+          end
+        end
       end
       #mab.div do
       #end
