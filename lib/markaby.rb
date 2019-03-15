@@ -249,12 +249,12 @@ module Builder
         when ::Hash
           attrs ||= {}
           attrs.merge!(arg)
-      log!(:argjasasas, arg, attrs)
+      #log!(:argjasasas, arg, attrs)
         when nil
           attrs ||= {}
           attrs.merge!({:nil => true}) if explicit_nil_handling?
         else
-      log!(:argarg, arg)
+      #log!(:argarg, arg)
           text ||= ''
           text << arg.to_s
         end
@@ -362,7 +362,7 @@ module Builder
     end
 
     def _escape_attribute(text)
-      log!(:escappapa, text, _escape(text))
+      #log!(:escappapa, text, _escape(text))
       _escape(text)
       #.gsub("\n", "&#10;").gsub("\r", "&#13;").
       #  gsub(%r{"}, '&quot;') # " WART
@@ -714,17 +714,17 @@ module Builder
 
     # Insert the attributes (given in the hash).
     def _insert_attributes(attrs, order=[])
-        log!(:ins_attr, attrs)
+        #log!(:ins_attr, attrs)
       return if attrs.nil?
       order.each do |k|
         v = attrs[k]
-        log!(:seta, k, v)
+        #log!(:seta, k, v)
         @target << %{ #{k}=#{@quote}#{_attr_value(v)}#{@quote}} if v
       end
       attrs.each do |k, v|
-        log!(:setb, k, v)
+        #log!(:setb, k, v)
         @target << %{ #{k}=#{@quote}#{_attr_value(v)}#{@quote}} unless order.member?(k) # " WART
-        log!(:setb_targ, @target, _attr_value(v))
+        #log!(:setb_targ, @target, _attr_value(v))
       end
     end
 
@@ -733,9 +733,9 @@ module Builder
       when ::Symbol
         value.to_s
       else
-      log!(:in_attr_v, value)
+      #log!(:in_attr_v, value)
         outattr = _escape_attribute(value.to_s)
-        log!(:out_attr_v, outattr)
+        #log!(:out_attr_v, outattr)
         outattr
       end
     end
@@ -1334,12 +1334,12 @@ module Markaby
     def tag!(tag, *args, &block)
       ele_id = nil
 
-log!("WTF", args)
+#log!("WTF", args)
 
       # TODO: Move this logic to the tagset so that the tagset itself can validate + raise when invalid
       if @auto_validation && @tagset
         if !@tagset.tagset.has_key?(tag.to_sym)
-        log!(@tagset.tagset.keys, tag)
+        #log!(@tagset.tagset.keys, tag)
           raise InvalidXhtmlError, "#{@tagset} #{tagset} no element `#{tag}' for #{tagset.doctype}"
         elsif args.last.respond_to?(:to_hash) || args.last.class == Hash
           attrs = args.last#.to_hash
@@ -1420,7 +1420,7 @@ log!("WTF", args)
       else
 #log!(instance_methods_for(::Builder::XmlMarkup))
 #log!(instance_methods_for(::Builder::XmlMarkup))
-      log!(:mmissing, sym, args)
+      #log!(:mmissing, sym, args)
         super
       end
     end

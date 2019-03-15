@@ -1,5 +1,10 @@
 #
 
+#Wkndr.camp {
+#  get '/live' do
+#  end
+#}
+
 Wkndr.play { |gl|
   gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
  
