@@ -74,6 +74,7 @@
 
 // kit1zx stuff
 #include "box.h"
+#include "markaby.h"
 #include "globals.h"
 #include "platform_bits.h"
 #include "game_loop.h"
@@ -1850,6 +1851,8 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, main_menu, NULL);
 
   eval_static_libs(mrb, box, NULL);
+
+  eval_static_libs(mrb, markaby, NULL);
 
   eval_static_libs(mrb, stack_blocker, NULL);
 
