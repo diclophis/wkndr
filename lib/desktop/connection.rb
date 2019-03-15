@@ -393,8 +393,8 @@ class Connection
     #NOTE: this is the server to client side
     self.write_ws_response!(sec_websocket_key) {
       @t = UV::Timer.new
-      @t.start(1000, 1000) {
-        log!(:send_ping)
+      @t.start(100, 100) {
+        #log!(:send_ping)
         self.write_typed({"c" => "ping"})
       }
     }
