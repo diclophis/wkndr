@@ -408,39 +408,41 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 #endif
 
+  fprintf(stderr, "wtf show!\n");
+
   return self;
 }
 
 
-mrb_value global_parse(mrb_state* mrb, mrb_value self) {
-  mrb_value mruby_code;
-
-  mrb_get_args(mrb, "o", &mruby_code);
-
-  const char *foo = mrb_string_value_cstr(mrb, &mruby_code);
-  int len = mrb_string_value_len(mrb, mruby_code);
-
-  fprintf(stderr, "gonna parse this %d\n", len);
-
-  //mrbc_context *detective_file = mrbc_context_new(mrb);
-  //mrbc_filename(mrb, detective_file, "Wkndrfile");
-  mrb_value ret;
-  //ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
-  //ret = mrb_load_string(mrb, foo);
-  ret = mrb_load_string(mrb, "");
-  //ret = mrb_load_string_cxt(mrb, "", detective_file);
-  fprintf(stderr, "DONNNNNE %d\n", len);
-
-  if (mrb->exc) {
-    fprintf(stderr, "Exception in XXX");
-    mrb_print_error(mrb);
-  }
-  //mrbc_context_free(mrb, detective_file);
-
-  fprintf(stderr, "BIIIIP %d\n", len);
-
-  return mrb_fixnum_value(len);
-}
+//mrb_value global_parse(mrb_state* mrb, mrb_value self) {
+//  mrb_value mruby_code;
+//
+//  mrb_get_args(mrb, "o", &mruby_code);
+//
+//  const char *foo = mrb_string_value_cstr(mrb, &mruby_code);
+//  int len = mrb_string_value_len(mrb, mruby_code);
+//
+//  fprintf(stderr, "gonna parse this %d\n", len);
+//
+//  //mrbc_context *detective_file = mrbc_context_new(mrb);
+//  //mrbc_filename(mrb, detective_file, "Wkndrfile");
+//  mrb_value ret;
+//  //ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
+//  //ret = mrb_load_string(mrb, foo);
+//  ret = mrb_load_string(mrb, "");
+//  //ret = mrb_load_string_cxt(mrb, "", detective_file);
+//  fprintf(stderr, "DONNNNNE %d\n", len);
+//
+//  if (mrb->exc) {
+//    fprintf(stderr, "Exception in XXX");
+//    mrb_print_error(mrb);
+//  }
+//  //mrbc_context_free(mrb, detective_file);
+//
+//  fprintf(stderr, "BIIIIP %d\n", len);
+//
+//  return mrb_fixnum_value(len);
+//}
 
 
 static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
@@ -1748,14 +1750,22 @@ Vector3 VectorSubtract(Vector3 v1, Vector3 v2)
 int main(int argc, char** argv) {
   mrb_state *mrb;
 
+  mrb_state *mrb_client;
+
   // initialize mruby
   if (!(mrb = mrb_open())) {
     fprintf(stderr,"%s: could not initialize mruby\n",argv[0]);
     return -1;
   }
 
-  mousexyz = mrb_ary_new(mrb);
-  pressedkeys = mrb_ary_new(mrb);
+  // initialize mruby
+  if (!(mrb_client = mrb_open())) {
+    fprintf(stderr,"%s: could not initialize mruby client\n",argv[0]);
+    return -1;
+  }
+
+  mousexyz = mrb_ary_new(mrb_client);
+  pressedkeys = mrb_ary_new(mrb_client);
 
   mrb_value args = mrb_ary_new(mrb);
   int i;
@@ -1776,7 +1786,6 @@ int main(int argc, char** argv) {
   mrb_define_class_method(mrb, fast_tty, "close", fast_tty_close, MRB_ARGS_REQ(2));
   mrb_define_class_method(mrb, fast_tty, "resize", fast_tty_resize, MRB_ARGS_REQ(3));
 
-
   struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
   mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
@@ -1785,77 +1794,87 @@ int main(int argc, char** argv) {
   //struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
 
   struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
+  struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
   mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
-  struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
-  mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
-  mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
-  mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
-  mrb_define_method(mrb, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
-  mrb_define_method(mrb, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
-  mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
-  mrb_define_method(mrb, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
-  mrb_define_method(mrb, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
-  mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
+  struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);
+  mrb_define_method(mrb_client, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb_client, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
+  mrb_define_method(mrb_client, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
+  mrb_define_method(mrb_client, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb_client, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
+  mrb_define_method(mrb_client, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb_client, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb_client, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
+  mrb_define_method(mrb_client, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb_client, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb_client, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb_client, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb_client, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
+  mrb_define_method(mrb_client, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
+  mrb_define_method(mrb_client, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
 
   // class Model
-  struct RClass *model_class = mrb_define_class(mrb, "Model", mrb->object_class);
-  mrb_define_method(mrb, model_class, "initialize", model_initialize, MRB_ARGS_REQ(3));
-  mrb_define_method(mrb, model_class, "draw", model_draw, MRB_ARGS_NONE());
-  mrb_define_method(mrb, model_class, "deltap", model_deltap, MRB_ARGS_REQ(3));
-  mrb_define_method(mrb, model_class, "deltar", model_deltar, MRB_ARGS_REQ(4));
-  mrb_define_method(mrb, model_class, "deltas", model_deltas, MRB_ARGS_REQ(3));
-  mrb_define_method(mrb, model_class, "yawpitchroll", model_yawpitchroll, MRB_ARGS_REQ(6));
-  mrb_define_method(mrb, model_class, "label", model_label, MRB_ARGS_REQ(1));
+  struct RClass *model_class = mrb_define_class(mrb_client, "Model", mrb->object_class);
+  mrb_define_method(mrb_client, model_class, "initialize", model_initialize, MRB_ARGS_REQ(3));
+  mrb_define_method(mrb_client, model_class, "draw", model_draw, MRB_ARGS_NONE());
+  mrb_define_method(mrb_client, model_class, "deltap", model_deltap, MRB_ARGS_REQ(3));
+  mrb_define_method(mrb_client, model_class, "deltar", model_deltar, MRB_ARGS_REQ(4));
+  mrb_define_method(mrb_client, model_class, "deltas", model_deltas, MRB_ARGS_REQ(3));
+  mrb_define_method(mrb_client, model_class, "yawpitchroll", model_yawpitchroll, MRB_ARGS_REQ(6));
+  mrb_define_method(mrb_client, model_class, "label", model_label, MRB_ARGS_REQ(1));
 
   // class Cube
-  struct RClass *cube_class = mrb_define_class(mrb, "Cube", model_class);
-  mrb_define_method(mrb, cube_class, "initialize", cube_initialize, MRB_ARGS_REQ(4));
+  struct RClass *cube_class = mrb_define_class(mrb_client, "Cube", model_class);
+  mrb_define_method(mrb_client, cube_class, "initialize", cube_initialize, MRB_ARGS_REQ(4));
 
   // class Sphere
-  struct RClass *sphere_class = mrb_define_class(mrb, "Sphere", model_class);
-  mrb_define_method(mrb, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
+  struct RClass *sphere_class = mrb_define_class(mrb_client, "Sphere", model_class);
+  mrb_define_method(mrb_client, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
-  eval_static_libs(mrb, window, NULL);
+  eval_static_libs(mrb_client, window, NULL);
 
   eval_static_libs(mrb, thor, NULL);
+  eval_static_libs(mrb_client, thor, NULL);
 
   eval_static_libs(mrb, wkndr, NULL);
+  eval_static_libs(mrb_client, wkndr, NULL);
 
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+  struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
-  mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
-  mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
+  //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
+
+  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
+  mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
+
+  //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
-  mrb_define_method(mrb, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
-  mrb_define_method(mrb, socket_stream_class, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, socket_stream_class, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
+  struct RClass *socket_stream_class_client = mrb_define_class(mrb_client, "SocketStream", mrb_client->object_class);
+  mrb_define_method(mrb_client, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
+  mrb_define_method(mrb_client, socket_stream_class, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb_client, socket_stream_class, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, globals, NULL);
+  eval_static_libs(mrb_client, globals, NULL);
 
-  eval_static_libs(mrb, socket_stream, NULL);
+  eval_static_libs(mrb_client, socket_stream, NULL);
 
-  eval_static_libs(mrb, platform_bits, NULL);
+  //eval_static_libs(mrb, platform_bits, NULL);
 
-  eval_static_libs(mrb, game_loop, NULL);
+  eval_static_libs(mrb_client, game_loop, NULL);
 
-  eval_static_libs(mrb, main_menu, NULL);
+  //eval_static_libs(mrb, main_menu, NULL);
 
-  eval_static_libs(mrb, box, NULL);
+  eval_static_libs(mrb_client, box, NULL);
 
   eval_static_libs(mrb, markaby, NULL);
 
   eval_static_libs(mrb, stack_blocker, NULL);
-
+  eval_static_libs(mrb_client, stack_blocker, NULL);
 
 #ifdef TARGET_DESKTOP
   eval_static_libs(mrb, base, NULL);
@@ -1863,13 +1882,26 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
 
+  if (i == 1) {
+    fprintf(stderr,"start_server 0\n");
+
+    mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 0);
+    if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
+  } else {
+    mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 1, args);
+  }
 #endif
 
-  if (i == 1) {
-    mrb_funcall(mrb, mrb_obj_value(thor_class), "start", 0);
-  } else {
-    mrb_funcall(mrb, mrb_obj_value(thor_class), "start", 1, args);
-  }
+  //if (i == 1) {
+  //  fprintf(stderr,"start 0\n");
+
+  //  mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 0);
+  //} else {
+  //  mrb_funcall(mrb, mrb_obj_value(thor_class_client), "start", 1, args);
+  //}
+
+  //mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "play", 0);
+  mrb_funcall(mrb, mrb_obj_value(thor_class), "play", 0);
 
   mrb_close(mrb);
 

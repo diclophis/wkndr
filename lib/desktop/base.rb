@@ -1,14 +1,6 @@
 #
 
 class Wkndr
-  ##desc "server [DIRECTORY]", "services given directory over http"
-  def self.server(directory = "public")
-    if File.exists?(directory)
-      log!(:StartServer)
-      Server.run!(directory)
-    end
-  end
-
   def self.show!(run_loop_blocker = nil)
     running = true
     #TODO: server FPS
@@ -21,37 +13,35 @@ class Wkndr
       running = false
     }
 
-    if running
-      timer = UV::Timer.new
-      timer.start(tick_interval_ms, tick_interval_ms) { |x|
-        begin
-          if running && run_loop_blocker.running
-            if ((ticks) % 1000) == 0
-              log!(:idle, ticks)
-            end
-
-            run_loop_blocker.signal
-          else
-            if exit_counter > 0
-              timer.stop
-              run_loop_blocker.shutdown
-              #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
-              #UV.default_loop.close
-              UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
-            else
-              all_halting = run_loop_blocker.halt!
-              exit_counter += 1
-            end
+    timer = UV::Timer.new
+    timer.start(tick_interval_ms, tick_interval_ms) { |x|
+      begin
+        if running && run_loop_blocker.running
+          if ((ticks) % 1000) == 0
+            log!(:idle, ticks)
           end
 
-          ticks += 1
-        rescue => e
-          log!(:base_running_timer_tick_error, e, e.backtrace)
+          run_loop_blocker.signal
+        else
+          if exit_counter > 0
+            timer.stop
+            run_loop_blocker.shutdown
+            #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
+            #UV.default_loop.close
+            UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
+          else
+            all_halting = run_loop_blocker.halt!
+            exit_counter += 1
+          end
         end
-      }
 
-      UV.run
-    end
+        ticks += 1
+      rescue => e
+        log!(:base_running_timer_tick_error, e, e.backtrace)
+      end
+    }
+
+    UV.run
   end
 
 #NOTE: TODO
