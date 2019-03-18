@@ -294,6 +294,26 @@ KUBEADM_RESET
 apiVersion: v1
 kind: Service
 metadata:
+  name: "wkndr-headless"
+spec:
+  clusterIP: "None"
+  ports:
+  - port: 8111
+    name: nginx-apt-proxy
+    protocol: TCP
+  - port: 8080
+    name: apache2
+    protocol: TCP
+  - port: 5000
+    name: docker-registry
+    protocol: TCP
+  selector:
+    name: "wkndr-app"
+...
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: "wkndr-app"
 spec:
   ports:
