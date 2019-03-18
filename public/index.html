@@ -2,28 +2,26 @@
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>kit1zx</title>
+    <title>wkndr.computer</title>
     <link rel="stylesheet" href="xterm-dist/xterm.css" />
     <style>
       div, canvas { margin: 0; padding: 0; }
       #wkndr-body { background-color: black; margin: 0; }
       #wkndr-graphics-container { position: absolute; left: 0; width: calc(50% - 2em); height: calc(100% - 2em); margin: 1em; }
       #wkndr-terminal-container { position: absolute; left: 50%; width: calc(50% - 1em); height: calc(100% - 2em); margin: 1em 0 1em 1em; }
-      #wkndr-graphics { width: 100%; height: 100%; position: absolute; }
-      #wkndr-terminal { width: 100%; height: 100%; position: absolute; }
+      .maxwh { width: 100%; height: 100%; position: absolute; }
     </style>
   </head>
   <body id="wkndr-body">
     <div id="wkndr-terminal-container">
-      <div id="wkndr-terminal"></div>
+      <div id="wkndr-terminal" class="maxwh"></div>
     </div>
     <div id="wkndr-graphics-container" oncontextmenu="event.preventDefault()">
-      <canvas id="wkndr-graphics"></canvas>
+      <canvas id="canvas" class="maxwh"></canvas>
     </div>
-    <script type='text/javascript' src='xterm-dist/xterm.js'></script>
-    <script type='text/javascript' src='xterm-dist/fit/fit.js'></script>
-    <script type='text/javascript' src='index.js'></script>
+    <script src='xterm-dist/xterm.js'></script>
+    <script src='xterm-dist/fit/fit.js'></script>
+    <script src='index.js'></script>
     <script async type="text/javascript" src="wkndr.js"></script>
   </body>
 </html>

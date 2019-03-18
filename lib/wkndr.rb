@@ -103,6 +103,45 @@ end
     Wkndr.play(stack, nil)
   end
 
+  desc "html", ""
+  def html
+    log!(:html)
+
+    begin
+      mab = Markaby::Builder.new
+
+      mab.html5 do
+        mab.head { mab.title "Boats.com" }
+        mab.body do
+          mab.h1 "Boats.com has great deals"
+          mab.ul do
+            mab.li "$49 for a canoe"
+            mab.li "$39 for a raft"
+            mab.li "$29 for a huge boot that floats and can fit 5 people"
+          end
+        end
+      end
+      #mab.div do
+      #end
+    rescue => e
+      log!(:html2, e)
+    end
+
+    log!(mab.to_s)
+
+    #stack = StackBlocker.new
+    #stack.fps = 60
+
+    #gl = GameLoop.new
+    #stack.up(gl)
+
+    #server = Wkndr.server
+    #stack.up(server)
+
+    #Wkndr.play(stack, gl)
+  end
+  method_added(:html) #TODO???
+
   desc "something", ""
   def something
     log!(:something)
@@ -122,5 +161,6 @@ end
     Wkndr.play(stack, gl)
   end
   method_added(:something) #TODO???
+
   default_command :something
 end

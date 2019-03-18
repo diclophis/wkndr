@@ -63,7 +63,8 @@ RAYLIB_TARGET_DEFINED="PLATFORM_DESKTOP"
 ifeq ($(TARGET),desktop)
   CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
 else
-  EMSCRIPTEN_FLAGS=-s ASSERTIONS=2 -s NO_EXIT_RUNTIME=0 -g4 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1
+  #EMSCRIPTEN_FLAGS=-s ASSERTIONS=2 -s NO_EXIT_RUNTIME=0 -g4 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+  EMSCRIPTEN_FLAGS=-s ASSERTIONS=0 -s NO_EXIT_RUNTIME=0 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -Imruby/include -Iraylib-src -I$(build)
 endif
 
@@ -75,7 +76,7 @@ $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://wkndr.computer/ #--shell-file shell.html --preload-file resources
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://wkndr.computer/ --preload-file resources
 endif
 
 $(build)/test.yml: $(target) config.ru
