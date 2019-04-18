@@ -44,7 +44,7 @@ class Server
       }
 
       update_utmp = Proc.new {
-        utmp_file = "/var/run/utmp"
+        utmp_file = "/var/run/utmpx"
         @fsev = UV::FS::Event.new
         @fsev.start(utmp_file, 0) do |path, event|
           if event == :change

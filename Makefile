@@ -1,6 +1,7 @@
 ## Makefile
 
 TARGET ?= desktop
+TARGET_OS ?= $(shell uname)
 
 ifeq ($(TARGET),desktop)
   product=wkndr.mruby
@@ -56,12 +57,17 @@ objects += $(raylib_static_lib)
 ifeq ($(TARGET),desktop)
   LDFLAGS=-lm -lpthread -ldl -lX11 -lpthread -lssl -lcrypto -lutil
   #ifeq ($(TARGET),desktop)
-  #LDFLAGS=-lm -lpthread -ldl -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+  ifeq ($(TARGET_OS),Darwin)
+    LDFLAGS=-lm -lpthread -ldl -lssl -lcrypto -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+  endif
 endif
 
 RAYLIB_TARGET_DEFINED="PLATFORM_DESKTOP"
 ifeq ($(TARGET),desktop)
   CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
+  ifeq ($(TARGET_OS),Darwin)
+    CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
+  endif
 else
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=2 -s NO_EXIT_RUNTIME=0 -g4 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   EMSCRIPTEN_FLAGS=-s ASSERTIONS=0 -s NO_EXIT_RUNTIME=0 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
