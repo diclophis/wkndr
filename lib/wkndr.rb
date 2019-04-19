@@ -62,6 +62,9 @@ class Wkndr < Thor
           }
           gl.twod {
             gl.draw_fps(0, 0)
+            gl.button(50.0, 50.0, 250.0, 20.0, "zzz") {
+              gl.emit({"z" => "zzz"})
+            }
           }
         }
       }
@@ -72,7 +75,7 @@ class Wkndr < Thor
 begin
       block.call(@gl)
 rescue => e
-  #log!(:e, e, e.backtrace)
+  log!(:e, e, e.backtrace)
   @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
   @gl.update { |global_time, delta_time|
     @gl.drawmode {

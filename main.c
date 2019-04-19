@@ -91,6 +91,7 @@
 #include "start.h"
 #include "client.h"
 #include "wkndr.h"
+#include "theseus.h"
 
 
 //server stuff
@@ -1852,6 +1853,8 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, thor, NULL);
 
   eval_static_libs(mrb, wkndr, NULL);
+
+  eval_static_libs(mrb, theseus, NULL);
 
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
 
