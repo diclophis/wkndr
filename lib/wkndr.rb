@@ -51,6 +51,53 @@ class Wkndr < Thor
     #  Wkndr.show! @stack
     #end
     #Wkndr.show!($stack)
+
+    log!(:play, stack, gl, block)
+
+    if stack && !@stack
+      @stack = stack
+    end
+
+    if gl && !@gl
+      @gl = gl
+      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+      gl.update { |global_time, delta_time|
+        gl.drawmode {
+          gl.threed {
+          }
+          gl.twod {
+            gl.draw_fps(0, 0)
+            gl.button(50.0, 50.0, 250.0, 20.0, "zzz") {
+              gl.emit({"z" => "zzz"})
+            }
+          }
+        }
+      }
+    end
+
+    if !block && @stack && @ql
+    elsif block && @gl
+      begin
+        block.call(@gl)
+      rescue => e
+        log!(:e, e, e.backtrace)
+        @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+        @gl.update { |global_time, delta_time|
+          @gl.drawmode {
+            @gl.threed {
+            }
+            @gl.twod {
+              @gl.draw_fps(0, 0)
+              @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
+                @gl.emit({"c" => "tty"})
+              }
+            }
+          }
+        }
+      end
+    else
+      Wkndr.show! @stack
+    end
   end
 
   desc "server", ""

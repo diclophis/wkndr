@@ -75,11 +75,14 @@ class Connection
         "Content-Type: text/css\r\n"
       when "html"
         "Content-Type: text/html\r\n"
+      when "txt"
+        "Content-Type: text/plain\r\n"
       else
         ""
       end
 
-    header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
+    #header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
+    header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\n#{content_type}\r\n"
     self.socket.write(header) {
       max_chunk = (self.socket.recv_buffer_size / 2).to_i
       sending = false
@@ -115,6 +118,7 @@ class Connection
             sending = false
           end
         else
+          log!(:close_fd_close)
           fd.close
           idle.stop
           self.processing_handshake = true
@@ -232,17 +236,23 @@ class Connection
           if actual_wkndrfile.is_a?(UVError)
             log!(:desktop_connection_wkndrfile_path_error, actual_wkndrfile)
           else
-            ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, 0)
-            wkread = ffff.read
-            self.write_typed({"p" => wkread})
-            ffff.close
-            @fsev = UV::FS::Event.new
-            @fsev.start(actual_wkndrfile, 0) do |path, event|
-              if event == :change
-                @fsev.stop
-                subscribe_to_wkndrfile(wkndrfile_path)
-              end
-            end
+            ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+            #do |ffff|
+              wkread = ffff.read(102400)
+              log!(:ffff, ffff)
+              #do |wkread|
+                log!(:wkread_length, wkread.length)
+                self.write_typed({"p" => wkread})
+                ffff.close
+                @fsev = UV::FS::Event.new
+                @fsev.start(actual_wkndrfile, 0) do |path, event|
+                  if event == :change
+                    @fsev.stop
+                    subscribe_to_wkndrfile(wkndrfile_path)
+                  end
+                end
+              #end
+            #end
           end
         rescue => e
           log!(:desktop_connection_wkndrfile_realpath_error, e, e.backtrace)

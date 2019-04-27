@@ -11,7 +11,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#if defined(__MACH__) || defined(__APPLE__)
+#include <util.h>
+#else
 #include <pty.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,6 +91,7 @@
 #include "start.h"
 #include "client_side.h"
 #include "wkndr.h"
+#include "theseus.h"
 
 
 //server stuff
@@ -113,6 +119,24 @@
 
 // other stuff
 #define FLT_MAX 3.40282347E+38F
+
+
+#if defined(__MACH__) || defined(__APPLE__)
+int ptsname_r(int fd, char* buf, size_t buflen) {
+  char *name = ptsname(fd);
+  if (name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (strlen(name) + 1 > buflen) {
+    errno = ERANGE;
+    return -1;
+  }
+  strncpy(buf, name, buflen);
+  return 0;
+}
+#endif
+
 
 #define MAX_LIGHTS 1 // Max lights supported by standard shader
 // Light type
@@ -1308,7 +1332,8 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
 
 static mrb_value fast_utmp_utmps(mrb_state* mrb, mrb_value self)
 {
-#ifdef TARGET_DESKTOP
+//TODO: fix when on back on linux box
+#ifdef TARGET_DESKTOP_X
 
   //mrb_value rets = mrb_ary_new(mrb);
   mrb_value outbound_utmp = mrb_hash_new(mrb);
@@ -1853,6 +1878,7 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, wkndr, NULL);
   eval_static_libs(mrb_client, wkndr, NULL);
 
+  //TODO:!!!!
   //struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
   //struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
   //struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
@@ -1860,6 +1886,14 @@ int main(int argc, char** argv) {
   //struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
   //mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
   //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
+
+  eval_static_libs(mrb, theseus, NULL);
+
+  struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+
+  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
+  mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   struct RClass *socket_stream_class_client = mrb_define_class(mrb_client, "SocketStream", mrb_client->object_class);

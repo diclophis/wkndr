@@ -34,8 +34,13 @@ class SocketStream
           when 1,2
             self.write_tty(cmsg)
           when "p"
-            log!(:cmsg, cmsg)
-            did_parse = Kernel.eval(cmsg)
+            log!(:cmsg, cmsg.length, cmsg)
+            begin
+              did_parse = Kernel.eval(cmsg)
+              log!(:cmsg_parsed_ok, did_parse)
+            rescue => e
+              log!(:cmsg_bad, e)
+            end
 
         else
           @got_bytes_block.call(cmsg)
