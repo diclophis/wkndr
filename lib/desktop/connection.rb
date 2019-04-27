@@ -75,11 +75,14 @@ class Connection
         "Content-Type: text/css\r\n"
       when "html"
         "Content-Type: text/html\r\n"
+      when "txt"
+        "Content-Type: text/plain\r\n"
       else
         ""
       end
 
-    header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
+    #header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
+    header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\n#{content_type}\r\n"
     self.socket.write(header) {
       max_chunk = (self.socket.recv_buffer_size / 2).to_i
       sending = false
@@ -115,6 +118,7 @@ class Connection
             sending = false
           end
         else
+          log!(:close_fd_close)
           fd.close
           idle.stop
           self.processing_handshake = true
