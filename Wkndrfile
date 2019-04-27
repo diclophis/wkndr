@@ -3,47 +3,48 @@
 #Wkndr.camp {
 #}
 
-# Wkndr.play { |gl|
-#   gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
-#  
-#   total_msg = 0
-#   cube = Cube.new(1.0, 1.0, 1.0, 20.0)
-#   speed = 100.0
-# 
-#   gl.get('/') {
-#     begin
-#       mab = Markaby::Builder.new
-#       mab.html5 do
-#         mab.head { mab.title "Boats.com" }
-#         mab.body do
-#           mab.h1 "Boats.com has great deals"
-#           mab.ul do
-#             mab.li "$49 for a canoe"
-#             mab.li "$39 for a raft"
-#             mab.li "$29 for a huge boot that floats and can fit 5 people"
-#           end
-#         end
-#       end
-#     rescue => e
-#       log!(:html2, e)
-#     end
-#   }
-# 
-#   gl.event { |typed_msg|
-#     total_msg += 1
-#   }
-# 
-#   gl.update { |global_time, delta_time|
-#     gl.drawmode {
-#       gl.threed {
-#         cube.deltar(Math.sin(global_time * 1.0) * 3.0, Math.sin(-global_time) * 5.0, 1.0, global_time * speed)
-#         cube.draw(true)
-#       }
-#       gl.twod {
-#         gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}") {
-#           gl.emit({"c" => "tty"})
-#         }
-#       }
-#     }
-#   }
-# }
+Wkndr.play { |gl|
+  gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
+ 
+  total_msg = 0
+  cube = Cube.new(1.0, 1.0, 1.0, 20.0)
+  speed = 100.0
+
+  #gl.get('/') {
+  #  begin
+  #    mab = Markaby::Builder.new
+  #    mab.html5 do
+  #      mab.head { mab.title "Boats.com" }
+  #      mab.body do
+  #        mab.h1 "Boats.com has great deals"
+  #        mab.ul do
+  #          mab.li "$49 for a canoe"
+  #          mab.li "$39 for a raft"
+  #          mab.li "$29 for a huge boot that floats and can fit 5 people"
+  #        end
+  #      end
+  #    end
+  #  rescue => e
+  #    log!(:html2, e)
+  #  end
+  #}
+
+  gl.event { |typed_msg|
+    total_msg += 1
+  }
+
+  gl.update { |global_time, delta_time|
+    gl.drawmode {
+      gl.threed {
+        cube.deltar(1.0, 1.0, 1.0, global_time * speed)
+        #cube.deltar(Math.sin(global_time * 1.0) * 3.0, Math.sin(-global_time) * 5.0, 1.0, global_time * speed)
+        cube.draw(true)
+      }
+      gl.twod {
+        gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{global_time}") {
+          gl.emit({"c" => "tty"})
+        }
+      }
+    }
+  }
+}

@@ -43,33 +43,33 @@ class Server
         self.on_connection(connection_error)
       }
 
-      update_utmp = Proc.new {
-        utmp_file = "/var/run/utmpx"
-        @fsev = UV::FS::Event.new
-        @fsev.start(utmp_file, 0) do |path, event|
-          if event == :change
-            @fsev.stop
+      #update_utmp = Proc.new {
+      #  utmp_file = "/var/run/utmpx"
+      #  @fsev = UV::FS::Event.new
+      #  @fsev.start(utmp_file, 0) do |path, event|
+      #    if event == :change
+      #      @fsev.stop
 
-            connections_by_pid = {}
-            @all_connections.each { |cn|
-              if cn.pid
-                connections_by_pid[cn.pid] = cn
-              end
-            }
+      #      connections_by_pid = {}
+      #      @all_connections.each { |cn|
+      #        if cn.pid
+      #          connections_by_pid[cn.pid] = cn
+      #        end
+      #      }
 
-            FastUTMP.utmps.each { |pts, username|
-              if fcn = connections_by_pid[pts]
-                logged_in_users_wkndrfile_path = ("~" + username)
-                fcn.subscribe_to_wkndrfile(logged_in_users_wkndrfile_path)
-              end
-            }
+      #      FastUTMP.utmps.each { |pts, username|
+      #        if fcn = connections_by_pid[pts]
+      #          logged_in_users_wkndrfile_path = ("~" + username)
+      #          fcn.subscribe_to_wkndrfile(logged_in_users_wkndrfile_path)
+      #        end
+      #      }
 
-            update_utmp.call
-          end
-        end
-      }
+      #      update_utmp.call
+      #    end
+      #  end
+      #}
 
-      update_utmp.call
+      #update_utmp.call
     }
   end
 

@@ -2,6 +2,8 @@
 
 class Wkndr
   def self.update_with_timer!(run_loop_blocker = nil)
+    log!(:install_timer, run_loop_blocker)
+
     running = true
     #TODO: server FPS
     fps = run_loop_blocker.fps
@@ -16,15 +18,15 @@ class Wkndr
     timer = UV::Timer.new
     timer.start(tick_interval_ms, tick_interval_ms) { |x|
       begin
-        log!(:timer)
+        #log!(:tick_timer, run_loop_blocker)
 
-        #if running && run_loop_blocker.running
-        #  if ((ticks) % 1000) == 0
-        #    log!(:idle, ticks)
-        #  end
+        if running && run_loop_blocker.running
+          if ((ticks) % 1000) == 0
+            log!(:idle, ticks)
+          end
 
-        #  run_loop_blocker.signal
-        #else
+          run_loop_blocker.cheese
+        else
         #  if exit_counter > 0
         #    timer.stop
         #    run_loop_blocker.shutdown
@@ -35,7 +37,7 @@ class Wkndr
         #    all_halting = run_loop_blocker.halt!
         #    exit_counter += 1
         #  end
-        #end
+        end
 
         ticks += 1
       rescue => e

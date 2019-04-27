@@ -3,9 +3,10 @@
 class StackBlocker
   attr_accessor :fps
 
-  def initialize
+  def initialize(for_server)
+    @for_server = for_server
     @stack = []
-    self.fps = 15
+    self.fps = 1
   end
 
   def up(o)
@@ -38,5 +39,15 @@ class StackBlocker
 
   def update(gt = 0, dt = 0)
     @stack.each { |srb| srb.update(gt, dt) }
+  end
+
+  def cheese
+    if @for_server
+    else
+      signal
+    end
+  #def signal(*args)
+  #  log!(:signal, args)
+  #  update
   end
 end

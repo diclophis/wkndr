@@ -52,7 +52,8 @@ class Wkndr < Thor
     #end
     #Wkndr.show!($stack)
 
-    log!(:play, stack, gl, block)
+    log!(:play, stack, gl, block, @stack, @gl)
+    #[:play, nil, nil, #<Proc:0x558e97dc72d0>, nil, nil]
 
     if stack && !@stack
       @stack = stack
@@ -67,7 +68,7 @@ class Wkndr < Thor
           }
           gl.twod {
             gl.draw_fps(0, 0)
-            gl.button(50.0, 50.0, 250.0, 20.0, "zzz") {
+            gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
               gl.emit({"z" => "zzz"})
             }
           }
@@ -75,28 +76,49 @@ class Wkndr < Thor
       }
     end
 
-    if !block && @stack && @ql
-    elsif block && @gl
-      begin
-        block.call(@gl)
-      rescue => e
-        log!(:e, e, e.backtrace)
-        @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-        @gl.update { |global_time, delta_time|
-          @gl.drawmode {
-            @gl.threed {
-            }
-            @gl.twod {
-              @gl.draw_fps(0, 0)
-              @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
-                @gl.emit({"c" => "tty"})
+    #if !block && @stack && @ql
+    #  log!(:WTF_CASE_IS_THIS)
+    #els
+
+#[:where_is_at_gl, #<Proc:0x55f2bef9ec80>, #<GameLoop:0x55f2bea85b10 @pointer=#<Object:0x55f2bea85ae0>, @emit_proc=#<Proc:0x55f2bea855d0>, @play_proc=#<Proc:0x55f2bea84850>>]
+#[:where_is_at_gl, #<GameLoop:0x55f2bea85b10 @pointer=#<Object:0x55f2bea85ae0>, @emit_proc=#<Proc:0x55f2bea855d0>, @play_proc=#<Proc:0x55f2bea84850>>]
+
+
+    if block
+      log!(:where_is_at_gl, block, @gl)
+
+      @cheeses ||= []
+      @cheeses << block
+
+      @proc_foop = block
+      @gl.update(&@proc_foop)
+    end
+
+    if @gl && @proc_foop
+      log!(:where_is_at_gl, @gl)
+      #[:where_is_at_gl, #<GameLoop:0x5624fc728b30 @pointer=#<Object:0x5624fc728b00>, @emit_proc=#<Proc:0x5624fc7285f0>, @play_proc=#<Proc:0x5624fc727870>>]
+
+        begin
+          @proc_foop.call(@gl)
+          #@gl.update(&block)
+        rescue => e
+          log!(:e, e, e.backtrace)
+          @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+          @gl.update { |global_time, delta_time|
+            @gl.drawmode {
+              @gl.threed {
+              }
+              @gl.twod {
+                @gl.draw_fps(0, 0)
+                @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
+                  @gl.emit({"c" => "tty"})
+                }
               }
             }
           }
-        }
-      end
-    else
-      Wkndr.show! @stack
+        end
+    #else
+    #  Wkndr.update_with_timer! @stack
     end
   end
 
@@ -150,33 +172,30 @@ class Wkndr < Thor
   end
   method_added(:html) #TODO???
 
-  desc "something", ""
-  def something
-    log!(:something)
+  #desc "something", ""
+  #def something
+  #  log!(:something)
 
-    #stack = StackBlocker.new
-    #stack.fps = 60
+  #  #stack = StackBlocker.new
+  #  #stack.fps = 60
 
-    #gl = GameLoop.new
-    #$stack.up(gl)
+  #  #gl = GameLoop.new
+  #  #$stack.up(gl)
 
-    #client = Wkndr.client(gl)
-    #$stack.up(client)
+  #  #client = Wkndr.client(gl)
+  #  #$stack.up(client)
 
-    #Wkndr.play(stack, gl)
-  end
-  method_added(:something) #TODO???
+  #  #Wkndr.play(stack, gl)
+  #end
+  #method_added(:something) #TODO???
 
-  def self.start_server(*args)
+  def self.start_server(stack, *args)
     log!(:StartServer)
 
-    stack = StackBlocker.new
     if server = Wkndr.server
       stack.up(server)
     end
 
     stack
   end
-
-  default_command :something
 end

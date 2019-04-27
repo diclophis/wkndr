@@ -104,6 +104,7 @@
 #include "kube.h"
 #include "connection.h"
 #include "server.h"
+#include "server_side.h"
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
 
@@ -1805,14 +1806,17 @@ int main(int argc, char** argv) {
   pressedkeys = mrb_ary_new(mrb_client);
 
   mrb_value args = mrb_ary_new(mrb_client);
+  mrb_value args_server = mrb_ary_new(mrb);
   int i;
 
   // convert argv into mruby strings
   for (i=1; i<argc; i++) {
     //fprintf(stderr, "wtf: %s\n", argv[i]);
     mrb_ary_push(mrb_client, args, mrb_str_new_cstr(mrb_client, argv[i]));
+    mrb_ary_push(mrb, args_server, mrb_str_new_cstr(mrb, argv[i]));
   }
 
+  mrb_define_global_const(mrb, "ARGV", args_server);
   mrb_define_global_const(mrb_client, "ARGV", args);
 
   struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
@@ -1830,9 +1834,9 @@ int main(int argc, char** argv) {
   // class PlatformBits
   //struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
 
-  //struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
-  //struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  //mrb_define_method(mrb, stack_blocker_class, "u", platform_bits_update, MRB_ARGS_NONE());
+  struct RClass *stack_blocker_class = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
+  struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
+  mrb_define_method(mrb_client, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);
@@ -1888,6 +1892,9 @@ int main(int argc, char** argv) {
   //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, theseus, NULL);
+  eval_static_libs(mrb_client, theseus, NULL);
+
+  eval_static_libs(mrb, stack_blocker, NULL);
 
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
 
@@ -1908,6 +1915,7 @@ int main(int argc, char** argv) {
 
   //eval_static_libs(mrb, platform_bits, NULL);
 
+  eval_static_libs(mrb, game_loop, NULL);
   eval_static_libs(mrb_client, game_loop, NULL);
 
   //eval_static_libs(mrb, main_menu, NULL);
@@ -1916,7 +1924,6 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, markaby, NULL);
 
-  eval_static_libs(mrb, stack_blocker, NULL);
   eval_static_libs(mrb_client, stack_blocker, NULL);
 
   mrb_value the_stack;
@@ -1939,7 +1946,7 @@ int main(int argc, char** argv) {
   //} else {
   //  the_stack = mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 1, args);
   //}
-#endif
+//#endif
 
 //  if (i == 1) {
 //    fprintf(stderr,"start 0\n");
@@ -1949,11 +1956,12 @@ int main(int argc, char** argv) {
 //    if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
 //  }
 
+//#ifdef TARGET_DESKTOP
+  mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
+#endif
+
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
-//#ifdef TARGET_DESKTOP
-//  mrb_value retret_stack = eval_static_libs(mrb, server_side, NULL);
-//#endif
 
   //  mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 0);
   //} else {

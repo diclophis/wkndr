@@ -221,6 +221,8 @@ class Connection
   end
 
   def subscribe_to_wkndrfile(wkndrfile_path)
+    log!(:subscribe_to_wkndrfile, wkndrfile_path)
+
     begin
       wkparts = wkndrfile_path.split("~", 2)  
 
@@ -236,6 +238,8 @@ class Connection
           if actual_wkndrfile.is_a?(UVError)
             log!(:desktop_connection_wkndrfile_path_error, actual_wkndrfile)
           else
+            log!(:subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
+
             ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
             #do |ffff|
               wkread = ffff.read(102400)
