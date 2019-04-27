@@ -1,7 +1,7 @@
 #
 
 class Wkndr
-  def self.show!(run_loop_blocker = nil)
+  def self.update_with_timer!(run_loop_blocker = nil)
     running = true
     #TODO: server FPS
     fps = run_loop_blocker.fps
@@ -9,38 +9,42 @@ class Wkndr
     tick_interval_ms = ((1.0/fps)*1000.0)
     ticks = 0
 
-    Signal.trap(:INT) { |signo|
-      running = false
-    }
+    #Signal.trap(:INT) { |signo|
+    #  running = false
+    #}
 
     timer = UV::Timer.new
     timer.start(tick_interval_ms, tick_interval_ms) { |x|
       begin
-        if running && run_loop_blocker.running
-          if ((ticks) % 1000) == 0
-            log!(:idle, ticks)
-          end
+        log!(:timer)
 
-          run_loop_blocker.signal
-        else
-          if exit_counter > 0
-            timer.stop
-            run_loop_blocker.shutdown
-            #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
-            #UV.default_loop.close
-            UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
-          else
-            all_halting = run_loop_blocker.halt!
-            exit_counter += 1
-          end
-        end
+        #if running && run_loop_blocker.running
+        #  if ((ticks) % 1000) == 0
+        #    log!(:idle, ticks)
+        #  end
+
+        #  run_loop_blocker.signal
+        #else
+        #  if exit_counter > 0
+        #    timer.stop
+        #    run_loop_blocker.shutdown
+        #    #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
+        #    #UV.default_loop.close
+        #    UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
+        #  else
+        #    all_halting = run_loop_blocker.halt!
+        #    exit_counter += 1
+        #  end
+        #end
 
         ticks += 1
       rescue => e
         log!(:base_running_timer_tick_error, e, e.backtrace)
       end
     }
+  end
 
+  def self.block!
     UV.run
   end
 

@@ -84,7 +84,7 @@
 #include "thor.h"
 #include "stack_blocker.h"
 #include "start.h"
-#include "client.h"
+#include "client_side.h"
 #include "wkndr.h"
 
 
@@ -389,23 +389,31 @@ void platform_bits_update_void(void* arg) {
   struct RObject* self = loop_data->self_pointer;
   mrb_value selfV = mrb_obj_value(self);
 
+  //mrb_iv_set(
+  //    mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
+  //    mrb_fixnum_value(write_packed_pointer));
+
   platform_bits_update(mrb, selfV);
 }
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
-#ifdef PLATFORM_WEB
-  mrb_value window_self;
+  mrb_value stack_self;
 
-  mrb_get_args(mrb, "o", &window_self);
+  mrb_get_args(mrb, "o", &stack_self);
 
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
   loop_data->mrb_pointer = mrb;
-  loop_data->self_pointer = mrb_obj_ptr(window_self);
+  loop_data->self_pointer = mrb_obj_ptr(stack_self);
 
+#ifdef PLATFORM_WEB
   emscripten_sample_gamepad_data();
 
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
+#endif
+
+#ifdef PLATFORM_DESKTOP
+  
 #endif
 
   fprintf(stderr, "wtf show!\n");
@@ -455,24 +463,28 @@ static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
 }
 
 
-static void eval_static_libs(mrb_state* mrb, ...) {
+static mrb_value eval_static_libs(mrb_state* mrb, ...) {
   va_list argp;
   va_start(argp, mrb);
 
   int end_of_static_libs = 0;
   uint8_t const *p;
 
+  mrb_value ret;
+
   while(!end_of_static_libs) {
     p = va_arg(argp, uint8_t const*);
     if (NULL == p) {
       end_of_static_libs = 1;
     } else {
-      mrb_load_irep(mrb, p);
+      ret = mrb_load_irep(mrb, p);
       if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
     }
   }
 
   va_end(argp);
+
+  return ret;
 }
 
 
@@ -1767,16 +1779,16 @@ int main(int argc, char** argv) {
   mousexyz = mrb_ary_new(mrb_client);
   pressedkeys = mrb_ary_new(mrb_client);
 
-  mrb_value args = mrb_ary_new(mrb);
+  mrb_value args = mrb_ary_new(mrb_client);
   int i;
 
   // convert argv into mruby strings
   for (i=1; i<argc; i++) {
     //fprintf(stderr, "wtf: %s\n", argv[i]);
-    mrb_ary_push(mrb, args, mrb_str_new_cstr(mrb, argv[i]));
+    mrb_ary_push(mrb_client, args, mrb_str_new_cstr(mrb_client, argv[i]));
   }
 
-  mrb_define_global_const(mrb, "ARGV", args);
+  mrb_define_global_const(mrb_client, "ARGV", args);
 
   struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
   mrb_define_class_method(mrb, fast_utmp, "utmps", fast_utmp_utmps, MRB_ARGS_NONE());
@@ -1793,9 +1805,9 @@ int main(int argc, char** argv) {
   // class PlatformBits
   //struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
 
-  struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
-  struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
+  //struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
+  //struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
+  //mrb_define_method(mrb, stack_blocker_class, "u", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);
@@ -1841,15 +1853,12 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, wkndr, NULL);
   eval_static_libs(mrb_client, wkndr, NULL);
 
-  struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
-  struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
-
-  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
+  //struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+  //struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
+  //struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
   //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
-
-  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
-  mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
-
+  //struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
+  //mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
   //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
@@ -1876,32 +1885,59 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, stack_blocker, NULL);
   eval_static_libs(mrb_client, stack_blocker, NULL);
 
+  mrb_value the_stack;
+  mrb_value the_stack_client;
+
 #ifdef TARGET_DESKTOP
   eval_static_libs(mrb, base, NULL);
+  eval_static_libs(mrb_client, base, NULL);
+
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
 
-  if (i == 1) {
-    fprintf(stderr,"start_server 0\n");
-
-    mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 0);
-    if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
-  } else {
-    mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 1, args);
-  }
-#endif
+  eval_static_libs(mrb_client, wslay_socket_stream, uv_io, NULL);
 
   //if (i == 1) {
-  //  fprintf(stderr,"start 0\n");
+  //  fprintf(stderr,"start_server 0\n");
+  //  the_stack = mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 0);
+  //  if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
+  //} else {
+  //  the_stack = mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 1, args);
+  //}
+#endif
+
+//  if (i == 1) {
+//    fprintf(stderr,"start 0\n");
+//  } else {
+//    fprintf(stderr,"start 1\n");
+//    mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 1, args);
+//    if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
+//  }
+
+  mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
+
+//#ifdef TARGET_DESKTOP
+//  mrb_value retret_stack = eval_static_libs(mrb, server_side, NULL);
+//#endif
 
   //  mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 0);
   //} else {
   //  mrb_funcall(mrb, mrb_obj_value(thor_class_client), "start", 1, args);
   //}
-
   //mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "play", 0);
-  mrb_funcall(mrb, mrb_obj_value(thor_class), "play", 0);
+
+  //loop_data_s* loop_data = arg;
+
+  //mrb_state* mrb = loop_data->mrb_pointer;
+  //struct RObject* self = loop_data->self_pointer;
+  //mrb_value selfV = mrb_obj_value(self);
+
+  ////mrb_iv_set(
+  ////    mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
+  ////    mrb_fixnum_value(write_packed_pointer));
+
+  //mrb_funcall(mrb, mrb_obj_value(thor_class), "show!", 1, the_stack);
 
   mrb_close(mrb);
 
