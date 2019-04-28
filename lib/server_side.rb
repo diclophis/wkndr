@@ -50,6 +50,16 @@ class ServerSide < Wkndr
   default_command :server
 end
 
-Wkndr.update_with_timer!(ServerSide.start(ARGV))
+server_side = ServerSide.start(ARGV)
+Wkndr.update_with_timer!(server_side)
 
+#begin
+#  #Wkndr.block!
+#  UV.run(UV::UV_RUN_NOWAIT)
+#rescue => e
+#  $stdout.write([:wtgasdasdasd, e].inspect)
+#  $stdout.write("\n\n\n")
+#end
+#
 #Wkndr.block!
+

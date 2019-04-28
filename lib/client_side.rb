@@ -5,6 +5,9 @@ def log!(*args, &block)
   yield if block
 end
 
+def spinlock!
+end
+
 class ClientSide < Wkndr
   def self.open_client!(stack, w, h)
     log!(:client, w, h)
@@ -49,7 +52,6 @@ class ClientSide < Wkndr
     stack = StackBlocker.new(false)
     #stack.fps = 60
 
-
     ClientSide.open_client!(stack, w.to_i, h.to_i)
 
     #Wkndr.play(stack, gl)
@@ -60,5 +62,17 @@ class ClientSide < Wkndr
   default_command :client
 end
 
-Wkndr.update_with_timer!(ClientSide.start(ARGV))
-Wkndr.block!
+client_side = ClientSide.start(ARGV)
+Wkndr.update_with_timer!(client_side)
+
+#if @server_side
+#  @client.up(@server_side)
+#end
+#@server_side.up(@client)
+
+##UV.run(UV::UV_RUN_ONCE)
+while true
+  Wkndr.block!
+end
+
+#UV.run #(UV::UV_RUN_ONCE)

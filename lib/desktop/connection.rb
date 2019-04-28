@@ -89,6 +89,8 @@ class Connection
 
       idle = UV::Timer.new #deadlocks??? UV::Idle.new
       idle.start(0, 16) do |x|
+        log!(:server_idle)
+
         if @halting
           idle.stop
         end
@@ -246,7 +248,8 @@ class Connection
               log!(:ffff, ffff)
               #do |wkread|
                 log!(:wkread_length, wkread.length)
-                self.write_typed({"p" => wkread})
+                #TODO:!!!!!!!!!
+                self.write_typed({"party" => wkread})
                 ffff.close
                 @fsev = UV::FS::Event.new
                 @fsev.start(actual_wkndrfile, 0) do |path, event|
@@ -303,6 +306,8 @@ class Connection
           channels = typed_msg.keys
 
           channels.each do |channel|
+            log!(:got_msg, typed_msg)
+
             #NOTE: channels are as follows
             #
             #  0 stdin of connected tty
@@ -321,7 +326,7 @@ class Connection
                   @pending_resize = typed_msg[channel]
                 end
 
-              when "p"
+              when "party"
                 wkndrfile_req = typed_msg[channel]
                 subscribe_to_wkndrfile(wkndrfile_req)
 

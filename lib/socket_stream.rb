@@ -33,7 +33,7 @@ class SocketStream
         case channel
           when 1,2
             self.write_tty(cmsg)
-          when "p"
+          when "party"
             log!(:cmsg, cmsg.length, cmsg)
             begin
               did_parse = Kernel.eval(cmsg)
@@ -92,7 +92,8 @@ class SocketStream
   end
 
   def did_connect(wkndrfile_path)
-    write_typed({"p" => wkndrfile_path})
+    #TODO: merge this with other bits
+    write_typed({"party" => wkndrfile_path})
   end
 
   def write_typed(*msg_typed)

@@ -15,6 +15,10 @@ def log!(*args, &block)
   }
 end
 
+def spinlock!
+  $stdout.write("")
+end
+
 class Server
   def self.run!(directory)
     Server.new(directory)

@@ -1,16 +1,21 @@
 #
 
 class StackBlocker
-  attr_accessor :fps
-
   def initialize(for_server)
     @for_server = for_server
     @stack = []
-    self.fps = 1
   end
 
   def up(o)
     @stack << o
+  end
+
+  def fps
+    if @for_server
+      1
+    else
+      1
+    end
   end
 
   def running
@@ -42,12 +47,16 @@ class StackBlocker
   end
 
   def cheese
+    #log!(:cheese, @for_server, self)
+
     if @for_server
+      #update
+      #UV.run(UV::UV_RUN_NOWAIT)
     else
       signal
     end
+
   #def signal(*args)
-  #  log!(:signal, args)
   #  update
   end
 end

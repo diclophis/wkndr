@@ -388,10 +388,14 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef TARGET_DESKTOP
   //TODO: this should have logic on ruby side based on if is window or not
-  //if (WindowShouldClose()) {
-  //  mrb_funcall(mrb, self, "halt!", 0, NULL);
-  //  return mrb_nil_value();
-  //}
+  if (WindowShouldClose()) {
+    mrb_funcall(mrb, self, "halt!", 0, NULL);
+    if (mrb->exc) {
+      fprintf(stderr, "Exception in XXXYYY");
+      mrb_print_error(mrb);
+    }
+    return mrb_nil_value();
+  }
 #endif
 
   double time;
@@ -401,7 +405,11 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   dt = GetFrameTime();
 
   //self is instance of StackBlocker.new !!!!!!!!!!
+  //fprintf(stderr, "\nwtf bits_update!\n");
+
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+
+  //fprintf(stderr, "\nwtf bits_update!---------------------\n\n");
 
   return mrb_nil_value();
 }
