@@ -12,17 +12,17 @@ class Wkndr
   def self.block!
     running = true
     #TODO: server FPS
-    #fps = 120 #run_loop_blocker.fps
+    fps = 1 #run_loop_blocker.fps
     #exit_counter = 0
-    #tick_interval_ms = ((1.0/fps)*1000.0)
+    tick_interval_ms = ((1.0/fps)*1000.0)
     @ticks ||= 0
 
     #Signal.trap(:INT) { |signo|
     #  running = false
     #}
 
-    #timer = UV::Timer.new
-    #timer.start(tick_interval_ms, tick_interval_ms) { |x|
+    timer = UV::Timer.new
+    timer.start(tick_interval_ms, 0) { |x|
       begin
         #timer.again
 
@@ -54,15 +54,16 @@ class Wkndr
       #  #    all_halting = run_loop_blocker.halt!
       #  #    exit_counter += 1
       #  #  end
+          #running = false
         end
 
         @ticks += 1
       rescue => e
         log!(:base_running_timer_tick_error, e, e.backtrace)
       end
-    #}
+    }
 
-    UV.run(UV::UV_RUN_ONCE)
+    UV.run(UV::UV_RUN_ONCE) #if running
     #UV.run(UV::UV_RUN_NOWAIT)
     #UV.run
   end

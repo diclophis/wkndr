@@ -69,7 +69,26 @@ class Wkndr < Thor
 
 		if @stack && @gl && block
 			#@stack.update(&block)
-      block.call(@gl)
+      begin
+        #@proc_foop.call(@gl)
+        #@gl.update(&block)
+        block.call(@gl)
+      rescue => e
+        log!(:e, e, e.backtrace)
+        @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+        @gl.update { |global_time, delta_time|
+          @gl.drawmode {
+            @gl.threed {
+            }
+            @gl.twod {
+              @gl.draw_fps(0, 0)
+              @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
+                @gl.emit({"c" => "tty"})
+              }
+            }
+          }
+        }
+      end
 		end
 
     bizb = false
@@ -82,22 +101,21 @@ class Wkndr < Thor
       @stack.cheese
     end
 
-    #   
-    #   if bizb
-    #     gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-    #     gl.update { |global_time, delta_time|
-    #       gl.drawmode {
-    #         gl.threed {
-    #         }
-    #         gl.twod {
-    #           gl.draw_fps(0, 0)
-    #           gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
-    #             gl.emit({"z" => "zzz"})
-    #           }
-    #         }
-    #       }
-    #     }
-    #   end
+    if bizb
+      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+      gl.update { |global_time, delta_time|
+        gl.drawmode {
+          gl.threed {
+          }
+          gl.twod {
+            gl.draw_fps(0, 0)
+            gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
+              gl.emit({"z" => "zzz"})
+            }
+          }
+        }
+      }
+    end
 
     #   #if !block && @stack && @ql
     #   #  log!(:WTF_CASE_IS_THIS)
