@@ -21,8 +21,8 @@ class Wkndr
     #  running = false
     #}
 
-    timer = UV::Timer.new
-    timer.start(tick_interval_ms, 0) { |x|
+    #timer = UV::Timer.new
+    #timer.start(tick_interval_ms, 0) { |x|
       begin
         #timer.again
 
@@ -61,10 +61,10 @@ class Wkndr
       rescue => e
         log!(:base_running_timer_tick_error, e, e.backtrace)
       end
-    }
+    #}
 
-    UV.run(UV::UV_RUN_ONCE) #if running
-    #UV.run(UV::UV_RUN_NOWAIT)
+    #UV.run(UV::UV_RUN_ONCE) #if running
+    UV.run(UV::UV_RUN_NOWAIT)
     #UV.run
   end
 
