@@ -304,7 +304,7 @@ class Wkndr < Thor
   method_added :server
 
   def self.open_client!(stack, w, h)
-    log!(:client, w, h)
+    log!(:client, w, h, self.class.to_s)
 
     #stack = StackBlocker.new
     gl = GameLoop.new
@@ -324,7 +324,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 35)
+    gl.open("wkndr", w, h, 0)
 
     Wkndr.play(stack, gl)
 
@@ -340,7 +340,7 @@ class Wkndr < Thor
 
   desc "client", ""
   def client(w = 512, h = 512)
-    log!(:outerclient, w, h)
+    log!(:outerclient, w, h, self.class.to_s)
 
     #client = Wkndr.client(w, h)
     stack = StackBlocker.new(false)
@@ -401,11 +401,11 @@ class Wkndr < Thor
         log!(:efg, stack)
         self.runblock!(stack)
         while true
-        begin
-          self.cheese_cross!
-        rescue => e
-          log!(:eee, e)
-        end
+          begin
+            self.cheese_cross!
+          rescue => e
+            log!(:eee, e)
+          end
 
           self.block!
         end
@@ -414,7 +414,7 @@ class Wkndr < Thor
   end
 
   def self.update_with_timer!(run_loop_blocker = nil)
-    log!(:install_timer, run_loop_blocker, run_loop_blocker.class)
+    #log!(:install_timer, run_loop_blocker, run_loop_blocker.class)
     #$stdout.write([run_loop_blocker].inspect)
 
     @stacks_to_care_about ||= []

@@ -60,7 +60,7 @@ class Connection
   end
 
   def serve_static_file!(filename)
-    fd = UV::FS::open(filename, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+    fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0) #, UV::FS::S_IREAD)
     file_size =  fd.stat.size
     sent = 0
 
@@ -84,7 +84,7 @@ class Connection
     header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
     #header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\n#{content_type}\r\n"
     self.socket.write(header) {
-      max_chunk = 1024 #(self.socket.recv_buffer_size / 2).to_i
+      max_chunk = 10240 #(self.socket.recv_buffer_size / 2).to_i
       sending = false
 
       #idle = UV::Timer.new #deadlocks??? UV::Idle.new
@@ -92,7 +92,6 @@ class Connection
       #idle = UV::Idle.new
       #idle.start do |x|
         #log!(:server_idle, self, self.socket)
-
         #if @halting
         #  idle.stop
         #end
@@ -104,47 +103,71 @@ class Connection
             left = max_chunk
           end
 
-          begin
-            #if !sending
-              bsent = sent
-              sending = true
-              #log!(:socket_inspect, self.socket)
+          #[:socket_inspect, #<UV::TCP:0x5558b3c914e0>, 11, #<UV::FS:0x5558b3c905e0>, 0, 32]
+          #log!(:socket_inspect, self.socket, self.socket.fileno, fd, sent, left)
 
-                UV::FS::sendfile(self.socket.fileno, fd, bsent, left) { |xyx|
-                  begin
-                    #log!(:socket_post_send, xyx)
+          #begin
+          #  #if !sending
+          #    bsent = sent
+          #    sending = true
 
-                    if xyx.is_a?(UVError)
-                      log!(:wtf_uv_e, xyx)
+            #ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+            #do |ffff|
+              wkread = fd.read(left, sent)
+              #fd.seek(wkread.length)
+              self.socket.write(wkread) { |foo|
+                #log!(:foo, foo)
+                if foo.is_a?(UVError)
+                  send_proc.call
+                else
+                  sent += wkread.length
 
-                      #max_chunk = ((max_chunk / 2) + 1).to_i
-                      log!(:sending_false_error, xyx)
-                      sending = false
-                    else
-                      sending = false
-                      sent += xyx.to_i
-                      log!(:sending_false_sent, sent)
+                  if (sent < file_size)
+                    begin
+                      send_proc.call
+                    rescue => e
+                      log!(:eee, e)
                     end
-
-                    send_proc.call
-                  rescue => e
-                    log!(:eee, e)
                   end
-                }
+                end
+              }
 
-            #end
-          rescue UVError => e#resource temporarily unavailable
-            log!(:wtf_uv_e, e)
-            #max_chunk = ((max_chunk / 2) + 1).to_i
-            sending = false
-          end
+                #UV::FS::sendfile(self.socket, fd, sent, left) { |xyx|
+          #        begin
+          #          #log!(:socket_post_send, xyx)
+
+          #          if xyx.is_a?(UVError)
+          #            #log!(:wtf_uv_e, xyx)
+
+          #            #max_chunk = ((max_chunk / 2) + 1).to_i
+          #            #log!(:sending_false_error, xyx)
+          #            sending = false
+          #          else
+          #            sending = false
+          #            sent += xyx.to_i
+          #            #log!(:sending_false_sent, sent)
+          #          end
+
+          #          send_proc.call
+          #        rescue => e
+          #          log!(:eee, e)
+          #        end
+                #}
+
+          #  #end
+          #rescue UVError => e#resource temporarily unavailable
+          #  log!(:wtf_uv_e, e)
+          #  #max_chunk = ((max_chunk / 2) + 1).to_i
+          #  sending = false
+          #end
         else
           log!(:close_fd_close, fd)
-          fd.close
-          fd = nil
-          self.socket.read_stop
-          self.socket.close
-          self.socket = nil
+
+          #fd.close
+          #fd = nil
+          #self.socket.read_stop
+          #self.socket.close
+          #self.socket = nil
 
           #idle.stop
           self.processing_handshake = true
@@ -153,9 +176,9 @@ class Connection
       }
       #end
 
-      log!(:socket_post_post, self)
-
       send_proc.call
+
+      log!(:socket_post_post, self)
     }
   end
 

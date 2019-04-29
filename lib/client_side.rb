@@ -12,6 +12,7 @@ class ClientSide < Wkndr
   desc "server", ""
   def server(*args)
     log!(:clientserver_ignore)
+    stack = StackBlocker.new(false)
   end
   method_added :server
 
@@ -28,6 +29,10 @@ class ClientSide < Wkndr
     if @client_stack
       @client_stack.signal
     end
+  end
+
+  def self.bang
+   self.show!(@client_stack)
   end
 end
 

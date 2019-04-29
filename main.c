@@ -1375,7 +1375,7 @@ static mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
 static mrb_value fast_utmp_utmps(mrb_state* mrb, mrb_value self)
 {
 //TODO: fix when on back on linux box
-#ifdef TARGET_DESKTOP_X
+#ifdef TARGET_DESKTOP
 
   //mrb_value rets = mrb_ary_new(mrb);
   mrb_value outbound_utmp = mrb_hash_new(mrb);
@@ -1930,7 +1930,7 @@ int main(int argc, char** argv) {
 
   //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
-  //mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
   //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, theseus, NULL);
@@ -1941,14 +1941,14 @@ int main(int argc, char** argv) {
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
-  mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
+  //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   struct RClass *socket_stream_class_client = mrb_define_class(mrb_client, "SocketStream", mrb_client->object_class);
-  mrb_define_method(mrb_client, socket_stream_class, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
-  mrb_define_method(mrb_client, socket_stream_class, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb_client, socket_stream_class, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb_client, socket_stream_class_client, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
+  mrb_define_method(mrb_client, socket_stream_class_client, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, globals, NULL);
   eval_static_libs(mrb_client, globals, NULL);
@@ -1991,8 +1991,6 @@ int main(int argc, char** argv) {
     mrb_print_backtrace(mrb_client);
   }
 
-
-
 #ifdef TARGET_DESKTOP
   struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
 
@@ -2023,6 +2021,10 @@ int main(int argc, char** argv) {
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
   }
+#endif
+
+#ifdef PLATFORM_WEB
+  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "bang", 0, 0);
 #endif
 
   mrb_close(mrb);
