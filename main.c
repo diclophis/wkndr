@@ -411,7 +411,7 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
   if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVER");
+    fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
   }
@@ -468,17 +468,17 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   loop_data_s *loop_data = NULL;
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
 
-  //Data_Get_Struct(mrb, data_value, &crisscross_data_type, loop_data);
-  //if (!loop_data) {
-  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
-  //}
+  Data_Get_Struct(mrb, data_value, &crisscross_data_type, loop_data);
+  if (!loop_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
 
-  //mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "wiz", 0, 0);
-  //if (loop_data->mrb_pointer) {
-  //  fprintf(stderr, "Exception in SERVER");
-  //  mrb_print_error(loop_data->mrb_pointer);
-  //  mrb_print_backtrace(loop_data->mrb_pointer);
-  //}
+  mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "wiz", 0, 0);
+  if (loop_data->mrb_pointer->exc) {
+    fprintf(stderr, "Exception in SERVER_CHEESE_CROSS");
+    mrb_print_error(loop_data->mrb_pointer);
+    mrb_print_backtrace(loop_data->mrb_pointer);
+  }
 
   //platform_bits_update_void(loop_data);
 
@@ -2010,7 +2010,7 @@ int main(int argc, char** argv) {
   loop_data->self_pointer = mrb_obj_ptr(mrb_obj_value(client_side_top_most_thor));
 
   mrb_iv_set(
-      mrb, mrb_obj_value(client_side_top_most_thor), mrb_intern_lit(mrb, "@flip_pointer"),
+      mrb, mrb_obj_value(server_side_top_most_thor), mrb_intern_lit(mrb, "@flip_pointer"),
       mrb_obj_value(
           Data_Wrap_Struct(mrb, mrb->object_class, &crisscross_data_type, loop_data)));
 

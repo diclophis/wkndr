@@ -24,7 +24,7 @@ class ClientSide < Wkndr
   #end
 
   def self.wiz
-    log!(:self_client_stack, @client_stack)
+    #log!(:self_client_stack, @client_stack)
     @client_stack.signal
   end
 end
