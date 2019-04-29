@@ -10,7 +10,7 @@
 
 class ClientSide < Wkndr
   desc "server", ""
-  def server
+  def server(*args)
     log!(:clientserver_ignore)
   end
   method_added :server
@@ -25,7 +25,9 @@ class ClientSide < Wkndr
 
   def self.wiz
     #log!(:self_client_stack, @client_stack)
-    @client_stack.signal
+    if @client_stack
+      @client_stack.signal
+    end
   end
 end
 

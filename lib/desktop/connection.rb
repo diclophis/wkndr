@@ -48,11 +48,11 @@ class Connection
       @fsev = nil
     end
 
-    if self.socket && self.socket.has_ref?
-      self.socket.read_stop 
-      self.socket.close
-      self.socket = nil
-    end
+    #if self.socket && self.socket.has_ref?
+    #  self.socket.read_stop 
+    #  self.socket.close
+    #  self.socket = nil
+    #end
   end
 
   def halt!
@@ -81,20 +81,23 @@ class Connection
         ""
       end
 
-    #header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
-    header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\n#{content_type}\r\n"
+    header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
+    #header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\n#{content_type}\r\n"
     self.socket.write(header) {
-      max_chunk = (self.socket.recv_buffer_size / 2).to_i
+      max_chunk = 1024 #(self.socket.recv_buffer_size / 2).to_i
       sending = false
 
-      idle = UV::Timer.new #deadlocks??? UV::Idle.new
-      idle.start(0, 16) do |x|
-        log!(:server_idle)
+      #idle = UV::Timer.new #deadlocks??? UV::Idle.new
+      #idle.start(0, 1000) do |x|
+      #idle = UV::Idle.new
+      #idle.start do |x|
+        #log!(:server_idle, self, self.socket)
 
-        if @halting
-          idle.stop
-        end
+        #if @halting
+        #  idle.stop
+        #end
 
+      send_proc = Proc.new {
         if (sent < file_size)
           left = file_size - sent
           if left > max_chunk
@@ -102,30 +105,57 @@ class Connection
           end
 
           begin
-            if !sending
+            #if !sending
               bsent = sent
               sending = true
-              UV::FS::sendfile(self.socket.fileno, fd, bsent, left) { |xyx|
-                if xyx.is_a?(UVError)
-                  max_chunk = ((max_chunk / 2) + 1).to_i
-                  sending = false
-                else
-                  sending = false
-                  sent += xyx.to_i
-                end
-              }
-            end
-          rescue UVError #resource temporarily unavailable
-            max_chunk = ((max_chunk / 2) + 1).to_i
+              #log!(:socket_inspect, self.socket)
+
+                UV::FS::sendfile(self.socket.fileno, fd, bsent, left) { |xyx|
+                  begin
+                    #log!(:socket_post_send, xyx)
+
+                    if xyx.is_a?(UVError)
+                      log!(:wtf_uv_e, xyx)
+
+                      #max_chunk = ((max_chunk / 2) + 1).to_i
+                      log!(:sending_false_error, xyx)
+                      sending = false
+                    else
+                      sending = false
+                      sent += xyx.to_i
+                      log!(:sending_false_sent, sent)
+                    end
+
+                    send_proc.call
+                  rescue => e
+                    log!(:eee, e)
+                  end
+                }
+
+            #end
+          rescue UVError => e#resource temporarily unavailable
+            log!(:wtf_uv_e, e)
+            #max_chunk = ((max_chunk / 2) + 1).to_i
             sending = false
           end
         else
-          log!(:close_fd_close)
+          log!(:close_fd_close, fd)
           fd.close
-          idle.stop
+          fd = nil
+          self.socket.read_stop
+          self.socket.close
+          self.socket = nil
+
+          #idle.stop
           self.processing_handshake = true
+          log!(:close_fd_close)
         end
-      end
+      }
+      #end
+
+      log!(:socket_post_post, self)
+
+      send_proc.call
     }
   end
 

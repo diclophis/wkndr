@@ -240,7 +240,7 @@ class Wkndr < Thor
   def self.start_server(stack, *args)
     log!(:StartServer)
 
-    if server = self.server
+    if server = self.server(*args)
       stack.up(server)
     end
 
@@ -291,13 +291,13 @@ class Wkndr < Thor
   #end
 
   desc "server", ""
-  def server
+  def server(*args)
     log!(:outerserver)
 
     stack = StackBlocker.new(true)
     ##stack.fps = 60
 
-    self.class.start_server(stack)
+    self.class.start_server(stack, *args)
 
     stack
   end
