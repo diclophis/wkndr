@@ -2,7 +2,7 @@
 
 //#version 330
 
-precision lowp float;
+precision mediump float;
 
 const int maxLights = 1;
 const vec3 viewDir = vec3(1.0);

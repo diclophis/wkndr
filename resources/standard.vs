@@ -2,7 +2,7 @@
 
 //#version 330
 
-precision lowp float;
+precision mediump float;
 
 attribute vec3 vertexPosition;
 attribute vec3 vertexNormal;

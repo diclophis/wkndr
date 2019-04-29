@@ -21,46 +21,52 @@ class Wkndr
     #  running = false
     #}
 
-    #timer = UV::Timer.new
-    #timer.start(tick_interval_ms, 0) { |x|
-      begin
-        #timer.again
+   # prepare = UV::Prepare.new
+   # prepare.start {
+   #   timer = UV::Timer.new
+   #   timer.start(tick_interval_ms, 0) { |x|
+        begin
+   #       prepare.stop
+   #       timer.stop
 
-      #  #UV.run(UV::UV_RUN_NOWAIT)
+          #timer.again
 
-        #log!(:tick_timer, @ticks) #run_loop_blocker)
+        #  #UV.run(UV::UV_RUN_NOWAIT)
 
-      #  #spinlock!
+          #log!(:tick_timer, @ticks) #run_loop_blocker)
 
-        running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
+        #  #spinlock!
 
-        if running && running_stacks.length > 0
-          if ((@ticks) % 1000) == 0
-            log!(:idle, @ticks)
+          running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
+
+          if running && running_stacks.length > 0
+            if ((@ticks) % 1000) == 0
+              log!(:idle, @ticks)
+            end
+
+        #UV.run #(UV::UV_RUN_ONCE)
+
+        #    #run_loop_blocker.cheese
+            running_stacks.each { |rlb| rlb.cheese }
+          else
+        #  #  if exit_counter > 0
+        #  #    timer.stop
+        #  #    run_loop_blocker.shutdown
+        #  #    #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
+        #  #    #UV.default_loop.close
+        #  #    UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
+        #  #  else
+        #  #    all_halting = run_loop_blocker.halt!
+        #  #    exit_counter += 1
+        #  #  end
+            #running = false
           end
 
-      #UV.run #(UV::UV_RUN_ONCE)
-
-      #    #run_loop_blocker.cheese
-          running_stacks.each { |rlb| rlb.cheese }
-        else
-      #  #  if exit_counter > 0
-      #  #    timer.stop
-      #  #    run_loop_blocker.shutdown
-      #  #    #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
-      #  #    #UV.default_loop.close
-      #  #    UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
-      #  #  else
-      #  #    all_halting = run_loop_blocker.halt!
-      #  #    exit_counter += 1
-      #  #  end
-          #running = false
+          @ticks += 1
+        rescue => e
+          log!(:base_running_timer_tick_error, e, e.backtrace)
         end
-
-        @ticks += 1
-      rescue => e
-        log!(:base_running_timer_tick_error, e, e.backtrace)
-      end
+      #}
     #}
 
     #UV.run(UV::UV_RUN_ONCE) #if running

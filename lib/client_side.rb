@@ -30,7 +30,7 @@ class ClientSide < Wkndr
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 120)
+    gl.open("wkndr", w, h, 35)
 
     Wkndr.play(stack, gl)
 
