@@ -1892,10 +1892,11 @@ int main(int argc, char** argv) {
 
   //TODO:!!!!
   //struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
-  //struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
+  struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
   //struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
+
   //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
-  //struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
+  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
   //mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
   //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
@@ -1964,12 +1965,27 @@ int main(int argc, char** argv) {
 //    if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
 //  }
 
-//#ifdef TARGET_DESKTOP
+  struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
+  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "restartup", 1, args_server);
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in XXXYYY");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
+
 #endif
 
+  struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
+  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
+  if (mrb_client->exc) {
+    fprintf(stderr, "Exception in XXXYYY");
+    mrb_print_error(mrb_client);
+    mrb_print_backtrace(mrb_client);
+  }
 
+  //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "start", 0);
 
   //  mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 0);
   //} else {

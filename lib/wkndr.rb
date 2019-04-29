@@ -3,6 +3,10 @@
 class Wkndr < Thor
   def self.block!
   end
+  
+  def self.runblock!(stack)
+    self.update_with_timer!(stack)
+  end
 
   #def self.play(stack = nil, gl = nil, &block)
   def self.play(stack = nil, gl = nil, &block)
@@ -168,12 +172,6 @@ class Wkndr < Thor
   #  Wkndr.start_server(*args)
   #end
 
-  #def self.server(directory = "public")
-  #  if File.exists?(directory)
-  #    Server.run!(directory)
-  #  end
-  #end
-
   desc "html", ""
   def html
     log!(:html)
@@ -240,6 +238,12 @@ class Wkndr < Thor
     stack
   end
 
+  def self.server(directory = "public")
+    if File.exists?(directory)
+      Server.run!(directory)
+    end
+  end
+
   #def self.open_client!(stack, w, h)
   #  log!(:client, w, h)
 
@@ -274,19 +278,18 @@ class Wkndr < Thor
   #end
 
   desc "server", ""
-  def server(w = 512, h = 512)
-    log!(:outerserver, w, h)
+  def server
+    log!(:outerserver)
 
     stack = StackBlocker.new(true)
     #stack.fps = 60
 
-    ServerSide.start_server(stack)
+    self.class.start_server(stack)
 
     stack
   end
   method_added :server
 
-  #default_command :server
   def self.open_client!(stack, w, h)
     log!(:client, w, h)
 
@@ -330,10 +333,56 @@ class Wkndr < Thor
     stack = StackBlocker.new(false)
     #stack.fps = 60
 
-    ClientSide.open_client!(stack, w.to_i, h.to_i)
+    self.class.open_client!(stack, w.to_i, h.to_i)
 
     #Wkndr.play(stack, gl)
     stack
   end
   method_added :client
+
+  #def startup(*args)
+  ##  start(*args)
+  #end
+  #method_added :startup
+
+  #default_command :startup
+
+  def self.restartup(*args_outer)
+    #$stdout.write("123")
+
+    class_eval do
+      #desc "startup", ""
+      #def self.startup(*args)
+      #  #self.start(*args)
+      #end
+
+      desc "startup", ""
+      def startup(*args)
+        #self.classstart(*args)
+        #$stdout.write("startup#{self.class.to_s}")
+
+        server_or_client_side = self.class.to_s
+
+        stack = nil
+
+        case server_or_client_side
+          when "ClientSide"
+            stack = client(512, 512)
+
+            #log!(:abc)
+
+          when "ServerSide"
+            stack = server
+            #log!(:efg)
+        end
+
+        self.class.runblock!(stack)
+      end
+      method_added :startup
+    
+      default_command :startup
+    end
+
+    self.start(*args_outer)
+  end
 end
