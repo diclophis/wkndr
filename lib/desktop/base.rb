@@ -1,14 +1,6 @@
 #
 
 class Wkndr
-  def self.update_with_timer!(run_loop_blocker = nil)
-    log!(:install_timer, run_loop_blocker, run_loop_blocker.class)
-    #$stdout.write([run_loop_blocker].inspect)
-
-    @stacks_to_care_about ||= []
-    @stacks_to_care_about << run_loop_blocker
-  end
-
   def self.block!
     running = true
     #TODO: server FPS
@@ -41,7 +33,7 @@ class Wkndr
 
           if running && running_stacks.length > 0
             if ((@ticks) % 1000) == 0
-              log!(:idle, @ticks)
+              #log!(:idle, @ticks)
             end
 
         #UV.run #(UV::UV_RUN_ONCE)

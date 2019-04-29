@@ -9,13 +9,19 @@
 # end
 
 class ClientSide < Wkndr
-  def self.runblock!(stack)
-    super(stack)
-
-    while true
-      self.block!
-    end
+  desc "server", ""
+  def server
+    log!(:clientserver_ignore)
   end
+  method_added :server
+
+  #def self.runblock!(stack)
+  #  super(stack)
+
+  #  while true
+  #    self.block!
+  #  end
+  #end
 end
 
 #ClientSide.startup(ARGV)

@@ -1947,65 +1947,30 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, server, NULL);
 
   eval_static_libs(mrb_client, wslay_socket_stream, uv_io, NULL);
-
-  //if (i == 1) {
-  //  fprintf(stderr,"start_server 0\n");
-  //  the_stack = mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 0);
-  //  if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
-  //} else {
-  //  the_stack = mrb_funcall(mrb, mrb_obj_value(thor_class), "start_server", 1, args);
-  //}
-//#endif
-
-//  if (i == 1) {
-//    fprintf(stderr,"start 0\n");
-//  } else {
-//    fprintf(stderr,"start 1\n");
-//    mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 1, args);
-//    if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
-//  }
-
-  struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
-  mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
-  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "restartup", 1, args_server);
-  if (mrb->exc) {
-    fprintf(stderr, "Exception in XXXYYY");
-    mrb_print_error(mrb);
-    mrb_print_backtrace(mrb);
-  }
-
 #endif
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
   if (mrb_client->exc) {
-    fprintf(stderr, "Exception in XXXYYY");
+    fprintf(stderr, "Exception in CLIENT");
     mrb_print_error(mrb_client);
     mrb_print_backtrace(mrb_client);
   }
 
-  //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "start", 0);
-
-  //  mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "start", 0);
-  //} else {
-  //  mrb_funcall(mrb, mrb_obj_value(thor_class_client), "start", 1, args);
-  //}
-  //mrb_funcall(mrb_client, mrb_obj_value(thor_class_client), "play", 0);
-
-  //loop_data_s* loop_data = arg;
-
-  //mrb_state* mrb = loop_data->mrb_pointer;
-  //struct RObject* self = loop_data->self_pointer;
-  //mrb_value selfV = mrb_obj_value(self);
-
-  ////mrb_iv_set(
-  ////    mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
-  ////    mrb_fixnum_value(write_packed_pointer));
-
-  //mrb_funcall(mrb, mrb_obj_value(thor_class), "show!", 1, the_stack);
+#ifdef TARGET_DESKTOP
+  struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
+  mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
+  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "restartup", 1, args_server);
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVER");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
+#endif
 
   mrb_close(mrb);
+  mrb_close(mrb_client);
 
   //NOTE: when libuv binds to fd=0 it sets modes that cause /usr/bin/read to break
   fcntl(0, F_SETFL, fcntl(0, F_GETFL) & ~O_NONBLOCK);

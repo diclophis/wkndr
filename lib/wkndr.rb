@@ -2,6 +2,15 @@
 
 class Wkndr < Thor
   def self.block!
+    running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
+
+    if running && running_stacks.length > 0
+      log!(:wtf)
+
+    #UV.run #(UV::UV_RUN_ONCE)
+    #    #run_loop_blocker.cheese
+      running_stacks.each { |rlb| rlb.cheese }
+    end
   end
   
   def self.runblock!(stack)
@@ -231,14 +240,18 @@ class Wkndr < Thor
   def self.start_server(stack, *args)
     log!(:StartServer)
 
-    if server = Wkndr.server
+    if server = self.server
       stack.up(server)
     end
+
+    log!(:StartedServer)
 
     stack
   end
 
   def self.server(directory = "public")
+    log!(:wtfclass, self, self.class)
+
     if File.exists?(directory)
       Server.run!(directory)
     end
@@ -282,7 +295,7 @@ class Wkndr < Thor
     log!(:outerserver)
 
     stack = StackBlocker.new(true)
-    #stack.fps = 60
+    ##stack.fps = 60
 
     self.class.start_server(stack)
 
@@ -360,29 +373,44 @@ class Wkndr < Thor
       def startup(*args)
         #self.classstart(*args)
         #$stdout.write("startup#{self.class.to_s}")
-
         server_or_client_side = self.class.to_s
-
-        stack = nil
 
         case server_or_client_side
           when "ClientSide"
-            stack = client(512, 512)
-
-            #log!(:abc)
-
+            client(*args)
           when "ServerSide"
-            stack = server
-            #log!(:efg)
+            server(*args)
         end
-
-        self.class.runblock!(stack)
       end
       method_added :startup
     
       default_command :startup
     end
 
-    self.start(*args_outer)
+    server_or_client_side = self.to_s
+
+    case server_or_client_side
+      when "ClientSide"
+        stack = self.start(*args_outer)
+        log!(:abc, stack)
+        self.runblock!(stack)
+
+      when "ServerSide"
+        stack = self.start(*args_outer)
+        log!(:efg, stack)
+        self.runblock!(stack)
+        while true
+          self.block!
+        end
+
+    end
+  end
+
+  def self.update_with_timer!(run_loop_blocker = nil)
+    log!(:install_timer, run_loop_blocker, run_loop_blocker.class)
+    #$stdout.write([run_loop_blocker].inspect)
+
+    @stacks_to_care_about ||= []
+    @stacks_to_care_about << run_loop_blocker
   end
 end
