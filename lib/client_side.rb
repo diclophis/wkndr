@@ -22,6 +22,11 @@ class ClientSide < Wkndr
   #    self.block!
   #  end
   #end
+
+  def self.wiz
+    log!(:self_client_stack, @client_stack)
+    @client_stack.signal
+  end
 end
 
 #ClientSide.startup(ARGV)

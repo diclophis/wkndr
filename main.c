@@ -213,9 +213,11 @@ typedef struct {
 
 static void play_data_destructor(mrb_state *mrb, void *p_);
 static void model_data_destructor(mrb_state *mrb, void *p_);
+static void crisscross_data_destructor(mrb_state *mrb, void *p_);
 
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
 const struct mrb_data_type model_data_type = {"model_data", model_data_destructor};
+const struct mrb_data_type crisscross_data_type = {"crisscross_data", crisscross_data_destructor};
 
 static int counter = 0;
 static mrb_value mousexyz;
@@ -408,6 +410,11 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   //fprintf(stderr, "\nwtf bits_update!\n");
 
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVER");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
 
   //fprintf(stderr, "\nwtf bits_update!---------------------\n\n");
 
@@ -450,6 +457,30 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 #endif
 
   fprintf(stderr, "wtf show!\n");
+
+  return self;
+}
+
+
+mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
+  //fprintf(stderr, "cross cheese show!\n");
+
+  loop_data_s *loop_data = NULL;
+  mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
+
+  //Data_Get_Struct(mrb, data_value, &crisscross_data_type, loop_data);
+  //if (!loop_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
+
+  //mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "wiz", 0, 0);
+  //if (loop_data->mrb_pointer) {
+  //  fprintf(stderr, "Exception in SERVER");
+  //  mrb_print_error(loop_data->mrb_pointer);
+  //  mrb_print_backtrace(loop_data->mrb_pointer);
+  //}
+
+  //platform_bits_update_void(loop_data);
 
   return self;
 }
@@ -1058,6 +1089,8 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   return self;
 }
 
+static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
+}
 
 static void model_data_destructor(mrb_state *mrb, void *p_) {
   //TODO
@@ -1958,8 +1991,31 @@ int main(int argc, char** argv) {
     mrb_print_backtrace(mrb_client);
   }
 
+
+
 #ifdef TARGET_DESKTOP
   struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
+
+//loop_data_s* loop_data = arg;
+//mrb_state* mrb = loop_data->mrb_pointer;
+//struct RObject* self = loop_data->self_pointer;
+//mrb_value selfV = mrb_obj_value(self);
+
+//mrb_iv_set(
+//    mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
+//    mrb_fixnum_value(write_packed_pointer));
+
+  loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
+  loop_data->mrb_pointer = mrb_client;
+  loop_data->self_pointer = mrb_obj_ptr(mrb_obj_value(client_side_top_most_thor));
+
+  mrb_iv_set(
+      mrb, mrb_obj_value(client_side_top_most_thor), mrb_intern_lit(mrb, "@flip_pointer"),
+      mrb_obj_value(
+          Data_Wrap_Struct(mrb, mrb->object_class, &crisscross_data_type, loop_data)));
+
+  mrb_define_class_method(mrb, thor_class, "cheese_cross!", cheese_cross, MRB_ARGS_REQ(0));
+
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "restartup", 1, args_server);
   if (mrb->exc) {

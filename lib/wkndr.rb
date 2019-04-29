@@ -394,12 +394,19 @@ class Wkndr < Thor
         stack = self.start(*args_outer)
         log!(:abc, stack)
         self.runblock!(stack)
+        @client_stack = stack
 
       when "ServerSide"
         stack = self.start(*args_outer)
         log!(:efg, stack)
         self.runblock!(stack)
         while true
+        begin
+          self.cheese_cross!
+        rescue => e
+          log!(:eee, e)
+        end
+
           self.block!
         end
 
