@@ -61,8 +61,8 @@ class Wkndr
       #}
     #}
 
-    UV.run(UV::UV_RUN_ONCE) #if running
-    #UV.run(UV::UV_RUN_NOWAIT)
+    #UV.run(UV::UV_RUN_ONCE) #if running
+    UV.run(UV::UV_RUN_NOWAIT)
     #UV.run
   end
 
