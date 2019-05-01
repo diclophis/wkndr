@@ -26,8 +26,12 @@ class ClientSide < Wkndr
 
   def self.wiz
     #log!(:self_client_stack, @client_stack)
-    if @client_stack
-      @client_stack.signal
+    begin
+      if @client_stack
+        @client_stack.signal
+      end
+    rescue Interrupt => e
+      @client_stack = nil
     end
   end
 

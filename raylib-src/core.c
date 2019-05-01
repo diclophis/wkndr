@@ -3224,7 +3224,7 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
     else if (key == GLFW_KEY_F12 && action == GLFW_PRESS)
     {
 #if defined(SUPPORT_GIF_RECORDING)
-        if (mods == GLFW_MOD_CONTROL)
+        if (true || mods == GLFW_MOD_CONTROL)
         {
             if (gifRecording)
             {
@@ -3249,7 +3249,7 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
                 strcpy(path, internalDataPath);
                 strcat(path, TextFormat("/screenrec%03i.gif", screenshotCounter));
             #else
-                strcpy(path, TextFormat("/screenrec%03i.gif", screenshotCounter));
+                strcpy(path, TextFormat("screenrec%03i.gif", screenshotCounter));
             #endif
 
                 // NOTE: delay represents the time between frames in the gif, if we capture a gif frame every

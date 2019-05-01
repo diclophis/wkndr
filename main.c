@@ -977,7 +977,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   BeginDrawing();
 
-  ClearBackground(BLACK);
+  ClearBackground(WHITE);
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
