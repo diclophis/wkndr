@@ -144,7 +144,7 @@ void main()
     
     // Calculate specular texture color fetching or set to maximum specular value by default
     float spec = 1.0;
-    if (useSpecular == 1) spec = texture2D(texture2, fragTexCoord).r;
+    //if (useSpecular == 1) spec = texture2D(texture2, fragTexCoord).r;
 
     //for (int i = 0; i < maxLights; i++)
     //{
