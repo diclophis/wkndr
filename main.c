@@ -1060,9 +1060,37 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   p_data->rotation.z = 0.0f; // Set model position
 
   p_data->angle = 0.0;
-  
-  p_data->texture = LoadTexture(c_model_png); // Load model texture
-  p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
+
+  mrb_value png_ending = mrb_str_new_cstr(mrb, ".png");
+  mrb_value mtl_ending = mrb_str_new_cstr(mrb, ".mtl");
+
+  mrb_value foop = mrb_funcall(mrb, model_png, "end_with?", 1, png_ending);
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVER");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
+
+  mrb_value foop_mtl = mrb_funcall(mrb, model_png, "end_with?", 1, mtl_ending);
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVER");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
+
+  //if (mrb_equal(mrb, foop, mrb_true_value())) {
+  //  p_data->texture = LoadTexture(c_model_png); // Load model texture
+  //  p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
+  //}
+
+  if (true || mrb_equal(mrb, foop_mtl, mrb_true_value())) {
+    fprintf(stderr, "Exception in SERVERFOOOOOOOOOOOOOO");
+    
+    Material mmm = LoadMaterial(c_model_png); // Load model texture
+    mmm.shader = standardShader;
+    p_data->model.material = mmm;
+    //p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
+  }
 
   //TODO?
   //p_data->model.material.shader = shader;
