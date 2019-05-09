@@ -32,9 +32,6 @@
 *   #define SUPPORT_VR_SIMULATOR
 *       Support VR simulation functionality (stereo rendering)
 *
-*   #define SUPPORT_DISTORTION_SHADER
-*       Include stereo rendering distortion shader (embedded)
-*
 *   DEPENDENCIES:
 *       raymath     - 3D math functionality (Vector3, Matrix, Quaternion)
 *       GLAD        - OpenGL extensions loading (OpenGL 3.3 Core only)
@@ -42,7 +39,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2018 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2014-2019 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -67,6 +64,25 @@
 #if defined(RLGL_STANDALONE)
     #define RAYMATH_STANDALONE
     #define RAYMATH_HEADER_ONLY
+
+    #if defined(_WIN32) && defined(BUILD_LIBTYPE_SHARED)
+        #define RLAPI __declspec(dllexport)         // We are building raylib as a Win32 shared library (.dll)
+    #elif defined(_WIN32) && defined(USE_LIBTYPE_SHARED)
+        #define RLAPI __declspec(dllimport)         // We are using raylib as a Win32 shared library (.dll)
+    #else
+        #define RLAPI   // We are building or using raylib as a static library (or Linux shared library)
+    #endif
+
+    // Allow custom memory allocators
+    #ifndef RL_MALLOC
+        #define RL_MALLOC(sz)       malloc(sz)
+    #endif
+    #ifndef RL_CALLOC
+        #define RL_CALLOC(n,sz)     calloc(n,sz)
+    #endif
+    #ifndef RL_FREE
+        #define RL_FREE(p)          free(p)
+    #endif
 #else
     #include "raylib.h"         // Required for: Model, Shader, Texture2D, TraceLog()
 #endif
@@ -175,12 +191,22 @@ typedef unsigned char byte;
         int format;             // Data format (PixelFormat)
     } Texture2D;
 
+    // Texture type, same as Texture2D
+    typedef Texture2D Texture;
+
+    // TextureCubemap type, actually, same as Texture2D
+    typedef Texture2D TextureCubemap;
+
     // RenderTexture2D type, for texture rendering
     typedef struct RenderTexture2D {
-        unsigned int id;        // Render texture (fbo) id
+        unsigned int id;        // OpenGL framebuffer (fbo) id
         Texture2D texture;      // Color buffer attachment texture
         Texture2D depth;        // Depth buffer attachment texture
+        bool depthTexture;      // Track if depth attachment is a texture or renderbuffer
     } RenderTexture2D;
+
+    // RenderTexture type, same as RenderTexture2D
+    typedef RenderTexture2D RenderTexture;
 
     // Vertex data definning a mesh
     typedef struct Mesh {
@@ -195,10 +221,10 @@ typedef unsigned char byte;
         unsigned short *indices;// vertex indices (in case vertex data comes indexed)
 
         // Animation vertex data
-        float *baseVertices;    // Vertex base position (required to apply bones transformations)
-        float *baseNormals;     // Vertex base normals (required to apply bones transformations)
-        float *weightBias;      // Vertex weight bias
-        int *weightId;          // Vertex weight id
+        float *animVertices;    // Animated vertex positions (after bones transformations)
+        float *animNormals;     // Animated normals (after bones transformations)
+        int *boneIds;           // Vertex bone ids, up to 4 bones influence by vertex (skinning)
+        float *boneWeights;     // Vertex bone weight, up to 4 bones influence by vertex (skinning)
 
         // OpenGL identifiers
         unsigned int vaoId;     // OpenGL Vertex Array Object id
@@ -250,6 +276,16 @@ typedef unsigned char byte;
         float lensDistortionValues[4];  // HMD lens distortion constant parameters
         float chromaAbCorrection[4];    // HMD chromatic aberration correction parameters
     } VrDeviceInfo;
+
+    // VR Stereo rendering configuration for simulator
+    typedef struct VrStereoConfig {
+        Shader distortionShader;        // VR stereo rendering distortion shader
+        Matrix eyesProjection[2];       // VR stereo rendering eyes projection matrices
+        Matrix eyesViewOffset[2];       // VR stereo rendering eyes view offset matrices
+        int eyeViewportRight[4];        // VR stereo rendering right eye viewport [x, y, w, h]
+        int eyeViewportLeft[4];         // VR stereo rendering left eye viewport [x, y, w, h]
+    } VrStereoConfig;
+
 
     // TraceLog message types
     typedef enum {
@@ -335,7 +371,7 @@ typedef unsigned char byte;
         LOC_MAP_PREFILTER,
         LOC_MAP_BRDF
     } ShaderLocationIndex;
-    
+
     // Shader uniform data types
     typedef enum {
         UNIFORM_FLOAT = 0,
@@ -365,20 +401,10 @@ typedef unsigned char byte;
         MAP_IRRADIANCE,          // NOTE: Uses GL_TEXTURE_CUBE_MAP
         MAP_PREFILTER,           // NOTE: Uses GL_TEXTURE_CUBE_MAP
         MAP_BRDF
-    } TexmapIndex;
+    } MaterialMapType;
 
     #define MAP_DIFFUSE      MAP_ALBEDO
     #define MAP_SPECULAR     MAP_METALNESS
-
-    // VR Head Mounted Display devices
-    typedef enum {
-        HMD_DEFAULT_DEVICE = 0,
-        HMD_OCULUS_RIFT_DK2,
-        HMD_OCULUS_RIFT_CV1,
-        HMD_OCULUS_GO,
-        HMD_VALVE_HTC_VIVE,
-        HMD_SONY_PSVR
-    } VrDevice;
 #endif
 
 #if defined(__cplusplus)
@@ -388,82 +414,92 @@ extern "C" {            // Prevents name mangling of functions
 //------------------------------------------------------------------------------------
 // Functions Declaration - Matrix operations
 //------------------------------------------------------------------------------------
-void rlMatrixMode(int mode);                    // Choose the current matrix to be transformed
-void rlPushMatrix(void);                        // Push the current matrix to stack
-void rlPopMatrix(void);                         // Pop lattest inserted matrix from stack
-void rlLoadIdentity(void);                      // Reset current matrix to identity matrix
-void rlTranslatef(float x, float y, float z);   // Multiply the current matrix by a translation matrix
-void rlRotatef(float angleDeg, float x, float y, float z);  // Multiply the current matrix by a rotation matrix
-void rlScalef(float x, float y, float z);       // Multiply the current matrix by a scaling matrix
-void rlMultMatrixf(float *matf);                // Multiply the current matrix by another matrix
-void rlFrustum(double left, double right, double bottom, double top, double near, double far);
-void rlOrtho(double left, double right, double bottom, double top, double near, double far);
-void rlViewport(int x, int y, int width, int height); // Set the viewport area
+RLAPI void rlMatrixMode(int mode);                    // Choose the current matrix to be transformed
+RLAPI void rlPushMatrix(void);                        // Push the current matrix to stack
+RLAPI void rlPopMatrix(void);                         // Pop lattest inserted matrix from stack
+RLAPI void rlLoadIdentity(void);                      // Reset current matrix to identity matrix
+RLAPI void rlTranslatef(float x, float y, float z);   // Multiply the current matrix by a translation matrix
+RLAPI void rlRotatef(float angleDeg, float x, float y, float z);  // Multiply the current matrix by a rotation matrix
+RLAPI void rlScalef(float x, float y, float z);       // Multiply the current matrix by a scaling matrix
+RLAPI void rlMultMatrixf(float *matf);                // Multiply the current matrix by another matrix
+RLAPI void rlFrustum(double left, double right, double bottom, double top, double znear, double zfar);
+RLAPI void rlOrtho(double left, double right, double bottom, double top, double znear, double zfar);
+RLAPI void rlViewport(int x, int y, int width, int height); // Set the viewport area
 
 //------------------------------------------------------------------------------------
 // Functions Declaration - Vertex level operations
 //------------------------------------------------------------------------------------
-void rlBegin(int mode);                         // Initialize drawing mode (how to organize vertex)
-void rlEnd(void);                               // Finish vertex providing
-void rlVertex2i(int x, int y);                  // Define one vertex (position) - 2 int
-void rlVertex2f(float x, float y);              // Define one vertex (position) - 2 float
-void rlVertex3f(float x, float y, float z);     // Define one vertex (position) - 3 float
-void rlTexCoord2f(float x, float y);            // Define one vertex (texture coordinate) - 2 float
-void rlNormal3f(float x, float y, float z);     // Define one vertex (normal) - 3 float
-void rlColor4ub(byte r, byte g, byte b, byte a);    // Define one vertex (color) - 4 byte
-void rlColor3f(float x, float y, float z);          // Define one vertex (color) - 3 float
-void rlColor4f(float x, float y, float z, float w); // Define one vertex (color) - 4 float
+RLAPI void rlBegin(int mode);                         // Initialize drawing mode (how to organize vertex)
+RLAPI void rlEnd(void);                               // Finish vertex providing
+RLAPI void rlVertex2i(int x, int y);                  // Define one vertex (position) - 2 int
+RLAPI void rlVertex2f(float x, float y);              // Define one vertex (position) - 2 float
+RLAPI void rlVertex3f(float x, float y, float z);     // Define one vertex (position) - 3 float
+RLAPI void rlTexCoord2f(float x, float y);            // Define one vertex (texture coordinate) - 2 float
+RLAPI void rlNormal3f(float x, float y, float z);     // Define one vertex (normal) - 3 float
+RLAPI void rlColor4ub(byte r, byte g, byte b, byte a);    // Define one vertex (color) - 4 byte
+RLAPI void rlColor3f(float x, float y, float z);          // Define one vertex (color) - 3 float
+RLAPI void rlColor4f(float x, float y, float z, float w); // Define one vertex (color) - 4 float
 
 //------------------------------------------------------------------------------------
 // Functions Declaration - OpenGL equivalent functions (common to 1.1, 3.3+, ES2)
 // NOTE: This functions are used to completely abstract raylib code from OpenGL layer
 //------------------------------------------------------------------------------------
-void rlEnableTexture(unsigned int id);                  // Enable texture usage
-void rlDisableTexture(void);                            // Disable texture usage
-void rlTextureParameters(unsigned int id, int param, int value); // Set texture parameters (filter, wrap)
-void rlEnableRenderTexture(unsigned int id);            // Enable render texture (fbo)
-void rlDisableRenderTexture(void);                      // Disable render texture (fbo), return to default framebuffer
-void rlEnableDepthTest(void);                           // Enable depth test
-void rlDisableDepthTest(void);                          // Disable depth test
-void rlEnableWireMode(void);                            // Enable wire mode
-void rlDisableWireMode(void);                           // Disable wire mode
-void rlDeleteTextures(unsigned int id);                 // Delete OpenGL texture from GPU
-void rlDeleteRenderTextures(RenderTexture2D target);    // Delete render textures (fbo) from GPU
-void rlDeleteShader(unsigned int id);                   // Delete OpenGL shader program from GPU
-void rlDeleteVertexArrays(unsigned int id);             // Unload vertex data (VAO) from GPU memory
-void rlDeleteBuffers(unsigned int id);                  // Unload vertex data (VBO) from GPU memory
-void rlClearColor(byte r, byte g, byte b, byte a);      // Clear color buffer with color
-void rlClearScreenBuffers(void);                        // Clear used screen buffers (color and depth)
+RLAPI void rlEnableTexture(unsigned int id);                  // Enable texture usage
+RLAPI void rlDisableTexture(void);                            // Disable texture usage
+RLAPI void rlTextureParameters(unsigned int id, int param, int value); // Set texture parameters (filter, wrap)
+RLAPI void rlEnableRenderTexture(unsigned int id);            // Enable render texture (fbo)
+RLAPI void rlDisableRenderTexture(void);                      // Disable render texture (fbo), return to default framebuffer
+RLAPI void rlEnableDepthTest(void);                           // Enable depth test
+RLAPI void rlDisableDepthTest(void);                          // Disable depth test
+RLAPI void rlEnableBackfaceCulling(void);                     // Enable backface culling
+RLAPI void rlDisableBackfaceCulling(void);                    // Disable backface culling
+RLAPI void rlEnableWireMode(void);                            // Enable wire mode
+RLAPI void rlDisableWireMode(void);                           // Disable wire mode
+RLAPI void rlDeleteTextures(unsigned int id);                 // Delete OpenGL texture from GPU
+RLAPI void rlDeleteRenderTextures(RenderTexture2D target);    // Delete render textures (fbo) from GPU
+RLAPI void rlDeleteShader(unsigned int id);                   // Delete OpenGL shader program from GPU
+RLAPI void rlDeleteVertexArrays(unsigned int id);             // Unload vertex data (VAO) from GPU memory
+RLAPI void rlDeleteBuffers(unsigned int id);                  // Unload vertex data (VBO) from GPU memory
+RLAPI void rlClearColor(byte r, byte g, byte b, byte a);      // Clear color buffer with color
+RLAPI void rlClearScreenBuffers(void);                        // Clear used screen buffers (color and depth)
+RLAPI void rlUpdateBuffer(int bufferId, void *data, int dataSize); // Update GPU buffer with new data
+RLAPI unsigned int rlLoadAttribBuffer(unsigned int vaoId, int shaderLoc, void *buffer, int size, bool dynamic);   // Load a new attributes buffer
 
 //------------------------------------------------------------------------------------
 // Functions Declaration - rlgl functionality
 //------------------------------------------------------------------------------------
-void rlglInit(int width, int height);           // Initialize rlgl (buffers, shaders, textures, states)
-void rlglClose(void);                           // De-inititialize rlgl (buffers, shaders, textures)
-void rlglDraw(void);                            // Update and draw default internal buffers
+RLAPI void rlglInit(int width, int height);           // Initialize rlgl (buffers, shaders, textures, states)
+RLAPI void rlglClose(void);                           // De-inititialize rlgl (buffers, shaders, textures)
+RLAPI void rlglDraw(void);                            // Update and draw default internal buffers
 
-int rlGetVersion(void);                         // Returns current OpenGL version
-bool rlCheckBufferLimit(int vCount);            // Check internal buffer overflow for a given number of vertex
-void rlSetDebugMarker(const char *text);        // Set debug marker for analysis
-void rlLoadExtensions(void *loader);            // Load OpenGL extensions
-Vector3 rlUnproject(Vector3 source, Matrix proj, Matrix view);  // Get world coordinates from screen coordinates
+RLAPI int rlGetVersion(void);                         // Returns current OpenGL version
+RLAPI bool rlCheckBufferLimit(int vCount);            // Check internal buffer overflow for a given number of vertex
+RLAPI void rlSetDebugMarker(const char *text);        // Set debug marker for analysis
+RLAPI void rlLoadExtensions(void *loader);            // Load OpenGL extensions
+RLAPI Vector3 rlUnproject(Vector3 source, Matrix proj, Matrix view);  // Get world coordinates from screen coordinates
 
 // Textures data management
-unsigned int rlLoadTexture(void *data, int width, int height, int format, int mipmapCount); // Load texture in GPU
-void rlUpdateTexture(unsigned int id, int width, int height, int format, const void *data); // Update GPU texture with new data
-void rlGetGlTextureFormats(int format, unsigned int *glInternalFormat, unsigned int *glFormat, unsigned int *glType);  // Get OpenGL internal formats
-void rlUnloadTexture(unsigned int id);                              // Unload texture from GPU memory
+RLAPI unsigned int rlLoadTexture(void *data, int width, int height, int format, int mipmapCount); // Load texture in GPU
+RLAPI unsigned int rlLoadTextureDepth(int width, int height, int bits, bool useRenderBuffer);     // Load depth texture/renderbuffer (to be attached to fbo)
+RLAPI unsigned int rlLoadTextureCubemap(void *data, int size, int format);                        // Load texture cubemap
+RLAPI void rlUpdateTexture(unsigned int id, int width, int height, int format, const void *data); // Update GPU texture with new data
+RLAPI void rlGetGlTextureFormats(int format, unsigned int *glInternalFormat, unsigned int *glFormat, unsigned int *glType);  // Get OpenGL internal formats
+RLAPI void rlUnloadTexture(unsigned int id);                              // Unload texture from GPU memory
 
-void rlGenerateMipmaps(Texture2D *texture);                         // Generate mipmap data for selected texture
-void *rlReadTexturePixels(Texture2D texture);                       // Read texture pixel data
-unsigned char *rlReadScreenPixels(int width, int height);           // Read screen pixel data (color buffer)
-RenderTexture2D rlLoadRenderTexture(int width, int height);         // Load a texture to be used for rendering (fbo with color and depth attachments)
+RLAPI void rlGenerateMipmaps(Texture2D *texture);                         // Generate mipmap data for selected texture
+RLAPI void *rlReadTexturePixels(Texture2D texture);                       // Read texture pixel data
+RLAPI unsigned char *rlReadScreenPixels(int width, int height);           // Read screen pixel data (color buffer)
+
+// Render texture management (fbo)
+RLAPI RenderTexture2D rlLoadRenderTexture(int width, int height, int format, int depthBits, bool useDepthTexture);    // Load a render texture (with color and depth attachments)
+RLAPI void rlRenderTextureAttach(RenderTexture target, unsigned int id, int attachType);  // Attach texture/renderbuffer to an fbo
+RLAPI bool rlRenderTextureComplete(RenderTexture target);                 // Verify render texture is complete
 
 // Vertex data management
-void rlLoadMesh(Mesh *mesh, bool dynamic);                          // Upload vertex data into GPU and provided VAO/VBO ids
-void rlUpdateMesh(Mesh mesh, int buffer, int numVertex);            // Update vertex data on GPU (upload new data to one buffer)
-void rlDrawMesh(Mesh mesh, Material material, Matrix transform);    // Draw a 3d mesh with material and transform
-void rlUnloadMesh(Mesh *mesh);                                      // Unload mesh data from CPU and GPU
+RLAPI void rlLoadMesh(Mesh *mesh, bool dynamic);                          // Upload vertex data into GPU and provided VAO/VBO ids
+RLAPI void rlUpdateMesh(Mesh mesh, int buffer, int numVertex);            // Update vertex data on GPU (upload new data to one buffer)
+RLAPI void rlDrawMesh(Mesh mesh, Material material, Matrix transform);    // Draw a 3d mesh with material and transform
+RLAPI void rlUnloadMesh(Mesh *mesh);                                      // Unload mesh data from CPU and GPU
 
 // NOTE: There is a set of shader related functions that are available to end user,
 // to avoid creating function wrappers through core module, they have been directly declared in raylib.h
@@ -474,49 +510,48 @@ void rlUnloadMesh(Mesh *mesh);                                      // Unload me
 // NOTE: This functions are useless when using OpenGL 1.1
 //------------------------------------------------------------------------------------
 // Shader loading/unloading functions
-char *LoadText(const char *fileName);                               // Load chars array from text file
-Shader LoadShader(const char *vsFileName, const char *fsFileName);  // Load shader from files and bind default locations
-Shader LoadShaderCode(char *vsCode, char *fsCode);                  // Load shader from code strings and bind default locations
-void UnloadShader(Shader shader);                                   // Unload shader from GPU memory (VRAM)
+RLAPI char *LoadText(const char *fileName);                               // Load chars array from text file
+RLAPI Shader LoadShader(const char *vsFileName, const char *fsFileName);  // Load shader from files and bind default locations
+RLAPI Shader LoadShaderCode(char *vsCode, char *fsCode);                  // Load shader from code strings and bind default locations
+RLAPI void UnloadShader(Shader shader);                                   // Unload shader from GPU memory (VRAM)
 
-Shader GetShaderDefault(void);                                      // Get default shader
-Texture2D GetTextureDefault(void);                                  // Get default texture
+RLAPI Shader GetShaderDefault(void);                                      // Get default shader
+RLAPI Texture2D GetTextureDefault(void);                                  // Get default texture
 
 // Shader configuration functions
-int GetShaderLocation(Shader shader, const char *uniformName);              // Get shader uniform location
-void SetShaderValue(Shader shader, int uniformLoc, const void *value, int uniformType);               // Set shader uniform value
-void SetShaderValueV(Shader shader, int uniformLoc, const void *value, int uniformType, int count);   // Set shader uniform value vector
-void SetShaderValueMatrix(Shader shader, int uniformLoc, Matrix mat);       // Set shader uniform value (matrix 4x4)
-void SetMatrixProjection(Matrix proj);                              // Set a custom projection matrix (replaces internal projection matrix)
-void SetMatrixModelview(Matrix view);                               // Set a custom modelview matrix (replaces internal modelview matrix)
-Matrix GetMatrixModelview();                                        // Get internal modelview matrix
+RLAPI int GetShaderLocation(Shader shader, const char *uniformName);              // Get shader uniform location
+RLAPI void SetShaderValue(Shader shader, int uniformLoc, const void *value, int uniformType);               // Set shader uniform value
+RLAPI void SetShaderValueV(Shader shader, int uniformLoc, const void *value, int uniformType, int count);   // Set shader uniform value vector
+RLAPI void SetShaderValueMatrix(Shader shader, int uniformLoc, Matrix mat);       // Set shader uniform value (matrix 4x4)
+RLAPI void SetMatrixProjection(Matrix proj);                              // Set a custom projection matrix (replaces internal projection matrix)
+RLAPI void SetMatrixModelview(Matrix view);                               // Set a custom modelview matrix (replaces internal modelview matrix)
+RLAPI Matrix GetMatrixModelview();                                        // Get internal modelview matrix
 
 // Texture maps generation (PBR)
 // NOTE: Required shaders should be provided
-Texture2D GenTextureCubemap(Shader shader, Texture2D skyHDR, int size);       // Generate cubemap texture from HDR texture
-Texture2D GenTextureIrradiance(Shader shader, Texture2D cubemap, int size);   // Generate irradiance texture using cubemap data
-Texture2D GenTexturePrefilter(Shader shader, Texture2D cubemap, int size);    // Generate prefilter texture using cubemap data
-Texture2D GenTextureBRDF(Shader shader, int size);                  // Generate BRDF texture using cubemap data
+RLAPI Texture2D GenTextureCubemap(Shader shader, Texture2D skyHDR, int size);       // Generate cubemap texture from HDR texture
+RLAPI Texture2D GenTextureIrradiance(Shader shader, Texture2D cubemap, int size);   // Generate irradiance texture using cubemap data
+RLAPI Texture2D GenTexturePrefilter(Shader shader, Texture2D cubemap, int size);    // Generate prefilter texture using cubemap data
+RLAPI Texture2D GenTextureBRDF(Shader shader, int size);                  // Generate BRDF texture using cubemap data
 
 // Shading begin/end functions
-void BeginShaderMode(Shader shader);              // Begin custom shader drawing
-void EndShaderMode(void);                         // End custom shader drawing (use default shader)
-void BeginBlendMode(int mode);                    // Begin blending mode (alpha, additive, multiplied)
-void EndBlendMode(void);                          // End blending mode (reset to default: alpha blending)
+RLAPI void BeginShaderMode(Shader shader);              // Begin custom shader drawing
+RLAPI void EndShaderMode(void);                         // End custom shader drawing (use default shader)
+RLAPI void BeginBlendMode(int mode);                    // Begin blending mode (alpha, additive, multiplied)
+RLAPI void EndBlendMode(void);                          // End blending mode (reset to default: alpha blending)
 
 // VR control functions
-VrDeviceInfo GetVrDeviceInfo(int vrDeviceType);   // Get VR device information for some standard devices
-void InitVrSimulator(VrDeviceInfo info);          // Init VR simulator for selected device parameters
-void CloseVrSimulator(void);                      // Close VR simulator for current device
-bool IsVrSimulatorReady(void);                    // Detect if VR simulator is ready
-void SetVrDistortionShader(Shader shader);        // Set VR distortion shader for stereoscopic rendering
-void UpdateVrTracking(Camera *camera);            // Update VR tracking (position and orientation) and camera
-void ToggleVrMode(void);                          // Enable/Disable VR experience
-void BeginVrDrawing(void);                        // Begin VR simulator stereo rendering
-void EndVrDrawing(void);                          // End VR simulator stereo rendering
+RLAPI void InitVrSimulator(void);                       // Init VR simulator for selected device parameters
+RLAPI void CloseVrSimulator(void);                      // Close VR simulator for current device
+RLAPI void UpdateVrTracking(Camera *camera);            // Update VR tracking (position and orientation) and camera
+RLAPI void SetVrConfiguration(VrDeviceInfo info, Shader distortion);      // Set stereo rendering configuration parameters
+RLAPI bool IsVrSimulatorReady(void);                    // Detect if VR simulator is ready
+RLAPI void ToggleVrMode(void);                          // Enable/Disable VR experience
+RLAPI void BeginVrDrawing(void);                        // Begin VR simulator stereo rendering
+RLAPI void EndVrDrawing(void);                          // End VR simulator stereo rendering
 
-void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
-int GetPixelDataSize(int width, int height, int format);// Get pixel data size in bytes (image or texture)
+RLAPI void TraceLog(int msgType, const char *text, ...);      // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
+RLAPI int GetPixelDataSize(int width, int height, int format);// Get pixel data size in bytes (image or texture)
 #endif
 
 #if defined(__cplusplus)
@@ -533,11 +568,11 @@ int GetPixelDataSize(int width, int height, int format);// Get pixel data size i
 
 #if defined(RLGL_IMPLEMENTATION)
 
-#if defined(RLGL_STANDALONE)
-    #define SUPPORT_VR_SIMULATOR
-    #define SUPPORT_DISTORTION_SHADER
-#else
-    #include "config.h"             // rlgl module configuration
+#if !defined(RLGL_STANDALONE)
+    // Check if config flags have been externally provided on compilation line
+    #if !defined(EXTERNAL_CONFIG_FLAGS)
+        #include "config.h"         // Defines module configuration flags
+    #endif
 #endif
 
 #include <stdio.h>                  // Required for: fopen(), fclose(), fread()... [Used only on LoadText()]
@@ -699,9 +734,12 @@ typedef struct DynamicBuffer {
 typedef struct DrawCall {
     int mode;                   // Drawing mode: LINES, TRIANGLES, QUADS
     int vertexCount;            // Number of vertex of the draw
-    //GLuint vaoId;             // Vertex Array id to be used on the draw
-    //GLuint shaderId;          // Shader id to be used on the draw
-    GLuint textureId;           // Texture id to be used on the draw
+    int vertexAlignment;        // Number of vertex required for index alignment (LINES, TRIANGLES)
+    //unsigned int vaoId;         // Vertex Array id to be used on the draw
+    //unsigned int shaderId;      // Shader id to be used on the draw
+    unsigned int textureId;     // Texture id to be used on the draw
+                                // TODO: Support additional texture units?
+
     //Matrix projection;        // Projection matrix for this draw
     //Matrix modelview;         // Modelview matrix for this draw
 } DrawCall;
@@ -709,96 +747,17 @@ typedef struct DrawCall {
 #if defined(SUPPORT_VR_SIMULATOR)
 // VR Stereo rendering configuration for simulator
 typedef struct VrStereoConfig {
-    RenderTexture2D stereoFbo;  // VR stereo rendering framebuffer
-    Shader distortionShader;    // VR stereo rendering distortion shader
-    Matrix eyesProjection[2];   // VR stereo rendering eyes projection matrices
-    Matrix eyesViewOffset[2];   // VR stereo rendering eyes view offset matrices
-    int eyesViewport[2][4];     // VR stereo rendering eyes viewports [x, y, w, h]
+    Shader distortionShader;        // VR stereo rendering distortion shader
+    Matrix eyesProjection[2];       // VR stereo rendering eyes projection matrices
+    Matrix eyesViewOffset[2];       // VR stereo rendering eyes view offset matrices
+    int eyeViewportRight[4];        // VR stereo rendering right eye viewport [x, y, w, h]
+    int eyeViewportLeft[4];         // VR stereo rendering left eye viewport [x, y, w, h]
 } VrStereoConfig;
 #endif
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-#if !defined(GRAPHICS_API_OPENGL_11) && defined(SUPPORT_DISTORTION_SHADER)
-    // Distortion shader embedded
-    static char distortionFShaderStr[] =
-    #if defined(GRAPHICS_API_OPENGL_21)
-    "#version 120                       \n"
-    #elif defined(GRAPHICS_API_OPENGL_ES2)
-    "#version 100                       \n"
-    "precision mediump float;           \n"     // precision required for OpenGL ES2 (WebGL)
-    #endif
-    #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
-    "varying vec2 fragTexCoord;         \n"
-    "varying vec4 fragColor;            \n"
-    #elif defined(GRAPHICS_API_OPENGL_33)
-    "#version 330                       \n"
-    "in vec2 fragTexCoord;              \n"
-    "in vec4 fragColor;                 \n"
-    "out vec4 finalColor;               \n"
-    #endif
-    "uniform sampler2D texture0;                                     \n"
-    #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
-    "uniform vec2 leftLensCenter;       \n"
-    "uniform vec2 rightLensCenter;      \n"
-    "uniform vec2 leftScreenCenter;     \n"
-    "uniform vec2 rightScreenCenter;    \n"
-    "uniform vec2 scale;                \n"
-    "uniform vec2 scaleIn;              \n"
-    "uniform vec4 hmdWarpParam;         \n"
-    "uniform vec4 chromaAbParam;        \n"
-    #elif defined(GRAPHICS_API_OPENGL_33)
-    "uniform vec2 leftLensCenter = vec2(0.288, 0.5);                 \n"
-    "uniform vec2 rightLensCenter = vec2(0.712, 0.5);                \n"
-    "uniform vec2 leftScreenCenter = vec2(0.25, 0.5);                \n"
-    "uniform vec2 rightScreenCenter = vec2(0.75, 0.5);               \n"
-    "uniform vec2 scale = vec2(0.25, 0.45);                          \n"
-    "uniform vec2 scaleIn = vec2(4, 2.2222);                         \n"
-    "uniform vec4 hmdWarpParam = vec4(1, 0.22, 0.24, 0);             \n"
-    "uniform vec4 chromaAbParam = vec4(0.996, -0.004, 1.014, 0.0);   \n"
-    #endif
-    "void main() \n"
-    "{ \n"
-    "   vec2 lensCenter = fragTexCoord.x < 0.5 ? leftLensCenter : rightLensCenter; \n"
-    "   vec2 screenCenter = fragTexCoord.x < 0.5 ? leftScreenCenter : rightScreenCenter; \n"
-    "   vec2 theta = (fragTexCoord - lensCenter)*scaleIn; \n"
-    "   float rSq = theta.x*theta.x + theta.y*theta.y; \n"
-    "   vec2 theta1 = theta*(hmdWarpParam.x + hmdWarpParam.y*rSq + hmdWarpParam.z*rSq*rSq + hmdWarpParam.w*rSq*rSq*rSq); \n"
-    "   vec2 thetaBlue = theta1*(chromaAbParam.z + chromaAbParam.w*rSq); \n"
-    "   vec2 tcBlue = lensCenter + scale*thetaBlue; \n"
-    "   if (any(bvec2(clamp(tcBlue, screenCenter - vec2(0.25, 0.5), screenCenter + vec2(0.25, 0.5)) - tcBlue))) \n"
-    "   { \n"
-    #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
-    "       gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); \n"
-    #elif defined(GRAPHICS_API_OPENGL_33)
-    "       finalColor = vec4(0.0, 0.0, 0.0, 1.0); \n"
-    #endif
-    "   } \n"
-    "   else \n"
-    "   { \n"
-    #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
-    "       float blue = texture2D(texture0, tcBlue).b; \n"
-    "       vec2 tcGreen = lensCenter + scale*theta1; \n"
-    "       float green = texture2D(texture0, tcGreen).g; \n"
-    #elif defined(GRAPHICS_API_OPENGL_33)
-    "       float blue = texture(texture0, tcBlue).b; \n"
-    "       vec2 tcGreen = lensCenter + scale*theta1; \n"
-    "       float green = texture(texture0, tcGreen).g; \n"
-    #endif
-    "       vec2 thetaRed = theta1*(chromaAbParam.x + chromaAbParam.y*rSq); \n"
-    "       vec2 tcRed = lensCenter + scale*thetaRed; \n"
-    #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
-    "       float red = texture2D(texture0, tcRed).r; \n"
-    "       gl_FragColor = vec4(red, green, blue, 1.0); \n"
-    #elif defined(GRAPHICS_API_OPENGL_33)
-    "       float red = texture(texture0, tcRed).r; \n"
-    "       finalColor = vec4(red, green, blue, 1.0); \n"
-    #endif
-    "    } \n"
-    "} \n";
-#endif
-
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 static Matrix stack[MAX_MATRIX_STACK_SIZE] = { 0 };
 static int stackCounter = 0;
@@ -845,6 +804,8 @@ static bool texCompASTCSupported = false;   // ASTC texture compression support
 // Extension supported flag: Textures format
 static bool texNPOTSupported = false;       // NPOT textures full support
 static bool texFloatSupported = false;      // float textures support (32 bit per channel)
+static bool texDepthSupported = false;      // Depth textures supported
+static int maxDepthBits = 16;               // Maximum bits for depth component
 
 // Extension supported flag: Clamp mirror wrap mode
 static bool texMirrorClampSupported = false;        // Clamp mirror wrap mode supported
@@ -866,12 +827,13 @@ static PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArrays;
 #if defined(SUPPORT_VR_SIMULATOR)
 // VR global variables
 static VrStereoConfig vrConfig = { 0 };     // VR stereo configuration for simulator
+static RenderTexture2D stereoFbo;           // VR stereo rendering framebuffer
 static bool vrSimulatorReady = false;       // VR simulator ready flag
 static bool vrStereoRender = false;         // VR stereo rendering enabled/disabled flag
                                             // NOTE: This flag is useful to render data over stereo image (i.e. FPS)
-#endif  // defined(SUPPORT_VR_SIMULATOR)
+#endif  // SUPPORT_VR_SIMULATOR
 
-#endif  // defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+#endif  // GRAPHICS_API_OPENGL_33 || GRAPHICS_API_OPENGL_ES2
 
 static int blendMode = 0;   // Track current blending mode
 
@@ -899,11 +861,10 @@ static void GenDrawCube(void);              // Generate and draw cube
 static void GenDrawQuad(void);              // Generate and draw quad
 
 #if defined(SUPPORT_VR_SIMULATOR)
-static void SetStereoConfig(VrDeviceInfo info); // Configure stereo rendering (including distortion shader) with HMD device parameters
-static void SetStereoView(int eye, Matrix matProjection, Matrix matModelView); // Set internal projection and modelview matrix depending on eye
+static void SetStereoView(int eye, Matrix matProjection, Matrix matModelView);  // Set internal projection and modelview matrix depending on eye
 #endif
 
-#endif  // defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+#endif  // GRAPHICS_API_OPENGL_33 || GRAPHICS_API_OPENGL_ES2
 
 #if defined(GRAPHICS_API_OPENGL_11)
 static int GenerateMipmaps(unsigned char *data, int baseWidth, int baseHeight);
@@ -929,14 +890,14 @@ void rlMatrixMode(int mode)
     }
 }
 
-void rlFrustum(double left, double right, double bottom, double top, double zNear, double zFar)
+void rlFrustum(double left, double right, double bottom, double top, double znear, double zfar)
 {
-    glFrustum(left, right, bottom, top, zNear, zFar);
+    glFrustum(left, right, bottom, top, znear, zfar);
 }
 
-void rlOrtho(double left, double right, double bottom, double top, double zNear, double zFar)
+void rlOrtho(double left, double right, double bottom, double top, double znear, double zfar)
 {
-    glOrtho(left, right, bottom, top, zNear, zFar);
+    glOrtho(left, right, bottom, top, znear, zfar);
 }
 
 void rlPushMatrix(void) { glPushMatrix(); }
@@ -976,14 +937,14 @@ void rlPushMatrix(void)
 
 // Pop lattest inserted matrix from stack
 void rlPopMatrix(void)
-{  
+{
     if (stackCounter > 0)
     {
         Matrix mat = stack[stackCounter - 1];
         *currentMatrix = mat;
         stackCounter--;
     }
-    
+
     if ((stackCounter == 0) && (currentMatrixMode == RL_MODELVIEW))
     {
         currentMatrix = &modelview;
@@ -1040,17 +1001,17 @@ void rlMultMatrixf(float *matf)
 }
 
 // Multiply the current matrix by a perspective matrix generated by parameters
-void rlFrustum(double left, double right, double bottom, double top, double near, double far)
+void rlFrustum(double left, double right, double bottom, double top, double znear, double zfar)
 {
-    Matrix matPerps = MatrixFrustum(left, right, bottom, top, near, far);
+    Matrix matPerps = MatrixFrustum(left, right, bottom, top, znear, zfar);
 
     *currentMatrix = MatrixMultiply(*currentMatrix, matPerps);
 }
 
 // Multiply the current matrix by an orthographic matrix generated by parameters
-void rlOrtho(double left, double right, double bottom, double top, double near, double far)
+void rlOrtho(double left, double right, double bottom, double top, double znear, double zfar)
 {
-    Matrix matOrtho = MatrixOrtho(left, right, bottom, top, near, far);
+    Matrix matOrtho = MatrixOrtho(left, right, bottom, top, znear, zfar);
 
     *currentMatrix = MatrixMultiply(*currentMatrix, matOrtho);
 }
@@ -1101,7 +1062,27 @@ void rlBegin(int mode)
     // NOTE: In all three cases, vertex are accumulated over default internal vertex buffer
     if (draws[drawsCounter - 1].mode != mode)
     {
-        if (draws[drawsCounter - 1].vertexCount > 0) drawsCounter++;
+        if (draws[drawsCounter - 1].vertexCount > 0)
+        {
+            // Make sure current draws[i].vertexCount is aligned a multiple of 4,
+            // that way, following QUADS drawing will keep aligned with index processing
+            // It implies adding some extra alignment vertex at the end of the draw,
+            // those vertex are not processed but they are considered as an additional offset
+            // for the next set of vertex to be drawn
+            if (draws[drawsCounter - 1].mode == RL_LINES) draws[drawsCounter - 1].vertexAlignment = ((draws[drawsCounter - 1].vertexCount < 4)? draws[drawsCounter - 1].vertexCount : draws[drawsCounter - 1].vertexCount%4);
+            else if (draws[drawsCounter - 1].mode == RL_TRIANGLES) draws[drawsCounter - 1].vertexAlignment = ((draws[drawsCounter - 1].vertexCount < 4)? 1 : (4 - (draws[drawsCounter - 1].vertexCount%4)));
+
+            if (rlCheckBufferLimit(draws[drawsCounter - 1].vertexAlignment)) rlglDraw();
+            else
+            {
+                vertexData[currentBuffer].vCounter += draws[drawsCounter - 1].vertexAlignment;
+                vertexData[currentBuffer].cCounter += draws[drawsCounter - 1].vertexAlignment;
+                vertexData[currentBuffer].tcCounter += draws[drawsCounter - 1].vertexAlignment;
+
+                drawsCounter++;
+            }
+        }
+
         if (drawsCounter >= MAX_DRAWCALL_REGISTERED) rlglDraw();
 
         draws[drawsCounter - 1].mode = mode;
@@ -1113,18 +1094,9 @@ void rlBegin(int mode)
 // Finish vertex providing
 void rlEnd(void)
 {
-    // Make sure current draws[i].vertexCount is multiple of 4, to align with index processing
-    // NOTE: It implies adding some extra vertex at the end of the draw, those vertex will be
-    // processed but are placed in a single point to not result in a fragment output...
-    // TODO: System could be improved (a bit) just storing every draw alignment value
-    // and adding it to vertexOffset on drawing... maybe in a future...
-    int vertexCount = draws[drawsCounter - 1].vertexCount;
-    int vertexToAlign = (vertexCount >= 4) ? vertexCount%4 : (4 - vertexCount%4);
-    for (int i = 0; i < vertexToAlign; i++) rlVertex3f(-1, -1, -1);
-
     // Make sure vertexCount is the same for vertices, texcoords, colors and normals
     // NOTE: In OpenGL 1.1, one glColor call can be made for all the subsequent glVertex calls
-    
+
     // Make sure colors count match vertex count
     if (vertexData[currentBuffer].vCounter != vertexData[currentBuffer].cCounter)
     {
@@ -1139,7 +1111,7 @@ void rlEnd(void)
             vertexData[currentBuffer].cCounter++;
         }
     }
-    
+
     // Make sure texcoords count match vertex count
     if (vertexData[currentBuffer].vCounter != vertexData[currentBuffer].tcCounter)
     {
@@ -1177,10 +1149,10 @@ void rlEnd(void)
 void rlVertex3f(float x, float y, float z)
 {
     Vector3 vec = { x, y, z };
-    
+
     // Transform provided vector if required
     if (useTransformMatrix) vec = Vector3Transform(vec, transformMatrix);
-    
+
     // Verify that MAX_BATCH_ELEMENTS limit not reached
     if (vertexData[currentBuffer].vCounter < (MAX_BATCH_ELEMENTS*4))
     {
@@ -1216,7 +1188,7 @@ void rlTexCoord2f(float x, float y)
 }
 
 // Define one vertex (normal)
-// NOTE: Normals limited to TRIANGLES only ?
+// NOTE: Normals limited to TRIANGLES only?
 void rlNormal3f(float x, float y, float z)
 {
     // TODO: Normals usage...
@@ -1261,7 +1233,27 @@ void rlEnableTexture(unsigned int id)
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     if (draws[drawsCounter - 1].textureId != id)
     {
-        if (draws[drawsCounter - 1].vertexCount > 0) drawsCounter++;
+        if (draws[drawsCounter - 1].vertexCount > 0)
+        {
+            // Make sure current draws[i].vertexCount is aligned a multiple of 4,
+            // that way, following QUADS drawing will keep aligned with index processing
+            // It implies adding some extra alignment vertex at the end of the draw,
+            // those vertex are not processed but they are considered as an additional offset
+            // for the next set of vertex to be drawn
+            if (draws[drawsCounter - 1].mode == RL_LINES) draws[drawsCounter - 1].vertexAlignment = ((draws[drawsCounter - 1].vertexCount < 4)? draws[drawsCounter - 1].vertexCount : draws[drawsCounter - 1].vertexCount%4);
+            else if (draws[drawsCounter - 1].mode == RL_TRIANGLES) draws[drawsCounter - 1].vertexAlignment = ((draws[drawsCounter - 1].vertexCount < 4)? 1 : (4 - (draws[drawsCounter - 1].vertexCount%4)));
+
+            if (rlCheckBufferLimit(draws[drawsCounter - 1].vertexAlignment)) rlglDraw();
+            else
+            {
+                vertexData[currentBuffer].vCounter += draws[drawsCounter - 1].vertexAlignment;
+                vertexData[currentBuffer].cCounter += draws[drawsCounter - 1].vertexAlignment;
+                vertexData[currentBuffer].tcCounter += draws[drawsCounter - 1].vertexAlignment;
+
+                drawsCounter++;
+            }
+        }
+
         if (drawsCounter >= MAX_DRAWCALL_REGISTERED) rlglDraw();
 
         draws[drawsCounter - 1].textureId = id;
@@ -1355,6 +1347,18 @@ void rlDisableDepthTest(void)
     glDisable(GL_DEPTH_TEST);
 }
 
+// Enable backface culling
+void rlEnableBackfaceCulling(void)
+{
+    glEnable(GL_CULL_FACE);
+}
+
+// Disable backface culling
+void rlDisableBackfaceCulling(void)
+{
+    glDisable(GL_CULL_FACE);
+}
+
 // Enable wire mode
 void rlEnableWireMode(void)
 {
@@ -1386,11 +1390,8 @@ void rlDeleteRenderTextures(RenderTexture2D target)
     if (target.texture.id > 0) glDeleteTextures(1, &target.texture.id);
     if (target.depth.id > 0)
     {
-#if defined(GRAPHICS_API_OPENGL_21) || defined(GRAPHICS_API_OPENGL_ES2)
-        glDeleteRenderbuffers(1, &target.depth.id);
-#elif defined(GRAPHICS_API_OPENGL_33)
-        glDeleteTextures(1, &target.depth.id);
-#endif
+        if (target.depthTexture) glDeleteTextures(1, &target.depth.id);
+        else glDeleteRenderbuffers(1, &target.depth.id);
     }
 
     if (target.id > 0) glDeleteFramebuffers(1, &target.id);
@@ -1450,6 +1451,15 @@ void rlClearScreenBuffers(void)
     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);     // Stencil buffer not used...
 }
 
+// Update GPU buffer with new data
+void rlUpdateBuffer(int bufferId, void *data, int dataSize)
+{
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    glBindBuffer(GL_ARRAY_BUFFER, bufferId);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, data);
+#endif
+}
+
 //----------------------------------------------------------------------------------
 // Module Functions Definition - rlgl Functions
 //----------------------------------------------------------------------------------
@@ -1485,7 +1495,7 @@ void rlglInit(int width, int height)
     //for (int i = 0; i < numComp; i++) TraceLog(LOG_INFO, "Supported compressed format: 0x%x", format[i]);
 
     // NOTE: We don't need that much data on screen... right now...
-    
+
     // TODO: Automatize extensions loading using rlLoadExtensions() and GLAD
     // Actually, when rlglInit() is called in InitWindow() in core.c,
     // OpenGL required extensions have already been loaded (PLATFORM_DESKTOP)
@@ -1495,22 +1505,19 @@ void rlglInit(int width, int height)
     GLint numExt = 0;
 
 #if defined(GRAPHICS_API_OPENGL_33)
-
     // NOTE: On OpenGL 3.3 VAO and NPOT are supported by default
     vaoSupported = true;
+
+    // Multiple texture extensions supported by default
     texNPOTSupported = true;
     texFloatSupported = true;
+    texDepthSupported = true;
 
     // We get a list of available extensions and we check for some of them (compressed textures)
     // NOTE: We don't need to check again supported extensions but we do (GLAD already dealt with that)
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExt);
 
-#if defined(_MSC_VER)
-    const char **extList = malloc(sizeof(const char *)*numExt);
-#else
-    const char *extList[numExt];
-#endif
-
+    const char **extList = RL_MALLOC(sizeof(const char *)*numExt);
     for (int i = 0; i < numExt; i++) extList[i] = (char *)glGetStringi(GL_EXTENSIONS, i);
 
 #elif defined(GRAPHICS_API_OPENGL_ES2)
@@ -1518,23 +1525,23 @@ void rlglInit(int width, int height)
 
     // NOTE: We have to duplicate string because glGetString() returns a const string
     int len = strlen(extensions) + 1;
-    char *extensionsDup = (char *)malloc(len);
+    char *extensionsDup = (char *)RL_MALLOC(len);
     strcpy(extensionsDup, extensions);
 
     // NOTE: String could be splitted using strtok() function (string.h)
     // NOTE: strtok() modifies the passed string, it can not be const
 
-    char *extList[512];     // Allocate 512 strings pointers (2 KB)
+    // Allocate 512 strings pointers (2 KB)
+    const char **extList = RL_MALLOC(sizeof(const char *)*512);
 
     extList[numExt] = strtok(extensionsDup, " ");
-
     while (extList[numExt] != NULL)
     {
         numExt++;
         extList[numExt] = strtok(NULL, " ");
     }
 
-    free(extensionsDup);    // Duplicated string must be deallocated
+    RL_FREE(extensionsDup);    // Duplicated string must be deallocated
 
     numExt -= 1;
 #endif
@@ -1560,7 +1567,19 @@ void rlglInit(int width, int height)
             glBindVertexArray = (PFNGLBINDVERTEXARRAYOESPROC)eglGetProcAddress("glBindVertexArrayOES");
             glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSOESPROC)eglGetProcAddress("glDeleteVertexArraysOES");
             //glIsVertexArray = (PFNGLISVERTEXARRAYOESPROC)eglGetProcAddress("glIsVertexArrayOES");     // NOTE: Fails in WebGL, omitted
+
+            if (glGenVertexArrays == NULL) printf("glGenVertexArrays is NULL.\n");  // WEB: ISSUE FOUND! ...but why?
+            if (glBindVertexArray == NULL) printf("glBindVertexArray is NULL.\n");  // WEB: ISSUE FOUND! ...but why?
         }
+
+        // TODO: HACK REVIEW!
+        // For some reason on raylib 2.5, VAO usage breaks the build
+        // error seems related to function pointers but I can not get detailed info...
+        // Avoiding VAO usage is the only solution for now... :(
+        // Ref: https://emscripten.org/docs/porting/guidelines/function_pointer_issues.html
+    #if defined(PLATFORM_WEB)
+        vaoSupported = false;
+    #endif
 
         // Check NPOT textures support
         // NOTE: Only check on OpenGL ES, OpenGL 3.3 has NPOT textures full support as core feature
@@ -1568,6 +1587,13 @@ void rlglInit(int width, int height)
 
         // Check texture float support
         if (strcmp(extList[i], (const char *)"GL_OES_texture_float") == 0) texFloatSupported = true;
+
+        // Check depth texture support
+        if ((strcmp(extList[i], (const char *)"GL_OES_depth_texture") == 0) ||
+            (strcmp(extList[i], (const char *)"GL_WEBGL_depth_texture") == 0)) texDepthSupported = true;
+
+        if (strcmp(extList[i], (const char *)"GL_OES_depth24") == 0) maxDepthBits = 24;
+        if (strcmp(extList[i], (const char *)"GL_OES_depth32") == 0) maxDepthBits = 32;
 #endif
         // DDS texture compression support
         if ((strcmp(extList[i], (const char *)"GL_EXT_texture_compression_s3tc") == 0) ||
@@ -1598,12 +1624,10 @@ void rlglInit(int width, int height)
         if (strcmp(extList[i], (const char *)"GL_EXT_texture_mirror_clamp") == 0) texMirrorClampSupported = true;
 
         // Debug marker support
-        if(strcmp(extList[i], (const char *)"GL_EXT_debug_marker") == 0) debugMarkerSupported = true;
+        if (strcmp(extList[i], (const char *)"GL_EXT_debug_marker") == 0) debugMarkerSupported = true;
     }
 
-#if defined(_WIN32) && defined(_MSC_VER)
-    free(extList);
-#endif
+    RL_FREE(extList);
 
 #if defined(GRAPHICS_API_OPENGL_ES2)
     if (vaoSupported) TraceLog(LOG_INFO, "[EXTENSION] VAO extension detected, VAO functions initialized successfully");
@@ -1624,11 +1648,8 @@ void rlglInit(int width, int height)
 
     if (debugMarkerSupported) TraceLog(LOG_INFO, "[EXTENSION] Debug Marker supported");
 
-    
-    
     // Initialize buffers, default shaders and default textures
     //----------------------------------------------------------
-
     // Init default white texture
     unsigned char pixels[4] = { 255, 255, 255, 255 };   // 1 pixel RGBA (4 bytes)
     defaultTextureId = rlLoadTexture(pixels, 1, 1, UNCOMPRESSED_R8G8B8A8, 1);
@@ -1642,17 +1663,18 @@ void rlglInit(int width, int height)
 
     // Init default vertex arrays buffers
     LoadBuffersDefault();
-    
+
     // Init transformations matrix accumulator
     transformMatrix = MatrixIdentity();
 
     // Init draw calls tracking system
-    draws = (DrawCall *)malloc(sizeof(DrawCall)*MAX_DRAWCALL_REGISTERED);
+    draws = (DrawCall *)RL_MALLOC(sizeof(DrawCall)*MAX_DRAWCALL_REGISTERED);
 
     for (int i = 0; i < MAX_DRAWCALL_REGISTERED; i++)
     {
         draws[i].mode = RL_QUADS;
         draws[i].vertexCount = 0;
+        draws[i].vertexAlignment = 0;
         //draws[i].vaoId = 0;
         //draws[i].shaderId = 0;
         draws[i].textureId = defaultTextureId;
@@ -1669,7 +1691,7 @@ void rlglInit(int width, int height)
     projection = MatrixIdentity();
     modelview = MatrixIdentity();
     currentMatrix = &modelview;
-#endif      // defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+#endif      // GRAPHICS_API_OPENGL_33 || GRAPHICS_API_OPENGL_ES2
 
     // Initialize OpenGL default states
     //----------------------------------------------------------
@@ -1716,7 +1738,7 @@ void rlglClose(void)
 
     TraceLog(LOG_INFO, "[TEX ID %i] Unloaded texture data (base white texture) from VRAM", defaultTextureId);
 
-    free(draws);
+    RL_FREE(draws);
 #endif
 }
 
@@ -1724,8 +1746,12 @@ void rlglClose(void)
 void rlglDraw(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-    UpdateBuffersDefault();
-    DrawBuffersDefault();       // NOTE: Stereo rendering is checked inside
+    // Only process data if we have data to process
+    if (vertexData[currentBuffer].vCounter > 0)
+    {
+        UpdateBuffersDefault();
+        DrawBuffersDefault();       // NOTE: Stereo rendering is checked inside
+    }
 #endif
 }
 
@@ -1778,7 +1804,7 @@ void rlLoadExtensions(void *loader)
         #if defined(GRAPHICS_API_OPENGL_21)
         if (GLAD_GL_VERSION_2_1) TraceLog(LOG_INFO, "OpenGL 2.1 profile supported");
         #elif defined(GRAPHICS_API_OPENGL_33)
-        if(GLAD_GL_VERSION_3_3) TraceLog(LOG_INFO, "OpenGL 3.3 Core profile supported");
+        if (GLAD_GL_VERSION_3_3) TraceLog(LOG_INFO, "OpenGL 3.3 Core profile supported");
         else TraceLog(LOG_ERROR, "OpenGL 3.3 Core profile not supported");
         #endif
     #endif
@@ -1816,7 +1842,7 @@ unsigned int rlLoadTexture(void *data, int width, int height, int format, int mi
 {
     glBindTexture(GL_TEXTURE_2D, 0);    // Free any old binding
 
-    GLuint id = 0;
+    unsigned int id = 0;
 
     // Check texture format support by OpenGL 1.1 (compressed textures not supported)
 #if defined(GRAPHICS_API_OPENGL_11)
@@ -1857,11 +1883,11 @@ unsigned int rlLoadTexture(void *data, int width, int height, int format, int mi
         return id;
     }
 #endif
-#endif      // defined(GRAPHICS_API_OPENGL_11)
+#endif      // GRAPHICS_API_OPENGL_11
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    glGenTextures(1, &id);              // Generate Pointer to the texture
+    glGenTextures(1, &id);              // Generate texture id
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     //glActiveTexture(GL_TEXTURE0);     // If not defined, using GL_TEXTURE0 by default (shader texture)
@@ -1965,8 +1991,123 @@ unsigned int rlLoadTexture(void *data, int width, int height, int format, int mi
     return id;
 }
 
+// Load depth texture/renderbuffer (to be attached to fbo)
+// WARNING: OpenGL ES 2.0 requires GL_OES_depth_texture/WEBGL_depth_texture extensions
+unsigned int rlLoadTextureDepth(int width, int height, int bits, bool useRenderBuffer)
+{
+    unsigned int id = 0;
+
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    unsigned int glInternalFormat = GL_DEPTH_COMPONENT16;
+
+    if ((bits != 16) && (bits != 24) && (bits != 32)) bits = 16;
+
+    if (bits == 24)
+    {
+#if defined(GRAPHICS_API_OPENGL_33)
+        glInternalFormat = GL_DEPTH_COMPONENT24;
+#elif defined(GRAPHICS_API_OPENGL_ES2)
+        if (maxDepthBits >= 24) glInternalFormat = GL_DEPTH_COMPONENT24_OES;
+#endif
+    }
+
+    if (bits == 32)
+    {
+#if defined(GRAPHICS_API_OPENGL_33)
+        glInternalFormat = GL_DEPTH_COMPONENT32;
+#elif defined(GRAPHICS_API_OPENGL_ES2)
+        if (maxDepthBits == 32) glInternalFormat = GL_DEPTH_COMPONENT32_OES;
+#endif
+    }
+
+    if (!useRenderBuffer && texDepthSupported)
+    {
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    else
+    {
+        // Create the renderbuffer that will serve as the depth attachment for the framebuffer
+        // NOTE: A renderbuffer is simpler than a texture and could offer better performance on embedded devices
+        glGenRenderbuffers(1, &id);
+        glBindRenderbuffer(GL_RENDERBUFFER, id);
+        glRenderbufferStorage(GL_RENDERBUFFER, glInternalFormat, width, height);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    }
+#endif
+
+    return id;
+}
+
+// Load texture cubemap
+// NOTE: Cubemap data is expected to be 6 images in a single column,
+// expected the following convention: +X, -X, +Y, -Y, +Z, -Z
+unsigned int rlLoadTextureCubemap(void *data, int size, int format)
+{
+    unsigned int cubemapId = 0;
+    unsigned int dataSize = GetPixelDataSize(size, size, format);
+
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    glGenTextures(1, &cubemapId);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapId);
+
+    unsigned int glInternalFormat, glFormat, glType;
+    rlGetGlTextureFormats(format, &glInternalFormat, &glFormat, &glType);
+
+    if (glInternalFormat != -1)
+    {
+        // Load cubemap faces
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            if (format < COMPRESSED_DXT1_RGB) glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, glInternalFormat, size, size, 0, glFormat, glType, (unsigned char *)data + i*dataSize);
+#if !defined(GRAPHICS_API_OPENGL_11)
+            else glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, glInternalFormat, size, size, 0, dataSize, (unsigned char *)data + i*dataSize);
+#endif
+#if defined(GRAPHICS_API_OPENGL_33)
+            if (format == UNCOMPRESSED_GRAYSCALE)
+            {
+                GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+                glTexParameteriv(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+            }
+            else if (format == UNCOMPRESSED_GRAY_ALPHA)
+            {
+#if defined(GRAPHICS_API_OPENGL_21)
+                GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ALPHA };
+#elif defined(GRAPHICS_API_OPENGL_33)
+                GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
+#endif
+                glTexParameteriv(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+            }
+#endif
+        }
+    }
+
+    // Set cubemap texture sampling parameters
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#if defined(GRAPHICS_API_OPENGL_33)
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);  // Flag not supported on OpenGL ES 2.0
+#endif
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+#endif
+
+    return cubemapId;
+}
+
 // Update already loaded texture in GPU with new data
-// TODO: We don't know safely if internal texture format is the expected one...
+// NOTE: We don't know safely if internal texture format is the expected one...
 void rlUpdateTexture(unsigned int id, int width, int height, int format, const void *data)
 {
     glBindTexture(GL_TEXTURE_2D, id);
@@ -2039,107 +2180,109 @@ void rlUnloadTexture(unsigned int id)
     if (id > 0) glDeleteTextures(1, &id);
 }
 
-// Load a texture to be used for rendering (fbo with color and depth attachments)
-RenderTexture2D rlLoadRenderTexture(int width, int height)
+// Load a texture to be used for rendering (fbo with default color and depth attachments)
+// NOTE: If colorFormat or depthBits are no supported, no attachment is done
+RenderTexture2D rlLoadRenderTexture(int width, int height, int format, int depthBits, bool useDepthTexture)
 {
     RenderTexture2D target = { 0 };
 
-    target.id = 0;
-
-    target.texture.id = 0;
-    target.texture.width = width;
-    target.texture.height = height;
-    target.texture.format = UNCOMPRESSED_R8G8B8A8;
-    target.texture.mipmaps = 1;
-
-    target.depth.id = 0;
-    target.depth.width = width;
-    target.depth.height = height;
-    target.depth.format = 19;       //DEPTH_COMPONENT_24BIT
-    target.depth.mipmaps = 1;
-
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-    // Create the texture that will serve as the color attachment for the framebuffer
-    glGenTextures(1, &target.texture.id);
-    glBindTexture(GL_TEXTURE_2D, target.texture.id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-#if defined(GRAPHICS_API_OPENGL_21) || defined(GRAPHICS_API_OPENGL_ES2)
-    #define USE_DEPTH_RENDERBUFFER
-#else
-    #define USE_DEPTH_TEXTURE
-#endif
-
-#if defined(USE_DEPTH_RENDERBUFFER)
-    // Create the renderbuffer that will serve as the depth attachment for the framebuffer.
-    glGenRenderbuffers(1, &target.depth.id);
-    glBindRenderbuffer(GL_RENDERBUFFER, target.depth.id);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);    // GL_DEPTH_COMPONENT24 not supported on Android
-#elif defined(USE_DEPTH_TEXTURE)
-    // NOTE: We can also use a texture for depth buffer (GL_ARB_depth_texture/GL_OES_depth_texture extension required)
-    // A renderbuffer is simpler than a texture and could offer better performance on embedded devices
-    glGenTextures(1, &target.depth.id);
-    glBindTexture(GL_TEXTURE_2D, target.depth.id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
-#endif
+    if (useDepthTexture && texDepthSupported) target.depthTexture = true;
 
     // Create the framebuffer object
     glGenFramebuffers(1, &target.id);
     glBindFramebuffer(GL_FRAMEBUFFER, target.id);
 
-    // Attach color texture and depth renderbuffer to FBO
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture.id, 0);
-#if defined(USE_DEPTH_RENDERBUFFER)
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, target.depth.id);
-#elif defined(USE_DEPTH_TEXTURE)
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, target.depth.id, 0);
-#endif
-
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-    if (status != GL_FRAMEBUFFER_COMPLETE)
+    // Create fbo color texture attachment
+    //-----------------------------------------------------------------------------------------------------
+    if ((format != -1) && (format < COMPRESSED_DXT1_RGB))
     {
-        TraceLog(LOG_WARNING, "Framebuffer object could not be created...");
-
-        switch (status)
-        {
-            case GL_FRAMEBUFFER_UNSUPPORTED: TraceLog(LOG_WARNING, "Framebuffer is unsupported"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: TraceLog(LOG_WARNING, "Framebuffer incomplete attachment"); break;
-#if defined(GRAPHICS_API_OPENGL_ES2)
-            case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS: TraceLog(LOG_WARNING, "Framebuffer incomplete dimensions"); break;
-#endif
-            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: TraceLog(LOG_WARNING, "Framebuffer incomplete missing attachment"); break;
-            default: break;
-        }
-
-        if (target.texture.id > 0) glDeleteTextures(1, &target.texture.id);
-        if (target.depth.id > 0)
-        {
-#if defined(USE_DEPTH_RENDERBUFFER)
-            glDeleteRenderbuffers(1, &target.depth.id);
-#elif defined(USE_DEPTH_TEXTURE)
-            glDeleteTextures(1, &target.depth.id);
-#endif
-        }
-
-        glDeleteFramebuffers(1, &target.id);
+        // WARNING: Some texture formats are not supported for fbo color attachment
+        target.texture.id = rlLoadTexture(NULL, width, height, format, 1);
+        target.texture.width = width;
+        target.texture.height = height;
+        target.texture.format = format;
+        target.texture.mipmaps = 1;
     }
-    else TraceLog(LOG_INFO, "[FBO ID %i] Framebuffer object created successfully", target.id);
+    //-----------------------------------------------------------------------------------------------------
+
+    // Create fbo depth renderbuffer/texture
+    //-----------------------------------------------------------------------------------------------------
+    if (depthBits > 0)
+    {
+        target.depth.id = rlLoadTextureDepth(width, height, depthBits, !useDepthTexture);
+        target.depth.width = width;
+        target.depth.height = height;
+        target.depth.format = 19;       //DEPTH_COMPONENT_24BIT?
+        target.depth.mipmaps = 1;
+    }
+    //-----------------------------------------------------------------------------------------------------
+
+    // Attach color texture and depth renderbuffer to FBO
+    //-----------------------------------------------------------------------------------------------------
+    rlRenderTextureAttach(target, target.texture.id, 0);    // COLOR attachment
+    rlRenderTextureAttach(target, target.depth.id, 1);      // DEPTH attachment
+    //-----------------------------------------------------------------------------------------------------
+
+    // Check if fbo is complete with attachments (valid)
+    //-----------------------------------------------------------------------------------------------------
+    if (rlRenderTextureComplete(target)) TraceLog(LOG_INFO, "[FBO ID %i] Framebuffer object created successfully", target.id);
+    //-----------------------------------------------------------------------------------------------------
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 
     return target;
+}
+
+// Attach color buffer texture to an fbo (unloads previous attachment)
+// NOTE: Attach type: 0-Color, 1-Depth renderbuffer, 2-Depth texture
+void rlRenderTextureAttach(RenderTexture2D target, unsigned int id, int attachType)
+{
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    glBindFramebuffer(GL_FRAMEBUFFER, target.id);
+
+    if (attachType == 0) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
+    else if (attachType == 1)
+    {
+        if (target.depthTexture) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, id, 0);
+        else glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, id);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
+}
+
+// Verify render texture is complete
+bool rlRenderTextureComplete(RenderTexture target)
+{
+    bool result = false;
+
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    glBindFramebuffer(GL_FRAMEBUFFER, target.id);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (status)
+        {
+            case GL_FRAMEBUFFER_UNSUPPORTED: TraceLog(LOG_WARNING, "Framebuffer is unsupported"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: TraceLog(LOG_WARNING, "Framebuffer has incomplete attachment"); break;
+#if defined(GRAPHICS_API_OPENGL_ES2)
+            case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS: TraceLog(LOG_WARNING, "Framebuffer has incomplete dimensions"); break;
+#endif
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: TraceLog(LOG_WARNING, "Framebuffer has a missing attachment"); break;
+            default: break;
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    result = (status == GL_FRAMEBUFFER_COMPLETE);
+#endif
+
+    return result;
 }
 
 // Generate mipmap data for selected texture
@@ -2185,7 +2328,7 @@ void rlGenerateMipmaps(Texture2D *texture)
             }
 
             texture->mipmaps = mipmapCount + 1;
-            free(data); // Once mipmaps have been generated and data has been uploaded to GPU VRAM, we can discard RAM data
+            RL_FREE(data); // Once mipmaps have been generated and data has been uploaded to GPU VRAM, we can discard RAM data
 
             TraceLog(LOG_WARNING, "[TEX ID %i] Mipmaps [%i] generated manually on CPU side", texture->id, texture->mipmaps);
         }
@@ -2213,9 +2356,15 @@ void rlGenerateMipmaps(Texture2D *texture)
 }
 
 // Upload vertex data into a VAO (if supported) and VBO
-// TODO: Check if mesh has already been loaded in GPU
 void rlLoadMesh(Mesh *mesh, bool dynamic)
 {
+    if (mesh->vaoId > 0)
+    {
+        // Check if mesh has already been loaded in GPU
+        TraceLog(LOG_WARNING, "Trying to re-load an already loaded mesh");
+        return;
+    }
+
     mesh->vaoId = 0;        // Vertex Array Object
     mesh->vboId[0] = 0;     // Vertex positions VBO
     mesh->vboId[1] = 0;     // Vertex texcoords VBO
@@ -2333,6 +2482,29 @@ void rlLoadMesh(Mesh *mesh, bool dynamic)
         TraceLog(LOG_INFO, "[VBOs] Mesh uploaded successfully to VRAM (GPU)");
     }
 #endif
+}
+
+// Load a new attributes buffer
+unsigned int rlLoadAttribBuffer(unsigned int vaoId, int shaderLoc, void *buffer, int size, bool dynamic)
+{
+    unsigned int id = 0;
+
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    int drawHint = GL_STATIC_DRAW;
+    if (dynamic) drawHint = GL_DYNAMIC_DRAW;
+
+    if (vaoSupported) glBindVertexArray(vaoId);
+
+    glGenBuffers(1, &id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
+    glBufferData(GL_ARRAY_BUFFER, size, buffer, drawHint);
+    glVertexAttribPointer(shaderLoc, 2, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(shaderLoc);
+
+    if (vaoSupported) glBindVertexArray(0);
+#endif
+
+    return id;
 }
 
 // Update vertex data on GPU (upload new data to one buffer)
@@ -2484,8 +2656,6 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
     if (vaoSupported) glBindVertexArray(mesh.vaoId);
     else
     {
-        // TODO: Simplify VBO binding into a for loop
-
         // Bind mesh VBO data: vertex position (shader-location = 0)
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[0]);
         glVertexAttribPointer(material.shader.locs[LOC_VERTEX_POSITION], 3, GL_FLOAT, 0, 0, 0);
@@ -2593,18 +2763,18 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
 // Unload mesh data from CPU and GPU
 void rlUnloadMesh(Mesh *mesh)
 {
-    if (mesh->vertices != NULL) free(mesh->vertices);
-    if (mesh->texcoords != NULL) free(mesh->texcoords);
-    if (mesh->normals != NULL) free(mesh->normals);
-    if (mesh->colors != NULL) free(mesh->colors);
-    if (mesh->tangents != NULL) free(mesh->tangents);
-    if (mesh->texcoords2 != NULL) free(mesh->texcoords2);
-    if (mesh->indices != NULL) free(mesh->indices);
+    RL_FREE(mesh->vertices);
+    RL_FREE(mesh->texcoords);
+    RL_FREE(mesh->normals);
+    RL_FREE(mesh->colors);
+    RL_FREE(mesh->tangents);
+    RL_FREE(mesh->texcoords2);
+    RL_FREE(mesh->indices);
 
-    if (mesh->baseVertices != NULL) free(mesh->baseVertices);
-    if (mesh->baseNormals != NULL) free(mesh->baseNormals);
-    if (mesh->weightBias != NULL) free(mesh->weightBias);
-    if (mesh->weightId != NULL) free(mesh->weightId);
+    RL_FREE(mesh->animVertices);
+    RL_FREE(mesh->animNormals);
+    RL_FREE(mesh->boneWeights);
+    RL_FREE(mesh->boneIds);
 
     rlDeleteBuffers(mesh->vboId[0]);   // vertex
     rlDeleteBuffers(mesh->vboId[1]);   // texcoords
@@ -2620,28 +2790,28 @@ void rlUnloadMesh(Mesh *mesh)
 // Read screen pixel data (color buffer)
 unsigned char *rlReadScreenPixels(int width, int height)
 {
-    unsigned char *screenData = (unsigned char *)calloc(width*height*4, sizeof(unsigned char));
+    unsigned char *screenData = (unsigned char *)RL_CALLOC(width*height*4, sizeof(unsigned char));
 
     // NOTE 1: glReadPixels returns image flipped vertically -> (0,0) is the bottom left corner of the framebuffer
     // NOTE 2: We are getting alpha channel! Be careful, it can be transparent if not cleared properly!
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, screenData);
 
     // Flip image vertically!
-    unsigned char *imgData = (unsigned char *)malloc(width*height*sizeof(unsigned char)*4);
+    unsigned char *imgData = (unsigned char *)RL_MALLOC(width*height*sizeof(unsigned char)*4);
 
     for (int y = height - 1; y >= 0; y--)
     {
         for (int x = 0; x < (width*4); x++)
         {
             imgData[((height - 1) - y)*width*4 + x] = screenData[(y*width*4) + x];  // Flip line
-            
+
             // Set alpha component value to 255 (no trasparent image retrieval)
             // NOTE: Alpha value has already been applied to RGB in framebuffer, we don't need it!
             if (((x + 1)%4) == 0) imgData[((height - 1) - y)*width*4 + x] = 255;
         }
     }
 
-    free(screenData);
+    RL_FREE(screenData);
 
     return imgData;     // NOTE: image data should be freed
 }
@@ -2673,7 +2843,7 @@ void *rlReadTexturePixels(Texture2D texture)
 
     if ((glInternalFormat != -1) && (texture.format < COMPRESSED_DXT1_RGB))
     {
-        pixels = (unsigned char *)malloc(size);
+        pixels = (unsigned char *)RL_MALLOC(size);
         glGetTexImage(GL_TEXTURE_2D, 0, glFormat, glType, pixels);
     }
     else TraceLog(LOG_WARNING, "Texture data retrieval not suported for pixel format");
@@ -2689,8 +2859,8 @@ void *rlReadTexturePixels(Texture2D texture)
     // 2 - Create an fbo, activate it, render quad with texture, glReadPixels()
     // We are using Option 1, just need to care for texture format on retrieval
     // NOTE: This behaviour could be conditioned by graphic driver...
-    RenderTexture2D fbo = rlLoadRenderTexture(texture.width, texture.height);
-    
+    RenderTexture2D fbo = rlLoadRenderTexture(texture.width, texture.height, UNCOMPRESSED_R8G8B8A8, 16, false);
+
     glBindFramebuffer(GL_FRAMEBUFFER, fbo.id);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -2699,12 +2869,12 @@ void *rlReadTexturePixels(Texture2D texture)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id, 0);
 
     // Allocate enough memory to read back our texture data
-    pixels = (unsigned char *)malloc(GetPixelDataSize(texture.width, texture.height, texture.format));
+    pixels = (unsigned char *)RL_MALLOC(GetPixelDataSize(texture.width, texture.height, texture.format));
 
     // Get OpenGL internal formats and data type from our texture format
     unsigned int glInternalFormat, glFormat, glType;
     rlGetGlTextureFormats(texture.format, &glInternalFormat, &glFormat, &glType);
-    
+
     // NOTE: We read data as RGBA because FBO texture is configured as RGBA, despite binding a RGB texture...
     glReadPixels(0, 0, texture.width, texture.height, glFormat, glType, pixels);
 
@@ -2769,7 +2939,7 @@ char *LoadText(const char *fileName)
 
             if (size > 0)
             {
-                text = (char *)malloc(sizeof(char)*(size + 1));
+                text = (char *)RL_MALLOC(sizeof(char)*(size + 1));
                 int count = fread(text, sizeof(char), size, textFile);
                 text[count] = '\0';
             }
@@ -2796,8 +2966,8 @@ Shader LoadShader(const char *vsFileName, const char *fsFileName)
 
     shader = LoadShaderCode(vShaderStr, fShaderStr);
 
-    if (vShaderStr != NULL) free(vShaderStr);
-    if (fShaderStr != NULL) free(fShaderStr);
+    if (vShaderStr != NULL) RL_FREE(vShaderStr);
+    if (fShaderStr != NULL) RL_FREE(fShaderStr);
 
     return shader;
 }
@@ -2855,7 +3025,7 @@ Shader LoadShaderCode(char *vsCode, char *fsCode)
         name[namelen] = 0;
 
         // Get the location of the named uniform
-        GLuint location = glGetUniformLocation(shader.id, name);
+        unsigned int location = glGetUniformLocation(shader.id, name);
 
         TraceLog(LOG_DEBUG, "[SHDR ID %i] Active uniform [%s] set at location: %i", shader.id, name, location);
     }
@@ -2932,7 +3102,7 @@ void SetShaderValueV(Shader shader, int uniformLoc, const void *value, int unifo
         case UNIFORM_SAMPLER2D: glUniform1iv(uniformLoc, count, (int *)value); break;
         default: TraceLog(LOG_WARNING, "Shader uniform could not be set data type not recognized");
     }
-    
+
     //glUseProgram(0);      // Avoid reseting current shader program, in case other uniforms are set
 #endif
 }
@@ -2945,6 +3115,18 @@ void SetShaderValueMatrix(Shader shader, int uniformLoc, Matrix mat)
     glUseProgram(shader.id);
 
     glUniformMatrix4fv(uniformLoc, 1, false, MatrixToFloat(mat));
+
+    //glUseProgram(0);
+#endif
+}
+
+// Set shader uniform value for texture
+void SetShaderValueTexture(Shader shader, int uniformLoc, Texture2D texture)
+{
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    glUseProgram(shader.id);
+
+    glUniform1i(uniformLoc, texture.id);
 
     //glUseProgram(0);
 #endif
@@ -3011,7 +3193,7 @@ Texture2D GenTextureCubemap(Shader shader, Texture2D skyHDR, int size)
     // NOTE: Faces are stored as 32 bit floating point values
     glGenTextures(1, &cubemap.id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id);
-    for (unsigned int i = 0; i < 6; i++) 
+    for (unsigned int i = 0; i < 6; i++)
     {
 #if defined(GRAPHICS_API_OPENGL_33)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, size, size, 0, GL_RGB, GL_FLOAT, NULL);
@@ -3019,7 +3201,7 @@ Texture2D GenTextureCubemap(Shader shader, Texture2D skyHDR, int size)
         if (texFloatSupported) glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, size, size, 0, GL_RGB, GL_FLOAT, NULL);
 #endif
     }
-    
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 #if defined(GRAPHICS_API_OPENGL_33)
@@ -3099,7 +3281,7 @@ Texture2D GenTextureIrradiance(Shader shader, Texture2D cubemap, int size)
     {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, NULL);
     }
-    
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -3177,7 +3359,7 @@ Texture2D GenTexturePrefilter(Shader shader, Texture2D cubemap, int size)
     {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, NULL);
     }
-    
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -3285,7 +3467,7 @@ Texture2D GenTextureBRDF(Shader shader, int size)
 
     // Unbind framebuffer and textures
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
+
     // Unload framebuffer but keep color texture
     glDeleteRenderbuffers(1, &rbo);
     glDeleteFramebuffers(1, &fbo);
@@ -3332,7 +3514,7 @@ void EndBlendMode(void)
 void BeginScissorMode(int x, int y, int width, int height)
 {
     rlglDraw();             // Force drawing elements
-    
+
     glEnable(GL_SCISSOR_TEST);
     glScissor(x, screenHeight - (y + height), width, height);
 }
@@ -3341,123 +3523,121 @@ void BeginScissorMode(int x, int y, int width, int height)
 void EndScissorMode(void)
 {
     rlglDraw();             // Force drawing elements
-    
+
     glDisable(GL_SCISSOR_TEST);
 }
 
 #if defined(SUPPORT_VR_SIMULATOR)
-// Get VR device information for some standard devices
-VrDeviceInfo GetVrDeviceInfo(int vrDeviceType)
-{
-    VrDeviceInfo hmd = { 0 };                // Current VR device info
-
-    switch (vrDeviceType)
-    {
-        case HMD_DEFAULT_DEVICE:
-        case HMD_OCULUS_RIFT_CV1:
-        {
-            // Oculus Rift CV1 parameters
-            // NOTE: CV1 represents a complete HMD redesign compared to previous versions,
-            // new Fresnel-hybrid-asymmetric lenses have been added and, consequently,
-            // previous parameters (DK2) and distortion shader (DK2) doesn't work any more.
-            // I just defined a set of parameters for simulator that approximate to CV1 stereo rendering
-            // but result is not the same obtained with Oculus PC SDK.
-            hmd.hResolution = 2160;                 // HMD horizontal resolution in pixels
-            hmd.vResolution = 1200;                 // HMD vertical resolution in pixels
-            hmd.hScreenSize = 0.133793f;            // HMD horizontal size in meters
-            hmd.vScreenSize = 0.0669f;              // HMD vertical size in meters
-            hmd.vScreenCenter = 0.04678f;           // HMD screen center in meters
-            hmd.eyeToScreenDistance = 0.041f;       // HMD distance between eye and display in meters
-            hmd.lensSeparationDistance = 0.07f;     // HMD lens separation distance in meters
-            hmd.interpupillaryDistance = 0.07f;     // HMD IPD (distance between pupils) in meters
-            hmd.lensDistortionValues[0] = 1.0f;     // HMD lens distortion constant parameter 0
-            hmd.lensDistortionValues[1] = 0.22f;    // HMD lens distortion constant parameter 1
-            hmd.lensDistortionValues[2] = 0.24f;    // HMD lens distortion constant parameter 2
-            hmd.lensDistortionValues[3] = 0.0f;     // HMD lens distortion constant parameter 3
-            hmd.chromaAbCorrection[0] = 0.996f;     // HMD chromatic aberration correction parameter 0
-            hmd.chromaAbCorrection[1] = -0.004f;    // HMD chromatic aberration correction parameter 1
-            hmd.chromaAbCorrection[2] = 1.014f;     // HMD chromatic aberration correction parameter 2
-            hmd.chromaAbCorrection[3] = 0.0f;       // HMD chromatic aberration correction parameter 3
-
-            TraceLog(LOG_INFO, "Initializing VR Simulator (Oculus Rift CV1)");
-        } break;
-        case HMD_OCULUS_RIFT_DK2:
-        {
-            // Oculus Rift DK2 parameters
-            hmd.hResolution = 1280;                 // HMD horizontal resolution in pixels
-            hmd.vResolution = 800;                  // HMD vertical resolution in pixels
-            hmd.hScreenSize = 0.14976f;             // HMD horizontal size in meters
-            hmd.vScreenSize = 0.09356f;             // HMD vertical size in meters
-            hmd.vScreenCenter = 0.04678f;           // HMD screen center in meters
-            hmd.eyeToScreenDistance = 0.041f;       // HMD distance between eye and display in meters
-            hmd.lensSeparationDistance = 0.0635f;   // HMD lens separation distance in meters
-            hmd.interpupillaryDistance = 0.064f;    // HMD IPD (distance between pupils) in meters
-            hmd.lensDistortionValues[0] = 1.0f;     // HMD lens distortion constant parameter 0
-            hmd.lensDistortionValues[1] = 0.22f;    // HMD lens distortion constant parameter 1
-            hmd.lensDistortionValues[2] = 0.24f;    // HMD lens distortion constant parameter 2
-            hmd.lensDistortionValues[3] = 0.0f;     // HMD lens distortion constant parameter 3
-            hmd.chromaAbCorrection[0] = 0.996f;     // HMD chromatic aberration correction parameter 0
-            hmd.chromaAbCorrection[1] = -0.004f;    // HMD chromatic aberration correction parameter 1
-            hmd.chromaAbCorrection[2] = 1.014f;     // HMD chromatic aberration correction parameter 2
-            hmd.chromaAbCorrection[3] = 0.0f;       // HMD chromatic aberration correction parameter 3
-
-            TraceLog(LOG_INFO, "Initializing VR Simulator (Oculus Rift DK2)");
-        } break;
-        case HMD_OCULUS_GO:
-        {
-            // TODO: Provide device display and lens parameters
-        }
-        case HMD_VALVE_HTC_VIVE:
-        {
-            // TODO: Provide device display and lens parameters
-        }
-        case HMD_SONY_PSVR:
-        {
-            // TODO: Provide device display and lens parameters
-        }
-        default: break;
-    }
-
-    return hmd;
-}
-
 // Init VR simulator for selected device parameters
-// NOTE: It modifies the global variable: VrStereoConfig vrConfig
-void InitVrSimulator(VrDeviceInfo info)
+// NOTE: It modifies the global variable: stereoFbo
+void InitVrSimulator(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Initialize framebuffer and textures for stereo rendering
     // NOTE: Screen size should match HMD aspect ratio
-    vrConfig.stereoFbo = rlLoadRenderTexture(screenWidth, screenHeight);
-
-#if defined(SUPPORT_DISTORTION_SHADER)
-    // Load distortion shader
-    vrConfig.distortionShader = LoadShaderCode(NULL, distortionFShaderStr);
-
-    if (vrConfig.distortionShader.id > 0) SetShaderDefaultLocations(&vrConfig.distortionShader);
-#endif
-
-    // Set VR configutarion parameters, including distortion shader
-    SetStereoConfig(info);
+    stereoFbo = rlLoadRenderTexture(screenWidth, screenHeight, UNCOMPRESSED_R8G8B8A8, 24, false);
 
     vrSimulatorReady = true;
-#endif
-
-#if defined(GRAPHICS_API_OPENGL_11)
+#else
     TraceLog(LOG_WARNING, "VR Simulator not supported on OpenGL 1.1");
 #endif
+}
+
+// Update VR tracking (position and orientation) and camera
+// NOTE: Camera (position, target, up) gets update with head tracking information
+void UpdateVrTracking(Camera *camera)
+{
+    // TODO: Simulate 1st person camera system
 }
 
 // Close VR simulator for current device
 void CloseVrSimulator(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-    if (vrSimulatorReady)
+    if (vrSimulatorReady) rlDeleteRenderTextures(stereoFbo);        // Unload stereo framebuffer and texture
+#endif
+}
+
+// Set stereo rendering configuration parameters
+void SetVrConfiguration(VrDeviceInfo hmd, Shader distortion)
+{
+#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+    // Reset vrConfig for a new values assignment
+    memset(&vrConfig, 0, sizeof(vrConfig));
+
+    // Assign distortion shader
+    vrConfig.distortionShader = distortion;
+
+    // Compute aspect ratio
+    float aspect = ((float)hmd.hResolution*0.5f)/(float)hmd.vResolution;
+
+    // Compute lens parameters
+    float lensShift = (hmd.hScreenSize*0.25f - hmd.lensSeparationDistance*0.5f)/hmd.hScreenSize;
+    float leftLensCenter[2] = { 0.25f + lensShift, 0.5f };
+    float rightLensCenter[2] = { 0.75f - lensShift, 0.5f };
+    float leftScreenCenter[2] = { 0.25f, 0.5f };
+    float rightScreenCenter[2] = { 0.75f, 0.5f };
+
+    // Compute distortion scale parameters
+    // NOTE: To get lens max radius, lensShift must be normalized to [-1..1]
+    float lensRadius = (float)fabs(-1.0f - 4.0f*lensShift);
+    float lensRadiusSq = lensRadius*lensRadius;
+    float distortionScale = hmd.lensDistortionValues[0] +
+                            hmd.lensDistortionValues[1]*lensRadiusSq +
+                            hmd.lensDistortionValues[2]*lensRadiusSq*lensRadiusSq +
+                            hmd.lensDistortionValues[3]*lensRadiusSq*lensRadiusSq*lensRadiusSq;
+
+    TraceLog(LOG_DEBUG, "VR: Distortion Scale: %f", distortionScale);
+
+    float normScreenWidth = 0.5f;
+    float normScreenHeight = 1.0f;
+    float scaleIn[2] = { 2.0f/normScreenWidth, 2.0f/normScreenHeight/aspect };
+    float scale[2] = { normScreenWidth*0.5f/distortionScale, normScreenHeight*0.5f*aspect/distortionScale };
+
+    TraceLog(LOG_DEBUG, "VR: Distortion Shader: LeftLensCenter = { %f, %f }", leftLensCenter[0], leftLensCenter[1]);
+    TraceLog(LOG_DEBUG, "VR: Distortion Shader: RightLensCenter = { %f, %f }", rightLensCenter[0], rightLensCenter[1]);
+    TraceLog(LOG_DEBUG, "VR: Distortion Shader: Scale = { %f, %f }", scale[0], scale[1]);
+    TraceLog(LOG_DEBUG, "VR: Distortion Shader: ScaleIn = { %f, %f }", scaleIn[0], scaleIn[1]);
+
+    // Fovy is normally computed with: 2*atan2(hmd.vScreenSize, 2*hmd.eyeToScreenDistance)
+    // ...but with lens distortion it is increased (see Oculus SDK Documentation)
+    //float fovy = 2.0f*atan2(hmd.vScreenSize*0.5f*distortionScale, hmd.eyeToScreenDistance);     // Really need distortionScale?
+    float fovy = 2.0f*(float)atan2(hmd.vScreenSize*0.5f, hmd.eyeToScreenDistance);
+
+    // Compute camera projection matrices
+    float projOffset = 4.0f*lensShift;      // Scaled to projection space coordinates [-1..1]
+    Matrix proj = MatrixPerspective(fovy, aspect, 0.01, 1000.0);
+    vrConfig.eyesProjection[0] = MatrixMultiply(proj, MatrixTranslate(projOffset, 0.0f, 0.0f));
+    vrConfig.eyesProjection[1] = MatrixMultiply(proj, MatrixTranslate(-projOffset, 0.0f, 0.0f));
+
+    // Compute camera transformation matrices
+    // NOTE: Camera movement might seem more natural if we model the head.
+    // Our axis of rotation is the base of our head, so we might want to add
+    // some y (base of head to eye level) and -z (center of head to eye protrusion) to the camera positions.
+    vrConfig.eyesViewOffset[0] = MatrixTranslate(-hmd.interpupillaryDistance*0.5f, 0.075f, 0.045f);
+    vrConfig.eyesViewOffset[1] = MatrixTranslate(hmd.interpupillaryDistance*0.5f, 0.075f, 0.045f);
+
+    // Compute eyes Viewports
+    vrConfig.eyeViewportRight[2] = hmd.hResolution/2;
+    vrConfig.eyeViewportRight[3] = hmd.vResolution;
+
+    vrConfig.eyeViewportLeft[0] = hmd.hResolution/2;
+    vrConfig.eyeViewportLeft[1] = 0;
+    vrConfig.eyeViewportLeft[2] = hmd.hResolution/2;
+    vrConfig.eyeViewportLeft[3] = hmd.vResolution;
+
+    if (vrConfig.distortionShader.id > 0)
     {
-        rlDeleteRenderTextures(vrConfig.stereoFbo); // Unload stereo framebuffer and texture
-        #if defined(SUPPORT_DISTORTION_SHADER)
-        UnloadShader(vrConfig.distortionShader);    // Unload distortion shader
-        #endif
+        // Update distortion shader with lens and distortion-scale parameters
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "leftLensCenter"), leftLensCenter, UNIFORM_VEC2);
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "rightLensCenter"), rightLensCenter, UNIFORM_VEC2);
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "leftScreenCenter"), leftScreenCenter, UNIFORM_VEC2);
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "rightScreenCenter"), rightScreenCenter, UNIFORM_VEC2);
+
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "scale"), scale, UNIFORM_VEC2);
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "scaleIn"), scaleIn, UNIFORM_VEC2);
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "hmdWarpParam"), hmd.lensDistortionValues, UNIFORM_VEC4);
+        SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "chromaAbParam"), hmd.chromaAbCorrection, UNIFORM_VEC4);
     }
 #endif
 }
@@ -3469,17 +3649,6 @@ bool IsVrSimulatorReady(void)
     return vrSimulatorReady;
 #else
     return false;
-#endif
-}
-
-// Set VR distortion shader for stereoscopic rendering
-// TODO: Review VR system to be more flexible, move distortion shader to user side
-void SetVrDistortionShader(Shader shader)
-{
-#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-    vrConfig.distortionShader = shader;
-
-    //SetStereoConfig(info);  // TODO: Must be reviewed to set new distortion shader uniform values...
 #endif
 }
 
@@ -3502,37 +3671,25 @@ void ToggleVrMode(void)
 #endif
 }
 
-// Update VR tracking (position and orientation) and camera
-// NOTE: Camera (position, target, up) gets update with head tracking information
-void UpdateVrTracking(Camera *camera)
-{
-    // TODO: Simulate 1st person camera system
-}
-
-// Begin Oculus drawing configuration
+// Begin VR drawing configuration
 void BeginVrDrawing(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     if (vrSimulatorReady)
     {
-        // Setup framebuffer for stereo rendering
-        rlEnableRenderTexture(vrConfig.stereoFbo.id);
 
-        // NOTE: If your application is configured to treat the texture as a linear format (e.g. GL_RGBA)
-        // and performs linear-to-gamma conversion in GLSL or does not care about gamma-correction, then:
-        //     - Require OculusBuffer format to be OVR_FORMAT_R8G8B8A8_UNORM_SRGB
-        //     - Do NOT enable GL_FRAMEBUFFER_SRGB
-        //glEnable(GL_FRAMEBUFFER_SRGB);
+        rlEnableRenderTexture(stereoFbo.id);    // Setup framebuffer for stereo rendering
+        //glEnable(GL_FRAMEBUFFER_SRGB);        // Enable SRGB framebuffer (only if required)
 
-        //glViewport(0, 0, buffer.width, buffer.height);        // Useful if rendering to separate framebuffers (every eye)
-        rlClearScreenBuffers();             // Clear current framebuffer(s)
+        //glViewport(0, 0, buffer.width, buffer.height);    // Useful if rendering to separate framebuffers (every eye)
+        rlClearScreenBuffers();                 // Clear current framebuffer
 
         vrStereoRender = true;
     }
 #endif
 }
 
-// End Oculus drawing process (and desktop mirror)
+// End VR drawing process (and desktop mirror)
 void EndVrDrawing(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -3554,14 +3711,11 @@ void EndVrDrawing(void)
         rlMatrixMode(RL_MODELVIEW);                             // Enable internal modelview matrix
         rlLoadIdentity();                                       // Reset internal modelview matrix
 
-#if defined(SUPPORT_DISTORTION_SHADER)
-        // Draw RenderTexture (stereoFbo) using distortion shader
-        currentShader = vrConfig.distortionShader;
-#else
-        currentShader = GetShaderDefault();
-#endif
+        // Draw RenderTexture (stereoFbo) using distortion shader if available
+        if (vrConfig.distortionShader.id > 0) currentShader = vrConfig.distortionShader;
+        else currentShader = GetShaderDefault();
 
-        rlEnableTexture(vrConfig.stereoFbo.texture.id);
+        rlEnableTexture(stereoFbo.texture.id);
 
         rlPushMatrix();
             rlBegin(RL_QUADS);
@@ -3574,15 +3728,15 @@ void EndVrDrawing(void)
 
                 // Bottom-right corner for texture and quad
                 rlTexCoord2f(0.0f, 0.0f);
-                rlVertex2f(0.0f, (float)vrConfig.stereoFbo.texture.height);
+                rlVertex2f(0.0f, (float)stereoFbo.texture.height);
 
                 // Top-right corner for texture and quad
                 rlTexCoord2f(1.0f, 0.0f);
-                rlVertex2f( (float)vrConfig.stereoFbo.texture.width, (float)vrConfig.stereoFbo.texture.height);
+                rlVertex2f( (float)stereoFbo.texture.width, (float)stereoFbo.texture.height);
 
                 // Top-left corner for texture and quad
                 rlTexCoord2f(1.0f, 1.0f);
-                rlVertex2f( (float)vrConfig.stereoFbo.texture.width, 0.0f);
+                rlVertex2f( (float)stereoFbo.texture.width, 0.0f);
             rlEnd();
         rlPopMatrix();
 
@@ -3629,7 +3783,7 @@ static unsigned int CompileShader(const char *shaderStr, int type)
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
 
 #if defined(_MSC_VER)
-        char *log = malloc(maxLength);
+        char *log = RL_MALLOC(maxLength);
 #else
         char log[maxLength];
 #endif
@@ -3638,7 +3792,7 @@ static unsigned int CompileShader(const char *shaderStr, int type)
         TraceLog(LOG_INFO, "%s", log);
 
 #if defined(_MSC_VER)
-        free(log);
+        RL_FREE(log);
 #endif
     }
     else TraceLog(LOG_INFO, "[SHDR ID %i] Shader compiled successfully", shader);
@@ -3685,7 +3839,7 @@ static unsigned int LoadShaderProgram(unsigned int vShaderId, unsigned int fShad
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
 
 #if defined(_MSC_VER)
-        char *log = malloc(maxLength);
+        char *log = RL_MALLOC(maxLength);
 #else
         char log[maxLength];
 #endif
@@ -3694,7 +3848,7 @@ static unsigned int LoadShaderProgram(unsigned int vShaderId, unsigned int fShad
         TraceLog(LOG_INFO, "%s", log);
 
 #if defined(_MSC_VER)
-        free(log);
+        RL_FREE(log);
 #endif
         glDeleteProgram(program);
 
@@ -3855,13 +4009,13 @@ static void LoadBuffersDefault(void)
     //--------------------------------------------------------------------------------------------
     for (int i = 0; i < MAX_BATCH_BUFFERING; i++)
     {
-        vertexData[i].vertices = (float *)malloc(sizeof(float)*3*4*MAX_BATCH_ELEMENTS);        // 3 float by vertex, 4 vertex by quad
-        vertexData[i].texcoords = (float *)malloc(sizeof(float)*2*4*MAX_BATCH_ELEMENTS);       // 2 float by texcoord, 4 texcoord by quad
-        vertexData[i].colors = (unsigned char *)malloc(sizeof(unsigned char)*4*4*MAX_BATCH_ELEMENTS);  // 4 float by color, 4 colors by quad
+        vertexData[i].vertices = (float *)RL_MALLOC(sizeof(float)*3*4*MAX_BATCH_ELEMENTS);        // 3 float by vertex, 4 vertex by quad
+        vertexData[i].texcoords = (float *)RL_MALLOC(sizeof(float)*2*4*MAX_BATCH_ELEMENTS);       // 2 float by texcoord, 4 texcoord by quad
+        vertexData[i].colors = (unsigned char *)RL_MALLOC(sizeof(unsigned char)*4*4*MAX_BATCH_ELEMENTS);  // 4 float by color, 4 colors by quad
 #if defined(GRAPHICS_API_OPENGL_33)
-        vertexData[i].indices = (unsigned int *)malloc(sizeof(unsigned int)*6*MAX_BATCH_ELEMENTS);      // 6 int by quad (indices)
+        vertexData[i].indices = (unsigned int *)RL_MALLOC(sizeof(unsigned int)*6*MAX_BATCH_ELEMENTS);      // 6 int by quad (indices)
 #elif defined(GRAPHICS_API_OPENGL_ES2)
-        vertexData[i].indices = (unsigned short *)malloc(sizeof(unsigned short)*6*MAX_BATCH_ELEMENTS);  // 6 int by quad (indices)
+        vertexData[i].indices = (unsigned short *)RL_MALLOC(sizeof(unsigned short)*6*MAX_BATCH_ELEMENTS);  // 6 int by quad (indices)
 #endif
 
         for (int j = 0; j < (3*4*MAX_BATCH_ELEMENTS); j++) vertexData[i].vertices[j] = 0.0f;
@@ -3933,7 +4087,7 @@ static void LoadBuffersDefault(void)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(short)*6*MAX_BATCH_ELEMENTS, vertexData[i].indices, GL_STATIC_DRAW);
 #endif
     }
-    
+
     TraceLog(LOG_INFO, "Internal buffers uploaded successfully (GPU)");
 
     // Unbind the current VAO
@@ -3956,7 +4110,7 @@ static void UpdateBuffersDefault(void)
         glBindBuffer(GL_ARRAY_BUFFER, vertexData[currentBuffer].vboId[0]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)*3*vertexData[currentBuffer].vCounter, vertexData[currentBuffer].vertices);
         //glBufferData(GL_ARRAY_BUFFER, sizeof(float)*3*4*MAX_BATCH_ELEMENTS, vertexData[currentBuffer].vertices, GL_DYNAMIC_DRAW);  // Update all buffer
-        
+
         // Texture coordinates buffer
         glBindBuffer(GL_ARRAY_BUFFER, vertexData[currentBuffer].vboId[1]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)*2*vertexData[currentBuffer].vCounter, vertexData[currentBuffer].texcoords);
@@ -3966,17 +4120,17 @@ static void UpdateBuffersDefault(void)
         glBindBuffer(GL_ARRAY_BUFFER, vertexData[currentBuffer].vboId[2]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(unsigned char)*4*vertexData[currentBuffer].vCounter, vertexData[currentBuffer].colors);
         //glBufferData(GL_ARRAY_BUFFER, sizeof(float)*4*4*MAX_BATCH_ELEMENTS, vertexData[currentBuffer].colors, GL_DYNAMIC_DRAW);    // Update all buffer
-        
+
         // NOTE: glMapBuffer() causes sync issue.
-        // If GPU is working with this buffer, glMapBuffer() will wait(stall) until GPU to finish its job. 
+        // If GPU is working with this buffer, glMapBuffer() will wait(stall) until GPU to finish its job.
         // To avoid waiting (idle), you can call first glBufferData() with NULL pointer before glMapBuffer().
         // If you do that, the previous data in PBO will be discarded and glMapBuffer() returns a new
         // allocated pointer immediately even if GPU is still working with the previous data.
-        
+
         // Another option: map the buffer object into client's memory
         // Probably this code could be moved somewhere else...
         // vertexData[currentBuffer].vertices = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
-        // if(vertexData[currentBuffer].vertices)
+        // if (vertexData[currentBuffer].vertices)
         // {
             // Update vertex data
         // }
@@ -4015,10 +4169,14 @@ static void DrawBuffersDefault(void)
 
             glUniformMatrix4fv(currentShader.locs[LOC_MATRIX_MVP], 1, false, MatrixToFloat(matMVP));
             glUniform4f(currentShader.locs[LOC_COLOR_DIFFUSE], 1.0f, 1.0f, 1.0f, 1.0f);
-            glUniform1i(currentShader.locs[LOC_MAP_DIFFUSE], 0);
+            glUniform1i(currentShader.locs[LOC_MAP_DIFFUSE], 0);    // Provided value refers to the texture unit (active)
 
-            // NOTE: Additional map textures not considered for default buffers drawing
-            
+            // TODO: Support additional texture units on custom shader
+            //if (currentShader->locs[LOC_MAP_SPECULAR] > 0) glUniform1i(currentShader.locs[LOC_MAP_SPECULAR], 1);
+            //if (currentShader->locs[LOC_MAP_NORMAL] > 0) glUniform1i(currentShader.locs[LOC_MAP_NORMAL], 2);
+
+            // NOTE: Right now additional map textures not considered for default buffers drawing
+
             int vertexOffset = 0;
 
             if (vaoSupported) glBindVertexArray(vertexData[currentBuffer].vaoId);
@@ -4043,17 +4201,21 @@ static void DrawBuffersDefault(void)
             }
 
             glActiveTexture(GL_TEXTURE0);
-           
+
             for (int i = 0; i < drawsCounter; i++)
             {
                 glBindTexture(GL_TEXTURE_2D, draws[i].textureId);
+
+                // TODO: Find some way to bind additional textures --> Use global texture IDs? Register them on draw[i]?
+                //if (currentShader->locs[LOC_MAP_SPECULAR] > 0) { glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, textureUnit1_id); }
+                //if (currentShader->locs[LOC_MAP_SPECULAR] > 0) { glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, textureUnit2_id); }
 
                 if ((draws[i].mode == RL_LINES) || (draws[i].mode == RL_TRIANGLES)) glDrawArrays(draws[i].mode, vertexOffset, draws[i].vertexCount);
                 else
                 {
 #if defined(GRAPHICS_API_OPENGL_33)
                     // We need to define the number of indices to be processed: quadsCount*6
-                    // NOTE: The final parameter tells the GPU the offset in bytes from the 
+                    // NOTE: The final parameter tells the GPU the offset in bytes from the
                     // start of the index buffer to the location of the first index to process
                     glDrawElements(GL_TRIANGLES, draws[i].vertexCount/4*6, GL_UNSIGNED_INT, (GLvoid *)(sizeof(GLuint)*vertexOffset/4*6));
 #elif defined(GRAPHICS_API_OPENGL_ES2)
@@ -4061,7 +4223,7 @@ static void DrawBuffersDefault(void)
 #endif
                 }
 
-                vertexOffset += draws[i].vertexCount;
+                vertexOffset += (draws[i].vertexCount + draws[i].vertexAlignment);
             }
 
             if (!vaoSupported)
@@ -4099,7 +4261,7 @@ static void DrawBuffersDefault(void)
     }
 
     drawsCounter = 1;
-    
+
     // Change to next buffer in the list
     currentBuffer++;
     if (currentBuffer >= MAX_BATCH_BUFFERING) currentBuffer = 0;
@@ -4129,10 +4291,10 @@ static void UnloadBuffersDefault(void)
         if (vaoSupported) glDeleteVertexArrays(1, &vertexData[i].vaoId);
 
         // Free vertex arrays memory from CPU (RAM)
-        free(vertexData[i].vertices);
-        free(vertexData[i].texcoords);
-        free(vertexData[i].colors);
-        free(vertexData[i].indices);
+        RL_FREE(vertexData[i].vertices);
+        RL_FREE(vertexData[i].texcoords);
+        RL_FREE(vertexData[i].colors);
+        RL_FREE(vertexData[i].indices);
     }
 }
 
@@ -4248,77 +4410,6 @@ static void GenDrawCube(void)
 }
 
 #if defined(SUPPORT_VR_SIMULATOR)
-// Configure stereo rendering (including distortion shader) with HMD device parameters
-// NOTE: It modifies the global variable: VrStereoConfig vrConfig
-static void SetStereoConfig(VrDeviceInfo hmd)
-{
-    // Compute aspect ratio
-    float aspect = ((float)hmd.hResolution*0.5f)/(float)hmd.vResolution;
-
-    // Compute lens parameters
-    float lensShift = (hmd.hScreenSize*0.25f - hmd.lensSeparationDistance*0.5f)/hmd.hScreenSize;
-    float leftLensCenter[2] = { 0.25f + lensShift, 0.5f };
-    float rightLensCenter[2] = { 0.75f - lensShift, 0.5f };
-    float leftScreenCenter[2] = { 0.25f, 0.5f };
-    float rightScreenCenter[2] = { 0.75f, 0.5f };
-
-    // Compute distortion scale parameters
-    // NOTE: To get lens max radius, lensShift must be normalized to [-1..1]
-    float lensRadius = (float)fabs(-1.0f - 4.0f*lensShift);
-    float lensRadiusSq = lensRadius*lensRadius;
-    float distortionScale = hmd.lensDistortionValues[0] +
-                            hmd.lensDistortionValues[1]*lensRadiusSq +
-                            hmd.lensDistortionValues[2]*lensRadiusSq*lensRadiusSq +
-                            hmd.lensDistortionValues[3]*lensRadiusSq*lensRadiusSq*lensRadiusSq;
-
-    TraceLog(LOG_DEBUG, "VR: Distortion Scale: %f", distortionScale);
-
-    float normScreenWidth = 0.5f;
-    float normScreenHeight = 1.0f;
-    float scaleIn[2] = { 2.0f/normScreenWidth, 2.0f/normScreenHeight/aspect };
-    float scale[2] = { normScreenWidth*0.5f/distortionScale, normScreenHeight*0.5f*aspect/distortionScale };
-
-    TraceLog(LOG_DEBUG, "VR: Distortion Shader: LeftLensCenter = { %f, %f }", leftLensCenter[0], leftLensCenter[1]);
-    TraceLog(LOG_DEBUG, "VR: Distortion Shader: RightLensCenter = { %f, %f }", rightLensCenter[0], rightLensCenter[1]);
-    TraceLog(LOG_DEBUG, "VR: Distortion Shader: Scale = { %f, %f }", scale[0], scale[1]);
-    TraceLog(LOG_DEBUG, "VR: Distortion Shader: ScaleIn = { %f, %f }", scaleIn[0], scaleIn[1]);
-
-#if defined(SUPPORT_DISTORTION_SHADER)
-    // Update distortion shader with lens and distortion-scale parameters
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "leftLensCenter"), leftLensCenter, UNIFORM_VEC2);
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "rightLensCenter"), rightLensCenter, UNIFORM_VEC2);
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "leftScreenCenter"), leftScreenCenter, UNIFORM_VEC2);
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "rightScreenCenter"), rightScreenCenter, UNIFORM_VEC2);
-
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "scale"), scale, UNIFORM_VEC2);
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "scaleIn"), scaleIn, UNIFORM_VEC2);
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "hmdWarpParam"), hmd.lensDistortionValues, UNIFORM_VEC4);
-    SetShaderValue(vrConfig.distortionShader, GetShaderLocation(vrConfig.distortionShader, "chromaAbParam"), hmd.chromaAbCorrection, UNIFORM_VEC4);
-#endif
-
-    // Fovy is normally computed with: 2*atan2(hmd.vScreenSize, 2*hmd.eyeToScreenDistance)
-    // ...but with lens distortion it is increased (see Oculus SDK Documentation)
-    //float fovy = 2.0f*atan2(hmd.vScreenSize*0.5f*distortionScale, hmd.eyeToScreenDistance);     // Really need distortionScale?
-    float fovy = 2.0f*(float)atan2(hmd.vScreenSize*0.5f, hmd.eyeToScreenDistance);
-
-    // Compute camera projection matrices
-    float projOffset = 4.0f*lensShift;      // Scaled to projection space coordinates [-1..1]
-    Matrix proj = MatrixPerspective(fovy, aspect, 0.01, 1000.0);
-    vrConfig.eyesProjection[0] = MatrixMultiply(proj, MatrixTranslate(projOffset, 0.0f, 0.0f));
-    vrConfig.eyesProjection[1] = MatrixMultiply(proj, MatrixTranslate(-projOffset, 0.0f, 0.0f));
-
-    // Compute camera transformation matrices
-    // NOTE: Camera movement might seem more natural if we model the head.
-    // Our axis of rotation is the base of our head, so we might want to add
-    // some y (base of head to eye level) and -z (center of head to eye protrusion) to the camera positions.
-    vrConfig.eyesViewOffset[0] = MatrixTranslate(-hmd.interpupillaryDistance*0.5f, 0.075f, 0.045f);
-    vrConfig.eyesViewOffset[1] = MatrixTranslate(hmd.interpupillaryDistance*0.5f, 0.075f, 0.045f);
-
-    // Compute eyes Viewports
-    //vrConfig.eyesViewport[0] = { 0.0f, 0.0f, (float)hmd.hResolution/2, (float)hmd.vResolution };
-    //vrConfig.eyesViewport[1] = { hmd.hResolution/2.0f, 0.0f, (float)hmd.hResolution/2, (float) hmd.vResolution };
-}
-
 // Set internal projection and modelview matrix depending on eyes tracking data
 static void SetStereoView(int eye, Matrix matProjection, Matrix matModelView)
 {
@@ -4337,9 +4428,9 @@ static void SetStereoView(int eye, Matrix matProjection, Matrix matModelView)
     SetMatrixModelview(eyeModelView);
     SetMatrixProjection(eyeProjection);
 }
-#endif      // defined(SUPPORT_VR_SIMULATOR)
+#endif  // SUPPORT_VR_SIMULATOR
 
-#endif //defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
+#endif  // GRAPHICS_API_OPENGL_33 || GRAPHICS_API_OPENGL_ES2
 
 #if defined(GRAPHICS_API_OPENGL_11)
 // Mipmaps data is generated after image data
@@ -4378,7 +4469,7 @@ static int GenerateMipmaps(unsigned char *data, int baseWidth, int baseHeight)
 
     // Generate mipmaps
     // NOTE: Every mipmap data is stored after data
-    Color *image = (Color *)malloc(width*height*sizeof(Color));
+    Color *image = (Color *)RL_MALLOC(width*height*sizeof(Color));
     Color *mipmap = NULL;
     int offset = 0;
     int j = 0;
@@ -4415,13 +4506,13 @@ static int GenerateMipmaps(unsigned char *data, int baseWidth, int baseHeight)
             j++;
         }
 
-        free(image);
+        RL_FREE(image);
 
         image = mipmap;
         mipmap = NULL;
     }
 
-    free(mipmap);       // free mipmap data
+    RL_FREE(mipmap);       // free mipmap data
 
     return mipmapCount;
 }
@@ -4435,7 +4526,7 @@ static Color *GenNextMipmap(Color *srcData, int srcWidth, int srcHeight)
     int width = srcWidth/2;
     int height = srcHeight/2;
 
-    Color *mipmap = (Color *)malloc(width*height*sizeof(Color));
+    Color *mipmap = (Color *)RL_MALLOC(width*height*sizeof(Color));
 
     // Scaling algorithm works perfectly (box-filter)
     for (int y = 0; y < height; y++)
@@ -4530,6 +4621,6 @@ int GetPixelDataSize(int width, int height, int format)
 
     return dataSize;
 }
-#endif
+#endif  // RLGL_STANDALONE
 
-#endif // RLGL_IMPLEMENTATION
+#endif  // RLGL_IMPLEMENTATION
