@@ -1000,7 +1000,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   BeginDrawing();
 
-  ClearBackground(WHITE);
+  ClearBackground(BLACK);
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
@@ -1084,58 +1084,59 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->angle = 0.0;
 
-  mrb_value png_ending = mrb_str_new_cstr(mrb, ".png");
-  mrb_value mtl_ending = mrb_str_new_cstr(mrb, ".mtl");
+  //mrb_value png_ending = mrb_str_new_cstr(mrb, ".png");
+  //mrb_value mtl_ending = mrb_str_new_cstr(mrb, ".mtl");
 
-  mrb_value foop = mrb_funcall(mrb, model_png, "end_with?", 1, png_ending);
-  if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVER");
-    mrb_print_error(mrb);
-    mrb_print_backtrace(mrb);
-  }
-
-  mrb_value foop_mtl = mrb_funcall(mrb, model_png, "end_with?", 1, mtl_ending);
-  if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVER");
-    mrb_print_error(mrb);
-    mrb_print_backtrace(mrb);
-  }
-
-  //if (mrb_equal(mrb, foop, mrb_true_value())) {
-  //  p_data->texture = LoadTexture(c_model_png); // Load model texture
-  //  p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
+  //mrb_value foop = mrb_funcall(mrb, model_png, "end_with?", 1, png_ending);
+  //if (mrb->exc) {
+  //  fprintf(stderr, "Exception in SERVER");
+  //  mrb_print_error(mrb);
+  //  mrb_print_backtrace(mrb);
   //}
 
-  if (true || mrb_equal(mrb, foop_mtl, mrb_true_value())) {
-    fprintf(stderr, "detected mtl\n");
-    
-    Material mmm = LoadMaterial(c_model_png); // Load model texture
-    //mmm.shader = standardShader;
+  //mrb_value foop_mtl = mrb_funcall(mrb, model_png, "end_with?", 1, mtl_ending);
+  //if (mrb->exc) {
+  //  fprintf(stderr, "Exception in SERVER");
+  //  mrb_print_error(mrb);
+  //  mrb_print_backtrace(mrb);
+  //}
 
-    ////mmm.maps[MAP_DIFFUSE].color = WHITE;
-    ////mmm.maps[MAP_SPECULAR].color = WHITE;
+  ////if (mrb_equal(mrb, foop, mrb_true_value())) {
+  ////  p_data->texture = LoadTexture(c_model_png); // Load model texture
+  ////  p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
+  ////}
 
-    ////Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
-    ////spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-    ////spotLight->intensity = 1.0f;
-    ////spotLight->diffuse = (Color){255, 100, 100, 255};
-    ////spotLight->coneAngle = 10.0f;
-    ////p_data->light = spotLight;
+  //if (true || mrb_equal(mrb, foop_mtl, mrb_true_value())) {
+  //  fprintf(stderr, "detected mtl\n");
 
-    //p_data->light = firstLight;
+  //  //int foo = 0;
+  //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
+  //  //mmm.shader = standardShader;
 
-    //mmm.shader = GetDefaultShader();
-    //p_data->model.material = mmm;
+  //  ////mmm.maps[MAP_DIFFUSE].color = WHITE;
+  //  ////mmm.maps[MAP_SPECULAR].color = WHITE;
 
-    //// Set shader lights values for enabled lights
-    //// NOTE: If values are not changed in real time, they can be set at initialization!!!
-    //SetShaderLightsValues(standardShader);
+  //  ////Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
+  //  ////spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  //  ////spotLight->intensity = 1.0f;
+  //  ////spotLight->diffuse = (Color){255, 100, 100, 255};
+  //  ////spotLight->coneAngle = 10.0f;
+  //  ////p_data->light = spotLight;
 
-    //p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
-  }
+  //  //p_data->light = firstLight;
 
-  //TODO?
-  //p_data->model.material.shader = shader;
+  //  //mmm.shader = GetDefaultShader();
+  //  //p_data->model.material = mmm;
+
+  //  //// Set shader lights values for enabled lights
+  //  //// NOTE: If values are not changed in real time, they can be set at initialization!!!
+  //  //SetShaderLightsValues(standardShader);
+
+  //  //p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
+  //}
+
+  ////TODO?
+  ////p_data->model.material.shader = shader;
 
   p_data->scale.x = scalef;
   p_data->scale.y = scalef;
@@ -1163,24 +1164,24 @@ static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
 }
 
 static void model_data_destructor(mrb_state *mrb, void *p_) {
-  //TODO
-  //mrb_value data_value;
-  //data_value = mrb_iv_get(mrb, (mrb_value)p_, mrb_intern_lit(mrb, "@pointer"));
+  // //TODO
+  // //mrb_value data_value;
+  // //data_value = mrb_iv_get(mrb, (mrb_value)p_, mrb_intern_lit(mrb, "@pointer"));
 
-  model_data_s *p_data = p_;
+  // model_data_s *p_data = p_;
 
-  //Data_Get_Struct(mrb, data_value, &model_data_type, p_data);
-  if (!p_data) {
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
-  }
-  //model_data_s *pd = (model_data_s *)p_;
+  // //Data_Get_Struct(mrb, data_value, &model_data_type, p_data);
+  // if (!p_data) {
+  //   mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  // }
+  // //model_data_s *pd = (model_data_s *)p_;
 
-  //// De-Initialization
-  UnloadTexture(p_data->texture);     // Unload texture
-  //TODO:
-  //UnloadModel(pd->model);         // Unload model
+  // //// De-Initialization
+  // UnloadTexture(p_data->texture);     // Unload texture
+  // //TODO:
+  // //UnloadModel(pd->model);         // Unload model
 
-  mrb_free(mrb, p_);
+  // mrb_free(mrb, p_);
 };
 
 
