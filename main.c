@@ -680,32 +680,32 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
-  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
+  //standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
 
-  //Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
-  Light dirLight;
-  
-  dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){5.0f, 6.0f, 7.0f}, (Color){255, 255, 255, 255});
-  dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  dirLight->intensity = 1.0f;
-  dirLight->diffuse = (Color){200, 255, 200, 255};
-  firstLight = dirLight;
-
-  //dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
-  //dirLight->intensity = 30.0f;
-  //dirLight->diffuse = (Color){100, 255, 100, 255};
-  //dirLight->radius = 5.0f;
-  //firstLight = dirLight;
-
+  ////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
+  //Light dirLight;
+  //
+  //dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){5.0f, 6.0f, 7.0f}, (Color){255, 255, 255, 255});
   //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
   //dirLight->intensity = 1.0f;
-  //dirLight->diffuse = (Color){100, 255, 100, 255};
+  //dirLight->diffuse = (Color){200, 255, 200, 255};
+  //firstLight = dirLight;
 
-  GetShaderLightsLocations(standardShader);
+  ////dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
+  ////dirLight->intensity = 30.0f;
+  ////dirLight->diffuse = (Color){100, 255, 100, 255};
+  ////dirLight->radius = 5.0f;
+  ////firstLight = dirLight;
 
-  SetShaderLightsValues(standardShader);
+  ////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  ////dirLight->intensity = 1.0f;
+  ////dirLight->diffuse = (Color){100, 255, 100, 255};
 
-  //fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
+  //GetShaderLightsLocations(standardShader);
+
+  //SetShaderLightsValues(standardShader);
+
+  ////fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
   SetExitKey(0);
 
@@ -1107,24 +1107,25 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //}
 
   if (true || mrb_equal(mrb, foop_mtl, mrb_true_value())) {
-    fprintf(stderr, "Exception in SERVERFOOOOOOOOOOOOOO");
+    fprintf(stderr, "detected mtl\n");
     
     Material mmm = LoadMaterial(c_model_png); // Load model texture
-    mmm.shader = standardShader;
+    //mmm.shader = standardShader;
 
-    //mmm.maps[MAP_DIFFUSE].color = WHITE;
-    //mmm.maps[MAP_SPECULAR].color = WHITE;
+    ////mmm.maps[MAP_DIFFUSE].color = WHITE;
+    ////mmm.maps[MAP_SPECULAR].color = WHITE;
 
-    //Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
-    //spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-    //spotLight->intensity = 1.0f;
-    //spotLight->diffuse = (Color){255, 100, 100, 255};
-    //spotLight->coneAngle = 10.0f;
-    //p_data->light = spotLight;
+    ////Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
+    ////spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+    ////spotLight->intensity = 1.0f;
+    ////spotLight->diffuse = (Color){255, 100, 100, 255};
+    ////spotLight->coneAngle = 10.0f;
+    ////p_data->light = spotLight;
 
-    p_data->light = firstLight;
+    //p_data->light = firstLight;
 
-    p_data->model.material = mmm;
+    //mmm.shader = GetDefaultShader();
+    //p_data->model.material = mmm;
 
     //// Set shader lights values for enabled lights
     //// NOTE: If values are not changed in real time, they can be set at initialization!!!
@@ -1210,9 +1211,9 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
     
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 
-    if (p_data->light) {
-      DrawLight(p_data->light);
-    }
+    //if (p_data->light) {
+    //  DrawLight(p_data->light);
+    //}
 
   //}
 
@@ -1277,7 +1278,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   Material material = { 0 };
 
   ////material.shader = GetShaderDefault();
-  material.shader = standardShader;
+  //material.shader = standardShader;
 
   ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
   ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
@@ -1293,10 +1294,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   ////spotLight->coneAngle = 10.0f;
   ////p_data->light = spotLight;
 
-  p_data->light = firstLight;
+  //p_data->light = firstLight;
 
-
-  p_data->model.material = material;      // Apply material to model
+  //p_data->model.material = material;      // Apply material to model
 
   //// Set shader lights values for enabled lights
   //// NOTE: If values are not changed in real time, they can be set at initialization!!!
