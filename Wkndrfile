@@ -4,8 +4,6 @@
 #}
 
 Wkndr.play { |gl|
-  log!(:FILEPLAY)
-
   gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
  
   total_msg = 0
@@ -50,6 +48,4 @@ Wkndr.play { |gl|
       }
     }
   }
-
-  log!(:FILEPLAY_OUT)
 }

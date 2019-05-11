@@ -148,7 +148,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 1000)
+    gl.open("wkndr", w, h, 15)
 
     Wkndr.play(stack, gl)
   end

@@ -139,7 +139,7 @@ int ptsname_r(int fd, char* buf, size_t buflen) {
 #endif
 
 
-#define MAX_LIGHTS 2 // Max lights supported by standard shader
+#define MAX_LIGHTS 1 // Max lights supported by standard shader
 // Light type
 typedef struct LightData {
     unsigned int id;        // Light unique id
@@ -680,30 +680,30 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
-  //standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
+  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
 
   ////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
-  //Light dirLight;
-  //
+  Light dirLight;
+  
   //dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){5.0f, 6.0f, 7.0f}, (Color){255, 255, 255, 255});
   //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  //dirLight->intensity = 1.0f;
-  //dirLight->diffuse = (Color){200, 255, 200, 255};
+  //dirLight->intensity = 0.5f;
+  //dirLight->diffuse = (Color){255, 255, 255, 255};
   //firstLight = dirLight;
 
-  ////dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
-  ////dirLight->intensity = 30.0f;
-  ////dirLight->diffuse = (Color){100, 255, 100, 255};
-  ////dirLight->radius = 5.0f;
-  ////firstLight = dirLight;
+  dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
+  dirLight->intensity = 10.0f;
+  dirLight->diffuse = (Color){128, 128, 128, 255};
+  dirLight->radius = 5.0f;
+  firstLight = dirLight;
 
   ////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
   ////dirLight->intensity = 1.0f;
   ////dirLight->diffuse = (Color){100, 255, 100, 255};
 
-  //GetShaderLightsLocations(standardShader);
+  GetShaderLightsLocations(standardShader);
 
-  //SetShaderLightsValues(standardShader);
+  SetShaderLightsValues(standardShader);
 
   ////fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
@@ -954,7 +954,11 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   BeginMode3D(p_data->camera);
 
+  //BeginShaderMode(standardShader);
+
   mrb_yield_argv(mrb, block, 0, NULL);
+
+  //EndShaderMode();
 
   EndMode3D();
 
@@ -1111,7 +1115,24 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   //  //int foo = 0;
   //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
-  //  //mmm.shader = standardShader;
+  for (int mi=0; mi<p_data->model.materialCount; mi++) {
+    Material material = { 0 };
+
+    ////material.shader = GetShaderDefault();
+    material.shader = standardShader;
+
+    ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+    ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+    ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+
+    material.maps[MAP_DIFFUSE].color = WHITE;
+    material.maps[MAP_SPECULAR].color = WHITE;
+
+    p_data->model.materials[mi] = material; //.shader = standardShader;
+  }
+  //p_data->model.materials[1].shader = standardShader;
+  //p_data->model.materials[2].shader = standardShader;
+  //p_data->model.materials[3].shader = standardShader;
 
   //  ////mmm.maps[MAP_DIFFUSE].color = WHITE;
   //  ////mmm.maps[MAP_SPECULAR].color = WHITE;
@@ -1123,7 +1144,7 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  ////spotLight->coneAngle = 10.0f;
   //  ////p_data->light = spotLight;
 
-  //  //p_data->light = firstLight;
+  p_data->light = firstLight;
 
   //  //mmm.shader = GetDefaultShader();
   //  //p_data->model.material = mmm;
@@ -1279,14 +1300,14 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   Material material = { 0 };
 
   ////material.shader = GetShaderDefault();
-  //material.shader = standardShader;
+  material.shader = standardShader;
 
   ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
   ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
   ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
 
-  //material.maps[MAP_DIFFUSE].color = WHITE;
-  //material.maps[MAP_SPECULAR].color = WHITE;
+  material.maps[MAP_DIFFUSE].color = WHITE;
+  material.maps[MAP_SPECULAR].color = WHITE;
 
   ////Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
   ////spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
@@ -1295,9 +1316,8 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   ////spotLight->coneAngle = 10.0f;
   ////p_data->light = spotLight;
 
-  //p_data->light = firstLight;
-
-  //p_data->model.material = material;      // Apply material to model
+  p_data->model.materials[0] = material;
+  p_data->light = firstLight;
 
   //// Set shader lights values for enabled lights
   //// NOTE: If values are not changed in real time, they can be set at initialization!!!
@@ -1319,9 +1339,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   float colors = 128.0;
   float freq = 64.0 / colors;
 
-  int r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
-  int g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
-  int b = (sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+  int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  int g = 128; //(sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
+  int b = 128; //(sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
 
   counter++;
 
@@ -1714,12 +1734,12 @@ void DrawLight(Light light)
 // Get shader locations for lights (up to MAX_LIGHTS)
 static void GetShaderLightsLocations(Shader shader)
 {
-    char locName[32] = "lightsX.\0";
+    char locName[32] = "lights[X].\0";
     char locNameUpdated[64];
     
     for (int i = 0; i < MAX_LIGHTS; i++)
     {
-        locName[6] = '0' + i;
+        locName[7] = '0' + i;
         
         strcpy(locNameUpdated, locName);
         strcat(locNameUpdated, "enabled\0");

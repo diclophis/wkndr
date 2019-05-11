@@ -646,8 +646,6 @@ Model LoadModel(const char *fileName)
     // Make sure model transform is set to identity matrix!
     model.transform = MatrixIdentity();
 
-    TraceLog(LOG_WARNING, "[%d] FOUND mesh", model.meshCount);
-
     if (model.meshCount == 0)
     {
         TraceLog(LOG_WARNING, "[%s] No meshes can be loaded, default to cube mesh", fileName);
@@ -798,6 +796,7 @@ Material *LoadMaterials(const char *fileName, int *materialCount)
     unsigned int count = 0;
     
     // TODO: Support IQM and GLTF for materials parsing
+    TraceLog(LOG_INFO, "[%s] WTFSDSDSDSDSDSDSDSDSDSDSD sadasdasdasdasdasd asd as", fileName);
 
 #if defined(SUPPORT_FILEFORMAT_MTL)
     if (IsFileExtension(fileName, ".mtl"))
@@ -807,6 +806,7 @@ Material *LoadMaterials(const char *fileName, int *materialCount)
         int result = tinyobj_parse_mtl_file(&mats, &count, fileName);
 
         // TODO: Process materials to return
+        fprintf(stderr, "BLAGRRSKLDJKLSDJKLSDJLSDJK\n");
 
         tinyobj_materials_free(mats, count);
     }
@@ -2763,21 +2763,14 @@ static Model LoadOBJ(const char *fileName)
         if (ret != TINYOBJ_SUCCESS) TraceLog(LOG_WARNING, "[%s] Model data could not be loaded", fileName);
         else TraceLog(LOG_INFO, "[%s] Model data loaded successfully: %i meshes / %i materials", fileName, meshCount, materialCount);
 
-        int fart = 0;
-        //TraceLog(LOG_INFO, "DEBUGTRACE-- %d", fart++);
-
         // Init model meshes array
         model.meshCount = meshCount;
         model.meshes = (Mesh *)RL_MALLOC(model.meshCount*sizeof(Mesh));
-
-        //TraceLog(LOG_INFO, "DEBUGTRACE-- %d", fart++);
 
         // Init model materials array
         model.materialCount = materialCount;
         model.materials = (Material *)RL_MALLOC(model.materialCount*sizeof(Material));
         model.meshMaterial = (int *)RL_CALLOC(model.meshCount, sizeof(int));
-
-        //TraceLog(LOG_INFO, "DEBUGTRACE-- %d", fart++);
 
         /*
         // Multiple meshes data reference
@@ -2792,8 +2785,6 @@ static Model LoadOBJ(const char *fileName)
         // Init model meshes
         for (int m = 0; m < 1; m++)
         {
-            //TraceLog(LOG_INFO, "DEBUGTRACEBBB-- %d", fart++);
-
             Mesh mesh = { 0 };
             memset(&mesh, 0, sizeof(Mesh));
             mesh.vertexCount = attrib.num_faces*3;
@@ -2808,8 +2799,6 @@ static Model LoadOBJ(const char *fileName)
 
             for (int f = 0; f < attrib.num_faces; f++)
             {
-                //TraceLog(LOG_INFO, "DEBUGTRACEINN-- %d", fart++);
-
                 // Get indices for the face
                 tinyobj_vertex_index_t idx0 = attrib.faces[3*f + 0];
                 tinyobj_vertex_index_t idx1 = attrib.faces[3*f + 1];
@@ -2820,7 +2809,13 @@ static Model LoadOBJ(const char *fileName)
                 // Fill vertices buffer (float) using vertex index of the face
                 for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx0.v_idx*3 + v]; } vCount +=3;
                 for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx1.v_idx*3 + v]; } vCount +=3;
-                for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx2.v_idx*3 + v]; } vCount +=3;
+                for (int v = 0; v < 3; v++) {
+                  int aaa = idx2.v_idx*3 + v;
+                  fprintf(stderr, "wtf: %d\n", aaa);
+                  mesh.vertices[vCount + v] = 
+                    attrib.vertices[idx2.v_idx*3 + v]; 
+                }
+                vCount +=3;
 
                 // Fill texcoords buffer (float) using vertex index of the face
                 // NOTE: Y-coordinate must be flipped upside-down
@@ -2841,11 +2836,7 @@ static Model LoadOBJ(const char *fileName)
 
             // Assign mesh material for current mesh
             model.meshMaterial[m] = attrib.material_ids[m];
-
-            //TraceLog(LOG_INFO, "DEBUGTRACE-- %d", fart++);
         }
-
-        //TraceLog(LOG_INFO, "DEBUGTRACE-- %d", fart++);
 
         // Init model materials
         for (int m = 0; m < materialCount; m++)
@@ -2881,6 +2872,8 @@ static Model LoadOBJ(const char *fileName)
             } tinyobj_material_t;
             */
 
+            TraceLog(LOG_INFO, "[%s] MATERIAL MAP", fileName);
+
             model.materials[m].maps[MAP_DIFFUSE].texture = GetTextureDefault();     // Get default texture, in case no texture is defined
             
             if (materials[m].diffuse_texname != NULL) model.materials[m].maps[MAP_DIFFUSE].texture = LoadTexture(materials[m].diffuse_texname);  //char *diffuse_texname; // map_Kd
@@ -2900,11 +2893,9 @@ static Model LoadOBJ(const char *fileName)
             if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
         }
 
-        //TraceLog(LOG_INFO, "DEBUGTRACE-- %d", fart++);
-
-        tinyobj_attrib_free(&attrib);
-        tinyobj_shapes_free(meshes, meshCount);
-        tinyobj_materials_free(materials, materialCount);
+        //tinyobj_attrib_free(&attrib);
+        //tinyobj_shapes_free(meshes, meshCount);
+        //tinyobj_materials_free(materials, materialCount);
     }
 
     // NOTE: At this point we have all model data loaded

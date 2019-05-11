@@ -17,7 +17,7 @@ uniform sampler2D texture1;
 uniform sampler2D texture2;
 
 //uniform vec4 colAmbient;
-const vec4 colAmbient = vec4(0.125, 0.125, 0.125, 1.0);
+const vec4 colAmbient = vec4(0.5, 0.5, 0.5, 1.0);
 uniform vec4 colDiffuse;
 uniform vec4 colSpecular;
 uniform float glossiness;
@@ -130,21 +130,24 @@ void main()
     vec3 v = normalize(viewDir);
 
     // Calculate diffuse texture color fetching
-    vec4 texelColor = vec4(0.0, 1.0, 1.0, 1.0); //texture2D(texture0, fragTexCoord);
+    vec4 texelColor = vec4(1.0, 1.0, 1.0, 1.0);
+    //vec4 texelColor = vec4(0.0, 1.0, 1.0, 1.0); //texture2D(texture0, fragTexCoord);
     //vec4 texelColor = texture2D(texture0, fragTexCoord);
     vec3 lighting = colAmbient.rgb;
-    //vec3 lighting = vec3(1.0, 0.1, 0.1);
+    //vec3 lighting = vec3(0.0, 0.0, 0.0);
     
     // Calculate normal texture color fetching or set to maximum normal value by default
-    if (useNormal == 1)
-    {
+    //if (useNormal == 1)
+    //{
         n *= texture2D(texture1, fragTexCoord).rgb;
         n = normalize(n);
-    }
+    //}
     
     // Calculate specular texture color fetching or set to maximum specular value by default
     float spec = 1.0;
-    //if (useSpecular == 1) spec = texture2D(texture2, fragTexCoord).r;
+    //if (useSpecular == 1) {
+      spec = texture2D(texture2, fragTexCoord).r;
+    //}
 
     //for (int i = 0; i < maxLights; i++)
     //{
@@ -185,12 +188,27 @@ void main()
             // NOTE: It seems that too many ComputeLight*() operations inside for loop breaks the shader on RPI
         }
 
+    vec3 surfacePos = vec3(mvp*vec4(fragPosition, 1.0));
+
     // Calculate final fragment color
-    //gl_FragColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+    if (surfacePos.x < 0.0) {
+    gl_FragColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+    }
+
+    if (surfacePos.x > 0.0) {
     //gl_FragColor = vec4(texelColor.rgb, 1.0);
     gl_FragColor = vec4(lighting, 1.0);
+    }
+
+
+    //just ambient
     //gl_FragColor = vec4(colAmbient.rgb, 1.0);
+
+    //just vertex raylib color
     //gl_FragColor = vec4(colDiffuse.rgb, colDiffuse.a);
+
     //gl_FragColor = vec4(lighting*colDiffuse.rgb, 1.0);
+
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 

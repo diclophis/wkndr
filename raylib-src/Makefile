@@ -57,7 +57,7 @@ PLATFORM             ?= PLATFORM_DESKTOP
 RAYLIB_LIBTYPE       ?= STATIC
 
 # Build mode for library: DEBUG or RELEASE
-RAYLIB_BUILD_MODE    ?= RELEASE
+RAYLIB_BUILD_MODE    ?= DEBUG
 
 # Include raylib modules on compilation
 # NOTE: Some programs like tools could not require those modules
@@ -266,10 +266,10 @@ endif
 #  -fno-strict-aliasing  jar_xm.h does shady stuff (breaks strict aliasing)
 CFLAGS += -O1 -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
 
-#ifeq ($(RAYLIB_BUILD_MODE), DEBUG)
+ifeq ($(RAYLIB_BUILD_MODE), DEBUG)
     CFLAGS += -g
     #CC      = clang
-#endif
+endif
 
 # Additional flags for compiler (if desired)
 #  -Wextra                  enables some extra warning flags that are not enabled by -Wall
