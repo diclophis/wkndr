@@ -682,9 +682,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
 
-  ////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
+  //////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
   Light dirLight;
-  
   //dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){5.0f, 6.0f, 7.0f}, (Color){255, 255, 255, 255});
   //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
   //dirLight->intensity = 0.5f;
@@ -697,15 +696,15 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   dirLight->radius = 5.0f;
   firstLight = dirLight;
 
-  ////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  ////dirLight->intensity = 1.0f;
-  ////dirLight->diffuse = (Color){100, 255, 100, 255};
+  //////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  //////dirLight->intensity = 1.0f;
+  //////dirLight->diffuse = (Color){100, 255, 100, 255};
 
   GetShaderLightsLocations(standardShader);
 
   SetShaderLightsValues(standardShader);
 
-  ////fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
+  //////fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
   SetExitKey(0);
 
@@ -1115,21 +1114,21 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   //  //int foo = 0;
   //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
-  for (int mi=0; mi<p_data->model.materialCount; mi++) {
-    Material material = { 0 };
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  Material material = { 0 };
 
-    ////material.shader = GetShaderDefault();
-    material.shader = standardShader;
+  //  ////material.shader = GetShaderDefault();
+  //  material.shader = standardShader;
 
-    ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
-    ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
-    ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+  //  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+  //  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+  //  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
 
-    material.maps[MAP_DIFFUSE].color = WHITE;
-    material.maps[MAP_SPECULAR].color = WHITE;
+  //  material.maps[MAP_DIFFUSE].color = WHITE;
+  //  material.maps[MAP_SPECULAR].color = WHITE;
 
-    p_data->model.materials[mi] = material; //.shader = standardShader;
-  }
+  //  p_data->model.materials[mi] = material; //.shader = standardShader;
+  //}
   //p_data->model.materials[1].shader = standardShader;
   //p_data->model.materials[2].shader = standardShader;
   //p_data->model.materials[3].shader = standardShader;
@@ -1144,7 +1143,7 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  ////spotLight->coneAngle = 10.0f;
   //  ////p_data->light = spotLight;
 
-  p_data->light = firstLight;
+  //p_data->light = firstLight;
 
   //  //mmm.shader = GetDefaultShader();
   //  //p_data->model.material = mmm;
@@ -1297,17 +1296,33 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
 
-  Material material = { 0 };
+  //Material material = { 0 };
 
   ////material.shader = GetShaderDefault();
-  material.shader = standardShader;
+  //material.shader = standardShader;
+
+  for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  Material material = { 0 };
+
+  //  ////material.shader = GetShaderDefault();
+  //  material.shader = standardShader;
+
+  //  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+  //  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+  //  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+
+  //  material.maps[MAP_DIFFUSE].color = WHITE;
+  //  material.maps[MAP_SPECULAR].color = WHITE;
+
+    p_data->model.materials[mi].shader = standardShader;
+  }
 
   ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
   ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
   ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
 
-  material.maps[MAP_DIFFUSE].color = WHITE;
-  material.maps[MAP_SPECULAR].color = WHITE;
+  //material.maps[MAP_DIFFUSE].color = WHITE;
+  //material.maps[MAP_SPECULAR].color = WHITE;
 
   ////Light spotLight = CreateLight(LIGHT_SPOT, (Vector3){50.0f, 50.0f, 100.0f}, (Color){255, 255, 255, 255});
   ////spotLight->target = (Vector3){0.0f, 0.0f, 0.0f};
@@ -1316,8 +1331,8 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   ////spotLight->coneAngle = 10.0f;
   ////p_data->light = spotLight;
 
-  p_data->model.materials[0] = material;
-  p_data->light = firstLight;
+  //p_data->model.materials[0] = material;
+  //p_data->light = firstLight;
 
   //// Set shader lights values for enabled lights
   //// NOTE: If values are not changed in real time, they can be set at initialization!!!
@@ -1340,7 +1355,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   float freq = 64.0 / colors;
 
   int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
-  int g = 128; //(sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
+  int g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
   int b = 128; //(sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
 
   counter++;
@@ -1789,7 +1804,7 @@ static void SetShaderLightsValues(Shader shader)
     int tempInt[8] = { 0 };
     float tempFloat[8] = { 0.0f };
    
-   fprintf(stderr, "wtf %d\n", lightsCount);
+   fprintf(stderr, "FOOOOOP %d\n", lightsCount);
 
     for (int i = 0; i < MAX_LIGHTS; i++)
     {
