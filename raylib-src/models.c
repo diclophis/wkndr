@@ -815,7 +815,7 @@ Material *LoadMaterials(const char *fileName, int *materialCount)
 #endif
 
     // Set materials shader to default (DIFFUSE, SPECULAR, NORMAL)
-    for (int i = 0; i < count; i++) materials[i].shader = GetShaderDefault();
+    //for (int i = 0; i < count; i++) materials[i].shader = GetShaderDefault();
 
     *materialCount = count;
     return materials;
@@ -826,7 +826,7 @@ Material LoadMaterialDefault(void)
 {
     Material material = { 0 };
 
-    material.shader = GetShaderDefault();
+    //material.shader = GetShaderDefault();
     material.maps[MAP_DIFFUSE].texture = GetTextureDefault();   // White texture (1x1 pixel)
     //material.maps[MAP_NORMAL].texture;         // NOTE: By default, not set
     //material.maps[MAP_SPECULAR].texture;       // NOTE: By default, not set
@@ -2874,23 +2874,23 @@ static Model LoadOBJ(const char *fileName)
 
             TraceLog(LOG_INFO, "[%s] MATERIAL MAP", fileName);
 
-            model.materials[m].maps[MAP_DIFFUSE].texture = GetTextureDefault();     // Get default texture, in case no texture is defined
-            
-            if (materials[m].diffuse_texname != NULL) model.materials[m].maps[MAP_DIFFUSE].texture = LoadTexture(materials[m].diffuse_texname);  //char *diffuse_texname; // map_Kd
-            model.materials[m].maps[MAP_DIFFUSE].color = (Color){ (float)(materials[m].diffuse[0]*255.0f), (float)(materials[m].diffuse[1]*255.0f), (float)(materials[m].diffuse[2]*255.0f), 255 }; //float diffuse[3];
-            model.materials[m].maps[MAP_DIFFUSE].value = 0.0f;
+            //model.materials[m].maps[MAP_DIFFUSE].texture = GetTextureDefault();     // Get default texture, in case no texture is defined
+            //
+            //if (materials[m].diffuse_texname != NULL) model.materials[m].maps[MAP_DIFFUSE].texture = LoadTexture(materials[m].diffuse_texname);  //char *diffuse_texname; // map_Kd
+            //model.materials[m].maps[MAP_DIFFUSE].color = (Color){ (float)(materials[m].diffuse[0]*255.0f), (float)(materials[m].diffuse[1]*255.0f), (float)(materials[m].diffuse[2]*255.0f), 255 }; //float diffuse[3];
+            //model.materials[m].maps[MAP_DIFFUSE].value = 0.0f;
 
-            if (materials[m].specular_texname != NULL) model.materials[m].maps[MAP_SPECULAR].texture = LoadTexture(materials[m].specular_texname);  //char *specular_texname; // map_Ks
-            model.materials[m].maps[MAP_SPECULAR].color = (Color){ (float)(materials[m].specular[0]*255.0f), (float)(materials[m].specular[1]*255.0f), (float)(materials[m].specular[2]*255.0f), 255 }; //float specular[3];
-            model.materials[m].maps[MAP_SPECULAR].value = 0.0f;
+            //if (materials[m].specular_texname != NULL) model.materials[m].maps[MAP_SPECULAR].texture = LoadTexture(materials[m].specular_texname);  //char *specular_texname; // map_Ks
+            //model.materials[m].maps[MAP_SPECULAR].color = (Color){ (float)(materials[m].specular[0]*255.0f), (float)(materials[m].specular[1]*255.0f), (float)(materials[m].specular[2]*255.0f), 255 }; //float specular[3];
+            //model.materials[m].maps[MAP_SPECULAR].value = 0.0f;
 
-            if (materials[m].bump_texname != NULL) model.materials[m].maps[MAP_NORMAL].texture = LoadTexture(materials[m].bump_texname);  //char *bump_texname; // map_bump, bump
-            model.materials[m].maps[MAP_NORMAL].color = WHITE;
-            model.materials[m].maps[MAP_NORMAL].value = materials[m].shininess;
+            //if (materials[m].bump_texname != NULL) model.materials[m].maps[MAP_NORMAL].texture = LoadTexture(materials[m].bump_texname);  //char *bump_texname; // map_bump, bump
+            //model.materials[m].maps[MAP_NORMAL].color = WHITE;
+            //model.materials[m].maps[MAP_NORMAL].value = materials[m].shininess;
 
-            model.materials[m].maps[MAP_EMISSION].color = (Color){ (float)(materials[m].emission[0]*255.0f), (float)(materials[m].emission[1]*255.0f), (float)(materials[m].emission[2]*255.0f), 255 }; //float emission[3];
+            //model.materials[m].maps[MAP_EMISSION].color = (Color){ (float)(materials[m].emission[0]*255.0f), (float)(materials[m].emission[1]*255.0f), (float)(materials[m].emission[2]*255.0f), 255 }; //float emission[3];
 
-            if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
+            //if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
         }
 
         //tinyobj_attrib_free(&attrib);

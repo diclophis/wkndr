@@ -2607,6 +2607,7 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Bind shader program
     glUseProgram(material.shader.id);
+    fprintf(stderr, "wtf: %d.", (material.shader.id));
 
     // Matrices and other values required by shader
     //-----------------------------------------------------
@@ -3921,10 +3922,12 @@ static Shader LoadShaderDefault(void)
     "{                                  \n"
 #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
     "    vec4 texelColor = texture2D(texture0, fragTexCoord); \n" // NOTE: texture2D() is deprecated on OpenGL 3.3 and ES 3.0
-    "    gl_FragColor = texelColor*colDiffuse*fragColor;      \n"
+    //"    gl_FragColor = texelColor*colDiffuse*fragColor;      \n"
+    "    gl_FragColor = vec4(0.25, 1.0, 0,0);      \n"
 #elif defined(GRAPHICS_API_OPENGL_33)
     "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
-    "    finalColor = texelColor*colDiffuse*fragColor;        \n"
+    //"    finalColor = texelColor*colDiffuse*fragColor;        \n"
+    "    finalColor = vec4(0.25, 0.0, 1,0);      \n"
 #endif
     "}                                  \n";
 

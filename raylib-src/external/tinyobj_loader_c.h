@@ -1409,7 +1409,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
           int v_idx = fixIndex(vi.v_idx, v_count);
           int vn_idx = fixIndex(vi.vn_idx, n_count);
           int vt_idx = fixIndex(vi.vt_idx, t_count);
-          fprintf(stderr, "cheese %d %d %d\n", v_idx, vn_idx, vt_idx);
+          //fprintf(stderr, "cheese %d %d %d\n", v_idx, vn_idx, vt_idx);
           attrib->faces[f_count + k].v_idx = v_idx;
           attrib->faces[f_count + k].vn_idx = vn_idx;
           attrib->faces[f_count + k].vt_idx = vt_idx;
