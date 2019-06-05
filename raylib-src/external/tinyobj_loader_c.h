@@ -203,7 +203,7 @@ static int my_atoi(const char *c) {
 
 /* Make index zero-base, and also support relative index. */
 static int fixIndex(int idx, size_t n) {
-fprintf(stderr, "wtffixIndex: %d %d\n", idx, n);
+//fprintf(stderr, "wtffixIndex: %d %d\n", idx, n);
   if (idx > 0) return idx - 1;
   if (idx == 0) return 0;
   return (int)n + idx; /* negative value = relative */
@@ -218,7 +218,7 @@ static tinyobj_vertex_index_t parseRawTriple(const char **token) {
   vi.vt_idx = 0; //(int)(0x80000000);
 
   vi.v_idx = my_atoi((*token));
-  fprintf(stderr, "my_atoi %d\n", vi.v_idx);
+  //fprintf(stderr, "my_atoi %d\n", vi.v_idx);
   while ((*token)[0] != '\0' && (*token)[0] != '/' && (*token)[0] != ' ' &&
          (*token)[0] != '\t' && (*token)[0] != '\r' && (*token)[0] != '\n') {
     (*token)++;

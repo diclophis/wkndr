@@ -1118,10 +1118,9 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  //int foo = 0;
   //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
   for (int mi=0; mi<p_data->model.materialCount; mi++) {
-  //  Material material = { 0 };
-
-  //  ////material.shader = GetShaderDefault();
-  //  material.shader = standardShader;
+    //Material material = { 0 };
+    //material.shader = standardShader;
+    //p_data->model.materials[mi] = material;
 
   //  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
   //  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
@@ -1130,7 +1129,6 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  material.maps[MAP_DIFFUSE].color = WHITE;
   //  material.maps[MAP_SPECULAR].color = WHITE;
 
-    //p_data->model.materials[mi] = material; //.shader = standardShader;
     p_data->model.materials[mi].shader = standardShader;
   }
 

@@ -5,11 +5,11 @@ precision mediump float;
 uniform mat4 mvp;             // VS: ModelViewProjection matrix
 uniform mat4 projection;      // VS: Projection matrix
 uniform mat4 view;            // VS: View matrix
+
 uniform vec4 colDiffuse;      // FS: Diffuse color
 uniform sampler2D texture0;   // FS: GL_TEXTURE0
 uniform sampler2D texture1;   // FS: GL_TEXTURE1
 uniform sampler2D texture2;   // FS: GL_TEXTURE2
-
 
 
 //varying vec3 fragPosition;
@@ -184,6 +184,8 @@ void main()
 //    //just vertex raylib color
 //    //gl_FragColor = vec4(colDiffuse.rgb, colDiffuse.a);
 
-  gl_FragColor = vec4(1.0, 0.5, 0.25, 1.0);
+  gl_FragColor = colDiffuse; //.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+
+  //gl_FragColor = vec4(1.0, 0.5, 0.25, 1.0);
 
 }

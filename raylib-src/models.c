@@ -796,7 +796,7 @@ Material *LoadMaterials(const char *fileName, int *materialCount)
     unsigned int count = 0;
     
     // TODO: Support IQM and GLTF for materials parsing
-    TraceLog(LOG_INFO, "[%s] WTFSDSDSDSDSDSDSDSDSDSDSD sadasdasdasdasdasd asd as", fileName);
+    //TraceLog(LOG_INFO, "[%s] WTFSDSDSDSDSDSDSDSDSDSDSD sadasdasdasdasdasd asd as", fileName);
 
 #if defined(SUPPORT_FILEFORMAT_MTL)
     if (IsFileExtension(fileName, ".mtl"))
@@ -2811,7 +2811,7 @@ static Model LoadOBJ(const char *fileName)
                 for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx1.v_idx*3 + v]; } vCount +=3;
                 for (int v = 0; v < 3; v++) {
                   int aaa = idx2.v_idx*3 + v;
-                  fprintf(stderr, "wtf: %d\n", aaa);
+                  //fprintf(stderr, "wtf: %d\n", aaa);
                   mesh.vertices[vCount + v] = 
                     attrib.vertices[idx2.v_idx*3 + v]; 
                 }
