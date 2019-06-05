@@ -1129,7 +1129,7 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  material.maps[MAP_DIFFUSE].color = WHITE;
   //  material.maps[MAP_SPECULAR].color = WHITE;
 
-    p_data->model.materials[mi].shader = standardShader;
+    //p_data->model.materials[mi].shader = standardShader;
   }
 
   //p_data->model.materials[1].shader = standardShader;
@@ -1231,9 +1231,9 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   //TODO, mode switch
   //else {
     // Draw 3d model with texture
-    DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
+    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
     
-    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
+    DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 
     //if (p_data->light) {
     //  DrawLight(p_data->light);
@@ -1320,7 +1320,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   ////  material.maps[MAP_DIFFUSE].color = WHITE;
   ////  material.maps[MAP_SPECULAR].color = WHITE;
 
-    p_data->model.materials[mi].shader = standardShader;
+    //p_data->model.materials[mi].shader = standardShader;
   }
 
   ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
