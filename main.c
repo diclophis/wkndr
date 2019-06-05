@@ -690,19 +690,19 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //dirLight->diffuse = (Color){255, 255, 255, 255};
   //firstLight = dirLight;
 
-  dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
-  dirLight->intensity = 10.0f;
-  dirLight->diffuse = (Color){128, 128, 128, 255};
-  dirLight->radius = 5.0f;
-  firstLight = dirLight;
+  //dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
+  //dirLight->intensity = 10.0f;
+  //dirLight->diffuse = (Color){128, 128, 128, 255};
+  //dirLight->radius = 5.0f;
+  //firstLight = dirLight;
 
-  //////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  //////dirLight->intensity = 1.0f;
-  //////dirLight->diffuse = (Color){100, 255, 100, 255};
+  ////////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
+  ////////dirLight->intensity = 1.0f;
+  ////////dirLight->diffuse = (Color){100, 255, 100, 255};
 
-  GetShaderLightsLocations(standardShader);
+  //GetShaderLightsLocations(standardShader);
 
-  SetShaderLightsValues(standardShader);
+  //SetShaderLightsValues(standardShader);
 
   //////fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
@@ -1076,6 +1076,9 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
+  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+    MeshTangents(&p_data->model.meshes[meshi]);
+  }
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1114,7 +1117,7 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   //  //int foo = 0;
   //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
-  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  for (int mi=0; mi<p_data->model.materialCount; mi++) {
   //  Material material = { 0 };
 
   //  ////material.shader = GetShaderDefault();
@@ -1127,8 +1130,10 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  material.maps[MAP_DIFFUSE].color = WHITE;
   //  material.maps[MAP_SPECULAR].color = WHITE;
 
-  //  p_data->model.materials[mi] = material; //.shader = standardShader;
-  //}
+    //p_data->model.materials[mi] = material; //.shader = standardShader;
+    p_data->model.materials[mi].shader = standardShader;
+  }
+
   //p_data->model.materials[1].shader = standardShader;
   //p_data->model.materials[2].shader = standardShader;
   //p_data->model.materials[3].shader = standardShader;
@@ -1295,6 +1300,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
+  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+    MeshTangents(&p_data->model.meshes[meshi]);
+  }
 
   //Material material = { 0 };
 
@@ -1302,17 +1310,17 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   //material.shader = standardShader;
 
   for (int mi=0; mi<p_data->model.materialCount; mi++) {
-  //  Material material = { 0 };
+  ////  Material material = { 0 };
 
-  //  ////material.shader = GetShaderDefault();
-  //  material.shader = standardShader;
+  ////  ////material.shader = GetShaderDefault();
+  ////  material.shader = standardShader;
 
-  //  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
-  //  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
-  //  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+  ////  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+  ////  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+  ////  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
 
-  //  material.maps[MAP_DIFFUSE].color = WHITE;
-  //  material.maps[MAP_SPECULAR].color = WHITE;
+  ////  material.maps[MAP_DIFFUSE].color = WHITE;
+  ////  material.maps[MAP_SPECULAR].color = WHITE;
 
     p_data->model.materials[mi].shader = standardShader;
   }
@@ -1408,6 +1416,9 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModelFromMesh(GenMeshSphere(ra, ri, sl));
+  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+    MeshTangents(&p_data->model.meshes[meshi]);
+  }
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
