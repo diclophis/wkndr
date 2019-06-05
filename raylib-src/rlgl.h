@@ -1559,8 +1559,6 @@ void rlglInit(int width, int height)
         // NOTE: Only check on OpenGL ES, OpenGL 3.3 has VAO support as core feature
         if (strcmp(extList[i], (const char *)"GL_OES_vertex_array_object") == 0)
         {
-            vaoSupported = true;
-
             // The extension is supported by our hardware and driver, try to get related functions pointers
             // NOTE: emscripten does not support VAOs natively, it uses emulation and it reduces overall performance...
             glGenVertexArrays = (PFNGLGENVERTEXARRAYSOESPROC)eglGetProcAddress("glGenVertexArraysOES");
@@ -1568,18 +1566,8 @@ void rlglInit(int width, int height)
             glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSOESPROC)eglGetProcAddress("glDeleteVertexArraysOES");
             //glIsVertexArray = (PFNGLISVERTEXARRAYOESPROC)eglGetProcAddress("glIsVertexArrayOES");     // NOTE: Fails in WebGL, omitted
 
-            if (glGenVertexArrays == NULL) printf("glGenVertexArrays is NULL.\n");  // WEB: ISSUE FOUND! ...but why?
-            if (glBindVertexArray == NULL) printf("glBindVertexArray is NULL.\n");  // WEB: ISSUE FOUND! ...but why?
+            if ((glGenVertexArrays != NULL) && (glBindVertexArray != NULL) && (glDeleteVertexArrays != NULL)) vaoSupported = true;
         }
-
-        // TODO: HACK REVIEW!
-        // For some reason on raylib 2.5, VAO usage breaks the build
-        // error seems related to function pointers but I can not get detailed info...
-        // Avoiding VAO usage is the only solution for now... :(
-        // Ref: https://emscripten.org/docs/porting/guidelines/function_pointer_issues.html
-    #if defined(PLATFORM_WEB)
-        vaoSupported = false;
-    #endif
 
         // Check NPOT textures support
         // NOTE: Only check on OpenGL ES, OpenGL 3.3 has NPOT textures full support as core feature
@@ -2607,7 +2595,6 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Bind shader program
     glUseProgram(material.shader.id);
-    fprintf(stderr, "wtf: %d.", (material.shader.id));
 
     // Matrices and other values required by shader
     //-----------------------------------------------------
@@ -3922,12 +3909,10 @@ static Shader LoadShaderDefault(void)
     "{                                  \n"
 #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
     "    vec4 texelColor = texture2D(texture0, fragTexCoord); \n" // NOTE: texture2D() is deprecated on OpenGL 3.3 and ES 3.0
-    //"    gl_FragColor = texelColor*colDiffuse*fragColor;      \n"
-    "    gl_FragColor = vec4(0.25, 1.0, 0,0);      \n"
+    "    gl_FragColor = texelColor*colDiffuse*fragColor;      \n"
 #elif defined(GRAPHICS_API_OPENGL_33)
     "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
-    //"    finalColor = texelColor*colDiffuse*fragColor;        \n"
-    "    finalColor = vec4(0.25, 0.0, 1,0);      \n"
+    "    finalColor = texelColor*colDiffuse*fragColor;        \n"
 #endif
     "}                                  \n";
 
