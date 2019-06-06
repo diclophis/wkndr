@@ -50,10 +50,10 @@ RUN cd /var/lib/wkndr && ls -l && \
     git submodule init && \
     git submodule update
 
-COPY raylib-src /var/lib/wkndr/raylib-src
-
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
+
+COPY raylib-src /var/lib/wkndr/raylib-src
 RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
 RUN /var/lib/wkndr/iterate-web.sh cheese
 RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
@@ -70,7 +70,6 @@ COPY Wkndrfile /var/lib/wkndr/
 COPY public/index.html /var/lib/wkndr/public/index.html
 COPY public/index.js /var/lib/wkndr/public/index.js
 COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
-RUN cd /var/lib/wkndr && ls -hl release && cp release/wkndr* public/
 
 RUN setcap cap_sys_chroot+ep /usr/sbin/chroot 
 

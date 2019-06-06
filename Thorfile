@@ -1324,7 +1324,8 @@ HEREDOC
   end
 
   def name_of_wkndr_pod
-    IO.popen("kubectl get pods -l name=wkndr-app -o name | cut -d/ -f2").read.strip
+    a = IO.popen("kubectl get pods -l app=#{APP}-app -o name | cut -d/ -f2").read.strip
+    a
   end
 
   def fetch_from_registry(path)
