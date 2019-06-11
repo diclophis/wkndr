@@ -48,7 +48,10 @@ RUN cd /var/lib/wkndr && ls -l && \
     git init && \
     git submodule add https://github.com/mruby/mruby mruby \
     git submodule init && \
-    git submodule update
+    git submodule update && \
+    cd mruby && \
+    git fetch && \
+    git checkout 7c91efc1ffda769a5f1a872c646c82b00698f1b8
 
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc

@@ -459,7 +459,7 @@ HEREDOC
   desc "receive-pack", ""
   def receive_pack(origin)
     git_push_cmd = [
-                     "kubectl", "exec", name_of_wkndr_pod,
+                     "kubectl", "exec", name_of_wkndr_pod(WKNDR),
                      "-i",
                      "--",
                      "wkndr", "rcp", APP, origin 
@@ -472,7 +472,7 @@ HEREDOC
   desc "upload-pack", ""
   def upload_pack
     git_pull_cmd = [
-                     "kubectl", "exec", name_of_wkndr_pod,
+                     "kubectl", "exec", name_of_wkndr_pod(WKNDR),
                      "-i",
                      "--",
                      "git", "upload-pack", "/var/tmp/#{APP}"
@@ -489,7 +489,7 @@ HEREDOC
     branch ||= IO.popen("git rev-parse --abbrev-ref HEAD").read.strip
 
     git_init_cmd = [
-                     "kubectl", "exec", name_of_wkndr_pod,
+                     "kubectl", "exec", name_of_wkndr_pod(WKNDR),
                      "-i",
                      "--",
                      "git", "init", "--bare", "/var/tmp/#{APP}"
@@ -1323,8 +1323,9 @@ HEREDOC
     end
   end
 
-  def name_of_wkndr_pod
-    a = IO.popen("kubectl get pods -l app=#{APP}-app -o name | cut -d/ -f2").read.strip
+  def name_of_wkndr_pod(bit = APP)
+    cmd = "kubectl get pods -l name=#{bit}-app -o name | cut -d/ -f2"
+    a = IO.popen(cmd).read.strip
     a
   end
 
