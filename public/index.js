@@ -73,7 +73,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       var typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
-      window.debug_print(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
+      window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
       Module._free(heapBuffer);
     };
 
@@ -106,8 +106,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 var Module = {
   arguments: ['client', graphicsContainer.offsetWidth.toString(), graphicsContainer.offsetHeight.toString()],
   preRun: [(function() {
-    window.debug_print = Module.cwrap(
-      'debug_print', 'number', ['number', 'number', 'number', 'number']
+    window.handle_js_websocket_event = Module.cwrap(
+      'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
     );
 
     window.pack_outbound_tty = Module.cwrap(

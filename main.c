@@ -228,11 +228,11 @@ static mrb_value pressedkeys;
 #ifdef PLATFORM_WEB
 
 EMSCRIPTEN_KEEPALIVE
-size_t debug_print(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
+size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
   //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
-  mrb_funcall(mrb, mrb_obj_value(selfP), "process", 1, clikestr_as_string);
+  mrb_funcall(mrb, mrb_obj_value(selfP), "dispatch_next_events", 1, clikestr_as_string);
   return 0;
 }
 
@@ -241,19 +241,10 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
 
-  /*
-  mrb_value outbound_tty_msg = mrb_ary_new(mrb);
-  mrb_ary_push(mrb, outbound_tty_msg, mrb_fixnum_value(0));
-  mrb_ary_push(mrb, outbound_tty_msg, clikestr_as_string);
-  mrb_ary_push(mrb, outbound_tty_msg, empty_string);
-  */
-
   mrb_value outbound_tty_msg = mrb_hash_new(mrb);
   mrb_hash_set(mrb, outbound_tty_msg, mrb_fixnum_value(0), clikestr_as_string);
   
   mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
-
-  //mrb_free(mrb, mrb_obj_ptr(outbound_tty_msg));
 
   return 0;
 }

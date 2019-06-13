@@ -34,6 +34,9 @@ MRuby::Build.new do |conf|
   conf.gem :github => "Asmod4n/mruby-b64"
   conf.gem :github => "Asmod4n/mruby-phr"
 
+  #http faas routing
+  conf.gem :github => "katzer/mruby-r3"
+
   conf.cc do |cc|
     cc.flags = ["-lm"]
   end

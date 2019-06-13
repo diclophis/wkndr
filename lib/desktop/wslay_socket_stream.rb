@@ -48,7 +48,7 @@ class WslaySocketStream < SocketStream
       # :internal_server_error, :tls_handshake
       # to_str => returns the message revieced
       if msg[:opcode] == :binary_frame
-        process(msg[:msg])
+        dispatch_next_events(msg[:msg])
       else
         #??????
       end

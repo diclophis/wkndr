@@ -13,12 +13,42 @@ class Wkndr < Thor
     self.update_with_timer!(stack)
   end
 
-  def self.play(stack = nil, gl = nil, &block)
-    log!(:play, block, @stack, @gl)
-
-    if stack && !@stack
-      @stack = stack
+  def self.camp(&block)
+    if @server
+      log!(:server_side_camp, block, @server)
+      block.call(@server)
+    else
+      log!(:client_side_skip)
     end
+  end
+
+  def self.set_stack(stack)
+    @stack = stack
+  end
+
+  def self.set_server(server)
+    @server = server
+  end
+
+  def self.the_server
+    @server
+  end
+
+  def self.set_gl(gl)
+    @gl = gl
+  end
+
+  def self.play(stack = nil, gl = nil, &block)
+    log!(:play_client_side, block, @stack, @gl, @the_server)
+
+    if block && !@stack && !@gl
+      log!(:server_side_skip, Wkndr.the_server)
+      return
+    end
+
+    #if stack && !@stack
+    #  @stack = stack
+    #end
 
 		if @stack && @gl && block
       begin
@@ -41,30 +71,14 @@ class Wkndr < Thor
       end
 		end
 
-    bizb = false
-    if gl && !@gl
-      @gl = gl
-      bizb = true
-    end
+    #bizb = false
+    #if gl && !@gl
+    #  @gl = gl
+    #  bizb = true
+    #end
 
     if @gl && @stack
       @stack.cheese
-    end
-
-    if bizb
-      gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-      gl.update { |global_time, delta_time|
-        gl.drawmode {
-          gl.threed {
-          }
-          gl.twod {
-            gl.draw_fps(0, 0)
-            gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
-              gl.emit({"z" => "zzz"})
-            }
-          }
-        }
-      }
     end
   end
 
@@ -112,7 +126,8 @@ class Wkndr < Thor
     log!(:wtfclass, self, self.class)
 
     if File.exists?(directory)
-      Server.run!(directory)
+      server = Server.run!(directory)
+      Wkndr.set_server(server)
     end
   end
 
@@ -150,7 +165,22 @@ class Wkndr < Thor
 
     gl.open("wkndr", w, h, 0)
 
-    Wkndr.play(stack, gl)
+    gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+    gl.update { |global_time, delta_time|
+      gl.drawmode {
+        gl.threed {
+        }
+        gl.twod {
+          gl.draw_fps(0, 0)
+          gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
+            gl.emit({"z" => "zzz"})
+          }
+        }
+      }
+    }
+
+    Wkndr.set_stack(stack)
+    Wkndr.set_gl(gl)
   end
 
   desc "client", ""

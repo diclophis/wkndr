@@ -47,6 +47,8 @@ class Server
         self.on_connection(connection_error)
       }
 
+      @tree = R3::Tree.new
+
       update_utmp = Proc.new {
         #osx
         # utmp_file = "/var/run/utmpx"
@@ -111,7 +113,7 @@ class Server
   def create_connection!
     @idents -= 1
 
-    http = Connection.new(@server.accept, @idents, @required_prefix)
+    http = Connection.new(self, @idents, @required_prefix, )
 
     @all_connections << http
 
@@ -128,5 +130,40 @@ class Server
 
   def update(gt = nil, dt = nil)
     #NOOP: TODO????
+  end
+
+  def get(path, &block)
+    log!(:register_handler, path, block)
+    @tree.add(path, R3::ANY, block)
+    @tree.compile
+    log!(:routes, @tree.routes)
+  end
+
+  def missing_response
+    "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 0\r\n\r\n"
+  end
+
+  def server_error(exception)
+    "HTTP/1.1 500 Server Error\r\nConnection: Close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: #{exception.length}\r\n\r\n#{exception}"
+  end
+
+  def match_dispatch(path)
+    ids_from_path, handler = @tree.match(path)
+    if ids_from_path && handler
+      begin
+        resp_from_handler = handler.call(ids_from_path)
+        bytes_to_return = resp_from_handler.to_s
+        "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{bytes_to_return.length}\r\n\r\n#{bytes_to_return}"
+      rescue => e
+        log!(:html2, e)
+        server_error(e.inspect)
+      end
+    else
+      missing_response
+    end
+  end
+
+  def block
+    @server.accept
   end
 end

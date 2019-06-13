@@ -20,7 +20,7 @@ class SocketStream
     ss
   end
 
-  def process(bytes = nil)
+  def dispatch_next_events(bytes = nil)
     process_as_msgpack_stream(bytes).each { |typed_msg|
       channels = typed_msg.keys
       channels.each do |channel|
@@ -29,13 +29,14 @@ class SocketStream
         #
         #  1 stdout of connected tty
         #  2 stderr of connected tty
-        #  p is the Wkndrfile code stream
+        #  party is the Wkndrfile code stream
         #  * everything else gets sent to user-defined handler
         case channel
           when 1,2
             self.write_tty(cmsg)
           when "party"
-            log!(:cmsg, cmsg.length, cmsg)
+            log!(:incoming_party, cmsg.length, cmsg)
+
             begin
               did_parse = Kernel.eval(cmsg)
               log!(:cmsg_parsed_ok, did_parse)
@@ -44,6 +45,7 @@ class SocketStream
             end
 
         else
+          #log!(:userdefined_events_next, cmsg)
           @got_bytes_block.call(cmsg)
         end
       end
@@ -98,6 +100,7 @@ class SocketStream
   def write_typed(*msg_typed)
     if connected
       msg = MessagePack.pack(*msg_typed)
+      log!(:outbound_bits, msg)
       write_packed(msg)
     end
   end

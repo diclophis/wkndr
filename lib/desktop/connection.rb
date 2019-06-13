@@ -8,12 +8,15 @@ class Connection
                 :processing_handshake,
                 :ss,
                 :socket,
-                :ident
+                :ident,
+                :server
 
-  def initialize(socket, ident, required_prefix)
+  def initialize(server, ident, required_prefix)
+    self.socket = server.block
+
+    self.server = server
+    
     self.ident = ident
-
-    self.socket = socket
 
     self.ss = ""
     self.last_buf = ""
@@ -212,7 +215,9 @@ class Connection
           requested_path = "#{@required_prefix}#{filename}"
           UV::FS.realpath(requested_path) { |resolved_filename|
             if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-              self.socket && self.socket.write("HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
+              response_bytes = server.match_dispatch(filename)
+
+              self.socket && self.socket.write(response_bytes) {
                 self.halt!
               }
             else
@@ -296,23 +301,27 @@ class Connection
             log!(:subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
 
             ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
-            #do |ffff|
-              wkread = ffff.read(102400)
-              log!(:ffff, ffff)
-              #do |wkread|
-                log!(:wkread_length, wkread.length)
-                #TODO:!!!!!!!!!
-                self.write_typed({"party" => wkread})
-                ffff.close
-                @fsev = UV::FS::Event.new
-                @fsev.start(actual_wkndrfile, 0) do |path, event|
-                  if event == :change
-                    @fsev.stop
-                    subscribe_to_wkndrfile(wkndrfile_path)
-                  end
-                end
-              #end
-            #end
+            wkread = ffff.read(102400)
+
+            #log!(:ffff, ffff)
+            log!(:outgoing_wkndrfile, wkread.length, wkread)
+
+            begin
+              did_parse = Kernel.eval(wkread)
+              log!(:outbound_party_parsed_ok, did_parse)
+              self.write_typed({"party" => wkread})
+            rescue => e
+              log!(:outbound_party_parsed_bad, e)
+            end
+
+            ffff.close
+            @fsev = UV::FS::Event.new
+            @fsev.start(actual_wkndrfile, 0) do |path, event|
+              if event == :change
+                @fsev.stop
+                subscribe_to_wkndrfile(wkndrfile_path)
+              end
+            end
           end
         rescue => e
           log!(:desktop_connection_wkndrfile_realpath_error, e, e.backtrace)

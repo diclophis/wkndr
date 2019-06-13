@@ -82,7 +82,7 @@ $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_debug_print', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://wkndr.computer/ --preload-file resources
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://wkndr.computer/ --preload-file resources
 endif
 
 $(build)/test.yml: $(target) config.ru
