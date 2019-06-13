@@ -90,7 +90,7 @@ class Wkndr < Thor
   option "run", :type => :string, :default => nil
   option "cache", :type => :boolean, :default => true
   option "push", :type => :string, :default => nil
-  def build
+  def build(container_definition="Dockerfile")
     if options["run"]
       delete_dockerfile = ["kubectl", "delete", "--grace-period=0", "deployment/#{APP}-app", "service/#{APP}", "service/#{APP}-node-service"]
       system(*delete_dockerfile)
@@ -98,7 +98,7 @@ class Wkndr < Thor
 
     version = IO.popen("git rev-parse --verify HEAD").read.strip
 
-    build_dockerfile = ["docker", "build", options["cache"] ? nil : "--no-cache", "-t", APP + ":" + version, "."].compact
+    build_dockerfile = ["docker", "build", "-f", container_definition, options["cache"] ? nil : "--no-cache", "-t", APP + ":" + version, "."].compact
     systemx(*build_dockerfile)
 
     tag_dockerfile = ["docker", "tag", APP + ":" + version, APP + ":latest"]
@@ -628,7 +628,7 @@ HEREDOC
     system("docker images | grep latest | awk -e '{ print $1 \":\" $2 }'")
   end
 
-  desc "test", ""
+  desc "test [PIPELINE]", ""
   option "with-bootstrap", :type => :string, :default => nil
   option "dry-run", :type => :boolean, :default => false
   def test(just_this_job=nil, version=nil)

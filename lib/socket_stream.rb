@@ -13,9 +13,9 @@ class SocketStream
     SocketStream
   end
 
+  # single-binary client side native connection creator
   def self.create_websocket_connection(&block)
     ss = socket_klass.new(block)
-    log!(:wtf_is_this, socket_klass, ss)
     ss.connect!
     ss
   end
@@ -48,8 +48,6 @@ class SocketStream
         end
       end
     }
-
-    #GC.start
   end
 
   def write(msg_typed)
