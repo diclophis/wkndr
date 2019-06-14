@@ -100,7 +100,6 @@
 #include <openssl/sha.h>
 #include <mruby/string.h>
 #include <b64/cencode.h>
-#include "base.h"
 #include "kube.h"
 #include "connection.h"
 #include "server.h"
@@ -283,16 +282,7 @@ size_t socket_connected(mrb_state* mrb, struct RObject* selfP, const char* buf, 
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
 
-  /*
-  mrb_value outbound_tty_msg = mrb_ary_new(mrb);
-  mrb_ary_push(mrb, outbound_tty_msg, mrb_fixnum_value(0));
-  mrb_ary_push(mrb, outbound_tty_msg, clikestr_as_string);
-  mrb_ary_push(mrb, outbound_tty_msg, empty_string);
-  */
-
   mrb_funcall(mrb, mrb_obj_value(selfP), "did_connect", 1, clikestr_as_string);
-
-  //mrb_free(mrb, mrb_obj_ptr(outbound_tty_msg));
 
   return 0;
 }
@@ -321,22 +311,13 @@ mrb_value socket_stream_unpack_inbound_tty(mrb_state* mrb, mrb_value self) {
   mrb_int fp = mrb_int(mrb, data_value);
   void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
   const char *foo = mrb_string_value_ptr(mrb, tty_output);
-  //const char *foo = mrb_string_value_cstr(mrb, &tty_output);
   int len = mrb_string_value_len(mrb, tty_output);
-
-  //mrb_p(mrb, tty_output);
 
   write_packed_pointer(0, foo, len);
 
   mrb_free(mrb, mrb_obj_ptr(tty_output));
 
 #endif
-
-//#ifdef PLATFORM_WEB
-//  EM_ASM_({
-//    window.unpack_inbound_tty(Pointer_stringify($0, $1)); //Pointer_stringify($0, $1)); // Convert message to JS string
-//  }, foo, len);
-//#endif
 
   return mrb_nil_value();
 }
@@ -383,11 +364,6 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef TARGET_DESKTOP
   //TODO: this should have logic on ruby side based on if is window or not
   if (WindowShouldClose()) {
-    //mrb_funcall(mrb, self, "halt!", 0, NULL);
-    //if (mrb->exc) {
-    //  fprintf(stderr, "Exception in XXXYYY");
-    //  mrb_print_error(mrb);
-    //}
     return mrb_nil_value();
   }
 #endif
@@ -399,8 +375,6 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   dt = GetFrameTime();
 
   //self is instance of StackBlocker.new !!!!!!!!!!
-  //fprintf(stderr, "\nwtf bits_update!\n");
-
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
 
   if (mrb->exc) {
@@ -409,8 +383,6 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
     mrb_print_backtrace(mrb);
     return mrb_nil_value();
   }
-
-  //fprintf(stderr, "\nwtf bits_update!---------------------\n\n");
 
   return mrb_true_value();
 }
@@ -422,10 +394,6 @@ void platform_bits_update_void(void* arg) {
   mrb_state* mrb = loop_data->mrb_pointer;
   struct RObject* self = loop_data->self_pointer;
   mrb_value selfV = mrb_obj_value(self);
-
-  //mrb_iv_set(
-  //    mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
-  //    mrb_fixnum_value(write_packed_pointer));
 
   platform_bits_update(mrb, selfV);
 }
@@ -457,8 +425,6 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 
 
 mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
-  //fprintf(stderr, "cross cheese show!\n");
-
   loop_data_s *loop_data = NULL;
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
 
@@ -484,35 +450,35 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
 }
 
 
-mrb_value global_parse(mrb_state* mrb, mrb_value self) {
-  mrb_value mruby_code;
-
-  mrb_get_args(mrb, "o", &mruby_code);
-
-  const char *foo = mrb_string_value_cstr(mrb, &mruby_code);
-  int len = mrb_string_value_len(mrb, mruby_code);
-
-  fprintf(stderr, "gonna parse this %d\n", len);
-
-  //mrbc_context *detective_file = mrbc_context_new(mrb);
-  //mrbc_filename(mrb, detective_file, "Wkndrfile");
-  mrb_value ret;
-  //ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
-  //ret = mrb_load_string(mrb, foo);
-  ret = mrb_load_string(mrb, "");
-  //ret = mrb_load_string_cxt(mrb, "", detective_file);
-  fprintf(stderr, "DONNNNNE %d\n", len);
-
-  if (mrb->exc) {
-    fprintf(stderr, "Exception in XXX");
-    mrb_print_error(mrb);
-  }
-  //mrbc_context_free(mrb, detective_file);
-
-  fprintf(stderr, "BIIIIP %d\n", len);
-
-  return mrb_fixnum_value(len);
-}
+//mrb_value global_parse(mrb_state* mrb, mrb_value self) {
+//  mrb_value mruby_code;
+//
+//  mrb_get_args(mrb, "o", &mruby_code);
+//
+//  const char *foo = mrb_string_value_cstr(mrb, &mruby_code);
+//  int len = mrb_string_value_len(mrb, mruby_code);
+//
+//  fprintf(stderr, "gonna parse this %d\n", len);
+//
+//  //mrbc_context *detective_file = mrbc_context_new(mrb);
+//  //mrbc_filename(mrb, detective_file, "Wkndrfile");
+//  mrb_value ret;
+//  //ret = mrb_load_nstring_cxt(mrb, foo, len, detective_file);
+//  //ret = mrb_load_string(mrb, foo);
+//  ret = mrb_load_string(mrb, "");
+//  //ret = mrb_load_string_cxt(mrb, "", detective_file);
+//  fprintf(stderr, "DONNNNNE %d\n", len);
+//
+//  if (mrb->exc) {
+//    fprintf(stderr, "Exception in XXX");
+//    mrb_print_error(mrb);
+//  }
+//  //mrbc_context_free(mrb, detective_file);
+//
+//  fprintf(stderr, "BIIIIP %d\n", len);
+//
+//  return mrb_fixnum_value(len);
+//}
 
 
 static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
@@ -608,9 +574,6 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
 
 static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
 {
-  //mrb_ary_set(mrb, pressedkeys, 0, mrb_nil_value());
-  //mrb_ary_set(mrb, pressedkeys, 1, mrb_nil_value());
-
   mrb_int argc;
   mrb_value *checkkeys;
   mrb_get_args(mrb, "*", &checkkeys, &argc);
@@ -857,14 +820,12 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 }
 
 
+//TODO: implenent on_shutdown
 static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
-  //TODO: implenent on_shutdown
-  //mrb_funcall(mrb, self, "play", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
-
-  fprintf(stderr, "CloseWindow\n");
-
-  //TODO: move this to window class somehow
-  CloseWindow(); // Close window and OpenGL context
+//  //mrb_funcall(mrb, self, "play", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+//  fprintf(stderr, "CloseWindow\n");
+//  //TODO: move this to window class somehow
+//  CloseWindow(); // Close window and OpenGL context
 
   return mrb_true_value();
 }
@@ -1507,8 +1468,6 @@ static mrb_value fast_utmp_utmps(mrb_state* mrb, mrb_value self)
       mrb_funcall(mrb, nclikestr_as_string, "strip!", 0);
 
       mrb_hash_set(mrb, outbound_utmp, clikestr_as_string, nclikestr_as_string);
-
-      //mrb_ary_push(mrb, rets, outbound_utmp);
     }
 
     if (utmp_buf->ut_type == BOOT_TIME) {
@@ -1531,8 +1490,6 @@ static mrb_value fast_tty_close(mrb_state* mrb, mrb_value self)
   mrb_int a,b;
   mrb_get_args(mrb, "ii", &a, &b);
 
-  //fprintf(stderr, "wtf %d, %d\n", a, b);
-
   close(a);
   close(b);
 
@@ -1545,8 +1502,6 @@ static mrb_value fast_tty_resize(mrb_state* mrb, mrb_value self)
   mrb_int a,cols,rows;
   mrb_get_args(mrb, "iii", &a, &cols, &rows);
 
-  //fprintf(stderr, "resize %d %d %d\n", a, cols, rows);
-  
   struct winsize w = {rows, cols, 0, 0};
 
   ioctl(a, TIOCSWINSZ, &w);
@@ -1592,6 +1547,7 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   
   ptsname_r(fdm, ptyname, foo);
 
+  //TODO
   //strncpy(ptyname, ptsname(fdm, ), FILENAME_MAX-1);
   //ptsname
 
@@ -1599,6 +1555,7 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 	fds = open(ptyname, O_RDWR | O_NOCTTY);
 	//fds = open(ptyname, O_RDWR);
 
+  //TODO: clean this up once sure its not broken or missing parts
 	//pid_t result = setsid();
 	//if (result < 0)
 	//{
@@ -1625,7 +1582,7 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 #endif
 }
 
-
+//TODO: minimal scripting env
 // MRB_API mrb_state*
 // mrb_empty_open_allocf(mrb_allocf f, void *ud)
 // {
@@ -1956,7 +1913,6 @@ int main(int argc, char** argv) {
 
   // convert argv into mruby strings
   for (i=1; i<argc; i++) {
-    //fprintf(stderr, "wtf: %s\n", argv[i]);
     mrb_ary_push(mrb_client, args, mrb_str_new_cstr(mrb_client, argv[i]));
     mrb_ary_push(mrb, args_server, mrb_str_new_cstr(mrb, argv[i]));
   }
@@ -1977,8 +1933,6 @@ int main(int argc, char** argv) {
   mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
 
   // class PlatformBits
-  //struct RClass *platform_bits_class = mrb_define_class(mrb, "Window", mrb->object_class);
-
   struct RClass *stack_blocker_class = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
   struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
   mrb_define_method(mrb_client, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
@@ -2027,15 +1981,10 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, wkndr, NULL);
   eval_static_libs(mrb_client, wkndr, NULL);
 
-  //TODO:!!!!
-  //struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
   struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
-  //struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
 
-  //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
   mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
-  //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb, theseus, NULL);
   eval_static_libs(mrb_client, theseus, NULL);
@@ -2045,8 +1994,7 @@ int main(int argc, char** argv) {
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
-  //mrb_define_class_method(mrb, thor_class, "show!", global_show, MRB_ARGS_REQ(1));
-  mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
+  //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   struct RClass *socket_stream_class_client = mrb_define_class(mrb_client, "SocketStream", mrb_client->object_class);
@@ -2059,12 +2007,8 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb_client, socket_stream, NULL);
 
-  //eval_static_libs(mrb, platform_bits, NULL);
-
   eval_static_libs(mrb, game_loop, NULL);
   eval_static_libs(mrb_client, game_loop, NULL);
-
-  //eval_static_libs(mrb, main_menu, NULL);
 
   eval_static_libs(mrb_client, box, NULL);
 
@@ -2076,9 +2020,6 @@ int main(int argc, char** argv) {
   mrb_value the_stack_client;
 
 #ifdef TARGET_DESKTOP
-  eval_static_libs(mrb, base, NULL);
-  eval_static_libs(mrb_client, base, NULL);
-
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
@@ -2087,15 +2028,6 @@ int main(int argc, char** argv) {
 
   struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
-
-//loop_data_s* loop_data = arg;
-//mrb_state* mrb = loop_data->mrb_pointer;
-//struct RObject* self = loop_data->self_pointer;
-//mrb_value selfV = mrb_obj_value(self);
-
-//mrb_iv_set(
-//    mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
-//    mrb_fixnum_value(write_packed_pointer));
 
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
   loop_data->mrb_pointer = mrb_client;
