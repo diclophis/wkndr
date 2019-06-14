@@ -467,7 +467,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "wiz", 0, 0);
+  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "block!", 0, 0);
 
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in SERVER_CHEESE_CROSS");
@@ -476,13 +476,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     return mrb_false_value();
   }
 
-  //platform_bits_update_void(loop_data);
-
-  //return mrb_fixnum_value(wiz_return_halt);
   if (mrb_test(wiz_return_halt)) {
-
-
-  //if (mrb_obj_equal(mrb, wiz_return_halt, mrb_true_value())) {
     return mrb_true_value();
   } else {
     return mrb_false_value();
@@ -2132,18 +2126,19 @@ int main(int argc, char** argv) {
   }
 
 #ifdef TARGET_DESKTOP
-  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "wiz", 0, 0);
-  fprintf(stderr, "EXITWIZ");
+  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
   if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVERWIZ");
+    fprintf(stderr, "Exception in SERVERBLOCK");
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
   }
 #endif
 
 #ifdef PLATFORM_WEB
-  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "bang", 0, 0);
+  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "wizbang!", 0, 0);
 #endif
+
+  fprintf(stderr, "closing ... \n");
 
   mrb_close(mrb);
   mrb_close(mrb_client);

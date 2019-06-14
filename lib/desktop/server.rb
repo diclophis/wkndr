@@ -169,7 +169,6 @@ class Server
   end
 
   def block_accept
-    log!(:ACCEPT)
     @server.accept
   end
 end

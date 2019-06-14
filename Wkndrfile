@@ -37,7 +37,7 @@ Wkndr.play { |gl|
         cube.draw(true)
       }
       gl.twod {
-        gl.draw_fps(0, 0)
+        #gl.draw_fps(0, 0)
         gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{global_time}") {
           gl.emit({"c" => "tty"})
         }

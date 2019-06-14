@@ -8,14 +8,11 @@ class Wkndr < Thor
   end
 
   def self.block!
-    #log!(:client_block)
     running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
 
     if running_stacks.length > 0
       bb_ret = true
-      
       running_stacks.each { |rlb| bb_ret = (bb_ret && rlb.cheese) }
-    #  log!(:bbret, bb_ret)
       bb_ret
     end
   end
@@ -173,7 +170,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 0)
+    gl.open("wkndr", w, h, 61)
 
     gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
     gl.update { |global_time, delta_time|
@@ -181,7 +178,7 @@ class Wkndr < Thor
         gl.threed {
         }
         gl.twod {
-          gl.draw_fps(0, 0)
+          #gl.draw_fps(0, 0)
           gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
             gl.emit({"z" => "zzz"})
           }
@@ -243,5 +240,9 @@ class Wkndr < Thor
   def self.update_with_timer!(run_loop_blocker = nil)
     @stacks_to_care_about ||= []
     @stacks_to_care_about << run_loop_blocker
+  end
+
+  def self.wizbang!
+    self.show!(self.first_stack)
   end
 end
