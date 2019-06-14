@@ -15,6 +15,8 @@ class ServerSide < Wkndr
       UV.run(UV::UV_RUN_NOWAIT)
     end
 
+    log!(:exitfoooOOOO, @keep_running, foo)
+
     UV.run(UV::UV_RUN_NOWAIT)
     UV.default_loop.stop
   end
