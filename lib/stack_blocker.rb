@@ -47,9 +47,8 @@ class StackBlocker
   end
 
   def cheese
+    #TODO: remove for_server abstraction its broken
     if @for_server
-      #update
-      #UV.run(UV::UV_RUN_NOWAIT)
     else
       signal
     end

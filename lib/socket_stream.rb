@@ -35,11 +35,8 @@ class SocketStream
           when 1,2
             self.write_tty(cmsg)
           when "party"
-            log!(:incoming_party, cmsg.length, cmsg)
-
             begin
               did_parse = Kernel.eval(cmsg)
-              log!(:cmsg_parsed_ok, did_parse)
             rescue => e
               log!(:cmsg_bad, e)
             end
@@ -94,14 +91,12 @@ class SocketStream
 
   def did_connect(wkndrfile_path)
     #TODO: merge this with other bits
-    log!(:did_connect)
     write_typed({"party" => wkndrfile_path})
   end
 
   def write_typed(*msg_typed)
     if connected
       msg = MessagePack.pack(*msg_typed)
-      log!(:outbound_bits, msg)
       write_packed(msg)
     end
   end

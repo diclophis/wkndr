@@ -54,10 +54,6 @@ class Wkndr < Thor
       return
     end
 
-    #if stack && !@stack
-    #  @stack = stack
-    #end
-
 		if @stack && @gl && block
       begin
         block.call(@gl)
@@ -79,44 +75,10 @@ class Wkndr < Thor
       end
 		end
 
-    #bizb = false
-    #if gl && !@gl
-    #  @gl = gl
-    #  bizb = true
-    #end
-
     if @gl && @stack
       @stack.cheese
     end
   end
-
-#  desc "html", ""
-#  def html
-#    log!(:html)
-#
-#    begin
-#      mab = Markaby::Builder.new
-#
-#      mab.html5 do
-#        mab.head { mab.title "Boats.com" }
-#        mab.body do
-#          mab.h1 "Boats.com has great deals"
-#          mab.ul do
-#            mab.li "$49 for a canoe"
-#            mab.li "$39 for a raft"
-#            mab.li "$29 for a huge boot that floats and can fit 5 people"
-#          end
-#        end
-#      end
-#      #mab.div do
-#      #end
-#    rescue => e
-#      log!(:html2, e)
-#    end
-#
-#    log!(mab.to_s)
-#  end
-#  method_added(:html) #TODO???
 
   def self.start_server(stack, *args)
     log!(:StartServer)

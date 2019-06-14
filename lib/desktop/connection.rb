@@ -50,12 +50,6 @@ class Connection
       @fsev.stop
       @fsev = nil
     end
-
-    #if self.socket && self.socket.has_ref?
-    #  self.socket.read_stop 
-    #  self.socket.close
-    #  self.socket = nil
-    #end
   end
 
   def halt!
@@ -375,8 +369,6 @@ class Connection
           channels = typed_msg.keys
 
           channels.each do |channel|
-            log!(:got_msg, typed_msg)
-
             #NOTE: channels are as follows
             #
             #  0 stdin of connected tty
@@ -434,8 +426,6 @@ class Connection
                     end
 
                     @stdin_tty.read_start do |bout|
-                      log!(:AAA, bout)
-
                       if bout.is_a?(UVError)
                         log!(:badout, bout)
                       elsif bout
@@ -482,7 +472,6 @@ class Connection
     self.write_ws_response!(sec_websocket_key) {
       @t = UV::Timer.new
       @t.start(100, 100) {
-        #log!(:send_ping)
         self.write_typed({"c" => "ping"})
       }
     }
