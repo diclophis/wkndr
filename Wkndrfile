@@ -1,8 +1,7 @@
 #
 
 Wkndr.camp { |sl|
-  sl.get('/boats') { |ids_from_path|
-    mab = Markaby::Builder.new
+  sl.get('/boats') { |ids_from_path, mab|
     mab.html5 do
       mab.head { mab.title "Boats.com" }
       mab.body do
@@ -14,7 +13,6 @@ Wkndr.camp { |sl|
         end
       end
     end
-    mab
   }
 }
 
@@ -33,11 +31,10 @@ Wkndr.play { |gl|
     gl.drawmode {
       gl.threed {
         cube.deltar(1.0, 1.0, 1.0, global_time * speed)
-        #cube.deltar(Math.sin(global_time * 1.0) * 3.0, Math.sin(-global_time) * 5.0, 1.0, global_time * speed)
         cube.draw(true)
       }
+
       gl.twod {
-        #gl.draw_fps(0, 0)
         gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{global_time}") {
           gl.emit({"c" => "tty"})
         }

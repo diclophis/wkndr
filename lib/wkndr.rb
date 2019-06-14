@@ -143,7 +143,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 61)
+    gl.open("wkndr", w, h, 60)
 
     gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
     gl.update { |global_time, delta_time|
@@ -207,7 +207,7 @@ class Wkndr < Thor
         #TODO: merge with runblock???
         self.install_trap!
         #foo_args = args[
-        self.block! if args_outer[0].length == 1
+        self.block! if args_outer[0].length > 1
 
     end
   end

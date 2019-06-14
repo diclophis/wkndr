@@ -156,8 +156,9 @@ class Server
     ids_from_path, handler = @tree.match(path)
     if ids_from_path && handler
       begin
-        resp_from_handler = handler.call(ids_from_path)
-        bytes_to_return = resp_from_handler.to_s
+        mab = Markaby::Builder.new
+        resp_from_handler = handler.call(ids_from_path, mab)
+        bytes_to_return = mab.to_s
         "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{bytes_to_return.length}\r\n\r\n#{bytes_to_return}"
       rescue => e
         log!(:html2, e)
