@@ -24,17 +24,6 @@ class ClientSide < Wkndr
   #  end
   #end
 
-  def self.wiz
-    #log!(:self_client_stack, @client_stack)
-    begin
-      if @client_stack
-        @client_stack.signal
-      end
-    rescue Interrupt => e
-      @client_stack = nil
-    end
-  end
-
   def self.bang
    self.show!(@client_stack)
   end

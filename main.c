@@ -465,16 +465,18 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "wiz", 0, 0);
+  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "wiz", 0, 0);
+
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in SERVER_CHEESE_CROSS");
     mrb_print_error(loop_data->mrb_pointer);
     mrb_print_backtrace(loop_data->mrb_pointer);
+    return mrb_false_value();
   }
 
   //platform_bits_update_void(loop_data);
 
-  return self;
+  return wiz_return_halt;
 }
 
 
@@ -2078,19 +2080,9 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, server, NULL);
 
   eval_static_libs(mrb_client, wslay_socket_stream, uv_io, NULL);
-#endif
 
-  struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
-  mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
-  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
-  if (mrb_client->exc) {
-    fprintf(stderr, "Exception in CLIENT");
-    mrb_print_error(mrb_client);
-    mrb_print_backtrace(mrb_client);
-  }
-
-#ifdef TARGET_DESKTOP
   struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
+  struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
 //loop_data_s* loop_data = arg;
 //mrb_state* mrb = loop_data->mrb_pointer;
@@ -2119,6 +2111,18 @@ int main(int argc, char** argv) {
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
   }
+#endif
+
+  mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
+  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
+  if (mrb_client->exc) {
+    fprintf(stderr, "Exception in CLIENT");
+    mrb_print_error(mrb_client);
+    mrb_print_backtrace(mrb_client);
+  }
+
+#ifdef TARGET_DESKTOP
+  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "wiz", 0, 0);
 #endif
 
 #ifdef PLATFORM_WEB

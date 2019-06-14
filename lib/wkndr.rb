@@ -226,14 +226,13 @@ class Wkndr < Thor
         stack = self.start(*args_outer)
         log!(:efg, stack)
         self.runblock!(stack)
-        while true
-          begin
-            self.cheese_cross!
-          rescue => e
-            log!(:eee, e)
-          end
+        @server_stack = stack
 
-          self.block!
+        #mruby/build/mrbgems/mruby-uv/example/tcp-server.rb
+
+        UV::Signal.new.start(UV::Signal::SIGINT) do
+          @server_stack.halt!
+          @server_stack = nil
         end
 
     end
@@ -242,5 +241,33 @@ class Wkndr < Thor
   def self.update_with_timer!(run_loop_blocker = nil)
     @stacks_to_care_about ||= []
     @stacks_to_care_about << run_loop_blocker
+  end
+
+  def self.wiz
+    begin
+      while @server_stack && self.cheese_cross!
+        self.block!
+      end
+    rescue Errno::EWOULDBLOCK => e
+    #rescue Interrupt => e
+    #  self.block!
+    #  @server_stack.halt!
+    #  @server_stack = nil
+    end
+
+    begin
+      if @client_stack
+        @client_stack.signal
+
+        return true
+      else
+        return false
+      end
+    rescue Errno::EWOULDBLOCK => e
+    #rescue Interrupt => e
+    #  @client_stack.signal
+    #  @client_stack.halt!
+    #  @client_stack = nil
+    end
   end
 end

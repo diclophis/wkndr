@@ -94,6 +94,7 @@ class SocketStream
 
   def did_connect(wkndrfile_path)
     #TODO: merge this with other bits
+    log!(:did_connect)
     write_typed({"party" => wkndrfile_path})
   end
 

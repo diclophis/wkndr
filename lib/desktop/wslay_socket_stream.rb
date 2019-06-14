@@ -75,6 +75,8 @@ class WslaySocketStream < SocketStream
     @host = '127.0.0.1'
     @port = 8000
 
+    log!(:connecting_to, @host, @port)
+
     on_read_start = Proc.new { |b|
       if b && b.is_a?(UVError)
         if @halting
