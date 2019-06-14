@@ -34,6 +34,7 @@ class Server
 
     @closing = false
     @closed = false
+    @handlers = {}
 
     UV::FS.realpath(required_prefix) { |resolved_prefix|
       if resolved_prefix.is_a?(UVError)
@@ -51,8 +52,6 @@ class Server
       @server.listen(32) { |connection_error|
         self.on_connection(connection_error)
       }
-
-      @tree = R3::Tree.new
 
       update_utmp = Proc.new {
         #osx
@@ -139,9 +138,16 @@ class Server
 
   def get(path, &block)
     log!(:register_handler, path, block)
-    @tree.add(path, R3::ANY, block)
-    @tree.compile
-    log!(:routes, @tree.routes)
+    tree = R3::Tree.new
+
+    @handlers[path] = block
+
+    @handlers.each { |k,v|
+      tree.add(k, R3::ANY, v)
+    }
+    tree.compile
+
+    @tree = tree
   end
 
   def missing_response
@@ -153,6 +159,7 @@ class Server
   end
 
   def match_dispatch(path)
+    log!(:matching_routes, path, @tree.routes)
     ids_from_path, handler = @tree.match(path)
     if ids_from_path && handler
       begin
