@@ -206,7 +206,8 @@ class Wkndr < Thor
         #TODO: figure out why install trap needs to be here???
         #TODO: merge with runblock???
         self.install_trap!
-        self.block!
+        #foo_args = args[
+        self.block! if args_outer[0].length == 1
 
     end
   end

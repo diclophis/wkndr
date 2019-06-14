@@ -419,7 +419,7 @@ class Connection
                     end
 
                     @ps.spawn do |sig|
-                      log!("exit #{sig}")
+                      log!(:ps_spawn_exit, "exitsig #{sig}")
 
                       @pid = nil
                       @ps = nil

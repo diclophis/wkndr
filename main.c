@@ -2056,14 +2056,16 @@ int main(int argc, char** argv) {
     mrb_print_backtrace(mrb_client);
   }
 
-//#ifdef TARGET_DESKTOP
-//  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
-//  if (mrb->exc) {
-//    fprintf(stderr, "Exception in SERVERBLOCK");
-//    mrb_print_error(mrb);
-//    mrb_print_backtrace(mrb);
-//  }
-//#endif
+#ifdef TARGET_DESKTOP
+  if (argc == 1) {
+    mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
+    if (mrb->exc) {
+      fprintf(stderr, "Exception in SERVERBLOCK");
+      mrb_print_error(mrb);
+      mrb_print_backtrace(mrb);
+    }
+  }
+#endif
 
 #ifdef PLATFORM_WEB
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "wizbang!", 0, 0);
