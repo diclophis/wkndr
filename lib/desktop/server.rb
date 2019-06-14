@@ -25,6 +25,7 @@ class Server
   end
 
   def initialize(required_prefix)
+
     #TODO: where does this go????
     UV.disable_stdio_inheritance
 
@@ -35,7 +36,11 @@ class Server
     @closed = false
 
     UV::FS.realpath(required_prefix) { |resolved_prefix|
-      @required_prefix = resolved_prefix
+      if resolved_prefix.is_a?(UVError)
+        log!(:INITSERVER2ERR, required_prefix, resolved_prefix)
+      else
+        @required_prefix = resolved_prefix
+      end
 
       host = '0.0.0.0'
       port = 8000
@@ -113,7 +118,7 @@ class Server
   def create_connection!
     @idents -= 1
 
-    http = Connection.new(self, @idents, @required_prefix, )
+    http = Connection.new(self, @idents, @required_prefix)
 
     @all_connections << http
 
@@ -163,7 +168,8 @@ class Server
     end
   end
 
-  def block
+  def block_accept
+    log!(:ACCEPT)
     @server.accept
   end
 end

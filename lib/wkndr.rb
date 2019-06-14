@@ -125,10 +125,9 @@ class Wkndr < Thor
   def self.server(directory = "public")
     log!(:wtfclass, self, self.class)
 
-    if File.exists?(directory)
-      server = Server.run!(directory)
-      Wkndr.set_server(server)
-    end
+    a_server = Server.run!(directory)
+    Wkndr.set_server(a_server)
+    a_server
   end
 
   desc "server", ""
@@ -218,18 +217,15 @@ class Wkndr < Thor
     case server_or_client_side
       when "ClientSide"
         stack = self.start(*args_outer)
-        log!(:abc, stack)
         self.runblock!(stack)
         @client_stack = stack
 
       when "ServerSide"
         stack = self.start(*args_outer)
-        log!(:efg, stack)
         self.runblock!(stack)
         @server_stack = stack
 
         #mruby/build/mrbgems/mruby-uv/example/tcp-server.rb
-
         UV::Signal.new.start(UV::Signal::SIGINT) do
           @server_stack.halt!
           @server_stack = nil

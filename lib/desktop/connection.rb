@@ -12,7 +12,7 @@ class Connection
                 :server
 
   def initialize(server, ident, required_prefix)
-    self.socket = server.block
+    self.socket = server.block_accept
 
     self.server = server
     
@@ -206,27 +206,34 @@ class Connection
           upgrade_to_websocket!
 
         else
-          filename = phr.path
+          unless @required_prefix
+            response_bytes = server.missing_response
+            self.socket && self.socket.write(response_bytes) {
+              self.halt!
+            }
+          else
+            filename = phr.path
 
-          if filename == "/" || filename[0, 2] == "/~"
-            filename = "/index.html"
-          end
-
-          requested_path = "#{@required_prefix}#{filename}"
-          UV::FS.realpath(requested_path) { |resolved_filename|
-            if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-              response_bytes = server.match_dispatch(filename)
-
-              self.socket && self.socket.write(response_bytes) {
-                self.halt!
-              }
-            else
-              self.processing_handshake = -1
-              self.ss = self.ss[@offset..-1]
-              self.phr.reset
-              serve_static_file!(resolved_filename)
+            if filename == "/" || filename[0, 2] == "/~"
+              filename = "/index.html"
             end
-          }
+
+            requested_path = "#{@required_prefix}#{filename}"
+            UV::FS.realpath(requested_path) { |resolved_filename|
+              if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
+                response_bytes = server.match_dispatch(filename)
+
+                self.socket && self.socket.write(response_bytes) {
+                  self.halt!
+                }
+              else
+                self.processing_handshake = -1
+                self.ss = self.ss[@offset..-1]
+                self.phr.reset
+                serve_static_file!(resolved_filename)
+              end
+            }
+          end
         end
       when :incomplete
         log!("desktop_connection_incomplete")
