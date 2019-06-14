@@ -1,70 +1,70 @@
 #
 
 class Wkndr
-  def self.block!
-    running = true
-    #TODO: server FPS
-    fps = 1 #run_loop_blocker.fps
-    #exit_counter = 0
-    tick_interval_ms = ((1.0/fps)*1000.0)
-    @ticks ||= 0
+  #def self.block!
+  #  running = true
+  #  #TODO: server FPS
+  #  fps = 1 #run_loop_blocker.fps
+  #  #exit_counter = 0
+  #  tick_interval_ms = ((1.0/fps)*1000.0)
+  #  @ticks ||= 0
 
-    #Signal.trap(:INT) { |signo|
-    #  running = false
-    #}
+  #  #Signal.trap(:INT) { |signo|
+  #  #  running = false
+  #  #}
 
-   # prepare = UV::Prepare.new
-   # prepare.start {
-   #   timer = UV::Timer.new
-   #   timer.start(tick_interval_ms, 0) { |x|
-        begin
-   #       prepare.stop
-   #       timer.stop
+  # # prepare = UV::Prepare.new
+  # # prepare.start {
+  # #   timer = UV::Timer.new
+  # #   timer.start(tick_interval_ms, 0) { |x|
+  #      begin
+  # #       prepare.stop
+  # #       timer.stop
 
-          #timer.again
+  #        #timer.again
 
-        #  #UV.run(UV::UV_RUN_NOWAIT)
+  #      #  #UV.run(UV::UV_RUN_NOWAIT)
 
-          #log!(:tick_timer, @ticks) #run_loop_blocker)
+  #        #log!(:tick_timer, @ticks) #run_loop_blocker)
 
-        #  #spinlock!
+  #      #  #spinlock!
 
-          running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
+  #        running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
 
-          if running && running_stacks.length > 0
-            if ((@ticks) % 1000) == 0
-              #log!(:idle, @ticks)
-            end
+  #        if running && running_stacks.length > 0
+  #          if ((@ticks) % 1000) == 0
+  #            #log!(:idle, @ticks)
+  #          end
 
-        #UV.run #(UV::UV_RUN_ONCE)
+  #      #UV.run #(UV::UV_RUN_ONCE)
 
-        #    #run_loop_blocker.cheese
-            running_stacks.each { |rlb| rlb.cheese }
-          else
-        #  #  if exit_counter > 0
-        #  #    timer.stop
-        #  #    run_loop_blocker.shutdown
-        #  #    #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
-        #  #    #UV.default_loop.close
-        #  #    UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
-        #  #  else
-        #  #    all_halting = run_loop_blocker.halt!
-        #  #    exit_counter += 1
-        #  #  end
-            #running = false
-          end
+  #      #    #run_loop_blocker.cheese
+  #          running_stacks.each { |rlb| rlb.cheese }
+  #        else
+  #      #  #  if exit_counter > 0
+  #      #  #    timer.stop
+  #      #  #    run_loop_blocker.shutdown
+  #      #  #    #uv_walk to find bug!!, its in client/wslay uv event bits, open timer or something!!!!
+  #      #  #    #UV.default_loop.close
+  #      #  #    UV.default_loop.stop #TODO: remove once uv leftover handle bug is fixed
+  #      #  #  else
+  #      #  #    all_halting = run_loop_blocker.halt!
+  #      #  #    exit_counter += 1
+  #      #  #  end
+  #          #running = false
+  #        end
 
-          @ticks += 1
-        rescue => e
-          log!(:base_running_timer_tick_error, e, e.backtrace)
-        end
-      #}
-    #}
+  #        @ticks += 1
+  #      rescue => e
+  #        log!(:base_running_timer_tick_error, e, e.backtrace)
+  #      end
+  #    #}
+  #  #}
 
-    #UV.run(UV::UV_RUN_ONCE) #if running
-    UV.run(UV::UV_RUN_NOWAIT)
-    #UV.run
-  end
+  #  #UV.run(UV::UV_RUN_ONCE) #if running
+  #  UV.run(UV::UV_RUN_NOWAIT)
+  #  #UV.run
+  #end
 
   #def self.block!
   #  UV.run

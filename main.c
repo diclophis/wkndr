@@ -383,11 +383,11 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef TARGET_DESKTOP
   //TODO: this should have logic on ruby side based on if is window or not
   if (WindowShouldClose()) {
-    mrb_funcall(mrb, self, "halt!", 0, NULL);
-    if (mrb->exc) {
-      fprintf(stderr, "Exception in XXXYYY");
-      mrb_print_error(mrb);
-    }
+    //mrb_funcall(mrb, self, "halt!", 0, NULL);
+    //if (mrb->exc) {
+    //  fprintf(stderr, "Exception in XXXYYY");
+    //  mrb_print_error(mrb);
+    //}
     return mrb_nil_value();
   }
 #endif
@@ -402,15 +402,17 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   //fprintf(stderr, "\nwtf bits_update!\n");
 
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
+    return mrb_nil_value();
   }
 
   //fprintf(stderr, "\nwtf bits_update!---------------------\n\n");
 
-  return mrb_nil_value();
+  return mrb_true_value();
 }
 
 
@@ -476,7 +478,15 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
 
   //platform_bits_update_void(loop_data);
 
-  return wiz_return_halt;
+  //return mrb_fixnum_value(wiz_return_halt);
+  if (mrb_test(wiz_return_halt)) {
+
+
+  //if (mrb_obj_equal(mrb, wiz_return_halt, mrb_true_value())) {
+    return mrb_true_value();
+  } else {
+    return mrb_false_value();
+  }
 }
 
 
@@ -2123,6 +2133,12 @@ int main(int argc, char** argv) {
 
 #ifdef TARGET_DESKTOP
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "wiz", 0, 0);
+  fprintf(stderr, "EXITWIZ");
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVERWIZ");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
 #endif
 
 #ifdef PLATFORM_WEB

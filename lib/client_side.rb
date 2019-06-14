@@ -24,8 +24,14 @@ class ClientSide < Wkndr
   #  end
   #end
 
+  def self.wiz
+    got_wiz = self.block!
+    #log!(:got_wiz, got_wiz)
+    got_wiz
+  end
+
   def self.bang
-   self.show!(@client_stack)
+    self.show!(self.first_stack)
   end
 end
 
