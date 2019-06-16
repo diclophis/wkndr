@@ -17,10 +17,15 @@ Wkndr.camp { |sl|
 }
 
 Wkndr.play { |gl|
-  gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
+  gl.lookat(1, 1.0, 1.0, 1.0, 0.0, 0.0, 0.01, 60.0)
 
   total_msg = 0
-  cube = Cube.new(1.0, 1.0, 1.0, 20.0)
+
+  cubes = []
+  cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
+  cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
+  cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
+
   speed = 100.0
 
   gl.event { |typed_msg|
@@ -30,8 +35,10 @@ Wkndr.play { |gl|
   gl.update { |global_time, delta_time|
     gl.drawmode {
       gl.threed {
-        cube.deltar(1.0, 1.0, 1.0, global_time * speed)
-        cube.draw(true)
+        cubes.each_with_index do |cube,i|
+          cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+          cube.draw(true)
+        end
       }
 
       gl.twod {

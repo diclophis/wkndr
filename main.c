@@ -784,7 +784,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
   SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, UNIFORM_VEC4);
 
-  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 150, 170, 190 }, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 150, 170, 190 }, Vector3Zero(), WHITE, standardShader);
   //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 10, 10, 10 }, Vector3Zero(), WHITE, standardShader);
   //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
