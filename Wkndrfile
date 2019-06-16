@@ -16,29 +16,29 @@ Wkndr.camp { |sl|
   }
 }
 
-#Wkndr.play { |gl|
-#  gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
-# 
-#  total_msg = 0
-#  cube = Cube.new(1.0, 1.0, 1.0, 20.0)
-#  speed = 100.0
-#
-#  gl.event { |typed_msg|
-#    total_msg += 1
-#  }
-#
-#  gl.update { |global_time, delta_time|
-#    gl.drawmode {
-#      gl.threed {
-#        cube.deltar(1.0, 1.0, 1.0, global_time * speed)
-#        cube.draw(true)
-#      }
-#
-#      gl.twod {
-#        gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{global_time}") {
-#          gl.emit({"c" => "tty"})
-#        }
-#      }
-#    }
-#  }
-#}
+Wkndr.play { |gl|
+  gl.lookat(0, 50.0, 50.0, 100.0, 0.0, 0.0, 0.01, 200.0)
+
+  total_msg = 0
+  cube = Cube.new(1.0, 1.0, 1.0, 20.0)
+  speed = 100.0
+
+  gl.event { |typed_msg|
+    total_msg += 1
+  }
+
+  gl.update { |global_time, delta_time|
+    gl.drawmode {
+      gl.threed {
+        cube.deltar(1.0, 1.0, 1.0, global_time * speed)
+        cube.draw(true)
+      }
+
+      gl.twod {
+        gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{'%0.2f' % global_time}") {
+          gl.emit({"c" => "tty"})
+        }
+      }
+    }
+  }
+}
