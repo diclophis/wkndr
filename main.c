@@ -1,6 +1,12 @@
 // stdlib stuff
 #define _XOPEN_SOURCE 600
 
+//#if defined(PLATFORM_DESKTOP)
+//    #define GLSL_VERSION            330
+//#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
+//    #define GLSL_VERSION            100
+//#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -776,24 +782,30 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
 
+  // ambient light level
+  int ambientLoc = GetShaderLocation(standardShader, "ambient");
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 1.0f, 1.0f, 1.0f, 1.0f }, UNIFORM_VEC4);
+
+	//int tempInt[8] = { 0 };
+	//float tempFloat[8] = { 0.0f };
+  //tempInt[0] = 0;
+  //int totalLightsLoc = GetShaderLocation(standardShader, "totalLights");
+  //SetShaderValue(standardShader, totalLightsLoc, tempInt, UNIFORM_INT);
+
   // Get some shader loactions
   standardShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(standardShader, "matModel");
   standardShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(standardShader, "viewPos");
 
-  // ambient light level
-  int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, UNIFORM_VEC4);
-
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 150, 170, 190 }, Vector3Zero(), WHITE, standardShader);
-  //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 10, 10, 10 }, Vector3Zero(), WHITE, standardShader);
-  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 150, 400, 190 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1500, 4000, 1900 }, Vector3Zero(), WHITE, standardShader);
+  //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
   //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 330, 350, 370 }, Vector3Zero(), BLUE, standardShader);
 
-  UpdateLightValues(standardShader, lights[0]);
-  UpdateLightValues(standardShader, lights[1]);
-  UpdateLightValues(standardShader, lights[2]);
-  UpdateLightValues(standardShader, lights[3]);
+  //UpdateLightValues(standardShader, lights[0]);
+  //UpdateLightValues(standardShader, lights[1]);
+  //UpdateLightValues(standardShader, lights[2]);
+  //UpdateLightValues(standardShader, lights[3]);
 
   //////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
   //Light dirLight;
@@ -1066,16 +1078,19 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   UpdateCamera(&p_data->camera);
 
+  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
   BeginMode3D(p_data->camera);
 
   //BeginShaderMode(standardShader);
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-	//if (lights[0].enabled) { DrawSphereEx(lights[0].position, 0.5f, 8, 8, WHITE); }
-	//if (lights[1].enabled) { DrawSphereEx(lights[1].position, 0.5f, 8, 8, RED); }
-	//if (lights[2].enabled) { DrawSphereEx(lights[2].position, 0.5f, 8, 8, GREEN); }
-	//if (lights[3].enabled) { DrawSphereEx(lights[3].position, 0.5f, 8, 8, BLUE); }
+	if (lights[0].enabled) { DrawSphereEx(lights[0].position, 0.5f, 8, 8, WHITE); }
+	if (lights[1].enabled) { DrawSphereEx(lights[1].position, 0.5f, 8, 8, RED); }
+	if (lights[2].enabled) { DrawSphereEx(lights[2].position, 0.5f, 8, 8, GREEN); }
+	if (lights[3].enabled) { DrawSphereEx(lights[3].position, 0.5f, 8, 8, BLUE); }
 
   //EndShaderMode();
 
@@ -1354,9 +1369,10 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   //TODO, mode switch
   //else {
     // Draw 3d model with texture
-    DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
+    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
 
-    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
+    DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
+    //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
 
     //if (p_data->light) {
     //  DrawLight(p_data->light);
@@ -1422,7 +1438,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
   for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
+    //MeshTangents(&p_data->model.meshes[meshi]);
   }
 
   //Material material = { 0 };
@@ -1539,7 +1555,7 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->model = LoadModelFromMesh(GenMeshSphere(ra, ri, sl));
   for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
+    //MeshTangents(&p_data->model.meshes[meshi]);
   }
 
   p_data->position.x = 0.0f;
