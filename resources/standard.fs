@@ -175,13 +175,13 @@ void main()
 
     // Calculate final fragment color
     //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-    finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+    //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
 
     //absolute diffuse color
     //finalColor = colDiffuse;
 
     //everything one solid color
-    //finalColor = vec4(1.0, 0.0, 1.0, 0.5);
+    finalColor = vec4(1.0, 0.0, 1.0, 0.5);
 
     ////color of default raylib model
     //finalColor = vec4(spec, 1.0);

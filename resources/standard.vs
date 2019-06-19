@@ -26,7 +26,10 @@ void main()
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
     
-    mat3 normalMatrix = transpose(inverse(mat3(matModel)));
+    //mat3 normalMatrix = transpose(inverse(mat3(matModel)));
+    //fragNormal = normalize(normalMatrix*vertexNormal);
+
+    mat3 normalMatrix = transpose((mat3(matModel)));
     fragNormal = normalize(normalMatrix*vertexNormal);
 
     // Calculate final vertex position

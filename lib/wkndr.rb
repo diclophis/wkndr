@@ -143,7 +143,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 15)
+    gl.open("wkndr", w, h, 5)
 
     #gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
 
