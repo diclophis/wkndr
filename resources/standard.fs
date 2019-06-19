@@ -31,28 +31,89 @@ struct Light {
     vec3 position;
     vec3 target;
     vec4 color;
+    //vec3 direction;
+    vec4 diffuse;
+    float intensity;
+    float radius;
+    float coneAngle;
 };
 
 // Input lighting values
 uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient;
 uniform vec3 viewPos;
+uniform mat4 matModel;
+
+const float glossiness = 0.25;
+const vec4 colSpecular = vec4(0.125, 0.125, 0.125, 1.0);
+
+vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
+{
+    vec3 surfacePos = vec3(matModel*vec4(fragPosition, 1.0));
+    vec3 surfaceToLight = l.position - surfacePos;
+
+    l.intensity = 5.0;
+    l.radius = 1.5;
+
+    // Diffuse shading
+    float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
+    float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
+
+    //// Specular shading
+    float spec = 0.0;
+    if (diff > 0.0)
+    {
+        vec3 h = normalize(-l.target + v);
+        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*s.r;
+    }
+
+    vec3 actualR = (diff*l.diffuse.rgb + spec*colSpecular.rgb);
+    
+    return vec3(0.1, actualR.g, 0.1);
+
+}
 
 void main()
 {
     //// Texel color fetching from texture sampler
-    ////vec4 texelColor = vec4(1.0);
-    //vec4 texelColor = texture(texture0, fragTexCoord);
+    //vec4 texelColor = vec4(1.0);
+    vec4 texelColor = texture(texture0, fragTexCoord);
 
     ////vec4(1.0, 0.0, fragColor.b, 0.5); //fragColor; //texture(texture0, fragTexCoord);
 
-    //vec3 lightDot = vec3(0.0);
+    vec3 lighting = ambient.rgb;
+
     //vec3 normal = normalize(fragNormal);
-    //vec3 viewD = normalize(viewPos - fragPosition);
-    //vec3 specular = vec3(0.0);
+    vec3 specular = vec3(1.0);
+
+    mat3 normalMatrix = mat3(matModel);
+    vec3 normal = normalize(normalMatrix*fragNormal);
+
+    // Normalize normal and view direction vectors
+    vec3 n = normalize(normal);
+    
+    vec3 viewDir = normalize(viewPos - fragPosition);
+    vec3 v = normalize(viewDir);
+
+    // Calculate diffuse texture color fetching
+    // broken
+    //vec4 texelColor = texture2D(texture0, fragTexCoord);
+
+    //
+    //vec4 texelColor = vec4(1.0, 1.0, 1.0, 1.0);
+
+    //vec3 lighting = colAmbient.rgb;
+    
+    // Calculate normal texture color fetching or set to maximum normal value by default
+    //if (useNormal == 1)
+    //{
+    //    n *= texture2D(texture1, fragTexCoord).rgb;
+    //    n = normalize(n);
+    //}
 
     //// NOTE: Implement here your fragment shader code
 
+    //vec3 lightDot = vec3(0.0);
     //for (int i = 0; i < MAX_LIGHTS; i++)
     //{
     //    if (lights[i].enabled == 1)
@@ -79,12 +140,42 @@ void main()
     //    }
     //}
 
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        // Check if light is enabled
+        if (lights[i].enabled == 1)
+        {
+            // Calculate lighting based on light type
+            if(lights[i].type == LIGHT_POINT) lighting += ComputeLightPoint(lights[i], n, v, specular);
+        }
+    }
+
     //finalColor = (texelColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
     //finalColor += texelColor*(ambient/10.0);
     //
     ////// Gamma correction
     //finalColor = pow(finalColor, vec4(1.0/2.0));
-    finalColor = colDiffuse;
+
+    // Calculate final fragment color
+    //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+
+    //absolute diffuse color
+    //finalColor = colDiffuse;
+
+    //everything one solid color
+    //finalColor = vec4(1.0, 0.0, 1.0, 0.5);
+
+    ////color of default raylib model
+    //finalColor = vec4(spec, 1.0);
+
+    //just ambient
+    //finalColor = ambient;
+
+    //just texture
+    //finalColor = texelColor;
+
+    //just lighting
+    finalColor = vec4(lighting, 1.0);
 }
 
 //     #version 330

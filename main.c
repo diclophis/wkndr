@@ -568,6 +568,8 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   mrb_get_args(mrb, "o", &stack_self);
 
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
+
+
   loop_data->mrb_pointer = mrb;
   loop_data->self_pointer = mrb_obj_ptr(stack_self);
 
@@ -780,6 +782,26 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 
   //p_data->buffer_target = LoadRenderTexture(screenWidth, screenHeight);
 
+  float px,py,pz,tx,ty,tz,fovy = 0;
+  px = 5;
+  py = 4;
+  pz = 3;
+  
+  fovy = 5.0;
+
+  p_data->camera.type = CAMERA_PERSPECTIVE;
+  // Define the camera to look into our 3d world
+  p_data->camera.position = (Vector3){ px, py, pz };    // Camera position
+  p_data->camera.target = (Vector3){ tx, ty, tz };      // Camera looking at point
+
+  p_data->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };    // Camera up vector (rotation towards target)
+  p_data->camera.fovy = fovy;                           // Camera field-of-view Y
+
+  p_data->cameraTwo.target = (Vector2){ 0, 0 };
+  p_data->cameraTwo.offset = (Vector2){ 0, 0 };
+  p_data->cameraTwo.rotation = 0.0f;
+  p_data->cameraTwo.zoom = 1.0f;
+
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
       mrb_obj_value(                           // with value hold in struct
@@ -827,7 +849,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 150, 400, 190 }, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1, 2, 3 }, Vector3Zero(), WHITE, standardShader);
   //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1500, 4000, 1900 }, Vector3Zero(), WHITE, standardShader);
   //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
@@ -1118,10 +1140,10 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-	if (lights[0].enabled) { DrawSphereEx(lights[0].position, 0.5f, 8, 8, WHITE); }
-	if (lights[1].enabled) { DrawSphereEx(lights[1].position, 0.5f, 8, 8, RED); }
-	if (lights[2].enabled) { DrawSphereEx(lights[2].position, 0.5f, 8, 8, GREEN); }
-	if (lights[3].enabled) { DrawSphereEx(lights[3].position, 0.5f, 8, 8, BLUE); }
+	if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.5f, 8, 8, WHITE); }
+	if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.5f, 8, 8, RED); }
+	if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.5f, 8, 8, GREEN); }
+	if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.5f, 8, 8, BLUE); }
 
   //EndShaderMode();
 
@@ -1245,9 +1267,9 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   
   //fprintf(stderr, "INIT %p\n", &p_data->model);
 
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1404,7 +1426,7 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   //else {
     // Draw 3d model with texture
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
-    fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
+    //fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
 
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 

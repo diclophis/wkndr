@@ -793,7 +793,7 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
 
       /* Add material to material table */
       if (material_table) {
-        fprintf(stderr, "WTF- %s -WTF", material.name);
+        //fprintf(stderr, "WTF- %s -WTF", material.name);
         hash_table_set(material.name, num_materials, material_table);
       }
 
@@ -1378,12 +1378,12 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
           memcpy((void*) material_name_null_term, (const void*) commands[i].material_name, commands[i].material_name_len);
           material_name_null_term[commands[i].material_name_len] = 0;
 
-          fprintf(stderr, "WTFABC %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
+          //fprintf(stderr, "WTFABC %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
 
           if (hash_table_exists(material_name_null_term, &material_table)) {
             material_id = (int)hash_table_get(material_name_null_term, &material_table);
         
-            fprintf(stderr, "WTF123123123123 %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
+            //fprintf(stderr, "WTF123123123123 %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
           } else {
             material_id = -1;
           }
@@ -1418,7 +1418,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
         for (k = 0; k < commands[i].num_f_num_verts; k++) {
           attrib->material_ids[face_count + k] = material_id;
-        fprintf(stderr, "SET %d = %d SET", (face_count + k), material_id);
+          //fprintf(stderr, "SET %d = %d SET", (face_count + k), material_id);
           attrib->face_num_verts[face_count + k] = commands[i].f_num_verts[k];
         }
 

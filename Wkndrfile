@@ -17,14 +17,14 @@ Wkndr.camp { |sl|
 }
 
 Wkndr.play { |gl|
-  gl.lookat(1, 10.0, 10.0, 10.0, 0.0, 0.0, 0.01, 45.0)
+  gl.lookat(1, 5.0, 4.0, 3.0, 0.0, 0.0, 0.01, 45.0)
 
   total_msg = 0
 
   cubes = []
-  cubes << Cube.new(0.13, 0.70, 0.15, 10.00)
-  cubes << Cube.new(0.17, 0.30, 0.90, 10.00)
-  cubes << Cube.new(1.10, 0.19, 0.40, 10.00)
+  cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
+  cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
+  cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
 
   speed = 100.0
 

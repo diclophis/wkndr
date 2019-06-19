@@ -67,7 +67,7 @@ class Wkndr < Thor
         block.call(@gl)
       rescue => e
         log!(:e, e, e.backtrace)
-        @gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+        #@gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
         @gl.update { |global_time, delta_time|
           @gl.drawmode {
             @gl.threed {
@@ -145,7 +145,8 @@ class Wkndr < Thor
 
     gl.open("wkndr", w, h, 15)
 
-    gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+    #gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+
     gl.update { |global_time, delta_time|
       gl.drawmode {
         gl.threed {

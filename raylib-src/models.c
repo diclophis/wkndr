@@ -2372,7 +2372,7 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
     for (int i = 0; i < model.meshCount; i++)
     {
         //model.materials[model.meshMaterial[i]].maps[MAP_DIFFUSE].color = tint;
-        fprintf(stderr, "CCC %p == %d DDD", &model.meshMaterial, model.materialCount);
+        //fprintf(stderr, "CCC %p == %d DDD", &model.meshMaterial, model.materialCount);
         //rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
         rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
     }
@@ -2862,7 +2862,7 @@ static Model LoadOBJ(const char *fileName)
               //AAA 0 0 0 BBBAAA 1 1 1 BBBAAA 2 2 2 BBBAAA 3 3 3 BBBINFO
             }
             
-            fprintf(stderr, "AAA %p == %d BBB", &model.meshMaterial, model.materialCount);
+            //fprintf(stderr, "AAA %p == %d BBB", &model.meshMaterial, model.materialCount);
         }
 
         // Init model materials
@@ -2918,7 +2918,7 @@ static Model LoadOBJ(const char *fileName)
 
             if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
 
-            fprintf(stderr, "+++ %p == %d +++", &model.meshMaterial, model.materialCount);
+            //fprintf(stderr, "+++ %p == %d +++", &model.meshMaterial, model.materialCount);
         }
 
         tinyobj_attrib_free(&attrib);
