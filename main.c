@@ -233,7 +233,8 @@ typedef struct {
 // Light type
 typedef enum {
     LIGHT_DIRECTIONAL,
-    LIGHT_POINT
+    LIGHT_POINT,
+    LIGHT_SPOT
 } LightType;
 
 
@@ -289,6 +290,41 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
+
+//                case LIGHT_DIRECTIONAL:
+//                {
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                } break;
+//                case LIGHT_SPOT:
+//                {
+//                    tempFloat[0] = lights[i]->position.x;
+//                    tempFloat[1] = lights[i]->position.y;
+//                    tempFloat[2] = lights[i]->position.z;
+//                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+//                    
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                    
+//                    tempFloat[0] = lights[i]->coneAngle;
+//                    SetShaderValue(shader, lightsLocs[i][7], tempFloat, UNIFORM_FLOAT);
+//                    //glUniform1f(lightsLocs[i][7], lights[i]->coneAngle);
+//                } break;
 
         // TODO: Below code doesn't look good to me, 
         // it assumes a specific shader naming and structure
@@ -831,7 +867,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.333f, 0.333f, 0.333f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.3f, 0.3f, 0.3f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
@@ -850,8 +886,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 10000, 10000, 0 }, Vector3Zero(), WHITE, standardShader);
-  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1500, 4000, 1900 }, Vector3Zero(), WHITE, standardShader);
-  //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 1000, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){0.0f, 1000.0f, 0.0f}, Vector3Zero(), WHITE, standardShader);
+
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
   //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 330, 350, 370 }, Vector3Zero(), BLUE, standardShader);
 

@@ -54,7 +54,7 @@ vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
     vec3 surfaceToLight = l.position - surfacePos;
 
     //TODO: backport enhanced lighting model
-    l.intensity = 150.0;
+    l.intensity = 0.1;
     l.radius = 1000.0;
 
     // Diffuse shading
@@ -66,11 +66,36 @@ vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
     if (diff > 0.0)
     {
         vec3 h = normalize(-l.target + v);
-        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*1.0; //s.r;
+        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.33; //s.r;
     }
 
     vec3 actualR = (diff*l.diffuse.rgb + spec*colSpecular.rgb);
     return actualR;
+}
+
+
+vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, vec3 s)
+{
+    //return vec3(1.0, 0, 1.0);
+
+    //vec3 lightDir = normalize(-l.target);
+    vec3 lightDir = -normalize(l.target - l.position);
+
+    l.intensity = 0.1;
+    
+    // Diffuse shading
+    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+
+    // Specular shading
+    float spec = 0.0;
+    if (diff > 0.0)
+    {
+        vec3 h = normalize(lightDir + v);
+        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.33;
+    }
+    
+    // Combine results
+    return (diff*l.intensity*l.diffuse.rgb + spec*colSpecular.rgb);
 }
 
 
@@ -90,12 +115,14 @@ void main()
       {
           // Calculate lighting based on light type
           if(lights[i].type == LIGHT_POINT) lighting += ComputeLightPoint(lights[i], n, v, specular);
+          else if(lights[i].type == LIGHT_DIRECTIONAL) lighting += ComputeLightDirectional(lights[i], n, v, specular);
       }
   }
 
   // Calculate final fragment color
+  //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
   finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-  finalColor += colDiffuse*(ambient/10.0);
+  finalColor += colDiffuse*(ambient/1.0);
 
   ////// TODO: Gamma correction
   //finalColor = pow(finalColor, vec4(1.0/2.0));
