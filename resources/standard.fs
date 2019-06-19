@@ -88,15 +88,29 @@ void main()
     //vec3 normal = normalize(fragNormal);
     vec3 specular = vec3(1.0);
 
-    mat3 normalMatrix = mat3(matModel);
-    vec3 normal = normalize(normalMatrix*fragNormal);
+    // mat3 normalMatrix = mat3(matModel);
+    // vec3 normal = normalize(normalMatrix*fragNormal);
 
-    // Normalize normal and view direction vectors
+    // // Normalize normal and view direction vectors
+    // //vec3 n = normalize(normal);
+    // //vec3 n = normal;
+    // //float NdotL = max(dot(normal, light), 0.0);
+    // 
+    // vec3 viewDir = normalize(viewPos - fragPosition);
+    // vec3 v = normalize(viewDir);
+
+
+    ////mat3 normalMatrix = mat3(matModel);
+    //vec3 normal = normalize(fragNormal);
+    ////
+    ////    // Normalize normal and view direction vectors
+    //vec3 viewD = normalize(viewPos - fragPosition);
     //vec3 n = normalize(normal);
-    vec3 n = normal;
-    
-    vec3 viewDir = normalize(viewPos - fragPosition);
-    vec3 v = normalize(viewDir);
+    //vec3 v = normalize(viewD);
+
+    vec3 n = normalize(fragNormal);
+    vec3 v = normalize(viewPos - fragPosition);
+
 
     // Calculate diffuse texture color fetching
     // broken

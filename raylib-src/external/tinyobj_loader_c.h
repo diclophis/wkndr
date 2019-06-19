@@ -1491,8 +1491,13 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
         } else {
           if (shape_idx == 0) {
             /* 'o' or 'g' after some 'v' lines. */
-            (*shapes)[shape_idx].name = my_strndup(
-                                                   prev_shape_name, prev_shape_name_len); /* may be NULL */
+            //if (prev_shape_name) {
+            //  (*shapes)[shape_idx].name = my_strndup(
+            //                                         prev_shape_name, prev_shape_name_len); /* may be NULL */
+            //} else {
+              (*shapes)[shape_idx].name = 0; //"foobar";
+            //}
+
             (*shapes)[shape_idx].face_offset = prev_shape.face_offset;
             (*shapes)[shape_idx].length = face_count - prev_face_offset;
             shape_idx++;
@@ -1501,8 +1506,8 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
           } else {
             if ((face_count - prev_face_offset) > 0) {
-              (*shapes)[shape_idx].name =
-                my_strndup(prev_shape_name, prev_shape_name_len);
+              (*shapes)[shape_idx].name = 0;
+                //my_strndup(prev_shape_name, prev_shape_name_len);
               (*shapes)[shape_idx].face_offset = prev_face_offset;
               (*shapes)[shape_idx].length = face_count - prev_face_offset;
               shape_idx++;
@@ -1524,8 +1529,8 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
     if ((face_count - prev_face_offset) > 0) {
       unsigned int length = face_count - prev_shape_face_offset;
       if (length > 0) {
-        (*shapes)[shape_idx].name =
-          my_strndup(prev_shape_name, prev_shape_name_len);
+        (*shapes)[shape_idx].name = 0;
+          //my_strndup(prev_shape_name, prev_shape_name_len);
         (*shapes)[shape_idx].face_offset = prev_face_offset;
         (*shapes)[shape_idx].length = face_count - prev_face_offset;
         shape_idx++;
