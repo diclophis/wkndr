@@ -809,7 +809,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 1.0f, 1.0f, 1.0f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
@@ -1242,12 +1242,12 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
-  fprintf(stderr, "INIT %p\n", &p_data->model);
-
   
-  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-  //  MeshTangents(&p_data->model.meshes[meshi]);
-  //}
+  //fprintf(stderr, "INIT %p\n", &p_data->model);
+
+  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+    MeshTangents(&p_data->model.meshes[meshi]);
+  }
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1404,11 +1404,11 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   //else {
     // Draw 3d model with texture
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
-    fprintf(stderr, "DRAW %p\n", &p_data->model.meshMaterial);
+    fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
 
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
-    //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
 
+    //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
     //if (p_data->light) {
     //  DrawLight(p_data->light);
     //}
@@ -1472,9 +1472,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    //MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   //Material material = { 0 };
 
@@ -1589,9 +1589,9 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModelFromMesh(GenMeshSphere(ra, ri, sl));
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    //MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;

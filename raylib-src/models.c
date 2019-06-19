@@ -668,10 +668,13 @@ Model LoadModel(const char *fileName)
         model.materialCount = 1;
         model.materials = (Material *)RL_CALLOC(model.materialCount, sizeof(Material));
         model.materials[0] = LoadMaterialDefault();
+        model.meshMaterial = (int *)RL_CALLOC(model.meshCount, sizeof(int));
 
+        for (int mmm=0; mmm<model.meshCount; mmm++) {
+          model.meshMaterial[mmm] = 0;
+        }
     }
 
-    model.meshMaterial = (int *)RL_CALLOC(model.meshCount, sizeof(int));
 
     return model;
 }
@@ -2369,9 +2372,9 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
     for (int i = 0; i < model.meshCount; i++)
     {
         //model.materials[model.meshMaterial[i]].maps[MAP_DIFFUSE].color = tint;
-        fprintf(stderr, "CCC %p == %d == %d == %d DDD", &model.meshMaterial, model.materialCount, i, model.meshMaterial[i]);
+        fprintf(stderr, "CCC %p == %d DDD", &model.meshMaterial, model.materialCount);
         //rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
-        rlDrawMesh(model.meshes[i], model.materials[0], model.transform);
+        rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
     }
 
     //CCC 0x7ffe5fb5b810 == 4 == 0 == 0 DDDCCC 0x7ffe5fb5b810 == 4 == 1 == 0 DDDCCC 0x7ffe5fb5b810 == 4 == 2 == 0 DDD
@@ -2835,12 +2838,14 @@ static Model LoadOBJ(const char *fileName)
 
                 // Fill texcoords buffer (float) using vertex index of the face
                 // NOTE: Y-coordinate must be flipped upside-down
-                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
-                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
-                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];
-                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx1.vt_idx*2 + 1]; vtCount += 2;
-                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx2.vt_idx*2 + 0];
-                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx2.vt_idx*2 + 1]; vtCount += 2;
+                if (model.materialCount) {
+                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
+                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
+                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];
+                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx1.vt_idx*2 + 1]; vtCount += 2;
+                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx2.vt_idx*2 + 0];
+                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx2.vt_idx*2 + 1]; vtCount += 2;
+                }
 
                 // Fill normals buffer (float) using vertex index of the face
                 for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx0.vn_idx*3 + v]; } vnCount +=3;
@@ -2850,11 +2855,14 @@ static Model LoadOBJ(const char *fileName)
 
             model.meshes[m] = mesh;                 // Assign mesh data to model
 
-            // Assign mesh material for current mesh
-            model.meshMaterial[m] = attrib.material_ids[shape.face_offset];
-
-            fprintf(stderr, "AAA %p == %d == %d == %d BBB", &model.meshMaterial, m, model.meshMaterial[m], attrib.material_ids[shape.face_offset]);
-            //AAA 0 0 0 BBBAAA 1 1 1 BBBAAA 2 2 2 BBBAAA 3 3 3 BBBINFO
+            if (model.materialCount) {
+              // Assign mesh material for current mesh
+              model.meshMaterial[m] = attrib.material_ids[shape.face_offset];
+              //, model.meshMaterial[m], attrib.material_ids[shape.face_offset]);
+              //AAA 0 0 0 BBBAAA 1 1 1 BBBAAA 2 2 2 BBBAAA 3 3 3 BBBINFO
+            }
+            
+            fprintf(stderr, "AAA %p == %d BBB", &model.meshMaterial, model.materialCount);
         }
 
         // Init model materials
@@ -2910,7 +2918,7 @@ static Model LoadOBJ(const char *fileName)
 
             if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
 
-            fprintf(stderr, "+++ %p == %d == %d == %d +++", &model.meshMaterial, model.materialCount, m, model.meshMaterial[m]);
+            fprintf(stderr, "+++ %p == %d +++", &model.meshMaterial, model.materialCount);
         }
 
         tinyobj_attrib_free(&attrib);
