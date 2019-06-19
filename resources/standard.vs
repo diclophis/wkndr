@@ -17,6 +17,7 @@ out vec4 fragColor;
 out vec3 fragNormal;
 
 // NOTE: Add here your custom variables
+//attribute vec4 vertexColor; // in_Color
 
 void main()
 {
@@ -48,7 +49,6 @@ void main()
 //attribute vec3 vertexPosition; // in_Position
 //attribute vec2 vertexTexCoord; // in_UV
 //attribute vec3 vertexNormal; // in_Normal
-//attribute vec4 vertexColor; // in_Color
 //
 //varying vec3 fragPosition; // Position_worldspace
 //varying vec2 fragTexCoord; // UV

@@ -790,9 +790,12 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
 #endif
       material.name = my_strdup(namebuf, (unsigned int) (line_end - token));
 
+
       /* Add material to material table */
-      if (material_table)
+      if (material_table) {
+        fprintf(stderr, "WTF- %s -WTF", material.name);
         hash_table_set(material.name, num_materials, material_table);
+      }
 
       continue;
     }
@@ -1134,7 +1137,7 @@ static int parseLine(Command *command, const char *p, unsigned int p_len,
     skip_space(&token);
     command->material_name = p + (token - linebuf);
     command->material_name_len = (unsigned int)length_until_newline(
-                                                                    token, (p_len - (unsigned int)(token - linebuf)) + 1);
+                                                                    token, (p_len - (unsigned int)(token - linebuf))) + 1;
     command->type = COMMAND_USEMTL;
 
     return 1;
@@ -1148,8 +1151,7 @@ static int parseLine(Command *command, const char *p, unsigned int p_len,
     skip_space(&token);
     command->mtllib_name = p + (token - linebuf);
     command->mtllib_name_len = (unsigned int)length_until_newline(
-                                                                  token, p_len - (unsigned int)(token - linebuf)) +
-      1;
+                                                                  token, p_len - (unsigned int)(token - linebuf)) + 1;
     command->type = COMMAND_MTLLIB;
 
     return 1;
@@ -1374,12 +1376,17 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
           /* Create a null terminated string */
           char* material_name_null_term = (char*) TINYOBJ_MALLOC(commands[i].material_name_len + 1);
           memcpy((void*) material_name_null_term, (const void*) commands[i].material_name, commands[i].material_name_len);
-          material_name_null_term[commands[i].material_name_len - 1] = 0;
+          material_name_null_term[commands[i].material_name_len] = 0;
 
-          if (hash_table_exists(material_name_null_term, &material_table))
+          fprintf(stderr, "WTFABC %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
+
+          if (hash_table_exists(material_name_null_term, &material_table)) {
             material_id = (int)hash_table_get(material_name_null_term, &material_table);
-          else
+        
+            fprintf(stderr, "WTF123123123123 %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
+          } else {
             material_id = -1;
+          }
 
           TINYOBJ_FREE(material_name_null_term);
         }
@@ -1411,6 +1418,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
         for (k = 0; k < commands[i].num_f_num_verts; k++) {
           attrib->material_ids[face_count + k] = material_id;
+        fprintf(stderr, "SET %d = %d SET", (face_count + k), material_id);
           attrib->face_num_verts[face_count + k] = commands[i].f_num_verts[k];
         }
 

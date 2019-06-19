@@ -41,7 +41,11 @@ uniform vec3 viewPos;
 void main()
 {
     // Texel color fetching from texture sampler
+    //vec4 texelColor = vec4(1.0);
     vec4 texelColor = texture(texture0, fragTexCoord);
+
+    //vec4(1.0, 0.0, fragColor.b, 0.5); //fragColor; //texture(texture0, fragTexCoord);
+
     vec3 lightDot = vec3(0.0);
     vec3 normal = normalize(fragNormal);
     vec3 viewD = normalize(viewPos - fragPosition);
@@ -69,7 +73,8 @@ void main()
             lightDot += lights[i].color.rgb*NdotL;
 
             float specCo = 0.0;
-            if (NdotL > 0.0) specCo = pow(max(0.0, dot(viewD, reflect(-(light), normal))), 16); // 16 refers to shine
+            float shiny = 0.0; // 16 has visible shine
+            if (NdotL > 0.0) specCo = pow(max(0.0, dot(viewD, reflect(-(light), normal))), shiny);
             specular += specCo;
         }
     }

@@ -7,6 +7,36 @@
 //    #define GLSL_VERSION            100
 //#endif
 
+// raylib stuff
+#define RAYGUI_IMPLEMENTATION 1
+
+//#define RLGL_IMPLEMENTATION 1
+#define GRAPHICS_API_OPENGL_33 1
+
+#if defined(GRAPHICS_API_OPENGL_33)
+    #if defined(__APPLE__)
+        #include <OpenGL/gl3.h>         // OpenGL 3 library for OSX
+        #include <OpenGL/gl3ext.h>      // OpenGL 3 extensions library for OSX
+    #else
+        #if defined(RLGL_STANDALONE)
+            #include "glad.h"           // GLAD extensions loading library, includes OpenGL headers
+        #else
+            #include "external/glad.h"  // GLAD extensions loading library, includes OpenGL headers
+        #endif
+    #endif
+#endif
+
+#if defined(GRAPHICS_API_OPENGL_ES2)
+    #include <EGL/egl.h>                // EGL library
+    #include <GLES2/gl2.h>              // OpenGL ES 2.0 library
+    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
+#endif
+
+#include <raylib.h>
+#include <raymath.h>
+#include <raygui.h>
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -74,13 +104,6 @@
 #include <mruby/string.h>
 #include <mruby/hash.h>
 #include <string.h>
-
-
-// raylib stuff
-#define RAYGUI_IMPLEMENTATION
-#include <raylib.h>
-#include <raymath.h>
-#include <raygui.h>
 
 
 // kit1zx stuff
@@ -781,6 +804,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   InitWindow(screenWidth, screenHeight, c_game_name);
 
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
+  //XSetShaderDefaultLocations(&standardShader);
+  //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_COLOR_NAME);
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
@@ -795,6 +820,12 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   // Get some shader loactions
   standardShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(standardShader, "matModel");
   standardShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(standardShader, "viewPos");
+  standardShader.locs[LOC_COLOR_DIFFUSE] = GetShaderLocation(standardShader, "colDiffuse");
+  
+  glBindAttribLocation(standardShader.id, 3, "vertexColor");
+  
+  //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
+  //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 150, 400, 190 }, Vector3Zero(), WHITE, standardShader);
   //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1500, 4000, 1900 }, Vector3Zero(), WHITE, standardShader);
@@ -1211,9 +1242,12 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  fprintf(stderr, "INIT %p\n", &p_data->model);
+
+  
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1263,9 +1297,9 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   //  material.maps[MAP_DIFFUSE].color = WHITE;
   //  material.maps[MAP_SPECULAR].color = WHITE;
-    p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
-    p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
-    p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
 
     p_data->model.materials[mi].shader = standardShader;
   }
@@ -1370,6 +1404,7 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   //else {
     // Draw 3d model with texture
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
+    fprintf(stderr, "DRAW %p\n", &p_data->model.meshMaterial);
 
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
     //DrawModel(p_data->model, p_data->position, 1.0, WHITE);

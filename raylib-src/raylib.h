@@ -1399,6 +1399,39 @@ RLAPI void SetAudioStreamPitch(AudioStream stream, float pitch);      // Set pit
 
 // IN PROGRESS: Check rnet.h for reference
 
+//// Get location handlers to for shader attributes and uniforms
+//// NOTE: If any location is not found, loc point becomes -1
+//static void XSetShaderDefaultLocations(Shader *shader); // Bind default shader locations (attributes and uniforms)
+//static void XSetShaderDefaultLocations(Shader *shader)
+//{
+//    // NOTE: Default shader attrib locations have been fixed before linking:
+//    //          vertex position location    = 0
+//    //          vertex texcoord location    = 1
+//    //          vertex normal location      = 2
+//    //          vertex color location       = 3
+//    //          vertex tangent location     = 4
+//    //          vertex texcoord2 location   = 5
+//
+//    // Get handles to GLSL input attibute locations
+//    shader->locs[LOC_VERTEX_POSITION] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_POSITION_NAME);
+//    shader->locs[LOC_VERTEX_TEXCOORD01] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_TEXCOORD_NAME);
+//    shader->locs[LOC_VERTEX_TEXCOORD02] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_TEXCOORD2_NAME);
+//    shader->locs[LOC_VERTEX_NORMAL] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_NORMAL_NAME);
+//    shader->locs[LOC_VERTEX_TANGENT] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_TANGENT_NAME);
+//    shader->locs[LOC_VERTEX_COLOR] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_COLOR_NAME);
+//
+//    // Get handles to GLSL uniform locations (vertex shader)
+//    shader->locs[LOC_MATRIX_MVP]  = glGetUniformLocation(shader->id, "mvp");
+//    shader->locs[LOC_MATRIX_PROJECTION]  = glGetUniformLocation(shader->id, "projection");
+//    shader->locs[LOC_MATRIX_VIEW]  = glGetUniformLocation(shader->id, "view");
+//
+//    // Get handles to GLSL uniform locations (fragment shader)
+//    shader->locs[LOC_COLOR_DIFFUSE] = glGetUniformLocation(shader->id, "colDiffuse");
+//    shader->locs[LOC_MAP_DIFFUSE] = glGetUniformLocation(shader->id, "texture0");
+//    shader->locs[LOC_MAP_SPECULAR] = glGetUniformLocation(shader->id, "texture1");
+//    shader->locs[LOC_MAP_NORMAL] = glGetUniformLocation(shader->id, "texture2");
+//}
+
 #if defined(__cplusplus)
 }
 #endif
