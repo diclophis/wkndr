@@ -36,8 +36,8 @@ Wkndr.play { |gl|
     gl.drawmode {
       gl.threed {
         cubes.each_with_index do |cube,i|
-          #cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
-          cube.deltar(0.5, 0, 1, global_time * speed)
+          cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+          #cube.deltar(0.5, 0, 1, global_time * speed)
           cube.draw(true)
         end
       }

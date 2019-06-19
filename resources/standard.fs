@@ -44,33 +44,33 @@ uniform vec4 ambient;
 uniform vec3 viewPos;
 uniform mat4 matModel;
 
-const float glossiness = 0.1;
+const float glossiness = 1.0;
 const vec4 colSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+
 
 vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
 {
     vec3 surfacePos = vec3(vec4(fragPosition, 1.0));
     vec3 surfaceToLight = l.position - surfacePos;
 
-    l.intensity = 10.0;
-    l.radius = 1.0;
+    //TODO: backport enhanced lighting model
+    l.intensity = 150.0;
+    l.radius = 1000.0;
 
     // Diffuse shading
     float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
     float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
-    return vec3(diff);
-
+    
     //////// Specular shading
-    //float spec = 0.0;
-    //if (diff > 0.0)
-    //{
-    //    vec3 h = normalize(-l.target + v);
-    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.1; //s.r;
-    //}
-    ////vec3 actualR = (diff*l.diffuse.rgb + spec*colSpecular.rgb);
-    //vec3 actualR = (diff + spec);
-    ////return vec3(0.1, actualR.g, 0.1);
-    //return actualR;
+    float spec = 0.0;
+    if (diff > 0.0)
+    {
+        vec3 h = normalize(-l.target + v);
+        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*1.0; //s.r;
+    }
+
+    vec3 actualR = (diff*l.diffuse.rgb + spec*colSpecular.rgb);
+    return actualR;
 }
 
 
@@ -93,17 +93,11 @@ void main()
       }
   }
 
-  //TODO
-  //finalColor = (texelColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
-  //
-
   // Calculate final fragment color
-  //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-
   finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
   finalColor += colDiffuse*(ambient/10.0);
 
-  ////// Gamma correction
+  ////// TODO: Gamma correction
   //finalColor = pow(finalColor, vec4(1.0/2.0));
 
   //absolute diffuse color
@@ -124,4 +118,3 @@ void main()
   //just lighting
   //finalColor = vec4(lighting, 1.0);
 }
-

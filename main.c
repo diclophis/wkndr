@@ -831,7 +831,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.333f, 0.333f, 0.333f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
@@ -849,7 +849,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 5, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 10000, 10000, 0 }, Vector3Zero(), WHITE, standardShader);
   //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1500, 4000, 1900 }, Vector3Zero(), WHITE, standardShader);
   //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
