@@ -44,33 +44,35 @@ uniform vec4 ambient;
 uniform vec3 viewPos;
 uniform mat4 matModel;
 
-const float glossiness = 0.25;
-const vec4 colSpecular = vec4(0.125, 0.125, 0.125, 1.0);
+const float glossiness = 0.001;
+const vec4 colSpecular = vec4(0.001, 0.001, 0.001, 1.0);
 
 vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
 {
     vec3 surfacePos = vec3(matModel*vec4(fragPosition, 1.0));
     vec3 surfaceToLight = l.position - surfacePos;
 
-    l.intensity = 5.0;
-    l.radius = 1.5;
+    l.intensity = 10.0;
+    l.radius = 1.0;
 
     // Diffuse shading
     float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
     float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
 
-    //// Specular shading
-    float spec = 0.0;
-    if (diff > 0.0)
-    {
-        vec3 h = normalize(-l.target + v);
-        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*s.r;
-    }
+    ////// Specular shading
+    //float spec = 0.0;
+    //if (diff > 0.0)
+    //{
+    //    vec3 h = normalize(-l.target + v);
+    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.1; //s.r;
+    //}
 
-    vec3 actualR = (diff*l.diffuse.rgb + spec*colSpecular.rgb);
-    
-    return vec3(0.1, actualR.g, 0.1);
+    //vec3 actualR = (diff*l.diffuse.rgb + spec*colSpecular.rgb);
 
+    //return vec3(0.1, actualR.g, 0.1);
+    //return actualR;
+
+    return vec3(diff);
 }
 
 void main()
@@ -90,7 +92,8 @@ void main()
     vec3 normal = normalize(normalMatrix*fragNormal);
 
     // Normalize normal and view direction vectors
-    vec3 n = normalize(normal);
+    //vec3 n = normalize(normal);
+    vec3 n = normal;
     
     vec3 viewDir = normalize(viewPos - fragPosition);
     vec3 v = normalize(viewDir);
@@ -158,6 +161,7 @@ void main()
 
     // Calculate final fragment color
     //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+    finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
 
     //absolute diffuse color
     //finalColor = colDiffuse;
@@ -175,7 +179,7 @@ void main()
     //finalColor = texelColor;
 
     //just lighting
-    finalColor = vec4(lighting, 1.0);
+    //finalColor = vec4(lighting, 1.0);
 }
 
 //     #version 330

@@ -2838,7 +2838,7 @@ static Model LoadOBJ(const char *fileName)
 
                 // Fill texcoords buffer (float) using vertex index of the face
                 // NOTE: Y-coordinate must be flipped upside-down
-                if (model.materialCount) {
+                if (attrib.num_texcoords) {
                   mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
                   mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
                   mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];

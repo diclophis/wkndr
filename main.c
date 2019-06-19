@@ -831,7 +831,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.33f, 0.33f, 0.33f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
@@ -849,7 +849,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1, 2, 3 }, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 5, 0 }, Vector3Zero(), WHITE, standardShader);
   //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1500, 4000, 1900 }, Vector3Zero(), WHITE, standardShader);
   //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 210, 230, 250 }, Vector3Zero(), RED, standardShader);
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
@@ -1140,10 +1140,10 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-	if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.5f, 8, 8, WHITE); }
-	if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.5f, 8, 8, RED); }
-	if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.5f, 8, 8, GREEN); }
-	if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.5f, 8, 8, BLUE); }
+	if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.0f, 16, 16, WHITE); }
+	if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.0f, 16, 16, RED); }
+	if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.0f, 16, 16, GREEN); }
+	if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.0f, 16, 16, BLUE); }
 
   //EndShaderMode();
 
@@ -1494,6 +1494,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
+  
   //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
   //  MeshTangents(&p_data->model.meshes[meshi]);
   //}
@@ -1513,9 +1514,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   ////  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
   ////  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
 
-    p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
-    p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
-    p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
 
     p_data->model.materials[mi].shader = standardShader;
   }
