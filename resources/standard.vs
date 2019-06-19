@@ -21,19 +21,31 @@ out vec3 fragNormal;
 
 void main()
 {
+
     // Send vertex attributes to fragment shader
     fragPosition = vec3(matModel*vec4(vertexPosition, 1.0f));
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
     
-    //mat3 normalMatrix = transpose(inverse(mat3(matModel)));
-    //fragNormal = normalize(normalMatrix*vertexNormal);
-
-    mat3 normalMatrix = transpose((mat3(matModel)));
+    mat3 normalMatrix = transpose(inverse(mat3(matModel)));
     fragNormal = normalize(normalMatrix*vertexNormal);
 
     // Calculate final vertex position
     gl_Position = mvp*vec4(vertexPosition, 1.0);
+
+//     // Send vertex attributes to fragment shader
+//     fragPosition = vec3(matModel*vec4(vertexPosition, 1.0f));
+//     fragTexCoord = vertexTexCoord;
+//     fragColor = vertexColor;
+//     
+//     //mat3 normalMatrix = transpose(inverse(mat3(matModel)));
+//     //fragNormal = normalize(normalMatrix*vertexNormal);
+// 
+//     mat3 normalMatrix = transpose((mat3(matModel)));
+//     fragNormal = normalize(normalMatrix*vertexNormal);
+// 
+//     // Calculate final vertex position
+//     gl_Position = mvp*vec4(vertexPosition, 1.0);
 }
 
 

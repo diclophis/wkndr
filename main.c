@@ -831,7 +831,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.33f, 0.33f, 0.33f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
