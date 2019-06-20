@@ -68,7 +68,6 @@
 #include <pwd.h>
 
 
-
 // mruby stuff
 #include <mruby.h>
 #include <mruby/array.h>
@@ -231,6 +230,9 @@ typedef struct {
     int posLoc;
     int targetLoc;
     int colorLoc;
+    int intensityLoc;
+    int coneAngleLoc;
+    int radiusLoc;
 } Light;
 
 // Light type
@@ -342,17 +344,37 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         char posName[32] = "lights[x].position\0";
         char targetName[32] = "lights[x].target\0";
         char colorName[32] = "lights[x].color\0";
+        char intensityName[32] = "lights[x].intensity\0";
+        char coneAngleName[32] = "lights[x].coneAngle\0";
+        char radiusName[32] = "lights[x].radius\0";
+
         enabledName[7] = '0' + lightsCount;
         typeName[7] = '0' + lightsCount;
         posName[7] = '0' + lightsCount;
         targetName[7] = '0' + lightsCount;
         colorName[7] = '0' + lightsCount;
+        intensityName[7] = '0' + lightsCount;
+        coneAngleName[7] = '0' + lightsCount;
+        radiusName[7] = '0' + lightsCount;
 
         light.enabledLoc = GetShaderLocation(shader, enabledName);
         light.typeLoc = GetShaderLocation(shader, typeName);
         light.posLoc = GetShaderLocation(shader, posName);
         light.targetLoc = GetShaderLocation(shader, targetName);
         light.colorLoc = GetShaderLocation(shader, colorName);
+        light.intensityLoc = GetShaderLocation(shader, intensityName);
+        light.coneAngleLoc = GetShaderLocation(shader, coneAngleName);
+        light.radiusLoc = GetShaderLocation(shader, radiusName);
+
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "intensity\0");
+//        lightsLocs[i][6] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "coneAngle\0");
+//        lightsLocs[i][7] = GetShaderLocation(shader, locNameUpdated);
 
         UpdateLightValues(shader, light);
         
@@ -369,6 +391,9 @@ void UpdateLightValues(Shader shader, Light light)
     // Send to shader light enabled state and type
     SetShaderValue(shader, light.enabledLoc, &light.enabled, UNIFORM_INT);
     SetShaderValue(shader, light.typeLoc, &light.type, UNIFORM_INT);
+    SetShaderValue(shader, light.intensityLoc, &light.intensity, UNIFORM_FLOAT);
+    SetShaderValue(shader, light.coneAngleLoc, &light.coneAngle, UNIFORM_FLOAT);
+    SetShaderValue(shader, light.radiusLoc, &light.radius, UNIFORM_FLOAT);
 
     // Send to shader light position values
     float position[3] = { light.position.x, light.position.y, light.position.z };
@@ -876,7 +901,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.015f, 0.015f, 0.015f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.125f, 0.125f, 0.125f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
@@ -894,16 +919,24 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0.5, 3, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0.5, 3, 0 }, Vector3Zero(), RED, standardShader);
+  lights[0].intensity = 3.0;
+  lights[0].radius = 3.0;
   lights[0].enabled = true;
 
-  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 7, 1 }, Vector3Zero(), WHITE, standardShader);
+  //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 7, 1 }, Vector3Zero(), WHITE, standardShader);
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 100, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[1].intensity = 1.0;
   lights[1].enabled = true;
 
-  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){7.0f, 5.0f, -3.0f}, Vector3Zero(), WHITE, standardShader);
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){7.0f, 5.0f, -3.0f}, Vector3Zero(), GREEN, standardShader);
+  lights[2].intensity = 2.0;
+  lights[2].coneAngle = 3.00;
   lights[2].enabled = true;
 
   lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 0, 7, 11 }, Vector3Zero(), WHITE, standardShader);
+  lights[3].radius = 10.0;
+  lights[3].intensity = 1.0;
   lights[3].enabled = true;
 
   UpdateLightValues(standardShader, lights[0]);
