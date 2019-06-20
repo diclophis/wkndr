@@ -1,191 +1,212 @@
-#version 100
+#version 330
 
-precision mediump float;
+// Input vertex attributes (from vertex shader)
+in vec3 fragPosition;
+in vec2 fragTexCoord;
+in vec4 fragColor;
+in vec3 fragNormal;
 
-uniform mat4 mvp;             // VS: ModelViewProjection matrix
-uniform mat4 projection;      // VS: Projection matrix
-uniform mat4 view;            // VS: View matrix
+// Input uniform values
+uniform sampler2D texture0;
+uniform vec4 colDiffuse;
 
-uniform vec4 colDiffuse;      // FS: Diffuse color
-uniform sampler2D texture0;   // FS: GL_TEXTURE0
-uniform sampler2D texture1;   // FS: GL_TEXTURE1
-uniform sampler2D texture2;   // FS: GL_TEXTURE2
+// Output fragment color
+out vec4 finalColor;
+
+// NOTE: Add here your custom variables
+
+#define     MAX_LIGHTS              4
+#define     LIGHT_DIRECTIONAL       0
+#define     LIGHT_POINT             1
+#define     LIGHT_SPOT              2
+
+struct MaterialProperty {
+    vec3 color;
+    int useSampler;
+    sampler2D sampler;
+};
+
+struct Light {
+    int enabled;
+    int type;
+    vec3 position;
+    vec3 target;
+    vec4 color;
+    float intensity;
+    float radius;
+    float coneAngle;
+};
+
+// Input lighting values
+uniform Light lights[MAX_LIGHTS];
+uniform vec4 ambient;
+uniform vec3 viewPos;
+uniform mat4 matModel;
+
+const float glossiness = 0.0001;
+//const vec4 colSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+
+vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
+{
+    //vec3 surfacePos = vec3(vec4(fragPosition, 1.0));
+    //vec3 surfaceToLight = l.position - surfacePos;
+
+    //// Diffuse shading
+    //float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
+    //float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
+    //
+    ////////// Specular shading
+    //float spec = 0.0;
+    //if (diff > 0.0)
+    //{
+    //    vec3 h = normalize(-l.target + v);
+    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3;
+    //}
+
+    //vec3 actualR = (diff*l.color.rgb + spec*s.rgb);
+    //return actualR;
+
+    //calculate the vector from this pixels surface to the light source
+    vec3 surfaceToLight = l.position - fragPosition;
+
+    //calculate the cosine of the angle of incidence
+    float brightness = dot(n, surfaceToLight) / (length(surfaceToLight) * length(n));
+    brightness = clamp(brightness, 0, 1);
+
+    //calculate final color of the pixel, based on:
+    // 1. The angle of incidence: brightness
+    // 2. The color/intensities of the light: light.intensities
+    // 3. The texture and texture coord: texture(tex, fragTexCoord)
+    float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
+
+    return (diff * l.color.rgb);
+}
 
 
-//varying vec3 fragPosition;
-//varying vec2 fragTexCoord;
-//varying vec4 fragColor;
-//varying vec3 fragNormal;
-//
-//uniform sampler2D texture0;
-//uniform sampler2D texture1;
-//uniform sampler2D texture2;
-//
-////uniform vec4 colAmbient;
-////uniform vec4 colDiffuse;
-////uniform vec4 colSpecular;
-////uniform float glossiness;
-//const vec4 colAmbient = vec4(0.25, 0.25, 0.25, 1.0);
-//const vec4 colDiffuse = vec4(0.125, 0.125, 0.5, 1.0);
-//const vec4 colSpecular = vec4(0.125, 0.5, 0.125, 1.0);
-//const float glossiness = 0.5;
-//
-//uniform int useNormal;
-//uniform int useSpecular;
-//
-//uniform mat4 modelMatrix;
-//uniform vec3 viewDir;
-//
-//struct Light {
-//    int enabled;
-//    int type;
-//    vec3 position;
-//    vec3 direction;
-//    vec4 diffuse;
-//    float intensity;
-//    float radius;
-//    float coneAngle;
-//};
-//
-//const int maxLights = 1;
-//uniform Light lights[maxLights];
-//
-//vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, float s)
-//{
-//    vec3 surfacePos = vec3(modelMatrix*vec4(fragPosition, 1.0));
-//    vec3 surfaceToLight = l.position - surfacePos;
-//    
-//    // Diffuse shading
-//    float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
-//    float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
-//    
-//    // Specular shading
-//    float spec = 0.0;
-//    if (diff > 0.0)
-//    {
-//        vec3 h = normalize(-l.direction + v);
-//        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*s;
-//    }
-//    
-//    return (diff*l.diffuse.rgb + spec*colSpecular.rgb);
-//}
-//
-//vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, float s)
-//{
-//    vec3 lightDir = normalize(-l.direction);
-//    
-//    // Diffuse shading
-//    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
-//    
-//    // Specular shading
-//    float spec = 0.0;
-//    if (diff > 0.0)
-//    {
-//        vec3 h = normalize(lightDir + v);
-//        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*s;
-//    }
-//    
-//    // Combine results
-//    return (diff*l.intensity*l.diffuse.rgb + spec*colSpecular.rgb);
-//}
-//
-//vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, float s)
-//{
-//    vec3 surfacePos = vec3(modelMatrix*vec4(fragPosition, 1));
-//    vec3 lightToSurface = normalize(surfacePos - l.position);
-//    vec3 lightDir = normalize(-l.direction);
-//    
-//    // Diffuse shading
-//    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
-//    
-//    // Spot attenuation
-//    float attenuation = clamp(float(dot(n, lightToSurface)), 0.0, 1.0);
-//    attenuation = dot(lightToSurface, -lightDir);
-//    
-//    float lightToSurfaceAngle = degrees(acos(attenuation));
-//    if (lightToSurfaceAngle > l.coneAngle) attenuation = 0.0;
-//    
-//    float falloff = (l.coneAngle - lightToSurfaceAngle)/l.coneAngle;
-//    
-//    // Combine diffuse and attenuation
-//    float diffAttenuation = diff*attenuation;
-//    
-//    // Specular shading
-//    float spec = 0.0;
-//    if (diffAttenuation > 0.0)
-//    {
-//        vec3 h = normalize(lightDir + v);
-//        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*s;
-//    }
-//    
-//    return (falloff*(diffAttenuation*l.diffuse.rgb + spec*colSpecular.rgb));
-//}
-//
+vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, vec3 s)
+{
+    vec3 lightDir = -normalize(l.target - l.position);
+
+    // Diffuse shading
+    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+
+    //// Specular shading
+    //float spec = 0.0;
+    //if (diff > 0.0)
+    //{
+    //    vec3 h = normalize(lightDir + v);
+    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3;
+    //}
+    //
+    //// Combine results
+    //return (diff*l.intensity*l.color.rgb + spec*s.rgb);
+
+    return (diff * l.color.rgb);
+}
+
+
+vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
+{
+    //vec3 surfacePos = vec3(modelMatrix*vec4(fragPosition, 1));
+    //vec3 surfacePos = vec3(vec4(fragPosition, 1.0));
+    //vec3 lightToSurface = l.position - surfacePos;
+
+    vec3 lightToSurface = normalize(fragPosition - l.position);
+
+    vec3 lightDir = -normalize(l.target - l.position);
+
+    // Diffuse shading
+    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+
+    // Spot attenuation
+    float attenuation = clamp(float(dot(n, lightToSurface)), 0.0, 1.0);
+    attenuation = dot(lightToSurface, -lightDir);
+
+    float lightToSurfaceAngle = degrees(acos(attenuation));
+    if (lightToSurfaceAngle > l.coneAngle) attenuation = 0.0;
+
+    float falloff = (l.coneAngle - lightToSurfaceAngle)/l.coneAngle;
+
+    // Combine diffuse and attenuation
+    float diffAttenuation = diff*attenuation;
+
+    //// Specular shading
+    //float spec = 0.0;
+    //if (diffAttenuation > 0.0)
+    //{
+    //    vec3 h = normalize(lightDir + v);
+    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3; //s
+    //}
+    //+ spec*s.rgb));
+
+    return (falloff*(diffAttenuation*l.color.rgb));
+}
+
 
 void main()
 {
-//    // Calculate fragment normal in screen space
-//    // NOTE: important to multiply model matrix by fragment normal to apply model transformation (rotation and scale)
-//    mat3 normalMatrix = mat3(modelMatrix);
-//    vec3 normal = normalize(normalMatrix*fragNormal);
-//
-//    // Normalize normal and view direction vectors
-//    vec3 n = normalize(normal);
-//    vec3 v = normalize(viewDir);
-//
-//    // Calculate diffuse texture color fetching
-//    // broken
-//    //vec4 texelColor = texture2D(texture0, fragTexCoord);
-//
-//    //
-//    vec4 texelColor = vec4(1.0, 1.0, 1.0, 1.0);
-//
-//    vec3 lighting = colAmbient.rgb;
-//    
-//    // Calculate normal texture color fetching or set to maximum normal value by default
-//    //if (useNormal == 1)
-//    //{
-//        n *= texture2D(texture1, fragTexCoord).rgb;
-//        n = normalize(n);
-//    //}
-//    
-//    // Calculate specular texture color fetching or set to maximum specular value by default
-//    float spec = 1.0;
-//    //if (useSpecular == 1) {
-//      spec = texture2D(texture2, fragTexCoord).r;
-//    //}
-//    
-//    for (int i = 0; i < maxLights; i++)
-//    {
-//        // Check if light is enabled
-//        if (lights[i].enabled == 1)
-//        {
-//            // Calculate lighting based on light type
-//            if(lights[i].type == 0) lighting += ComputeLightPoint(lights[i], n, v, spec);
-//            else if(lights[i].type == 1) lighting += ComputeLightDirectional(lights[i], n, v, spec);
-//            else if(lights[i].type == 2) lighting += ComputeLightSpot(lights[i], n, v, spec);
-//            
-//            // NOTE: It seems that too many ComputeLight*() operations inside for loop breaks the shader on RPI
-//        }
-//    }
-//    
-//    // Calculate final fragment color
-//    //gl_FragColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-//
-//    //everything one solid color
-//    //gl_FragColor = vec4(1.0);
-//
-//    //color of default raylib model
-//    //gl_FragColor = vec4(spec, 1.0);
-//
-//    //just ambient
-//    //gl_FragColor = vec4(colAmbient.rgb, 1.0);
-//
-//    //just vertex raylib color
-//    //gl_FragColor = vec4(colDiffuse.rgb, colDiffuse.a);
+  vec4 texelColor = vec4(0.0);
+  vec3 lighting = vec3(0.0);
+  vec3 lightDot = vec3(0.0);
+  vec3 specular = texture(texture0, fragTexCoord).rgb;
 
-  gl_FragColor = colDiffuse; //.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+  vec3 n = normalize(fragNormal);
+  vec3 v = normalize(viewPos - fragPosition);
 
-  //gl_FragColor = vec4(1.0, 0.5, 0.25, 1.0);
+  for (int i = 0; i < MAX_LIGHTS; i++)
+  {
+      // Check if light is enabled
+      if (lights[i].enabled == 1)
+      {
+          // Calculate lighting based on light type
+          if(lights[i].type == LIGHT_POINT) lighting += ComputeLightPoint(lights[i], n, v, specular);
+          else if(lights[i].type == LIGHT_DIRECTIONAL) lighting += ComputeLightDirectional(lights[i], n, v, specular);
+          else if(lights[i].type == LIGHT_SPOT) lighting += ComputeLightSpot(lights[i], n, v, specular);
 
+          //float NdotL = max(dot(n, lighting), 0.0);
+          //lightDot += lights[i].color.rgb*NdotL;
+      }
+  }
+
+  //finalColor = vec4(lighting, 1.0);
+
+  //*(vec4(specular, 1.0));
+  //finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0));
+
+  //finalColor = (vec4(lighting, 1.0)*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+  //finalColor = (vec4(lighting, 1.0)*((vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+  
+  //brokefinalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+  //finalColor = vec4(specular*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+  //finalColor += colDiffuse*(ambient/1.0);
+
+  // Gamma correction
+  //finalColor = pow(finalColor, vec4(1.0/1.1));
+
+  //// Calculate final fragment color
+  ////finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+  //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+  //finalColor += colDiffuse*(ambient/1.0);
+
+  //////// TODO: Gamma correction
+  //finalColor = pow(finalColor, vec4(1.0/2.0));
+
+  //absolute diffuse color
+  //finalColor = colDiffuse;
+
+  //everything one solid color
+  //finalColor = vec4(1.0, 0.0, 1.0, 0.5);
+
+  ////color of default raylib model
+  //finalColor = vec4(spec, 1.0);
+
+  //just ambient
+  //finalColor = ambient;
+
+  //just texture
+  //finalColor = texelColor;
+  //finalColor = specular;
+
+  //just lighting
+  finalColor = vec4(lighting, 1.0);
 }

@@ -2603,6 +2603,8 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
 
     // Upload to shader material.colDiffuse
     if (material.shader.locs[LOC_COLOR_DIFFUSE] != -1)
+        //fprintf(stderr, "...... %f %f %f -", (float)material.maps[MAP_DIFFUSE].color.r, (float)material.maps[MAP_DIFFUSE].color.g, (float)material.maps[MAP_DIFFUSE].color.b);
+
         glUniform4f(material.shader.locs[LOC_COLOR_DIFFUSE], (float)material.maps[MAP_DIFFUSE].color.r/255.0f,
                                                            (float)material.maps[MAP_DIFFUSE].color.g/255.0f,
                                                            (float)material.maps[MAP_DIFFUSE].color.b/255.0f,
@@ -2641,9 +2643,13 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
     }
 
     // Bind vertex array objects (or VBOs)
-    if (vaoSupported) glBindVertexArray(mesh.vaoId);
+    if (vaoSupported) {
+      //fprintf(stderr, "cheesebar");
+      glBindVertexArray(mesh.vaoId);
+    }
     else
     {
+
         // Bind mesh VBO data: vertex position (shader-location = 0)
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[0]);
         glVertexAttribPointer(material.shader.locs[LOC_VERTEX_POSITION], 3, GL_FLOAT, 0, 0, 0);

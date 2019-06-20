@@ -668,10 +668,13 @@ Model LoadModel(const char *fileName)
         model.materialCount = 1;
         model.materials = (Material *)RL_CALLOC(model.materialCount, sizeof(Material));
         model.materials[0] = LoadMaterialDefault();
+        model.meshMaterial = (int *)RL_CALLOC(model.meshCount, sizeof(int));
 
+        for (int mmm=0; mmm<model.meshCount; mmm++) {
+          model.meshMaterial[mmm] = 0;
+        }
     }
 
-    model.meshMaterial = (int *)RL_CALLOC(model.meshCount, sizeof(int));
 
     return model;
 }
@@ -831,8 +834,8 @@ Material LoadMaterialDefault(void)
     //material.maps[MAP_NORMAL].texture;         // NOTE: By default, not set
     //material.maps[MAP_SPECULAR].texture;       // NOTE: By default, not set
 
-    material.maps[MAP_DIFFUSE].color = WHITE;    // Diffuse color
-    material.maps[MAP_SPECULAR].color = WHITE;   // Specular color
+    material.maps[MAP_DIFFUSE].color = BLUE;    // Diffuse color
+    material.maps[MAP_SPECULAR].color = RED;   // Specular color
 
     return material;
 }
@@ -2368,9 +2371,14 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
 
     for (int i = 0; i < model.meshCount; i++)
     {
-        model.materials[model.meshMaterial[i]].maps[MAP_DIFFUSE].color = tint;
+        //model.materials[model.meshMaterial[i]].maps[MAP_DIFFUSE].color = tint;
+        //fprintf(stderr, "CCC %p == %d DDD", &model.meshMaterial, model.materialCount);
+        //rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
         rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
     }
+
+    //CCC 0x7ffe5fb5b810 == 4 == 0 == 0 DDDCCC 0x7ffe5fb5b810 == 4 == 1 == 0 DDDCCC 0x7ffe5fb5b810 == 4 == 2 == 0 DDD
+
 }
 
 // Draw a model wires (with texture if set)
@@ -2772,8 +2780,8 @@ static Model LoadOBJ(const char *fileName)
 
         // Init model meshes array
         // TODO: Support multiple meshes... in the meantime, only one mesh is returned
-        //model.meshCount = meshCount;
-        model.meshCount = 1;
+        model.meshCount = meshCount;
+        //model.meshCount = 1;
         model.meshes = (Mesh *)RL_MALLOC(model.meshCount*sizeof(Mesh));
 
         // Init model materials array
@@ -2792,7 +2800,7 @@ static Model LoadOBJ(const char *fileName)
         */
 
         // Init model meshes
-        for (int m = 0; m < 1; m++)
+        for (int m = 0; m < model.meshCount; m++)
         {
             Mesh mesh = { 0 };
             memset(&mesh, 0, sizeof(Mesh));
@@ -2806,8 +2814,16 @@ static Model LoadOBJ(const char *fileName)
             int vtCount = 0;
             int vnCount = 0;
 
+            tinyobj_shape_t shape = meshes[m];
+
+            for (int ff = 0; ff<shape.length; ff++) {
+              int f = shape.face_offset + ff;
+
+
+/*
             for (int f = 0; f < attrib.num_faces; f++)
             {
+*/
                 // Get indices for the face
                 tinyobj_vertex_index_t idx0 = attrib.faces[3*f + 0];
                 tinyobj_vertex_index_t idx1 = attrib.faces[3*f + 1];
@@ -2822,12 +2838,14 @@ static Model LoadOBJ(const char *fileName)
 
                 // Fill texcoords buffer (float) using vertex index of the face
                 // NOTE: Y-coordinate must be flipped upside-down
-                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
-                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
-                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];
-                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx1.vt_idx*2 + 1]; vtCount += 2;
-                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx2.vt_idx*2 + 0];
-                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx2.vt_idx*2 + 1]; vtCount += 2;
+                if (attrib.num_texcoords) {
+                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
+                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
+                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];
+                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx1.vt_idx*2 + 1]; vtCount += 2;
+                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx2.vt_idx*2 + 0];
+                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx2.vt_idx*2 + 1]; vtCount += 2;
+                }
 
                 // Fill normals buffer (float) using vertex index of the face
                 for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx0.vn_idx*3 + v]; } vnCount +=3;
@@ -2837,8 +2855,14 @@ static Model LoadOBJ(const char *fileName)
 
             model.meshes[m] = mesh;                 // Assign mesh data to model
 
-            // Assign mesh material for current mesh
-            model.meshMaterial[m] = attrib.material_ids[m];
+            if (model.materialCount) {
+              // Assign mesh material for current mesh
+              model.meshMaterial[m] = attrib.material_ids[shape.face_offset];
+              //, model.meshMaterial[m], attrib.material_ids[shape.face_offset]);
+              //AAA 0 0 0 BBBAAA 1 1 1 BBBAAA 2 2 2 BBBAAA 3 3 3 BBBINFO
+            }
+            
+            //fprintf(stderr, "AAA %p == %d BBB", &model.meshMaterial, model.materialCount);
         }
 
         // Init model materials
@@ -2881,6 +2905,7 @@ static Model LoadOBJ(const char *fileName)
             model.materials[m].maps[MAP_DIFFUSE].color = (Color){ (float)(materials[m].diffuse[0]*255.0f), (float)(materials[m].diffuse[1]*255.0f), (float)(materials[m].diffuse[2]*255.0f), 255 }; //float diffuse[3];
             model.materials[m].maps[MAP_DIFFUSE].value = 0.0f;
 
+
             if (materials[m].specular_texname != NULL) model.materials[m].maps[MAP_SPECULAR].texture = LoadTexture(materials[m].specular_texname);  //char *specular_texname; // map_Ks
             model.materials[m].maps[MAP_SPECULAR].color = (Color){ (float)(materials[m].specular[0]*255.0f), (float)(materials[m].specular[1]*255.0f), (float)(materials[m].specular[2]*255.0f), 255 }; //float specular[3];
             model.materials[m].maps[MAP_SPECULAR].value = 0.0f;
@@ -2892,6 +2917,8 @@ static Model LoadOBJ(const char *fileName)
             model.materials[m].maps[MAP_EMISSION].color = (Color){ (float)(materials[m].emission[0]*255.0f), (float)(materials[m].emission[1]*255.0f), (float)(materials[m].emission[2]*255.0f), 255 }; //float emission[3];
 
             if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
+
+            //fprintf(stderr, "+++ %p == %d +++", &model.meshMaterial, model.materialCount);
         }
 
         tinyobj_attrib_free(&attrib);

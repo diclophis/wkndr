@@ -1,6 +1,42 @@
 // stdlib stuff
 #define _XOPEN_SOURCE 600
 
+//#if defined(PLATFORM_DESKTOP)
+//    #define GLSL_VERSION            330
+//#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
+//    #define GLSL_VERSION            100
+//#endif
+
+// raylib stuff
+#define RAYGUI_IMPLEMENTATION 1
+
+//#define RLGL_IMPLEMENTATION 1
+#define GRAPHICS_API_OPENGL_33 1
+
+#if defined(GRAPHICS_API_OPENGL_33)
+    #if defined(__APPLE__)
+        #include <OpenGL/gl3.h>         // OpenGL 3 library for OSX
+        #include <OpenGL/gl3ext.h>      // OpenGL 3 extensions library for OSX
+    #else
+        #if defined(RLGL_STANDALONE)
+            #include "glad.h"           // GLAD extensions loading library, includes OpenGL headers
+        #else
+            #include "external/glad.h"  // GLAD extensions loading library, includes OpenGL headers
+        #endif
+    #endif
+#endif
+
+#if defined(GRAPHICS_API_OPENGL_ES2)
+    #include <EGL/egl.h>                // EGL library
+    #include <GLES2/gl2.h>              // OpenGL ES 2.0 library
+    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
+#endif
+
+#include <raylib.h>
+#include <raymath.h>
+#include <raygui.h>
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -30,7 +66,6 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
-
 
 
 // mruby stuff
@@ -68,13 +103,6 @@
 #include <mruby/string.h>
 #include <mruby/hash.h>
 #include <string.h>
-
-
-// raylib stuff
-#define RAYGUI_IMPLEMENTATION
-#include <raylib.h>
-#include <raymath.h>
-#include <raygui.h>
 
 
 // kit1zx stuff
@@ -136,45 +164,251 @@ int ptsname_r(int fd, char* buf, size_t buflen) {
 #endif
 
 
-#define MAX_LIGHTS 1 // Max lights supported by standard shader
-// Light type
-typedef struct LightData {
-    unsigned int id;        // Light unique id
-    bool enabled;           // Light enabled
-    int type;               // Light type: LIGHT_POINT, LIGHT_DIRECTIONAL, LIGHT_SPOT
+//#define MAX_LIGHTS 1 // Max lights supported by standard shader
 
-    Vector3 position;       // Light position
-    Vector3 target;         // Light direction: LIGHT_DIRECTIONAL and LIGHT_SPOT (cone direction target)
+//// Light type
+//typedef struct LightData {
+//    unsigned int id;        // Light unique id
+//    bool enabled;           // Light enabled
+//    int type;               // Light type: LIGHT_POINT, LIGHT_DIRECTIONAL, LIGHT_SPOT
+//
+//    Vector3 position;       // Light position
+//    Vector3 target;         // Light direction: LIGHT_DIRECTIONAL and LIGHT_SPOT (cone direction target)
+//    float radius;           // Light attenuation radius light intensity reduced with distance (world distance)
+//
+//    Color diffuse;          // Light diffuse color
+//    float intensity;        // Light intensity level
+//
+//    float coneAngle;        // Light cone max angle: LIGHT_SPOT
+//} LightData, *Light;
+//
+//// Light types
+//typedef enum { LIGHT_POINT, LIGHT_DIRECTIONAL, LIGHT_SPOT } LightType;
+//
+////----------------------------------------------------------------------------------
+//// Global Variables Definition
+////----------------------------------------------------------------------------------
+//static Light lights[MAX_LIGHTS];            // Lights pool
+//static int lightsCount = 0;                 // Enabled lights counter
+//static int lightsLocs[MAX_LIGHTS][8];       // Lights location points in shader: 8 possible points per light: 
+//                                            // enabled, type, position, target, radius, diffuse, intensity, coneAngle
+
+//
+////----------------------------------------------------------------------------------
+//// Module Functions Declaration
+////----------------------------------------------------------------------------------
+//static Light CreateLight(int type, Vector3 position, Color diffuse); // Create a new light, initialize it and add to pool
+//static void DestroyLight(Light light);     // Destroy a light and take it out of the list
+//
+//static void GetShaderLightsLocations(Shader shader);    // Get shader locations for lights (up to MAX_LIGHTS)
+//static void SetShaderLightsValues(Shader shader);       // Set shader uniform values for lights
+
+
+
+//----------------------------------------------------------------------------------
+// Defines and Macros
+//----------------------------------------------------------------------------------
+#define         MAX_LIGHTS            4         // Max dynamic lights supported by shader
+
+//----------------------------------------------------------------------------------
+// Types and Structures Definition
+//----------------------------------------------------------------------------------
+// Light data
+typedef struct {   
+    int type;
+    Vector3 position;
+    Vector3 target;
+    Color color;
+    bool enabled;
     float radius;           // Light attenuation radius light intensity reduced with distance (world distance)
-
-    Color diffuse;          // Light diffuse color
     float intensity;        // Light intensity level
-
     float coneAngle;        // Light cone max angle: LIGHT_SPOT
-} LightData, *Light;
+    
+    // Shader locations
+    int enabledLoc;
+    int typeLoc;
+    int posLoc;
+    int targetLoc;
+    int colorLoc;
+    int intensityLoc;
+    int coneAngleLoc;
+    int radiusLoc;
+} Light;
 
-// Light types
-typedef enum { LIGHT_POINT, LIGHT_DIRECTIONAL, LIGHT_SPOT } LightType;
+// Light type
+typedef enum {
+    LIGHT_DIRECTIONAL,
+    LIGHT_POINT,
+    LIGHT_SPOT
+} LightType;
+
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static Light lights[MAX_LIGHTS];            // Lights pool
-static int lightsCount = 0;                 // Enabled lights counter
-static int lightsLocs[MAX_LIGHTS][8];       // Lights location points in shader: 8 possible points per light: 
-                                            // enabled, type, position, target, radius, diffuse, intensity, coneAngle
+int lightsCount = 0;    // Current amount of created lights
 static Shader standardShader;
 static Light firstLight;
+Light lights[MAX_LIGHTS] = { 0 };
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-static Light CreateLight(int type, Vector3 position, Color diffuse); // Create a new light, initialize it and add to pool
-static void DestroyLight(Light light);     // Destroy a light and take it out of the list
+Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader);   // Create a light and get shader locations
+void UpdateLightValues(Shader shader, Light light);         // Send light properties to shader
 static void DrawLight(Light light);        // Draw light in 3D world
+//void InitLightLocations(Shader shader, Light *light);     // Init light shader locations
 
-static void GetShaderLightsLocations(Shader shader);    // Get shader locations for lights (up to MAX_LIGHTS)
-static void SetShaderLightsValues(Shader shader);       // Set shader uniform values for lights
+
+//----------------------------------------------------------------------------------
+// Defines and Macros
+//----------------------------------------------------------------------------------
+// ...
+
+//----------------------------------------------------------------------------------
+// Types and Structures Definition
+//----------------------------------------------------------------------------------
+// ...
+
+//----------------------------------------------------------------------------------
+// Global Variables Definition
+//----------------------------------------------------------------------------------
+// ...
+
+//----------------------------------------------------------------------------------
+// Module specific Functions Declaration
+//----------------------------------------------------------------------------------
+// ...
+
+//----------------------------------------------------------------------------------
+// Module Functions Definition
+//----------------------------------------------------------------------------------
+
+// Create a light and get shader locations
+Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader)
+{
+    Light light = { 0 };
+
+    if (lightsCount < MAX_LIGHTS)
+    {
+        light.enabled = true;
+        light.type = type;
+        light.position = position;
+        light.target = target;
+        light.color = color;
+        light.radius = 2.0;
+        light.intensity = 1.0;
+        light.coneAngle = 7.0;
+
+
+//                case LIGHT_DIRECTIONAL:
+//                {
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                } break;
+//                case LIGHT_SPOT:
+//                {
+//                    tempFloat[0] = lights[i]->position.x;
+//                    tempFloat[1] = lights[i]->position.y;
+//                    tempFloat[2] = lights[i]->position.z;
+//                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+//                    
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                    
+//                    tempFloat[0] = lights[i]->coneAngle;
+//                    SetShaderValue(shader, lightsLocs[i][7], tempFloat, UNIFORM_FLOAT);
+//                    //glUniform1f(lightsLocs[i][7], lights[i]->coneAngle);
+//                } break;
+
+        // TODO: Below code doesn't look good to me, 
+        // it assumes a specific shader naming and structure
+        // Probably this implementation could be improved
+        char enabledName[32] = "lights[x].enabled\0";
+        char typeName[32] = "lights[x].type\0";
+        char posName[32] = "lights[x].position\0";
+        char targetName[32] = "lights[x].target\0";
+        char colorName[32] = "lights[x].color\0";
+        char intensityName[32] = "lights[x].intensity\0";
+        char coneAngleName[32] = "lights[x].coneAngle\0";
+        char radiusName[32] = "lights[x].radius\0";
+
+        enabledName[7] = '0' + lightsCount;
+        typeName[7] = '0' + lightsCount;
+        posName[7] = '0' + lightsCount;
+        targetName[7] = '0' + lightsCount;
+        colorName[7] = '0' + lightsCount;
+        intensityName[7] = '0' + lightsCount;
+        coneAngleName[7] = '0' + lightsCount;
+        radiusName[7] = '0' + lightsCount;
+
+        light.enabledLoc = GetShaderLocation(shader, enabledName);
+        light.typeLoc = GetShaderLocation(shader, typeName);
+        light.posLoc = GetShaderLocation(shader, posName);
+        light.targetLoc = GetShaderLocation(shader, targetName);
+        light.colorLoc = GetShaderLocation(shader, colorName);
+        light.intensityLoc = GetShaderLocation(shader, intensityName);
+        light.coneAngleLoc = GetShaderLocation(shader, coneAngleName);
+        light.radiusLoc = GetShaderLocation(shader, radiusName);
+
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "intensity\0");
+//        lightsLocs[i][6] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "coneAngle\0");
+//        lightsLocs[i][7] = GetShaderLocation(shader, locNameUpdated);
+
+        UpdateLightValues(shader, light);
+        
+        lightsCount++;
+    }
+
+    return light;
+}
+
+// Send light properties to shader
+// NOTE: Light shader locations should be available 
+void UpdateLightValues(Shader shader, Light light)
+{
+    // Send to shader light enabled state and type
+    SetShaderValue(shader, light.enabledLoc, &light.enabled, UNIFORM_INT);
+    SetShaderValue(shader, light.typeLoc, &light.type, UNIFORM_INT);
+    SetShaderValue(shader, light.intensityLoc, &light.intensity, UNIFORM_FLOAT);
+    SetShaderValue(shader, light.coneAngleLoc, &light.coneAngle, UNIFORM_FLOAT);
+    SetShaderValue(shader, light.radiusLoc, &light.radius, UNIFORM_FLOAT);
+
+    // Send to shader light position values
+    float position[3] = { light.position.x, light.position.y, light.position.z };
+    SetShaderValue(shader, light.posLoc, position, UNIFORM_VEC3);
+
+    // Send to shader light target position values
+    float target[3] = { light.target.x, light.target.y, light.target.z };
+    SetShaderValue(shader, light.targetLoc, target, UNIFORM_VEC3);
+
+    // Send to shader light color values
+    float color[4] = { (float)light.color.r/(float)255, (float)light.color.g/(float)255, 
+                       (float)light.color.b/(float)255, (float)light.color.a/(float)255 };
+    SetShaderValue(shader, light.colorLoc, color, UNIFORM_VEC4);
+}
+
 
 // Vector3 math functions
 static float VectorLength(const Vector3 v);             // Calculate vector length
@@ -403,6 +637,8 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   mrb_get_args(mrb, "o", &stack_self);
 
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
+
+
   loop_data->mrb_pointer = mrb;
   loop_data->self_pointer = mrb_obj_ptr(stack_self);
 
@@ -615,6 +851,26 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 
   //p_data->buffer_target = LoadRenderTexture(screenWidth, screenHeight);
 
+  float px,py,pz,tx,ty,tz,fovy = 0;
+  px = 5;
+  py = 4;
+  pz = 3;
+  
+  fovy = 5.0;
+
+  p_data->camera.type = CAMERA_PERSPECTIVE;
+  // Define the camera to look into our 3d world
+  p_data->camera.position = (Vector3){ px, py, pz };    // Camera position
+  p_data->camera.target = (Vector3){ tx, ty, tz };      // Camera looking at point
+
+  p_data->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };    // Camera up vector (rotation towards target)
+  p_data->camera.fovy = fovy;                           // Camera field-of-view Y
+
+  p_data->cameraTwo.target = (Vector2){ 0, 0 };
+  p_data->cameraTwo.offset = (Vector2){ 0, 0 };
+  p_data->cameraTwo.rotation = 0.0f;
+  p_data->cameraTwo.zoom = 1.0f;
+
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
       mrb_obj_value(                           // with value hold in struct
@@ -638,10 +894,66 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
+  //startLighting
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
+  //XSetShaderDefaultLocations(&standardShader);
+  //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_COLOR_NAME);
+
+  // ambient light level
+  int ambientLoc = GetShaderLocation(standardShader, "ambient");
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.125f, 0.125f, 0.125f, 1.0f }, UNIFORM_VEC4);
+
+	//int tempInt[8] = { 0 };
+	//float tempFloat[8] = { 0.0f };
+  //tempInt[0] = 0;
+  //int totalLightsLoc = GetShaderLocation(standardShader, "totalLights");
+  //SetShaderValue(standardShader, totalLightsLoc, tempInt, UNIFORM_INT);
+
+  // Get some shader loactions
+  standardShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(standardShader, "matModel");
+  standardShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(standardShader, "viewPos");
+  standardShader.locs[LOC_COLOR_DIFFUSE] = GetShaderLocation(standardShader, "colDiffuse");
+  
+  glBindAttribLocation(standardShader.id, 3, "vertexColor");
+  
+  //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
+  //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
+
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 7, 0 }, Vector3Zero(), RED, standardShader);
+  lights[0].intensity = 0.1;
+  lights[0].radius = 10.0;
+  lights[0].enabled = true;
+
+  //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 7, 1 }, Vector3Zero(), WHITE, standardShader);
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 100, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[1].intensity = 0.7;
+  lights[1].enabled = true;
+
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){7.0f, 5.0f, -3.0f}, Vector3Zero(), GREEN, standardShader);
+  lights[2].intensity = 0.5;
+  lights[2].coneAngle = 3.00;
+  lights[2].enabled = true;
+
+  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 0, 7, 11 }, Vector3Zero(), WHITE, standardShader);
+  lights[3].intensity = 0.007;
+  lights[3].radius = 100.0;
+  lights[3].enabled = true;
+
+  UpdateLightValues(standardShader, lights[0]);
+  UpdateLightValues(standardShader, lights[1]);
+  UpdateLightValues(standardShader, lights[2]);
+  UpdateLightValues(standardShader, lights[3]);
+
+  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 10000, 10000, 0 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 1000, 0 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0] = CreateLight(LIGHT_SPOT, (Vector3){0.0f, 1000.0f, 0.0f}, Vector3Zero(), WHITE, standardShader);
+
+  //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
+  //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 330, 350, 370 }, Vector3Zero(), BLUE, standardShader);
+
 
   //////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
-  Light dirLight;
+  //Light dirLight;
   //dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){5.0f, 6.0f, 7.0f}, (Color){255, 255, 255, 255});
   //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
   //dirLight->intensity = 0.5f;
@@ -871,6 +1183,10 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   p_data->cameraTwo.rotation = 0.0f;
   p_data->cameraTwo.zoom = 1.0f;
 
+  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
+
   return mrb_nil_value();
 }
 
@@ -907,11 +1223,22 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   UpdateCamera(&p_data->camera);
 
+  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
   BeginMode3D(p_data->camera);
 
   //BeginShaderMode(standardShader);
 
   mrb_yield_argv(mrb, block, 0, NULL);
+
+	//if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.0f, 16, 16, WHITE); }
+	//if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.0f, 16, 16, RED); }
+	//if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.0f, 16, 16, GREEN); }
+	//if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.0f, 16, 16, BLUE); }
+  for (int i=0; i<MAX_LIGHTS; i++) {
+    DrawLight(lights[i]);
+  }
 
   //EndShaderMode();
 
@@ -1032,9 +1359,12 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  
+  //fprintf(stderr, "INIT %p\n", &p_data->model);
+
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1084,8 +1414,11 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   //  material.maps[MAP_DIFFUSE].color = WHITE;
   //  material.maps[MAP_SPECULAR].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
 
-    //p_data->model.materials[mi].shader = standardShader;
+    p_data->model.materials[mi].shader = standardShader;
   }
 
   //p_data->model.materials[1].shader = standardShader;
@@ -1181,20 +1514,18 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   }
 
   if (draw_wires) {
-    DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
+    //DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
   }
 
   //TODO, mode switch
   //else {
     // Draw 3d model with texture
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
-    
+    //fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
+
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 
-    //if (p_data->light) {
-    //  DrawLight(p_data->light);
-    //}
-
+    //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
   //}
 
   return mrb_nil_value();
@@ -1254,9 +1585,10 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   //Material material = { 0 };
 
@@ -1273,10 +1605,11 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   ////  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
   ////  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
 
-  ////  material.maps[MAP_DIFFUSE].color = WHITE;
-  ////  material.maps[MAP_SPECULAR].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
+    //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
 
-    //p_data->model.materials[mi].shader = standardShader;
+    p_data->model.materials[mi].shader = standardShader;
   }
 
   ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
@@ -1313,7 +1646,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->scale.y = scalef;
   p_data->scale.z = scalef;
 
-  float colors = 128.0;
+  float colors = 32.0;
   float freq = 64.0 / colors;
 
   int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
@@ -1326,7 +1659,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
     counter *= -1;
   }
 
-  p_data->color.r = r;
+  p_data->color.r = 255;
   p_data->color.g = g;
   p_data->color.b = b;
   p_data->color.a = 255;
@@ -1370,9 +1703,9 @@ static mrb_value sphere_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModelFromMesh(GenMeshSphere(ra, ri, sl));
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -1455,7 +1788,7 @@ static mrb_value fast_utmp_utmps(mrb_state* mrb, mrb_value self)
     if (utmp_buf->ut_name[0] && utmp_buf->ut_line[0] && utmp_buf->ut_type == USER_PROCESS) {
       ++entries;
 
-			//mrb_value mrb_login_pid = mrb_fixnum_value(utmp_buf->ut_pid);
+      //mrb_value mrb_login_pid = mrb_fixnum_value(utmp_buf->ut_pid);
 
       mrb_value empty_string = mrb_str_new_lit(mrb, "");
       mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, utmp_buf->ut_line, UT_LINESIZE);
@@ -1513,32 +1846,32 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 #ifdef TARGET_DESKTOP
   struct winsize w = {21, 82, 0, 0};
 
-	int fdm, fds, rc;
+  int fdm, fds, rc;
   static char ptyname[FILENAME_MAX];
 
-	fdm = posix_openpt(O_RDWR);
-	//fdm = open("/dev/pts/ptmx", O_RDWR);
-	if (fdm < 0)
-	{
-		fprintf(stderr, "Error %d on posix_openpt()\n", errno);
-		return mrb_nil_value();
-	}
+  fdm = posix_openpt(O_RDWR);
+  //fdm = open("/dev/pts/ptmx", O_RDWR);
+  if (fdm < 0)
+  {
+    fprintf(stderr, "Error %d on posix_openpt()\n", errno);
+    return mrb_nil_value();
+  }
 
   ioctl(fdm, TIOCSWINSZ, &w);
 
-	rc = grantpt(fdm);
-	if (rc != 0)
-	{
-		fprintf(stderr, "Error %d on grantpt()\n", errno);
-		return mrb_nil_value();
-	}
+  rc = grantpt(fdm);
+  if (rc != 0)
+  {
+    fprintf(stderr, "Error %d on grantpt()\n", errno);
+    return mrb_nil_value();
+  }
 
-	rc = unlockpt(fdm);
-	if (rc != 0)
-	{
-		fprintf(stderr, "Error %d on unlockpt()\n", errno);
-		return mrb_nil_value();
-	}
+  rc = unlockpt(fdm);
+  if (rc != 0)
+  {
+    fprintf(stderr, "Error %d on unlockpt()\n", errno);
+    return mrb_nil_value();
+  }
 
   int foo = FILENAME_MAX;
   ptyname[FILENAME_MAX-1] = '\0';
@@ -1549,17 +1882,17 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   //strncpy(ptyname, ptsname(fdm, ), FILENAME_MAX-1);
   //ptsname
 
-	//// Open the slave PTY
-	fds = open(ptyname, O_RDWR | O_NOCTTY);
-	//fds = open(ptyname, O_RDWR);
+  //// Open the slave PTY
+  fds = open(ptyname, O_RDWR | O_NOCTTY);
+  //fds = open(ptyname, O_RDWR);
 
   //TODO: clean this up once sure its not broken or missing parts
-	//pid_t result = setsid();
-	//if (result < 0)
-	//{
-	//  //fprintf(stderr, "%s\n", explain_setsid());
-	//	fprintf(stderr, "Error %d on setsid()\n", errno);
-	//	fprintf(stderr, "Error %s on setsid()\n", strerror(errno));
+  //pid_t result = setsid();
+  //if (result < 0)
+  //{
+  //  //fprintf(stderr, "%s\n", explain_setsid());
+  //  fprintf(stderr, "Error %d on setsid()\n", errno);
+  //  fprintf(stderr, "Error %s on setsid()\n", strerror(errno));
   //}
 
   //ptsname(fdm), O_RDWR);
@@ -1610,242 +1943,242 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 // Module Functions Definitions
 //--------------------------------------------------------------------------------------------
 
-// Create a new light, initialize it and add to pool
-Light CreateLight(int type, Vector3 position, Color diffuse)
-{
-    Light light = NULL;
-    
-    if (lightsCount < MAX_LIGHTS)
-    {
-        // Allocate dynamic memory
-        light = (Light)malloc(sizeof(LightData));
-        
-        // Initialize light values with generic values
-        light->id = lightsCount;
-        light->type = type;
-        light->enabled = true;
-        
-        light->position = position;
-        light->target = (Vector3){ 0.0f, 0.0f, 0.0f };
-        light->intensity = 1.0f;
-        light->diffuse = diffuse;
-        
-        // Add new light to the array
-        lights[lightsCount] = light;
-        
-        // Increase enabled lights count
-        lightsCount++;
-    }
-    else
-    {
-        // NOTE: Returning latest created light to avoid crashes
-        light = lights[lightsCount];
-    }
+//// Create a new light, initialize it and add to pool
+//Light CreateLight(int type, Vector3 position, Color diffuse)
+//{
+//    Light light = NULL;
+//    
+//    if (lightsCount < MAX_LIGHTS)
+//    {
+//        // Allocate dynamic memory
+//        light = (Light)malloc(sizeof(LightData));
+//        
+//        // Initialize light values with generic values
+//        light->id = lightsCount;
+//        light->type = type;
+//        light->enabled = true;
+//        
+//        light->position = position;
+//        light->target = (Vector3){ 0.0f, 0.0f, 0.0f };
+//        light->intensity = 1.0f;
+//        light->diffuse = diffuse;
+//        
+//        // Add new light to the array
+//        lights[lightsCount] = light;
+//        
+//        // Increase enabled lights count
+//        lightsCount++;
+//    }
+//    else
+//    {
+//        // NOTE: Returning latest created light to avoid crashes
+//        light = lights[lightsCount];
+//    }
+//
+//    return light;
+//}
 
-    return light;
-}
+//// Destroy a light and take it out of the list
+//void DestroyLight(Light light)
+//{
+//    if (light != NULL)
+//    {
+//        int lightId = light->id;
+//
+//        // Free dynamic memory allocation
+//        free(lights[lightId]);
+//
+//        // Remove *obj from the pointers array
+//        for (int i = lightId; i < lightsCount; i++)
+//        {
+//            // Resort all the following pointers of the array
+//            if ((i + 1) < lightsCount)
+//            {
+//                lights[i] = lights[i + 1];
+//                lights[i]->id = lights[i + 1]->id;
+//            }
+//        }
+//        
+//        // Decrease enabled physic objects count
+//        lightsCount--;
+//    }
+//}
 
-// Destroy a light and take it out of the list
-void DestroyLight(Light light)
-{
-    if (light != NULL)
-    {
-        int lightId = light->id;
-
-        // Free dynamic memory allocation
-        free(lights[lightId]);
-
-        // Remove *obj from the pointers array
-        for (int i = lightId; i < lightsCount; i++)
-        {
-            // Resort all the following pointers of the array
-            if ((i + 1) < lightsCount)
-            {
-                lights[i] = lights[i + 1];
-                lights[i]->id = lights[i + 1]->id;
-            }
-        }
-        
-        // Decrease enabled physic objects count
-        lightsCount--;
-    }
-}
-
-// Draw light in 3D world
+//// Draw light in 3D world
 void DrawLight(Light light)
 {
-    switch (light->type)
+    switch (light.type)
     {
         case LIGHT_POINT:
         {
-            DrawSphereWires(light->position, 0.3f*light->intensity, 8, 8, (light->enabled ? light->diffuse : GRAY));
+            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
             
-            DrawCircle3D(light->position, light->radius, (Vector3){ 0, 0, 0 }, 0.0f, (light->enabled ? light->diffuse : GRAY));
-            DrawCircle3D(light->position, light->radius, (Vector3){ 1, 0, 0 }, 90.0f, (light->enabled ? light->diffuse : GRAY));
-            DrawCircle3D(light->position, light->radius, (Vector3){ 0, 1, 0 },90.0f, (light->enabled ? light->diffuse : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 0, 0 }, 0.0f, (light.enabled ? light.color : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 1, 0, 0 }, 90.0f, (light.enabled ? light.color : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 1, 0 },90.0f, (light.enabled ? light.color : GRAY));
         } break;
         case LIGHT_DIRECTIONAL:
         {
-            DrawLine3D(light->position, light->target, (light->enabled ? light->diffuse : GRAY));
+            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
             
-            DrawSphereWires(light->position, 0.3f*light->intensity, 8, 8, (light->enabled ? light->diffuse : GRAY));
-            DrawCubeWires(light->target, 0.3f, 0.3f, 0.3f, (light->enabled ? light->diffuse : GRAY));
+            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
         } break;
         case LIGHT_SPOT:
         {
-            DrawLine3D(light->position, light->target, (light->enabled ? light->diffuse : GRAY));
+            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
             
-            Vector3 dir = VectorSubtract(light->target, light->position);
+            Vector3 dir = VectorSubtract(light.target, light.position);
             VectorNormalize(&dir);
             
-            DrawCircle3D(light->position, 0.5f, dir, 0.0f, (light->enabled ? light->diffuse : GRAY));
+            DrawCircle3D(light.position, 0.5f, dir, 0.0f, (light.enabled ? light.color : GRAY));
             
             //DrawCylinderWires(light->position, 0.0f, 0.3f*light->coneAngle/50, 0.6f, 5, (light->enabled ? light->diffuse : GRAY));
-            DrawCubeWires(light->target, 0.3f, 0.3f, 0.3f, (light->enabled ? light->diffuse : GRAY));
+            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
         } break;
         default: break;
     }
 }
 
-// Get shader locations for lights (up to MAX_LIGHTS)
-static void GetShaderLightsLocations(Shader shader)
-{
-    char locName[32] = "lights[X].\0";
-    char locNameUpdated[64];
-    
-    for (int i = 0; i < MAX_LIGHTS; i++)
-    {
-        locName[7] = '0' + i;
-        
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "enabled\0");
-        lightsLocs[i][0] = GetShaderLocation(shader, locNameUpdated);
-        
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "type\0");
-        lightsLocs[i][1] = GetShaderLocation(shader, locNameUpdated);
-
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "position\0");
-        lightsLocs[i][2] = GetShaderLocation(shader, locNameUpdated);
-        
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "direction\0");
-        lightsLocs[i][3] = GetShaderLocation(shader, locNameUpdated);
-        
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "radius\0");
-        lightsLocs[i][4] = GetShaderLocation(shader, locNameUpdated);
-        
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "diffuse\0");
-        lightsLocs[i][5] = GetShaderLocation(shader, locNameUpdated);
-        
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "intensity\0");
-        lightsLocs[i][6] = GetShaderLocation(shader, locNameUpdated);
-        
-        locNameUpdated[0] = '\0';
-        strcpy(locNameUpdated, locName);
-        strcat(locNameUpdated, "coneAngle\0");
-        lightsLocs[i][7] = GetShaderLocation(shader, locNameUpdated);
-    }
-}
-
-// Set shader uniform values for lights
-// NOTE: It would be far easier with shader UBOs but are not supported on OpenGL ES 2.0
-static void SetShaderLightsValues(Shader shader)
-{
-    int tempInt[8] = { 0 };
-    float tempFloat[8] = { 0.0f };
-   
-   fprintf(stderr, "FOOOOOP %d\n", lightsCount);
-
-    for (int i = 0; i < MAX_LIGHTS; i++)
-    {
-        if (i < lightsCount)
-        {
-            tempInt[0] = lights[i]->enabled;
-            SetShaderValue(shader, lightsLocs[i][0], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][0], lights[i]->enabled);
-            
-            tempInt[0] = lights[i]->type;
-            SetShaderValue(shader, lightsLocs[i][1], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][1], lights[i]->type);
-            
-            tempFloat[0] = (float)lights[i]->diffuse.r/255.0f;
-            tempFloat[1] = (float)lights[i]->diffuse.g/255.0f;
-            tempFloat[2] = (float)lights[i]->diffuse.b/255.0f;
-            tempFloat[3] = (float)lights[i]->diffuse.a/255.0f;
-            SetShaderValue(shader, lightsLocs[i][5], tempFloat, UNIFORM_VEC4);
-            //glUniform4f(lightsLocs[i][5], (float)lights[i]->diffuse.r/255, (float)lights[i]->diffuse.g/255, (float)lights[i]->diffuse.b/255, (float)lights[i]->diffuse.a/255);
-            
-            tempFloat[0] = lights[i]->intensity;
-            SetShaderValue(shader, lightsLocs[i][6], tempFloat, UNIFORM_FLOAT);
-            
-            switch (lights[i]->type)
-            {
-                case LIGHT_POINT:
-                {
-                    tempFloat[0] = lights[i]->position.x;
-                    tempFloat[1] = lights[i]->position.y;
-                    tempFloat[2] = lights[i]->position.z;
-                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
-
-                    tempFloat[0] = lights[i]->radius;
-                    SetShaderValue(shader, lightsLocs[i][4], tempFloat, UNIFORM_FLOAT);
-            
-                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
-                    //glUniform1f(lightsLocs[i][4], lights[i]->radius);
-                } break;
-                case LIGHT_DIRECTIONAL:
-                {
-                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
-                    VectorNormalize(&direction);
-                    
-                    tempFloat[0] = direction.x;
-                    tempFloat[1] = direction.y;
-                    tempFloat[2] = direction.z;
-                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
-                    
-                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
-                } break;
-                case LIGHT_SPOT:
-                {
-                    tempFloat[0] = lights[i]->position.x;
-                    tempFloat[1] = lights[i]->position.y;
-                    tempFloat[2] = lights[i]->position.z;
-                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
-                    
-                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
-                    
-                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
-                    VectorNormalize(&direction);
-                    
-                    tempFloat[0] = direction.x;
-                    tempFloat[1] = direction.y;
-                    tempFloat[2] = direction.z;
-                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
-                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
-                    
-                    tempFloat[0] = lights[i]->coneAngle;
-                    SetShaderValue(shader, lightsLocs[i][7], tempFloat, UNIFORM_FLOAT);
-                    //glUniform1f(lightsLocs[i][7], lights[i]->coneAngle);
-                } break;
-                default: break;
-            }
-        }
-        else
-        {
-            tempInt[0] = 0;
-            SetShaderValue(shader, lightsLocs[i][0], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][0], 0);   // Light disabled
-        }
-    }
-}
+//// Get shader locations for lights (up to MAX_LIGHTS)
+//static void GetShaderLightsLocations(Shader shader)
+//{
+//    char locName[32] = "lights[X].\0";
+//    char locNameUpdated[64];
+//    
+//    for (int i = 0; i < MAX_LIGHTS; i++)
+//    {
+//        locName[7] = '0' + i;
+//        
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "enabled\0");
+//        lightsLocs[i][0] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "type\0");
+//        lightsLocs[i][1] = GetShaderLocation(shader, locNameUpdated);
+//
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "position\0");
+//        lightsLocs[i][2] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "direction\0");
+//        lightsLocs[i][3] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "radius\0");
+//        lightsLocs[i][4] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "diffuse\0");
+//        lightsLocs[i][5] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "intensity\0");
+//        lightsLocs[i][6] = GetShaderLocation(shader, locNameUpdated);
+//        
+//        locNameUpdated[0] = '\0';
+//        strcpy(locNameUpdated, locName);
+//        strcat(locNameUpdated, "coneAngle\0");
+//        lightsLocs[i][7] = GetShaderLocation(shader, locNameUpdated);
+//    }
+//}
+//
+//// Set shader uniform values for lights
+//// NOTE: It would be far easier with shader UBOs but are not supported on OpenGL ES 2.0
+//static void SetShaderLightsValues(Shader shader)
+//{
+//    int tempInt[8] = { 0 };
+//    float tempFloat[8] = { 0.0f };
+//   
+//   fprintf(stderr, "FOOOOOP %d\n", lightsCount);
+//
+//    for (int i = 0; i < MAX_LIGHTS; i++)
+//    {
+//        if (i < lightsCount)
+//        {
+//            tempInt[0] = lights[i]->enabled;
+//            SetShaderValue(shader, lightsLocs[i][0], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][0], lights[i]->enabled);
+//            
+//            tempInt[0] = lights[i]->type;
+//            SetShaderValue(shader, lightsLocs[i][1], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][1], lights[i]->type);
+//            
+//            tempFloat[0] = (float)lights[i]->diffuse.r/255.0f;
+//            tempFloat[1] = (float)lights[i]->diffuse.g/255.0f;
+//            tempFloat[2] = (float)lights[i]->diffuse.b/255.0f;
+//            tempFloat[3] = (float)lights[i]->diffuse.a/255.0f;
+//            SetShaderValue(shader, lightsLocs[i][5], tempFloat, UNIFORM_VEC4);
+//            //glUniform4f(lightsLocs[i][5], (float)lights[i]->diffuse.r/255, (float)lights[i]->diffuse.g/255, (float)lights[i]->diffuse.b/255, (float)lights[i]->diffuse.a/255);
+//            
+//            tempFloat[0] = lights[i]->intensity;
+//            SetShaderValue(shader, lightsLocs[i][6], tempFloat, UNIFORM_FLOAT);
+//            
+//            switch (lights[i]->type)
+//            {
+//                case LIGHT_POINT:
+//                {
+//                    tempFloat[0] = lights[i]->position.x;
+//                    tempFloat[1] = lights[i]->position.y;
+//                    tempFloat[2] = lights[i]->position.z;
+//                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+//
+//                    tempFloat[0] = lights[i]->radius;
+//                    SetShaderValue(shader, lightsLocs[i][4], tempFloat, UNIFORM_FLOAT);
+//            
+//                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+//                    //glUniform1f(lightsLocs[i][4], lights[i]->radius);
+//                } break;
+//                case LIGHT_DIRECTIONAL:
+//                {
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                } break;
+//                case LIGHT_SPOT:
+//                {
+//                    tempFloat[0] = lights[i]->position.x;
+//                    tempFloat[1] = lights[i]->position.y;
+//                    tempFloat[2] = lights[i]->position.z;
+//                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+//                    
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                    
+//                    tempFloat[0] = lights[i]->coneAngle;
+//                    SetShaderValue(shader, lightsLocs[i][7], tempFloat, UNIFORM_FLOAT);
+//                    //glUniform1f(lightsLocs[i][7], lights[i]->coneAngle);
+//                } break;
+//                default: break;
+//            }
+//        }
+//        else
+//        {
+//            tempInt[0] = 0;
+//            SetShaderValue(shader, lightsLocs[i][0], tempInt, UNIFORM_INT); //glUniform1i(lightsLocs[i][0], 0);   // Light disabled
+//        }
+//    }
+//}
 
 // Calculate vector length
 float VectorLength(const Vector3 v)
