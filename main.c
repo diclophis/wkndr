@@ -166,6 +166,7 @@ int ptsname_r(int fd, char* buf, size_t buflen) {
 
 
 //#define MAX_LIGHTS 1 // Max lights supported by standard shader
+
 //// Light type
 //typedef struct LightData {
 //    unsigned int id;        // Light unique id
@@ -199,7 +200,6 @@ int ptsname_r(int fd, char* buf, size_t buflen) {
 ////----------------------------------------------------------------------------------
 //static Light CreateLight(int type, Vector3 position, Color diffuse); // Create a new light, initialize it and add to pool
 //static void DestroyLight(Light light);     // Destroy a light and take it out of the list
-//static void DrawLight(Light light);        // Draw light in 3D world
 //
 //static void GetShaderLightsLocations(Shader shader);    // Get shader locations for lights (up to MAX_LIGHTS)
 //static void SetShaderLightsValues(Shader shader);       // Set shader uniform values for lights
@@ -221,6 +221,9 @@ typedef struct {
     Vector3 target;
     Color color;
     bool enabled;
+    float radius;           // Light attenuation radius light intensity reduced with distance (world distance)
+    float intensity;        // Light intensity level
+    float coneAngle;        // Light cone max angle: LIGHT_SPOT
     
     // Shader locations
     int enabledLoc;
@@ -251,6 +254,7 @@ Light lights[MAX_LIGHTS] = { 0 };
 //----------------------------------------------------------------------------------
 Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader);   // Create a light and get shader locations
 void UpdateLightValues(Shader shader, Light light);         // Send light properties to shader
+static void DrawLight(Light light);        // Draw light in 3D world
 //void InitLightLocations(Shader shader, Light *light);     // Init light shader locations
 
 
@@ -290,6 +294,10 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
+        light.radius = 2.0;
+        light.intensity = 1.0;
+        light.coneAngle = 7.0;
+
 
 //                case LIGHT_DIRECTIONAL:
 //                {
@@ -861,13 +869,14 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
+  //startLighting
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
   //XSetShaderDefaultLocations(&standardShader);
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_COLOR_NAME);
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.3f, 0.3f, 0.3f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.015f, 0.015f, 0.015f, 1.0f }, UNIFORM_VEC4);
 
 	//int tempInt[8] = { 0 };
 	//float tempFloat[8] = { 0.0f };
@@ -885,17 +894,30 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 10000, 10000, 0 }, Vector3Zero(), WHITE, standardShader);
-  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 1000, 0 }, Vector3Zero(), WHITE, standardShader);
-  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){0.0f, 1000.0f, 0.0f}, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0.5, 3, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[0].enabled = true;
+
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 7, 1 }, Vector3Zero(), WHITE, standardShader);
+  lights[1].enabled = true;
+
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){7.0f, 5.0f, -3.0f}, Vector3Zero(), WHITE, standardShader);
+  lights[2].enabled = true;
+
+  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 0, 7, 11 }, Vector3Zero(), WHITE, standardShader);
+  lights[3].enabled = true;
+
+  UpdateLightValues(standardShader, lights[0]);
+  UpdateLightValues(standardShader, lights[1]);
+  UpdateLightValues(standardShader, lights[2]);
+  UpdateLightValues(standardShader, lights[3]);
+
+  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 10000, 10000, 0 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 1000, 0 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0] = CreateLight(LIGHT_SPOT, (Vector3){0.0f, 1000.0f, 0.0f}, Vector3Zero(), WHITE, standardShader);
 
   //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
   //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 330, 350, 370 }, Vector3Zero(), BLUE, standardShader);
 
-  //UpdateLightValues(standardShader, lights[0]);
-  //UpdateLightValues(standardShader, lights[1]);
-  //UpdateLightValues(standardShader, lights[2]);
-  //UpdateLightValues(standardShader, lights[3]);
 
   //////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
   //Light dirLight;
@@ -1177,10 +1199,13 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-	if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.0f, 16, 16, WHITE); }
-	if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.0f, 16, 16, RED); }
-	if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.0f, 16, 16, GREEN); }
-	if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.0f, 16, 16, BLUE); }
+	//if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.0f, 16, 16, WHITE); }
+	//if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.0f, 16, 16, RED); }
+	//if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.0f, 16, 16, GREEN); }
+	//if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.0f, 16, 16, BLUE); }
+  for (int i=0; i<MAX_LIGHTS; i++) {
+    DrawLight(lights[i]);
+  }
 
   //EndShaderMode();
 
@@ -1468,10 +1493,6 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 
     //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
-    //if (p_data->light) {
-    //  DrawLight(p_data->light);
-    //}
-
   //}
 
   return mrb_nil_value();
@@ -1951,40 +1972,40 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 //}
 
 //// Draw light in 3D world
-//void DrawLight(Light light)
-//{
-//    switch (light->type)
-//    {
-//        case LIGHT_POINT:
-//        {
-//            DrawSphereWires(light->position, 0.3f*light->intensity, 8, 8, (light->enabled ? light->diffuse : GRAY));
-//            
-//            DrawCircle3D(light->position, light->radius, (Vector3){ 0, 0, 0 }, 0.0f, (light->enabled ? light->diffuse : GRAY));
-//            DrawCircle3D(light->position, light->radius, (Vector3){ 1, 0, 0 }, 90.0f, (light->enabled ? light->diffuse : GRAY));
-//            DrawCircle3D(light->position, light->radius, (Vector3){ 0, 1, 0 },90.0f, (light->enabled ? light->diffuse : GRAY));
-//        } break;
-//        case LIGHT_DIRECTIONAL:
-//        {
-//            DrawLine3D(light->position, light->target, (light->enabled ? light->diffuse : GRAY));
-//            
-//            DrawSphereWires(light->position, 0.3f*light->intensity, 8, 8, (light->enabled ? light->diffuse : GRAY));
-//            DrawCubeWires(light->target, 0.3f, 0.3f, 0.3f, (light->enabled ? light->diffuse : GRAY));
-//        } break;
-//        case LIGHT_SPOT:
-//        {
-//            DrawLine3D(light->position, light->target, (light->enabled ? light->diffuse : GRAY));
-//            
-//            Vector3 dir = VectorSubtract(light->target, light->position);
-//            VectorNormalize(&dir);
-//            
-//            DrawCircle3D(light->position, 0.5f, dir, 0.0f, (light->enabled ? light->diffuse : GRAY));
-//            
-//            //DrawCylinderWires(light->position, 0.0f, 0.3f*light->coneAngle/50, 0.6f, 5, (light->enabled ? light->diffuse : GRAY));
-//            DrawCubeWires(light->target, 0.3f, 0.3f, 0.3f, (light->enabled ? light->diffuse : GRAY));
-//        } break;
-//        default: break;
-//    }
-//}
+void DrawLight(Light light)
+{
+    switch (light.type)
+    {
+        case LIGHT_POINT:
+        {
+            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+            
+            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 0, 0 }, 0.0f, (light.enabled ? light.color : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 1, 0, 0 }, 90.0f, (light.enabled ? light.color : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 1, 0 },90.0f, (light.enabled ? light.color : GRAY));
+        } break;
+        case LIGHT_DIRECTIONAL:
+        {
+            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
+            
+            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
+        } break;
+        case LIGHT_SPOT:
+        {
+            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
+            
+            Vector3 dir = VectorSubtract(light.target, light.position);
+            VectorNormalize(&dir);
+            
+            DrawCircle3D(light.position, 0.5f, dir, 0.0f, (light.enabled ? light.color : GRAY));
+            
+            //DrawCylinderWires(light->position, 0.0f, 0.3f*light->coneAngle/50, 0.6f, 5, (light->enabled ? light->diffuse : GRAY));
+            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
+        } break;
+        default: break;
+    }
+}
 
 //// Get shader locations for lights (up to MAX_LIGHTS)
 //static void GetShaderLightsLocations(Shader shader)
