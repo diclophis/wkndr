@@ -17,7 +17,7 @@ Wkndr.camp { |sl|
 }
 
 Wkndr.play { |gl|
-  gl.lookat(1, 1.0, 3.0, 2.0, 0.0, 0.0, 0.01, 75.0)
+  gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
 
   total_msg = 0
 

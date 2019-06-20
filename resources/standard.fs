@@ -48,27 +48,51 @@ const float glossiness = 0.0001;
 
 vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
 {
-    vec3 surfacePos = vec3(vec4(fragPosition, 1.0));
-    vec3 surfaceToLight = l.position - surfacePos;
+    //vec3 surfacePos = vec3(vec4(fragPosition, 1.0));
+    //vec3 surfaceToLight = l.position - surfacePos;
 
-    //TODO: backport enhanced lighting model
-    //l.intensity = 1.0;
-    //l.radius = 2.0;
+    ////TODO: backport enhanced lighting model
+    ////l.intensity = 1.0;
+    ////l.radius = 2.0;
 
-    // Diffuse shading
-    float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
+    //// Diffuse shading
+    //float brightness = clamp(float(dot(n, surfaceToLight)/(length(surfaceToLight)*length(n))), 0.0, 1.0);
+    //float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
+    //
+    ////////// Specular shading
+    //float spec = 0.0;
+    //if (diff > 0.0)
+    //{
+    //    vec3 h = normalize(-l.target + v);
+    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3;
+    //}
+
+    //vec3 actualR = (diff*l.color.rgb + spec*s.rgb);
+    //return actualR;
+
+    //mat3 normalMatrix = transpose(inverse(mat3(model)));
+    //vec3 normal = normalize(normalMatrix * fragNormal);
+
+    //calculate the location of this fragment (pixel) in world coordinates
+    //vec3 fragPosition = vec3(model * vec4(fragVert, 1));
+
+    //calculate the vector from this pixels surface to the light source
+    vec3 surfaceToLight = l.position - fragPosition;
+
+    //calculate the cosine of the angle of incidence
+    float brightness = dot(n, surfaceToLight) / (length(surfaceToLight) * length(n));
+    brightness = clamp(brightness, 0, 1);
+
+    //calculate final color of the pixel, based on:
+    // 1. The angle of incidence: brightness
+    // 2. The color/intensities of the light: light.intensities
+    // 3. The texture and texture coord: texture(tex, fragTexCoord)
+    //vec4 surfaceColor = texture(tex, fragTexCoord);
+    //return (brightness * l.intensity * s);
+
     float diff = 1.0/dot(surfaceToLight/l.radius, surfaceToLight/l.radius)*brightness*l.intensity;
-    
-    //////// Specular shading
-    float spec = 0.0;
-    if (diff > 0.0)
-    {
-        vec3 h = normalize(-l.target + v);
-        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3;
-    }
 
-    vec3 actualR = (diff*l.color.rgb + spec*s.rgb);
-    return actualR;
+    return (diff * l.color.rgb);
 }
 
 
@@ -107,25 +131,25 @@ vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
 
     //vec3 lightDir = normalize(-l.direction);
     vec3 lightDir = -normalize(l.target - l.position);
-    
+
     //l.intensity = 1.00;
     //l.coneAngle = 7.0;
 
     // Diffuse shading
     float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
-    
+
     // Spot attenuation
     float attenuation = clamp(float(dot(n, lightToSurface)), 0.0, 1.0);
     attenuation = dot(lightToSurface, -lightDir);
-    
+
     float lightToSurfaceAngle = degrees(acos(attenuation));
     if (lightToSurfaceAngle > l.coneAngle) attenuation = 0.0;
-    
+
     float falloff = (l.coneAngle - lightToSurfaceAngle)/l.coneAngle;
-    
+
     // Combine diffuse and attenuation
     float diffAttenuation = diff*attenuation;
-    
+
     // Specular shading
     float spec = 0.0;
     if (diffAttenuation > 0.0)
@@ -133,7 +157,7 @@ vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
         vec3 h = normalize(lightDir + v);
         spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3; //s
     }
-    
+
     return (falloff*(diffAttenuation*l.color.rgb + spec*s.rgb));
 }
 
