@@ -1044,7 +1044,8 @@ HEREDOC
                name.include?("install") ||
                name.include?("Bundle") ||
                name.include?("Critical") ||
-               name.include?("Build")
+               name.include?("Build") ||
+               name.include?("i18n")
           next
         end
 
