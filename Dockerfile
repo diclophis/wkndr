@@ -63,9 +63,9 @@ RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
 
 COPY main.c /var/lib/wkndr/
 COPY lib /var/lib/wkndr/lib
-COPY resources /var/lib/wkndr/resources
 RUN /var/lib/wkndr/iterate-server.sh
 
+COPY resources /var/lib/wkndr/resources
 RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/

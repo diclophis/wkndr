@@ -11,19 +11,19 @@
 #define RAYGUI_IMPLEMENTATION 1
 
 //#define RLGL_IMPLEMENTATION 1
-#define GRAPHICS_API_OPENGL_33 1
-
+//#define GRAPHICS_API_OPENGL_33 1
+//
 #if defined(GRAPHICS_API_OPENGL_33)
-    #if defined(__APPLE__)
-        #include <OpenGL/gl3.h>         // OpenGL 3 library for OSX
-        #include <OpenGL/gl3ext.h>      // OpenGL 3 extensions library for OSX
-    #else
-        #if defined(RLGL_STANDALONE)
-            #include "glad.h"           // GLAD extensions loading library, includes OpenGL headers
-        #else
+//    #if defined(__APPLE__)
+//        #include <OpenGL/gl3.h>         // OpenGL 3 library for OSX
+//        #include <OpenGL/gl3ext.h>      // OpenGL 3 extensions library for OSX
+//    #else
+//        #if defined(RLGL_STANDALONE)
+//            #include "glad.h"           // GLAD extensions loading library, includes OpenGL headers
+//        #else
             #include "external/glad.h"  // GLAD extensions loading library, includes OpenGL headers
-        #endif
-    #endif
+//        #endif
+//    #endif
 #endif
 
 #if defined(GRAPHICS_API_OPENGL_ES2)

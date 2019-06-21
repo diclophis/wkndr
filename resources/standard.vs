@@ -1,5 +1,7 @@
 #version 330
 
+precision mediump float;
+
 // Input vertex attributes
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;

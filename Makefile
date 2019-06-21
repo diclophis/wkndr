@@ -65,14 +65,14 @@ endif
 RAYLIB_TARGET_DEFINED="PLATFORM_DESKTOP"
 ifeq ($(TARGET),desktop)
   #CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
-  CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -g3 -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
+  CFLAGS=-DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) -g3 -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
 else
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=2 -s NO_EXIT_RUNTIME=0 -g4 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   EMSCRIPTEN_FLAGS=-s ASSERTIONS=0 -s NO_EXIT_RUNTIME=0 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
-  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -s USE_GLFW=3 -Imruby/include -Iraylib-src -I$(build)
+  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2 -s USE_GLFW=3 -s USE_WEBGL2=1 -Imruby/include -Iraylib-src -I$(build)
 endif
 
 run: $(target) $(sources)

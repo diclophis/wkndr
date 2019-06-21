@@ -217,7 +217,7 @@ class Connection
               if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
                 response_bytes = server.match_dispatch(filename)
 
-                self.socket && self.socket.write(response_bytes) {
+                self.socket && response_bytes && self.socket.write(response_bytes) {
                   self.halt!
                 }
               else
