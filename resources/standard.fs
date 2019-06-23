@@ -1,6 +1,7 @@
-#version 330
+#version 300 es
+//#version 330
 
-precision mediump float;
+precision lowp float;
 
 // Input vertex attributes (from vertex shader)
 in vec3 fragPosition;
@@ -73,7 +74,7 @@ vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
 
     //calculate the cosine of the angle of incidence
     float brightness = dot(n, surfaceToLight) / (length(surfaceToLight) * length(n));
-    brightness = clamp(brightness, 0, 1);
+    //TODO: brightness = clamp(brightness, 0, 1);
 
     //calculate final color of the pixel, based on:
     // 1. The angle of incidence: brightness
@@ -90,7 +91,8 @@ vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, vec3 s)
     vec3 lightDir = -normalize(l.target - l.position);
 
     // Diffuse shading
-    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+    //TODO: float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+    float diff = (float(dot(n, lightDir)))*l.intensity;
 
     //// Specular shading
     //float spec = 0.0;
@@ -118,10 +120,12 @@ vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
     vec3 lightDir = -normalize(l.target - l.position);
 
     // Diffuse shading
-    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+    //float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+    float diff = (float(dot(n, lightDir)))*l.intensity;
 
     // Spot attenuation
-    float attenuation = clamp(float(dot(n, lightToSurface)), 0.0, 1.0);
+    //float attenuation = clamp(float(dot(n, lightToSurface)), 0.0, 1.0);
+    float attenuation = (float(dot(n, lightToSurface)));
     attenuation = dot(lightToSurface, -lightDir);
 
     float lightToSurfaceAngle = degrees(acos(attenuation));

@@ -6,8 +6,8 @@ set -x
 cd /root/emsdk
 
 ./emsdk list
-./emsdk activate sdk-1.38.27-64bit
-#./emsdk activate latest
+#./emsdk activate sdk-1.38.36-64bit
+./emsdk activate latest
 
 . ./emsdk_env.sh
 
@@ -18,4 +18,4 @@ echo 'int main() {' >> /var/tmp/emscripten.c
 echo 'printf("hello, world %d!\n", PATH_MAX);' >> /var/tmp/emscripten.c
 echo 'return 0; }' >> /var/tmp/emscripten.c
 
-emcc -o /var/tmp/emscripten.html /var/tmp/emscripten.c
+emcc -lm -o /var/tmp/emscripten.html /var/tmp/emscripten.c

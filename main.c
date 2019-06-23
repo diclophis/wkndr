@@ -35,7 +35,7 @@
 #if defined(GRAPHICS_API_OPENGL_ES3)
     #include <EGL/egl.h>                // EGL library
     #include <GLES3/gl3.h>              // OpenGL ES 2.0 library
-    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
+    #include <GLES3/gl2ext.h>           // OpenGL ES 2.0 extensions library
 #endif
 
 #include <raylib.h>
@@ -1519,9 +1519,9 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  if (draw_wires) {
-    //DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
-  }
+  //if (draw_wires) {
+    DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
+  //}
 
   //TODO, mode switch
   //else {
@@ -1529,7 +1529,7 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
     //fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
 
-    DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
+    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
 
     //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
   //}

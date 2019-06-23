@@ -1,6 +1,6 @@
 #
 
-EMSDK_VERSION="1.38.27"
+#EMSDK_VERSION="1.38.36"
 
 require_relative './mruby.rb'
 
@@ -26,9 +26,13 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.gem :github => "yui-knk/mruby-set"
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
-  conf.cc.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
-  conf.linker.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
-  conf.archiver.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emar"
+  #conf.cc.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
+  #conf.linker.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
+  #conf.archiver.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emar"
+
+  conf.cc.command = "/root/emsdk/fastcomp/emscripten/emcc"
+  conf.linker.command = "/root/emsdk/fastcomp/emscripten/emcc"
+  conf.archiver.command = "/root/emsdk/fastcomp/emscripten/emar"
 
   #conf.enable_cxx_exception
   conf.disable_cxx_exception

@@ -21,7 +21,7 @@ else
   mruby_static_lib="mruby/build/emscripten/lib/libmruby.a"
 endif
 
-raylib_static_lib_deps=$(shell find raylib-src -type f)
+raylib_static_lib_deps=$(shell find raylib-src -type f 2> /dev/null)
 
 ifeq ($(TARGET),desktop)
   raylib_static_lib=$(build)/libraylib.a
@@ -72,7 +72,7 @@ ifeq ($(TARGET),desktop)
 else
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=2 -s NO_EXIT_RUNTIME=0 -g4 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   EMSCRIPTEN_FLAGS=-s ASSERTIONS=0 -s NO_EXIT_RUNTIME=0 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
-  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2 -s USE_GLFW=3 -s USE_WEBGL2=1 -Imruby/include -Iraylib-src -I$(build)
+  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -Imruby/include -Iraylib-src -I$(build)
 endif
 
 run: $(target) $(sources)
@@ -83,7 +83,7 @@ $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -g4 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://wkndr.computer/ --preload-file resources
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -g4 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://wkndr.computer/ --preload-file resources
 endif
 
 $(build)/test.yml: $(target) config.ru
@@ -114,7 +114,7 @@ else
 	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -B -e -j
 endif
 
-cheese: $(mruby_static_lib)
+build-mruby: $(mruby_static_lib)
 
 $(mrbc): $(mruby_static_lib)
 

@@ -16,6 +16,8 @@ cd emsdk
 
 ./emsdk list
 
-./emsdk install emscripten-1.38.27
+./emsdk install latest
+#emscripten-1.38.36
+#./emsdk install emscripten-1.38.36
 #./emsdk install sdk-master-64bit
-./emsdk install sdk-1.38.27-64bit
+#./emsdk install latest sdk-1.38.36-64bit

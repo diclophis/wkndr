@@ -3,3 +3,6 @@ build
 mruby
 vendor
 release
+*.o
+**/*.o
+**/**/*.o

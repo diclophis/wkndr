@@ -1,6 +1,7 @@
-#version 330
+#version 300 es
+//#version 330
 
-precision mediump float;
+precision lowp float;
 
 // Input vertex attributes
 in vec3 vertexPosition;
