@@ -51,14 +51,15 @@ RUN cd /var/lib/wkndr && ls -l && \
     git submodule update && \
     cd mruby && \
     git fetch && \
-    git checkout 7c91efc1ffda769a5f1a872c646c82b00698f1b8
+    git checkout cb3ee2d0501612f406e2d44b1e6d55b18861b1e1
 
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 
+RUN /var/lib/wkndr/iterate-web.sh build-mruby
+
 COPY raylib-src /var/lib/wkndr/raylib-src
 RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
-RUN /var/lib/wkndr/iterate-web.sh cheese
 RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
 
 COPY main.c /var/lib/wkndr/

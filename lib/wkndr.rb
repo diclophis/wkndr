@@ -89,10 +89,10 @@ class Wkndr < Thor
   end
 
   def self.start_server(stack, *args)
-    log!(:StartServer)
+    log!(:StartServer, args)
 
-    if server = self.server(*args)
-      stack.up(server)
+    if a_server = self.mk_server(*args)
+      stack.up(a_server)
     end
 
     log!(:StartedServer)
@@ -100,7 +100,7 @@ class Wkndr < Thor
     stack
   end
 
-  def self.server(directory = "public")
+  def self.mk_server(directory = "public")
     log!(:wtfclass, self, self.class)
 
     unless self.to_s == "ClientSide"
@@ -113,7 +113,7 @@ class Wkndr < Thor
 
   desc "server", ""
   def server(*args)
-    log!(:outerserver)
+    log!(:outerserver, args)
 
     stack = StackBlocker.new(true)
 
@@ -181,6 +181,10 @@ class Wkndr < Thor
       desc "startup", ""
       def startup(*args)
         server_or_client_side = self.class.to_s
+
+        log!(:startup_eval_class, args)
+
+        args.shift
 
         case server_or_client_side
           when "ClientSide"

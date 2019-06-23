@@ -32,6 +32,12 @@
     #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
 #endif
 
+#if defined(GRAPHICS_API_OPENGL_ES3)
+    #include <EGL/egl.h>                // EGL library
+    #include <GLES3/gl3.h>              // OpenGL ES 2.0 library
+    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
+#endif
+
 #include <raylib.h>
 #include <raymath.h>
 #include <raygui.h>

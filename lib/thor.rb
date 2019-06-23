@@ -678,7 +678,7 @@ class Thor
       arguments = []
 
       args.each do |item|
-        break if item =~ /^-/
+        #break if item =~ /^-/
         arguments << item
       end
 
@@ -3166,7 +3166,7 @@ class Thor
     # Retrieve the command name from given args.
     def retrieve_command_name(args) #:nodoc:
       meth = args.first.to_s unless args.empty?
-      args.shift if meth && (map[meth] || meth !~ /^\-/)
+      args.shift if meth && (map[meth]) #TODO:  || !(meth ~= /^\-/))
     end
     alias_method :retrieve_task_name, :retrieve_command_name
 
