@@ -241,7 +241,12 @@
 #endif
 
 #if defined(PLATFORM_WEB)
-    #define GLFW_INCLUDE_ES2        // GLFW3: Enable OpenGL ES 2.0 (translated to WebGL)
+    #if defined(GRAPHICS_API_OPENGL_ES2)
+      #define GLFW_INCLUDE_ES2        // GLFW3: Enable OpenGL ES 2.0 (translated to WebGL)
+    #elif defined(GRAPHICS_API_OPENGL_ES3)
+      #define GLFW_INCLUDE_NONE       // Disable the standard OpenGL header inclusion on GLFW3
+    #endif
+
     #include <GLFW/glfw3.h>         // GLFW3 library: Windows, OpenGL context and Input management
     #include <sys/time.h>           // Required for: timespec, nanosleep(), select() - POSIX
 
@@ -2411,7 +2416,7 @@ static bool InitGraphicsDevice(int width, int height)
     displayHeight = screenHeight;
 #endif  // PLATFORM_WEB
 
-    glfwDefaultWindowHints();                       // Set default windows hints:
+    //glfwDefaultWindowHints();                       // Set default windows hints:
     //glfwWindowHint(GLFW_RED_BITS, 8);             // Framebuffer red color component bits
     //glfwWindowHint(GLFW_GREEN_BITS, 8);           // Framebuffer green color component bits
     //glfwWindowHint(GLFW_BLUE_BITS, 8);            // Framebuffer blue color component bits
@@ -2465,8 +2470,18 @@ static bool InitGraphicsDevice(int width, int height)
 #endif
         //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE); // Request OpenGL DEBUG context
     }
+    else if (rlGetVersion() == OPENGL_ES_30)                    // Request OpenGL ES 3.0 context
+    {
+        TraceLog(LOG_WARNING, "USING OPENGL_ES_30");
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Profiles Hint: Only 3.3 and above!
+        //glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        //glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);     // Alternative: GLFW_EGL_CONTEXT_API (ANGLE)
+    }
     else if (rlGetVersion() == OPENGL_ES_20)                    // Request OpenGL ES 2.0 context
     {
+        TraceLog(LOG_WARNING, "USING OPENGL_ES_20");
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);

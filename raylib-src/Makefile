@@ -148,7 +148,7 @@ endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # Emscripten required variables
     EMSDK_PATH          ?= D:/emsdk
-    EMSCRIPTEN_VERSION  ?= 1.38.31
+    EMSCRIPTEN_VERSION  ?= 1.38.36
     CLANG_VERSION       = e$(EMSCRIPTEN_VERSION)_64bit
     PYTHON_VERSION      = 2.7.13.1_64bit\python-2.7.13.amd64
     NODE_VERSION        = 8.9.1_64bit
@@ -197,8 +197,8 @@ ifeq ($(PLATFORM),PLATFORM_RPI)
     GRAPHICS = GRAPHICS_API_OPENGL_ES2
 endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
-    # On HTML5 OpenGL ES 2.0 is used, emscripten translates it to WebGL 1.0
-    GRAPHICS = GRAPHICS_API_OPENGL_ES2
+    # On HTML5 OpenGL ES 3.0 is used, emscripten translates it to WebGL 2.0
+    GRAPHICS = GRAPHICS_API_OPENGL_ES3
 endif
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
     # By default use OpenGL ES 2.0 on Android
@@ -287,7 +287,7 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     # --profiling                # include information for code profiling
     # --memory-init-file 0       # to avoid an external memory initialization code file (.mem)
     # --preload-file resources   # specify a resources folder for data compilation
-    CFLAGS += -s USE_GLFW=3
+    CFLAGS += -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s WASM=1
     ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
         CFLAGS += -s ASSERTIONS=1 --profiling
     endif
