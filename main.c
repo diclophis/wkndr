@@ -925,24 +925,24 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
   //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 7, 0 }, Vector3Zero(), RED, standardShader);
-  lights[0].intensity = 0.1;
-  lights[0].radius = 10.0;
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0,3, 0 }, Vector3Zero(), RED, standardShader);
+  lights[0].intensity = 1.0;
+  lights[0].radius = 1.0;
   lights[0].enabled = true;
 
   //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 7, 1 }, Vector3Zero(), WHITE, standardShader);
-  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 100, 0 }, Vector3Zero(), WHITE, standardShader);
-  lights[1].intensity = 0.7;
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 5, 3, 7 }, Vector3Zero(), WHITE, standardShader);
+  lights[1].intensity = 0.001;
   lights[1].enabled = true;
 
-  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){7.0f, 5.0f, -3.0f}, Vector3Zero(), GREEN, standardShader);
-  lights[2].intensity = 0.5;
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){3.0f, 3.0f, -3.0f}, (Vector3){2.0f, 2.0f, -2.0f}, BLUE, standardShader);
+  lights[2].intensity = 1.0;
   lights[2].coneAngle = 3.00;
   lights[2].enabled = true;
 
-  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 0, 7, 11 }, Vector3Zero(), WHITE, standardShader);
-  lights[3].intensity = 0.007;
-  lights[3].radius = 100.0;
+  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
+  lights[3].intensity = 0.5;
+  lights[3].radius = 3.0;
   lights[3].enabled = true;
 
   UpdateLightValues(standardShader, lights[0]);
@@ -1236,9 +1236,9 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-  //for (int i=0; i<MAX_LIGHTS; i++) {
-  //  DrawLight(lights[i]);
-  //}
+  for (int i=0; i<MAX_LIGHTS; i++) {
+    DrawLight(lights[i]);
+  }
 
   EndMode3D();
 
@@ -2014,7 +2014,7 @@ void DrawLight(Light light)
             
             DrawCircle3D(light.position, 0.5f, dir, 0.0f, (light.enabled ? light.color : GRAY));
             
-            //DrawCylinderWires(light->position, 0.0f, 0.3f*light->coneAngle/50, 0.6f, 5, (light->enabled ? light->diffuse : GRAY));
+            //DrawCylinderWires(light.position, 0.0f, 0.3f*light.coneAngle/50, 0.6f, 5, (light.enabled ? light.color : GRAY));
             DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
         } break;
         default: break;

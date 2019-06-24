@@ -71,7 +71,8 @@ vec3 ComputeLightPoint(Light l, vec3 n, vec3 v, vec3 s)
 
     //calculate the cosine of the angle of incidence
     float brightness = dot(n, surfaceToLight) / (length(surfaceToLight) * length(n));
-    //TODO: brightness = clamp(brightness, 0, 1);
+    //TODO:
+    brightness = clamp(brightness, 0.0, 1.0);
 
     //calculate final color of the pixel, based on:
     // 1. The angle of incidence: brightness
@@ -88,8 +89,9 @@ vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, vec3 s)
     vec3 lightDir = -normalize(l.target - l.position);
 
     // Diffuse shading
-    //TODO: float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
-    float diff = (float(dot(n, lightDir)))*l.intensity;
+    //TODO: 
+    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+    //float diff = (float(dot(n, lightDir)))*l.intensity;
 
     //// Specular shading
     //float spec = 0.0;
@@ -108,17 +110,13 @@ vec3 ComputeLightDirectional(Light l, vec3 n, vec3 v, vec3 s)
 
 vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
 {
-    //vec3 surfacePos = vec3(modelMatrix*vec4(fragPosition, 1));
-    //vec3 surfacePos = vec3(vec4(fragPosition, 1.0));
-    //vec3 lightToSurface = l.position - surfacePos;
-
     vec3 lightToSurface = normalize(fragPosition - l.position);
 
     vec3 lightDir = -normalize(l.target - l.position);
 
     // Diffuse shading
-    //float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
-    float diff = (float(dot(n, lightDir)))*l.intensity;
+    float diff = clamp(float(dot(n, lightDir)), 0.0, 1.0)*l.intensity;
+    //float diff = (float(dot(n, lightDir)))*l.intensity;
 
     // Spot attenuation
     //float attenuation = clamp(float(dot(n, lightToSurface)), 0.0, 1.0);
@@ -134,21 +132,19 @@ vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
     float diffAttenuation = diff*attenuation;
 
     //// Specular shading
-    //float spec = 0.0;
-    //if (diffAttenuation > 0.0)
-    //{
-    //    vec3 h = normalize(lightDir + v);
-    //    spec = pow(abs(dot(n, h)), 3.0 + glossiness)*0.3; //s
-    //}
-    //+ spec*s.rgb));
+    float spec = 0.0;
+    if (diffAttenuation > 0.0)
+    {
+        vec3 h = normalize(lightDir + v);
+        spec = pow(abs(dot(n, h)), 3.0 + glossiness)*1.0;
+    }
 
-    return (falloff*(diffAttenuation*l.color.rgb));
+    return (falloff*(diffAttenuation*l.color.rgb + spec*s.rgb));
 }
 
 
 void main()
 {
-  //vec4 texelColor = vec4(0.0);
   vec3 lighting = vec3(0.0);
   vec3 lightDot = vec3(0.0);
   vec3 specular = texture(texture0, fragTexCoord).rgb;
@@ -167,41 +163,16 @@ void main()
           else if(lights[i].type == LIGHT_SPOT) lighting += ComputeLightSpot(lights[i], n, v, specular);
 
           //float NdotL = max(dot(n, lighting), 0.0);
-          //lightDot += lights[i].color.rgb*NdotL;
+          ////lightDot += lights[i].color.rgb*NdotL;
+          //lightDot += NdotL;
       }
   }
-
-  //finalColor = vec4(lighting, 1.0);
-
-  //*(vec4(specular, 1.0));
-  //finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0));
-
-  //finalColor = (vec4(lighting, 1.0)*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
-  //finalColor = (vec4(lighting, 1.0)*((vec4(specular, 1.0))*vec4(lightDot, 1.0)));
-  
-  //brokefinalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-  //finalColor = vec4(specular*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-  //finalColor += colDiffuse*(ambient/1.0);
-
-  // Gamma correction
-  //finalColor = pow(finalColor, vec4(1.0/1.1));
-
-  //// Calculate final fragment color
-  ////finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-  //finalColor = vec4(texelColor.rgb*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
-  //finalColor += colDiffuse*(ambient/1.0);
-
-  //////// TODO: Gamma correction
-  //finalColor = pow(finalColor, vec4(1.0/2.0));
 
   //absolute diffuse color
   //finalColor = colDiffuse;
 
   //everything one solid color
   //finalColor = vec4(1.0, 0.0, 1.0, 0.5);
-
-  ////color of default raylib model
-  //finalColor = vec4(spec, 1.0);
 
   //just ambient
   //finalColor = ambient;
@@ -211,12 +182,21 @@ void main()
 
   //just lighting
   //finalColor = vec4(lighting, 1.0);
-  
-  //finalColor = vec4(specular*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
 
-  //broken...
-  //finalColor = fragColor;
+  //just lightDot
+  //finalColor = vec4(lightDot, 1.0);
 
-  //finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0)) * colDiffuse;
-  finalColor = vec4(lighting, 1.0)*colDiffuse;
+  //no texture
+  //finalColor = vec4(lighting, 1.0)*colDiffuse;
+
+  //with texture
+  finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0)) * colDiffuse;
+  //finalColor = (vec4(lighting, 1.0)*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+  //finalColor = (vec4(lighting, 1.0)*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+ 
+  //with ambient
+  //finalColor += colDiffuse*(ambient/1.0);
+
+  // Gamma correction
+  //finalColor = pow(finalColor, vec4(1.0/1.0));
 }
