@@ -791,11 +791,8 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
 #endif
       material.name = my_strdup(namebuf, (unsigned int) (line_end - token));
 
-      fprintf(stderr, "MTLLINE");
-
       /* Add material to material table */
       if (material_table) {
-        fprintf(stderr, "WTF- %s -WTF", material.name);
         hash_table_set(material.name, num_materials, material_table);
       }
 
@@ -950,8 +947,6 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
     /* @todo { unknown parameter } */
   }
 
-  fprintf(stderr, "ENDLINE");
-
   if (material.name) {
     /* Flush last material element */
     materials = tinyobj_material_add(materials, num_materials, &material);
@@ -964,8 +959,6 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
   if (linebuf) {
     TINYOBJ_FREE(linebuf);
   }
-
-  fprintf(stderr, "MTLOK");
 
   return TINYOBJ_SUCCESS;
 }
@@ -1147,7 +1140,6 @@ static int parseLine(Command *command, const char *p, unsigned int p_len,
 
     command->group_name = command->material_name;
     command->group_name_len = command->material_name_len;
-    //fprintf(stderr, "TINYOBJ: usemtl\n");
 
     command->type = COMMAND_USEMTL;
 
@@ -1316,13 +1308,11 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
     }
   }
 
-  fprintf(stderr, "START2");
   /* line_infos are not used anymore. Release memory. */
   if (line_infos) {
     TINYOBJ_FREE(line_infos);
   }
 
-  fprintf(stderr, "START3");
   /* Load material(if exits) */
   if (mtllib_line_index >= 0 && commands[mtllib_line_index].mtllib_name &&
       commands[mtllib_line_index].mtllib_name_len > 0) {
@@ -1341,7 +1331,6 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
   }
 
   /* Construct attributes */
-  fprintf(stderr, "START4");
   {
     unsigned int v_count = 0;
     unsigned int n_count = 0;
@@ -1391,12 +1380,8 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
           memcpy((void*) material_name_null_term, (const void*) commands[i].material_name, commands[i].material_name_len);
           material_name_null_term[commands[i].material_name_len] = 0;
 
-          //fprintf(stderr, "WTFABC %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
-
           if (hash_table_exists(material_name_null_term, &material_table)) {
             material_id = (int)hash_table_get(material_name_null_term, &material_table);
-        
-            //fprintf(stderr, "WTF123123123123 %s %d %d\n\n", material_name_null_term, commands[i].material_name_len, material_id);
           } else {
             material_id = -1;
           }
@@ -1431,7 +1416,6 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
         for (k = 0; k < commands[i].num_f_num_verts; k++) {
           attrib->material_ids[face_count + k] = material_id;
-          //fprintf(stderr, "SET %d = %d SET", (face_count + k), material_id);
           attrib->face_num_verts[face_count + k] = commands[i].f_num_verts[k];
         }
 
@@ -1441,7 +1425,6 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
     }
   }
 
-  fprintf(stderr, "START5");
   /* 5. Construct shape information. */
   {
     unsigned int face_count = 0;

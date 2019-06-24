@@ -2775,9 +2775,7 @@ static Model LoadOBJ(const char *fileName)
         else TraceLog(LOG_INFO, "[%s] Model data loaded successfully: %i meshes / %i materials", fileName, meshCount, materialCount);
 
         // Init model meshes array
-        // TODO: Support multiple meshes... in the meantime, only one mesh is returned
         model.meshCount = meshCount;
-        //model.meshCount = 1;
         model.meshes = (Mesh *)RL_MALLOC(model.meshCount*sizeof(Mesh));
 
         // Init model materials array
@@ -2816,82 +2814,37 @@ static Model LoadOBJ(const char *fileName)
 
             int total_faces = shape.length;
             for (int ff = 0; ff<total_faces; ff++) {
-              //int f = ff; //shape.face_offset + ff;
               int f = shape.face_offset + ff;
-              //int idx_a = (3 * shape.face_offset) + 0 * f;
-              //int idx_b = (3 * shape.face_offset) + 1 * f;
-              //int idx_c = (3 * shape.face_offset) + 2 * f;
-              
-              //int f = ff; //shape.face_offset + ff;
-              //int idx_a = 3 * f + 0 + shape.face_offset;
-              //int idx_b = 3 * f + 1 + shape.face_offset;
-              //int idx_c = 3 * f + 2 + shape.face_offset;
-
-              //int f = shape.face_offset + ff;
               int idx_a = 3 * f + 0;
               int idx_b = 3 * f + 1;
               int idx_c = 3 * f + 2;
 
-              //int idx_a = 0 + (shape.face_offset);
-              //int idx_b = 1 + (shape.face_offset);
-              //int idx_c = 2 + (shape.face_offset);
-
-              //int idx_a = 0;
-              //int idx_b = 1;
-              //int idx_c = 2;
-
-              //int idx_a = shape.face_offset + 3 * ff + 0;
-              //int idx_b = shape.face_offset + 3 * ff + 1;
-              //int idx_c = shape.face_offset + 3 * ff + 2;
-
-              //int f = shape.face_offset + ff;
-              //int f = ff; //shape.face_offset;
-
-            //for (int f = 0; f < attrib.num_faces; f++)
-            //{
-                
-                // Get indices for the face
-                //tinyobj_vertex_index_t idx0 = attrib.faces[3*f + 0 + shape.face_offset];
-                //tinyobj_vertex_index_t idx1 = attrib.faces[3*f + 1 + shape.face_offset];
-                //tinyobj_vertex_index_t idx2 = attrib.faces[3*f + 2 + shape.face_offset];
-
-                //tinyobj_vertex_index_t idx0 = attrib.faces[0 + shape.face_offset * ff];
-                //tinyobj_vertex_index_t idx1 = attrib.faces[1 + shape.face_offset * ff];
-                //tinyobj_vertex_index_t idx2 = attrib.faces[2 + shape.face_offset * ff];
-
-                //tinyobj_vertex_index_t idx0 = attrib.faces[0 + shape.face_offset];
-                //tinyobj_vertex_index_t idx1 = attrib.faces[1 + shape.face_offset];
-                //tinyobj_vertex_index_t idx2 = attrib.faces[2 + shape.face_offset];
-
-                tinyobj_vertex_index_t idx0 = attrib.faces[idx_a];
-                tinyobj_vertex_index_t idx1 = attrib.faces[idx_b];
-                tinyobj_vertex_index_t idx2 = attrib.faces[idx_c];
+              tinyobj_vertex_index_t idx0 = attrib.faces[idx_a];
+              tinyobj_vertex_index_t idx1 = attrib.faces[idx_b];
+              tinyobj_vertex_index_t idx2 = attrib.faces[idx_c];
               
-              TraceLog(LOG_WARNING, "Face %i == %i == %i // index: v %i/%i/%i . vt %i/%i/%i . vn %i/%i/%i\n", f, ff, shape.face_offset, idx0.v_idx, idx1.v_idx, idx2.v_idx, idx0.vt_idx, idx1.vt_idx, idx2.vt_idx, idx0.vn_idx, idx1.vn_idx, idx2.vn_idx);
+              //TraceLog(LOG_WARNING, "Face %i == %i == %i // index: v %i/%i/%i . vt %i/%i/%i . vn %i/%i/%i\n", f, ff, shape.face_offset, idx0.v_idx, idx1.v_idx, idx2.v_idx, idx0.vt_idx, idx1.vt_idx, idx2.vt_idx, idx0.vn_idx, idx1.vn_idx, idx2.vn_idx);
 
-                // TraceLog(LOG_DEBUG, "Face %i index: v %i/%i/%i . vt %i/%i/%i . vn %i/%i/%i\n", f, idx0.v_idx, idx1.v_idx, idx2.v_idx, idx0.vt_idx, idx1.vt_idx, idx2.vt_idx, idx0.vn_idx, idx1.vn_idx, idx2.vn_idx);
+              // Fill vertices buffer (float) using vertex index of the face
+              for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx0.v_idx*3 + v]; } vCount +=3;
+              for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx1.v_idx*3 + v]; } vCount +=3;
+              for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx2.v_idx*3 + v]; } vCount +=3;
 
-                // Fill vertices buffer (float) using vertex index of the face
-                for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx0.v_idx*3 + v]; } vCount +=3;
-                for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx1.v_idx*3 + v]; } vCount +=3;
-                for (int v = 0; v < 3; v++) { mesh.vertices[vCount + v] = attrib.vertices[idx2.v_idx*3 + v]; } vCount +=3;
+              // Fill texcoords buffer (float) using vertex index of the face
+              // NOTE: Y-coordinate must be flipped upside-down
+              if (attrib.num_texcoords) {
+                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
+                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
+                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];
+                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx1.vt_idx*2 + 1]; vtCount += 2;
+                mesh.texcoords[vtCount + 0] = attrib.texcoords[idx2.vt_idx*2 + 0];
+                mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx2.vt_idx*2 + 1]; vtCount += 2;
+              }
 
-                // Fill texcoords buffer (float) using vertex index of the face
-                // NOTE: Y-coordinate must be flipped upside-down
-                if (attrib.num_texcoords) {
-                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx0.vt_idx*2 + 0];
-                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx0.vt_idx*2 + 1]; vtCount += 2;
-                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx1.vt_idx*2 + 0];
-                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx1.vt_idx*2 + 1]; vtCount += 2;
-                  mesh.texcoords[vtCount + 0] = attrib.texcoords[idx2.vt_idx*2 + 0];
-                  mesh.texcoords[vtCount + 1] = 1.0f - attrib.texcoords[idx2.vt_idx*2 + 1]; vtCount += 2;
-                }
-
-                // Fill normals buffer (float) using vertex index of the face
-                for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx0.vn_idx*3 + v]; } vnCount +=3;
-                for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx1.vn_idx*3 + v]; } vnCount +=3;
-                for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx2.vn_idx*3 + v]; } vnCount +=3;
-            //}
+              // Fill normals buffer (float) using vertex index of the face
+              for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx0.vn_idx*3 + v]; } vnCount +=3;
+              for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx1.vn_idx*3 + v]; } vnCount +=3;
+              for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx2.vn_idx*3 + v]; } vnCount +=3;
             }
 
             model.meshes[m] = mesh;                 // Assign mesh data to model
@@ -2899,11 +2852,7 @@ static Model LoadOBJ(const char *fileName)
             if (model.materialCount) {
               // Assign mesh material for current mesh
               model.meshMaterial[m] = attrib.material_ids[shape.face_offset];
-              //, model.meshMaterial[m], attrib.material_ids[shape.face_offset]);
-              //AAA 0 0 0 BBBAAA 1 1 1 BBBAAA 2 2 2 BBBAAA 3 3 3 BBBINFO
             }
-            
-            //fprintf(stderr, "AAA %p == %d BBB", &model.meshMaterial, model.materialCount);
         }
 
         // Init model materials
@@ -2958,8 +2907,6 @@ static Model LoadOBJ(const char *fileName)
             model.materials[m].maps[MAP_EMISSION].color = (Color){ (float)(materials[m].emission[0]*255.0f), (float)(materials[m].emission[1]*255.0f), (float)(materials[m].emission[2]*255.0f), 255 }; //float emission[3];
 
             if (materials[m].displacement_texname != NULL) model.materials[m].maps[MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
-
-            //fprintf(stderr, "+++ %p == %d +++", &model.meshMaterial, model.materialCount);
         }
 
         tinyobj_attrib_free(&attrib);
