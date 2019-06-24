@@ -2371,14 +2371,10 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
 
     for (int i = 0; i < model.meshCount; i++)
     {
-        //model.materials[model.meshMaterial[i]].maps[MAP_DIFFUSE].color = tint;
-        //fprintf(stderr, "CCC %p == %d DDD", &model.meshMaterial, model.materialCount);
-        //rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
-        rlDrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
+        Material material = model.materials[model.meshMaterial[i]];
+        Matrix transform = model.transform;
+        rlDrawMesh(model.meshes[i], material, transform);
     }
-
-    //CCC 0x7ffe5fb5b810 == 4 == 0 == 0 DDDCCC 0x7ffe5fb5b810 == 4 == 1 == 0 DDDCCC 0x7ffe5fb5b810 == 4 == 2 == 0 DDD
-
 }
 
 // Draw a model wires (with texture if set)
