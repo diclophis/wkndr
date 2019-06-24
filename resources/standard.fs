@@ -1,6 +1,3 @@
-#version 300 es
-//#version 330
-
 precision lowp float;
 
 // Input vertex attributes (from vertex shader)
@@ -151,7 +148,7 @@ vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
 
 void main()
 {
-  vec4 texelColor = vec4(0.0);
+  //vec4 texelColor = vec4(0.0);
   vec3 lighting = vec3(0.0);
   vec3 lightDot = vec3(0.0);
   vec3 specular = texture(texture0, fragTexCoord).rgb;
@@ -210,9 +207,15 @@ void main()
   //finalColor = ambient;
 
   //just texture
-  //finalColor = texelColor;
-  //finalColor = specular;
+  //finalColor = vec4(specular, 1.0);
 
   //just lighting
-  finalColor = vec4(lighting, 1.0);
+  //finalColor = vec4(lighting, 1.0);
+  
+  //finalColor = vec4(specular*lighting*colDiffuse.rgb, texelColor.a*colDiffuse.a);
+
+  //broken...
+  //finalColor = fragColor;
+
+  finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0)) * colDiffuse;
 }

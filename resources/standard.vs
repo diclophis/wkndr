@@ -1,6 +1,3 @@
-#version 300 es
-//#version 330
-
 precision lowp float;
 
 // Input vertex attributes

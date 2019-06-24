@@ -3801,7 +3801,19 @@ void EndVrDrawing(void)
 static unsigned int CompileShader(const char *shaderStr, int type)
 {
     unsigned int shader = glCreateShader(type);
-    glShaderSource(shader, 1, &shaderStr, NULL);
+
+#if defined(GRAPHICS_API_OPENGL_33)
+    const char *shaderVersionStr = "#version 330\n";
+#elif defined(GRAPHICS_API_OPENGL_ES3)
+    const char *shaderVersionStr = "#version 300 es\n";
+#endif
+
+    const char *shaderStack[2];
+
+    shaderStack[0] = shaderVersionStr;
+    shaderStack[1] = shaderStr;
+
+    glShaderSource(shader, 2, shaderStack, NULL);
 
     GLint success = 0;
     glCompileShader(shader);
@@ -3903,11 +3915,11 @@ static Shader LoadShaderDefault(void)
 
     // Vertex shader directly defined, no external file required
     char defaultVShaderStr[] =
-#if defined(GRAPHICS_API_OPENGL_21)
-    "#version 120                       \n"
-#elif defined(GRAPHICS_API_OPENGL_ES2)
-    "#version 100                       \n"
-#endif
+//#if defined(GRAPHICS_API_OPENGL_21)
+//    "#version 120                       \n"
+//#elif defined(GRAPHICS_API_OPENGL_ES2)
+//    "#version 100                       \n"
+//#endif
 #if defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_21)
     "attribute vec3 vertexPosition;     \n"
     "attribute vec2 vertexTexCoord;     \n"
@@ -3915,14 +3927,12 @@ static Shader LoadShaderDefault(void)
     "varying vec2 fragTexCoord;         \n"
     "varying vec4 fragColor;            \n"
 #elif defined(GRAPHICS_API_OPENGL_ES3)
-    "#version 300 es                    \n"
     "in vec3 vertexPosition;            \n"
     "in vec2 vertexTexCoord;            \n"
     "in vec4 vertexColor;               \n"
     "out vec2 fragTexCoord;             \n"
     "out vec4 fragColor;                \n"
 #elif defined(GRAPHICS_API_OPENGL_33)
-    "#version 330                       \n"
     "in vec3 vertexPosition;            \n"
     "in vec2 vertexTexCoord;            \n"
     "in vec4 vertexColor;               \n"
@@ -3939,23 +3949,21 @@ static Shader LoadShaderDefault(void)
 
     // Fragment shader directly defined, no external file required
     char defaultFShaderStr[] =
-#if defined(GRAPHICS_API_OPENGL_21)
-    "#version 120                       \n"
-#elif defined(GRAPHICS_API_OPENGL_ES2)
-    "#version 100                       \n"
-    "precision mediump float;           \n"     // precision required for OpenGL ES2 (WebGL)
-#endif
+//#if defined(GRAPHICS_API_OPENGL_21)
+//    "#version 120                       \n"
+//#elif defined(GRAPHICS_API_OPENGL_ES2)
+//    "#version 100                       \n"
+//    "precision mediump float;           \n"     // precision required for OpenGL ES2 (WebGL)
+//#endif
 #if defined(GRAPHICS_API_OPENGL_ES2)
     "varying vec2 fragTexCoord;         \n"
     "varying vec4 fragColor;            \n"
 #elif defined(GRAPHICS_API_OPENGL_ES3)
-    "#version 300 es                    \n"
     "precision mediump float;           \n"     // precision required for OpenGL ES3 (WebGL2)
     "in vec2 fragTexCoord;              \n"
     "in vec4 fragColor;                 \n"
     "out vec4 finalColor;               \n"
 #elif defined(GRAPHICS_API_OPENGL_33)
-    "#version 330       \n"
     "in vec2 fragTexCoord;              \n"
     "in vec4 fragColor;                 \n"
     "out vec4 finalColor;               \n"
