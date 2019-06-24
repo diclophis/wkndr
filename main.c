@@ -1505,18 +1505,9 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
 
   //if (draw_wires) {
     //DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
-  //}
-
-  //TODO, mode switch
-  //else {
-    // Draw 3d model with texture
     DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
-    //fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
-
-    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);
-
-    //DrawModel(p_data->model, p_data->position, 1.0, WHITE);
   //}
+
 
   return mrb_nil_value();
 }

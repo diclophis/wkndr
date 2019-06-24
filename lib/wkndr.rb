@@ -143,16 +143,14 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 24)
-
-    #gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+    gl.open("wkndr", w, h, 0)
 
     gl.update { |global_time, delta_time|
       gl.drawmode {
         gl.threed {
         }
         gl.twod {
-          #gl.draw_fps(0, 0)
+          gl.draw_fps(0, 0)
           gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
             gl.emit({"z" => "zzz"})
           }
