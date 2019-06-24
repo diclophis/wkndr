@@ -2406,12 +2406,22 @@ void rlLoadMesh(Mesh *mesh, bool dynamic)
     glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
     glEnableVertexAttribArray(0);
 
+    if (mesh->texcoords != NULL)
+    {
+        TraceLog(LOG_WARNING, "Mesh HAS textcoords (1)");
     // Enable vertex attributes: texcoords (shader-location = 1)
     glGenBuffers(1, &mesh->vboId[1]);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vboId[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*mesh->vertexCount, mesh->texcoords, drawHint);
     glVertexAttribPointer(1, 2, GL_FLOAT, 0, 0, 0);
     glEnableVertexAttribArray(1);
+    } else {
+        // Default texcoord2 vertex attribute
+        TraceLog(LOG_WARNING, "Mesh using DEFAULT textcoords (1)");
+
+        glVertexAttrib2f(1, 0.0f, 0.0f);
+        glDisableVertexAttribArray(1);
+    }
 
     // Enable vertex attributes: normals (shader-location = 2)
     if (mesh->normals != NULL)
@@ -2464,6 +2474,8 @@ void rlLoadMesh(Mesh *mesh, bool dynamic)
     // Default texcoord2 vertex attribute (shader-location = 5)
     if (mesh->texcoords2 != NULL)
     {
+        TraceLog(LOG_WARNING, "Mesh HAS textcoords2");
+
         glGenBuffers(1, &mesh->vboId[5]);
         glBindBuffer(GL_ARRAY_BUFFER, mesh->vboId[5]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float)*2*mesh->vertexCount, mesh->texcoords2, drawHint);
@@ -2473,6 +2485,8 @@ void rlLoadMesh(Mesh *mesh, bool dynamic)
     else
     {
         // Default texcoord2 vertex attribute
+        TraceLog(LOG_WARNING, "Mesh using DEFAULT textcoords2");
+
         glVertexAttrib2f(5, 0.0f, 0.0f);
         glDisableVertexAttribArray(5);
     }

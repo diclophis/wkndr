@@ -2802,32 +2802,76 @@ static Model LoadOBJ(const char *fileName)
         // Init model meshes
         for (int m = 0; m < model.meshCount; m++)
         {
+            tinyobj_shape_t shape = meshes[m];
+
             Mesh mesh = { 0 };
             memset(&mesh, 0, sizeof(Mesh));
-            mesh.vertexCount = attrib.num_faces*3;
-            mesh.triangleCount = attrib.num_faces;
+            mesh.vertexCount = shape.length*3;
+            mesh.triangleCount = shape.length;
             mesh.vertices = (float *)RL_MALLOC(mesh.vertexCount*3*sizeof(float));
-            mesh.texcoords = (float *)RL_MALLOC(mesh.vertexCount*2*sizeof(float));
+            if (attrib.num_texcoords) {
+              mesh.texcoords = (float *)RL_MALLOC(mesh.vertexCount*2*sizeof(float));
+            }
             mesh.normals = (float *)RL_MALLOC(mesh.vertexCount*3*sizeof(float));
 
             int vCount = 0;
             int vtCount = 0;
             int vnCount = 0;
 
-            tinyobj_shape_t shape = meshes[m];
-
-            for (int ff = 0; ff<shape.length; ff++) {
+            int total_faces = shape.length;
+            for (int ff = 0; ff<total_faces; ff++) {
+              //int f = ff; //shape.face_offset + ff;
               int f = shape.face_offset + ff;
+              //int idx_a = (3 * shape.face_offset) + 0 * f;
+              //int idx_b = (3 * shape.face_offset) + 1 * f;
+              //int idx_c = (3 * shape.face_offset) + 2 * f;
+              
+              //int f = ff; //shape.face_offset + ff;
+              //int idx_a = 3 * f + 0 + shape.face_offset;
+              //int idx_b = 3 * f + 1 + shape.face_offset;
+              //int idx_c = 3 * f + 2 + shape.face_offset;
 
+              //int f = shape.face_offset + ff;
+              int idx_a = 3 * f + 0;
+              int idx_b = 3 * f + 1;
+              int idx_c = 3 * f + 2;
 
-/*
-            for (int f = 0; f < attrib.num_faces; f++)
-            {
-*/
+              //int idx_a = 0 + (shape.face_offset);
+              //int idx_b = 1 + (shape.face_offset);
+              //int idx_c = 2 + (shape.face_offset);
+
+              //int idx_a = 0;
+              //int idx_b = 1;
+              //int idx_c = 2;
+
+              //int idx_a = shape.face_offset + 3 * ff + 0;
+              //int idx_b = shape.face_offset + 3 * ff + 1;
+              //int idx_c = shape.face_offset + 3 * ff + 2;
+
+              //int f = shape.face_offset + ff;
+              //int f = ff; //shape.face_offset;
+
+            //for (int f = 0; f < attrib.num_faces; f++)
+            //{
+                
                 // Get indices for the face
-                tinyobj_vertex_index_t idx0 = attrib.faces[3*f + 0];
-                tinyobj_vertex_index_t idx1 = attrib.faces[3*f + 1];
-                tinyobj_vertex_index_t idx2 = attrib.faces[3*f + 2];
+                //tinyobj_vertex_index_t idx0 = attrib.faces[3*f + 0 + shape.face_offset];
+                //tinyobj_vertex_index_t idx1 = attrib.faces[3*f + 1 + shape.face_offset];
+                //tinyobj_vertex_index_t idx2 = attrib.faces[3*f + 2 + shape.face_offset];
+
+                //tinyobj_vertex_index_t idx0 = attrib.faces[0 + shape.face_offset * ff];
+                //tinyobj_vertex_index_t idx1 = attrib.faces[1 + shape.face_offset * ff];
+                //tinyobj_vertex_index_t idx2 = attrib.faces[2 + shape.face_offset * ff];
+
+                //tinyobj_vertex_index_t idx0 = attrib.faces[0 + shape.face_offset];
+                //tinyobj_vertex_index_t idx1 = attrib.faces[1 + shape.face_offset];
+                //tinyobj_vertex_index_t idx2 = attrib.faces[2 + shape.face_offset];
+
+                tinyobj_vertex_index_t idx0 = attrib.faces[idx_a];
+                tinyobj_vertex_index_t idx1 = attrib.faces[idx_b];
+                tinyobj_vertex_index_t idx2 = attrib.faces[idx_c];
+              
+              TraceLog(LOG_WARNING, "Face %i == %i == %i // index: v %i/%i/%i . vt %i/%i/%i . vn %i/%i/%i\n", f, ff, shape.face_offset, idx0.v_idx, idx1.v_idx, idx2.v_idx, idx0.vt_idx, idx1.vt_idx, idx2.vt_idx, idx0.vn_idx, idx1.vn_idx, idx2.vn_idx);
 
                 // TraceLog(LOG_DEBUG, "Face %i index: v %i/%i/%i . vt %i/%i/%i . vn %i/%i/%i\n", f, idx0.v_idx, idx1.v_idx, idx2.v_idx, idx0.vt_idx, idx1.vt_idx, idx2.vt_idx, idx0.vn_idx, idx1.vn_idx, idx2.vn_idx);
 
@@ -2851,6 +2895,7 @@ static Model LoadOBJ(const char *fileName)
                 for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx0.vn_idx*3 + v]; } vnCount +=3;
                 for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx1.vn_idx*3 + v]; } vnCount +=3;
                 for (int v = 0; v < 3; v++) { mesh.normals[vnCount + v] = attrib.normals[idx2.vn_idx*3 + v]; } vnCount +=3;
+            //}
             }
 
             model.meshes[m] = mesh;                 // Assign mesh data to model

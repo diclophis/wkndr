@@ -2475,8 +2475,8 @@ static bool InitGraphicsDevice(int width, int height)
         TraceLog(LOG_WARNING, "USING OPENGL_ES_30");
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Profiles Hint: Only 3.3 and above!
-        //glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Profiles Hint: Only 3.3 and above!
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
         //glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);     // Alternative: GLFW_EGL_CONTEXT_API (ANGLE)
     }
     else if (rlGetVersion() == OPENGL_ES_20)                    // Request OpenGL ES 2.0 context
