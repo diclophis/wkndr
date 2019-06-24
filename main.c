@@ -1234,19 +1234,11 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   BeginMode3D(p_data->camera);
 
-  //BeginShaderMode(standardShader);
-
   mrb_yield_argv(mrb, block, 0, NULL);
 
-	//if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.0f, 16, 16, WHITE); }
-	//if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.0f, 16, 16, RED); }
-	//if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.0f, 16, 16, GREEN); }
-	//if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.0f, 16, 16, BLUE); }
-  for (int i=0; i<MAX_LIGHTS; i++) {
-    DrawLight(lights[i]);
-  }
-
-  //EndShaderMode();
+  //for (int i=0; i<MAX_LIGHTS; i++) {
+  //  DrawLight(lights[i]);
+  //}
 
   EndMode3D();
 
@@ -1297,8 +1289,6 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   mrb_yield_argv(mrb, block, 0, NULL);
 
   EndDrawing();
-
-  //fprintf(stderr, "end_draw\n");
 
   return mrb_nil_value();
 }
@@ -1366,12 +1356,6 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
   
-  //fprintf(stderr, "INIT %p\n", &p_data->model);
-
-  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-  //  MeshTangents(&p_data->model.meshes[meshi]);
-  //}
-
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
   p_data->position.z = 0.0f;
@@ -1520,13 +1504,13 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   }
 
   //if (draw_wires) {
-    DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
+    //DrawModelWiresEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, BLUE);   // Draw 3d model with texture
   //}
 
   //TODO, mode switch
   //else {
     // Draw 3d model with texture
-    //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
+    DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
     //fprintf(stderr, "\nDRAW %p", &p_data->model.meshMaterial);
 
     //DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, WHITE);

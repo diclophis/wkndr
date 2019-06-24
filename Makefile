@@ -62,10 +62,10 @@ ifeq ($(TARGET),desktop)
   endif
 endif
 
-RAYLIB_TARGET_DEFINED="PLATFORM_DESKTOP"
+RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 ifeq ($(TARGET),desktop)
   #CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
-  CFLAGS=-DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) -g3 -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
+  CFLAGS=-DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) -g3 -ggdb -std=c99 -Imruby/include -Iraylib-src/external/glfw/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
