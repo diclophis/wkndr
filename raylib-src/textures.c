@@ -74,6 +74,10 @@
                                 // Required for: rlLoadTexture() rlDeleteTextures(),
                                 //      rlGenerateMipmaps(), some funcs for DrawTexturePro()
 
+#include "tinyhash.h"
+
+
+
 // Support only desired texture formats on stb_image
 #if !defined(SUPPORT_FILEFORMAT_BMP)
     #define STBI_NO_BMP
@@ -177,6 +181,11 @@ static Image LoadPVR(const char *fileName);   // Load PVR file
 #if defined(SUPPORT_FILEFORMAT_ASTC)
 static Image LoadASTC(const char *fileName);  // Load ASTC file
 #endif
+
+hash_table_t textures_table;
+#define MAX_POSSIBLE_TEXTURES 32
+Texture2D textures_lookup[MAX_POSSIBLE_TEXTURES] = { 0 };
+int lastTextureIndex = 0;
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition
@@ -388,18 +397,36 @@ Image LoadImageRaw(const char *fileName, int width, int height, int format, int 
 // Load texture from file into GPU memory (VRAM)
 Texture2D LoadTexture(const char *fileName)
 {
-    Texture2D texture = { 0 };
 
+  if (lastTextureIndex == 0) {
+    create_hash_table(MAX_POSSIBLE_TEXTURES, &textures_table);
+  }
+
+  Texture2D texture = { 0 };
+
+  if (hash_table_exists(fileName, &textures_table)) {
+    //int addOfTextureTwoD = (int)hash_table_get(fileName, textures_table);
+    //texture = addOfTextureTwoD;
+    int previouslyCreatedTextureIndex =  (int)hash_table_get(fileName, &textures_table);
+    texture = textures_lookup[previouslyCreatedTextureIndex];
+
+    //texture = (Texture2D *)hash_table_get(fileName, textures_table);
+	} else {
     Image image = LoadImage(fileName);
 
     if (image.data != NULL)
     {
         texture = LoadTextureFromImage(image);
+        textures_lookup[lastTextureIndex] = texture;
+        hash_table_set(fileName, lastTextureIndex, &textures_table);
         UnloadImage(image);
+        lastTextureIndex++;
     }
     else TraceLog(LOG_WARNING, "Texture could not be created");
 
-    return texture;
+	}
+
+  return texture;
 }
 
 // Load a texture from image data

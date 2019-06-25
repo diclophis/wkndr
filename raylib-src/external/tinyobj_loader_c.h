@@ -576,7 +576,7 @@ static unsigned long hash_djb2(const unsigned char* str)
   return hash;
 }
 
-static void create_hash_table(unsigned int start_capacity, hash_table_t* hash_table)
+void create_hash_table(unsigned int start_capacity, hash_table_t* hash_table)
 {
   if (start_capacity < 1)
     start_capacity = HASH_TABLE_DEFAULT_SIZE;
@@ -675,12 +675,12 @@ static void hash_table_maybe_grow(unsigned int new_n, hash_table_t* hash_table)
   (*hash_table) = new_hash_table;
 }
 
-static int hash_table_exists(const char* name, hash_table_t* hash_table)
+int hash_table_exists(const char* name, hash_table_t* hash_table)
 {
   return hash_table_find(hash_djb2((const unsigned char*)name), hash_table) != NULL;
 }
 
-static void hash_table_set(const char* name, unsigned int val, hash_table_t* hash_table)
+void hash_table_set(const char* name, unsigned int val, hash_table_t* hash_table)
 {
   /* Hash name */
   unsigned long hash = hash_djb2((const unsigned char *)name);
@@ -702,7 +702,7 @@ static void hash_table_set(const char* name, unsigned int val, hash_table_t* has
   while (hash_table_insert(hash, (long)val, hash_table) != HASH_TABLE_SUCCESS);
 }
 
-static long hash_table_get(const char* name, hash_table_t* hash_table)
+long hash_table_get(const char* name, hash_table_t* hash_table)
 {
   hash_table_entry_t* ret = hash_table_find(hash_djb2((const unsigned char*)(name)), hash_table);
   return ret->value;

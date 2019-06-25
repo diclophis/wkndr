@@ -902,18 +902,10 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   //startLighting
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
-  //XSetShaderDefaultLocations(&standardShader);
-  //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(shader->id, DEFAULT_ATTRIB_COLOR_NAME);
 
   // ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
   SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.125f, 0.125f, 0.125f, 1.0f }, UNIFORM_VEC4);
-
-	//int tempInt[8] = { 0 };
-	//float tempFloat[8] = { 0.0f };
-  //tempInt[0] = 0;
-  //int totalLightsLoc = GetShaderLocation(standardShader, "totalLights");
-  //SetShaderValue(standardShader, totalLightsLoc, tempInt, UNIFORM_INT);
 
   // Get some shader loactions
   standardShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(standardShader, "matModel");
@@ -921,66 +913,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   standardShader.locs[LOC_COLOR_DIFFUSE] = GetShaderLocation(standardShader, "colDiffuse");
   
   glBindAttribLocation(standardShader.id, 3, "vertexColor");
-  
-  //standardShader.locs[LOC_VERTEX_COLOR] = glGetAttribLocation(standardShader.id, "vertexColor");
-  //fprintf(stderr, "WTFWTF %d\n\n\n\n", standardShader.locs[LOC_VERTEX_COLOR]);
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0,3, 0 }, Vector3Zero(), RED, standardShader);
-  lights[0].intensity = 1.0;
-  lights[0].radius = 1.0;
-  lights[0].enabled = true;
-
-  //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 7, 1 }, Vector3Zero(), WHITE, standardShader);
-  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 5, 3, 7 }, Vector3Zero(), WHITE, standardShader);
-  lights[1].intensity = 0.001;
-  lights[1].enabled = true;
-
-  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){3.0f, 3.0f, -3.0f}, (Vector3){2.0f, 2.0f, -2.0f}, BLUE, standardShader);
-  lights[2].intensity = 1.0;
-  lights[2].coneAngle = 3.00;
-  lights[2].enabled = true;
-
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 3, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, Vector3Zero(), Vector3Zero(), WHITE, standardShader);
+  lights[2] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
   lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
-  lights[3].intensity = 0.5;
-  lights[3].radius = 3.0;
-  lights[3].enabled = true;
-
-  UpdateLightValues(standardShader, lights[0]);
-  UpdateLightValues(standardShader, lights[1]);
-  UpdateLightValues(standardShader, lights[2]);
-  UpdateLightValues(standardShader, lights[3]);
-
-  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 10000, 10000, 0 }, Vector3Zero(), WHITE, standardShader);
-  //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 1000, 0 }, Vector3Zero(), WHITE, standardShader);
-  //lights[0] = CreateLight(LIGHT_SPOT, (Vector3){0.0f, 1000.0f, 0.0f}, Vector3Zero(), WHITE, standardShader);
-
-  //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 270, 290, 310 }, Vector3Zero(), GREEN, standardShader);
-  //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 330, 350, 370 }, Vector3Zero(), BLUE, standardShader);
-
-
-  //////Light dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){20.0f, 20.0f, 20.0f}, (Color){255, 255, 255, 255});
-  //Light dirLight;
-  //dirLight = CreateLight(LIGHT_DIRECTIONAL, (Vector3){5.0f, 6.0f, 7.0f}, (Color){255, 255, 255, 255});
-  //dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  //dirLight->intensity = 0.5f;
-  //dirLight->diffuse = (Color){255, 255, 255, 255};
-  //firstLight = dirLight;
-
-  //dirLight = CreateLight(LIGHT_POINT, (Vector3){10.0f, 15.0f, 10.0f}, (Color){255, 255, 255, 255});
-  //dirLight->intensity = 10.0f;
-  //dirLight->diffuse = (Color){128, 128, 128, 255};
-  //dirLight->radius = 5.0f;
-  //firstLight = dirLight;
-
-  ////////dirLight->target = (Vector3){0.0f, 0.0f, 0.0f};
-  ////////dirLight->intensity = 1.0f;
-  ////////dirLight->diffuse = (Color){100, 255, 100, 255};
-
-  //GetShaderLightsLocations(standardShader);
-
-  //SetShaderLightsValues(standardShader);
-
-  //////fprintf(stderr, "InitWindow %d %d\n", screenWidth, screenHeight);
 
   SetExitKey(0);
 
@@ -1192,6 +1129,41 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
   SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
+  //updateLighting
+  //white closeup point
+  lights[0].position.x = tx + 0;
+  lights[0].position.y = ty + 0.5;
+  lights[0].position.z = tz + 0;
+  lights[0].target.x = tx + 0;
+  lights[0].target.y = ty + 0;
+  lights[0].target.z = tz + 0;
+  lights[0].intensity = 0.125;
+  lights[0].radius = 0.333;
+  lights[0].enabled = true;
+
+  //white directional
+  lights[1].intensity = 0.001;
+  lights[1].enabled = true;
+
+  //blue spotlight
+  lights[2].position.x = tx + 2;
+  lights[2].position.y = ty + 3;
+  lights[2].position.z = tz - 2;
+  lights[2].target.x = tx;
+  lights[2].target.y = ty;
+  lights[2].target.z = tz;
+  lights[2].intensity = 1.0;
+  lights[2].coneAngle = 5.00;
+  lights[2].enabled = true;
+
+  lights[3].intensity = 0.5;
+  lights[3].radius = 3.0;
+  lights[3].enabled = true;
+
+  UpdateLightValues(standardShader, lights[0]);
+  UpdateLightValues(standardShader, lights[1]);
+  UpdateLightValues(standardShader, lights[2]);
+  UpdateLightValues(standardShader, lights[3]);
 
   return mrb_nil_value();
 }
@@ -1236,9 +1208,10 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-  for (int i=0; i<MAX_LIGHTS; i++) {
-    DrawLight(lights[i]);
-  }
+  //drawLighting
+  //for (int i=0; i<MAX_LIGHTS; i++) {
+  //  DrawLight(lights[i]);
+  //}
 
   EndMode3D();
 
