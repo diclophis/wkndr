@@ -1138,8 +1138,8 @@ static int parseLine(Command *command, const char *p, unsigned int p_len,
     command->material_name_len = (unsigned int)length_until_newline(
                                                                     token, (p_len - (unsigned int)(token - linebuf))) + 1;
 
-    command->group_name = command->material_name;
-    command->group_name_len = command->material_name_len;
+    //command->group_name = command->material_name;
+    //command->group_name_len = command->material_name_len;
 
     command->type = COMMAND_USEMTL;
 
@@ -1442,7 +1442,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
     /* Find the number of shapes in .obj */
     for (i = 0; i < num_lines; i++) {
-      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G || commands[i].type == COMMAND_USEMTL) {
+      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G) { // || commands[i].type == COMMAND_USEMTL) {
         n++;
       }
     }
@@ -1453,13 +1453,13 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
     (*shapes) = (tinyobj_shape_t*)TINYOBJ_MALLOC(sizeof(tinyobj_shape_t) * (n + 1));
 
     for (i = 0; i < num_lines; i++) {
-      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G || commands[i].type == COMMAND_USEMTL) {
+      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G) { // || commands[i].type == COMMAND_USEMTL) {
         if (commands[i].type == COMMAND_O) {
           shape_name = commands[i].object_name;
           shape_name_len = commands[i].object_name_len;
-        } else if (commands[i].type == COMMAND_USEMTL) {
-          shape_name = commands[i].mtllib_name;
-          shape_name_len = commands[i].mtllib_name_len;
+        //} else if (commands[i].type == COMMAND_USEMTL) {
+        //  shape_name = commands[i].mtllib_name;
+        //  shape_name_len = commands[i].mtllib_name_len;
         } else {
           shape_name = commands[i].group_name;
           shape_name_len = commands[i].group_name_len;

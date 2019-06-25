@@ -190,7 +190,7 @@ void main()
   //finalColor = vec4(lighting, 1.0)*colDiffuse;
 
   //with texture
-  finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0)) * colDiffuse;
+  finalColor = vec4(lighting, 1.0)*(vec4(specular, 1.0)); // * colDiffuse;
   //finalColor = (vec4(lighting, 1.0)*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
   //finalColor = (vec4(lighting, 1.0)*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
  
