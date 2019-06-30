@@ -609,18 +609,35 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   double time;
   float dt;
 
+  double itime;
+  float idt;
+
+  BeginDrawing();
+
+  ClearBackground(BLACK);
+
   time = GetTime();
   dt = GetFrameTime();
 
-  //self is instance of StackBlocker.new !!!!!!!!!!
-  mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+  //int cnt = 3;
+  //for (int i=0; i<cnt; i++) {
+  //  idt = dt / (float)cnt;
+  //  itime = time - ((float)i*(idt));
 
-  if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
-    mrb_print_error(mrb);
-    mrb_print_backtrace(mrb);
-    return mrb_nil_value();
-  }
+    //self is instance of StackBlocker.new !!!!!!!!!!
+    //mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, itime), mrb_float_value(mrb, idt));
+    mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+
+    if (mrb->exc) {
+      fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
+      mrb_print_error(mrb);
+      mrb_print_backtrace(mrb);
+      return mrb_nil_value();
+    }
+
+  //}
+
+  EndDrawing();
 
   return mrb_true_value();
 }
@@ -1255,13 +1272,8 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  BeginDrawing();
-
-  ClearBackground(BLACK);
 
   mrb_yield_argv(mrb, block, 0, NULL);
-
-  EndDrawing();
 
   return mrb_nil_value();
 }

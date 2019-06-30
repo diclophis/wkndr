@@ -26,13 +26,13 @@ Wkndr.play { |gl|
   cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
   cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
 
-  speed = 33.0
-
   gl.event { |typed_msg|
     total_msg += 1
   }
 
   gl.update { |global_time, delta_time|
+    speed = 0.0 + (global_time * 10.0)
+
     gl.drawmode {
       gl.threed {
         cubes.each_with_index do |cube,i|
