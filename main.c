@@ -932,7 +932,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   glBindAttribLocation(standardShader.id, 3, "vertexColor");
 
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 3, 0 }, Vector3Zero(), WHITE, standardShader);
-  lights[1] = CreateLight(LIGHT_DIRECTIONAL, Vector3Zero(), Vector3Zero(), WHITE, standardShader);
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 5, 7 }, Vector3Zero(), WHITE, standardShader);
   lights[2] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
   lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
 
@@ -1159,7 +1159,7 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   lights[0].enabled = true;
 
   //white directional
-  lights[1].intensity = 0.001;
+  lights[1].intensity = 0.33;
   lights[1].enabled = true;
 
   //blue spotlight
@@ -1169,11 +1169,11 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   lights[2].target.x = tx;
   lights[2].target.y = ty;
   lights[2].target.z = tz;
-  lights[2].intensity = 1.0;
-  lights[2].coneAngle = 5.00;
+  lights[2].intensity = 0.5;
+  lights[2].coneAngle = 8.00;
   lights[2].enabled = true;
 
-  lights[3].intensity = 0.5;
+  lights[3].intensity = 0.33;
   lights[3].radius = 3.0;
   lights[3].enabled = true;
 
