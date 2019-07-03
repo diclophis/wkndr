@@ -1352,9 +1352,10 @@ module Markaby
             atname = k.to_s.downcase.intern
             #raise "wtf #{atname} #{AttrsBoolean}"
 
-            unless k =~ /:/ or @tagset.tagset[tag].include?(atname) or (@tagset == Markaby::HTML5 && atname.to_s =~ /^data-/)
-              raise InvalidXhtmlError, "no attribute `#{k}' on #{tag} elements"
-            end
+            #TODO
+            #unless k =~ /:/ or @tagset.tagset[tag].include?(atname) or (@tagset == Markaby::HTML5 && atname.to_s =~ /^data-/)
+            #  raise InvalidXhtmlError, "no attribute `#{k}' on #{tag} elements"
+            #end
 
             if atname == :id
               ele_id = v.to_s
@@ -1478,12 +1479,13 @@ module Markaby
     # Adds attributes to an element.  Bang methods set the :id attribute.
     # Other methods add to the :class attribute.
     def method_missing(id_or_class, *args, &block)
-      if id_or_class.to_s =~ /(.*)!$/
-        @attrs[:id] = $1
-      else
-        id = id_or_class
-        @attrs[:class] = @attrs[:class] ? "#{@attrs[:class]} #{id}".strip : id
-      end
+      #TODO:
+      #if id_or_class.to_s =~ /(.*)!$/
+      #  @attrs[:id] = $1
+      #else
+      #  id = id_or_class
+      #  @attrs[:class] = @attrs[:class] ? "#{@attrs[:class]} #{id}".strip : id
+      #end
 
       unless args.empty?
         if args.last.respond_to? :to_hash

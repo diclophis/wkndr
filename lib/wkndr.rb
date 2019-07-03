@@ -119,6 +119,10 @@ class Wkndr < Thor
 
     self.class.start_server(stack, *args)
 
+    log!(:StartedServerTHORECOMMANDSTILEWTF)
+
+    Wkndr.the_server.subscribe_to_wkndrfile("/")
+
     stack
   end
   method_added :server

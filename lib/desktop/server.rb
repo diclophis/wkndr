@@ -160,8 +160,8 @@ class Server
 
   def match_dispatch(path)
     if @tree
-      log!(:matching_routes, path, @tree.routes)
       ids_from_path, handler = @tree.match(path)
+      log!(:matching_routes, path, @tree.routes, handler, ids_from_path)
       if ids_from_path && handler
         begin
           mab = Markaby::Builder.new
@@ -180,5 +180,57 @@ class Server
 
   def block_accept
     @server.accept
+  end
+
+  def subscribe_to_wkndrfile(wkndrfile_path, write_back_connection = nil)
+    log!(:subscribe_to_wkndrfile, wkndrfile_path)
+
+    begin
+      wkparts = wkndrfile_path.split("~", 2)  
+
+      if wkndrfile_path == "/"
+        reqd_wkfile = "Wkndrfile"
+      else
+        reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??
+        reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
+      end
+
+      UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
+        begin
+          if actual_wkndrfile.is_a?(UVError)
+            log!(:desktop_connection_wkndrfile_path_error, actual_wkndrfile)
+          else
+            log!(:subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
+
+            ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+            wkread = ffff.read(102400)
+
+            #log!(:ffff, ffff)
+            log!(:outgoing_wkndrfile, wkread.length, wkread)
+
+            begin
+              did_parse = Kernel.eval(wkread)
+              log!(:outbound_party_parsed_ok, did_parse)
+              write_back_connection.write_typed({"party" => wkread}) if write_back_connection
+            rescue => e
+              log!(:outbound_party_parsed_bad, e)
+            end
+
+            ffff.close
+            @fsev = UV::FS::Event.new
+            @fsev.start(actual_wkndrfile, 0) do |path, event|
+              if event == :change
+                @fsev.stop
+                subscribe_to_wkndrfile(wkndrfile_path, write_back_connection)
+              end
+            end
+          end
+        rescue => e
+          log!(:desktop_server_wkndrfile_realpath_error, e, e.backtrace)
+        end
+      }
+    rescue => e
+      log!(:desktop_server_wkndrfile_subscribe_error, e, e.backtrace)
+    end
   end
 end

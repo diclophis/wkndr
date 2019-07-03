@@ -208,25 +208,31 @@ class Connection
           else
             filename = phr.path
 
-            if filename == "/" || filename[0, 2] == "/~"
-              filename = "/index.html"
-            end
+            do_upstream_handling = Proc.new {
+              response_bytes = server.match_dispatch(filename)
 
-            requested_path = "#{@required_prefix}#{filename}"
-            UV::FS.realpath(requested_path) { |resolved_filename|
-              if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-                response_bytes = server.match_dispatch(filename)
-
-                self.socket && response_bytes && self.socket.write(response_bytes) {
-                  self.halt!
-                }
-              else
-                self.processing_handshake = -1
-                self.ss = self.ss[@offset..-1]
-                self.phr.reset
-                serve_static_file!(resolved_filename)
-              end
+              self.socket && response_bytes && self.socket.write(response_bytes) {
+                self.halt!
+              }
             }
+
+            if filename == "/" #|| filename[0, 2] == "/~"
+              do_upstream_handling.call
+            else
+              #  filename = "/index.html"
+              #end
+              requested_path = "#{@required_prefix}#{filename}"
+              UV::FS.realpath(requested_path) { |resolved_filename|
+                if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
+                  do_upstream_handling.call
+                else
+                  self.processing_handshake = -1
+                  self.ss = self.ss[@offset..-1]
+                  self.phr.reset
+                  serve_static_file!(resolved_filename)
+                end
+              }
+            end
           end
         end
       when :incomplete
@@ -278,58 +284,6 @@ class Connection
       if b && b.is_a?(String)
         self.handle_bytes!(b)
       end
-    end
-  end
-
-  def subscribe_to_wkndrfile(wkndrfile_path)
-    log!(:subscribe_to_wkndrfile, wkndrfile_path)
-
-    begin
-      wkparts = wkndrfile_path.split("~", 2)  
-
-      if wkndrfile_path == "/"
-        reqd_wkfile = "Wkndrfile"
-      else
-        reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??
-        reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
-      end
-
-      UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
-        begin
-          if actual_wkndrfile.is_a?(UVError)
-            log!(:desktop_connection_wkndrfile_path_error, actual_wkndrfile)
-          else
-            log!(:subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
-
-            ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
-            wkread = ffff.read(102400)
-
-            #log!(:ffff, ffff)
-            log!(:outgoing_wkndrfile, wkread.length, wkread)
-
-            begin
-              did_parse = Kernel.eval(wkread)
-              log!(:outbound_party_parsed_ok, did_parse)
-              self.write_typed({"party" => wkread})
-            rescue => e
-              log!(:outbound_party_parsed_bad, e)
-            end
-
-            ffff.close
-            @fsev = UV::FS::Event.new
-            @fsev.start(actual_wkndrfile, 0) do |path, event|
-              if event == :change
-                @fsev.stop
-                subscribe_to_wkndrfile(wkndrfile_path)
-              end
-            end
-          end
-        rescue => e
-          log!(:desktop_connection_wkndrfile_realpath_error, e, e.backtrace)
-        end
-      }
-    rescue => e
-      log!(:desktop_connection_wkndrfile_subscribe_error, e, e.backtrace)
     end
   end
 
@@ -389,7 +343,7 @@ class Connection
 
               when "party"
                 wkndrfile_req = typed_msg[channel]
-                subscribe_to_wkndrfile(wkndrfile_req)
+                self.server.subscribe_to_wkndrfile(wkndrfile_req, self)
 
               when "c"
                 dispatch_req = typed_msg[channel]
