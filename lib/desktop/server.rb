@@ -188,7 +188,7 @@ class Server
     begin
       wkparts = wkndrfile_path.split("~", 2)  
 
-      if wkndrfile_path == "/"
+      if wkndrfile_path == "/" || (wkparts.length != 2)
         reqd_wkfile = "Wkndrfile"
       else
         reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??

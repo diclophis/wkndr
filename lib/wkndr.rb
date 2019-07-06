@@ -147,7 +147,7 @@ class Wkndr < Thor
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 0)
+    gl.open("wkndr", w, h, 60)
 
     gl.update { |global_time, delta_time|
       gl.drawmode {
