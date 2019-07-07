@@ -12,10 +12,10 @@ class ServerSide < Wkndr
   def self.block!
     while @keep_running && foo = self.cheese_cross!
       super
-      UV.run(UV::UV_RUN_NOWAIT)
+      UV.run(UV::UV_RUN_ONCE)
     end
 
-    UV.run(UV::UV_RUN_NOWAIT)
+    UV.run(UV::UV_RUN_ONCE)
     UV.default_loop.stop
   end
 end
