@@ -8,7 +8,7 @@ class Wkndr < Thor
   end
 
   def self.block!
-    #log!(:wtFBLOCK, self)
+    #log!(:runBLOCKWTFWTF, self, @stacks_to_care_about)
 
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
@@ -111,22 +111,6 @@ class Wkndr < Thor
     end
   end
 
-  desc "server", ""
-  def server(*args)
-    log!(:outerserver, args)
-
-    stack = StackBlocker.new(true)
-
-    self.class.start_server(stack, *args)
-
-    log!(:StartedServerTHORECOMMANDSTILEWTF)
-
-    Wkndr.the_server.subscribe_to_wkndrfile("/")
-
-    stack
-  end
-  method_added :server
-
   def self.open_client!(stack, w, h)
     log!(:client, w, h, self.class.to_s)
 
@@ -178,16 +162,26 @@ class Wkndr < Thor
   end
   method_added :client
 
-  def self.restartup(*args_outer)
+  def self.update_with_timer!(run_loop_blocker = nil)
+    @stacks_to_care_about ||= []
+    @stacks_to_care_about << run_loop_blocker
+  end
+
+  def self.wizbang!
+    self.show!(self.first_stack)
+  end
+
+  def self.restartup(args_outer)
+    log!(:restartup, self, args_outer)
+
     class_eval do
       desc "startup", ""
       def startup(*args)
+        log!(:default_startup, args)
+
         server_or_client_side = self.class.to_s
-
-        log!(:startup_eval_class, args)
-
-        args.shift
-
+        log!(:startup_eval_class, server_or_client_side, args)
+        
         case server_or_client_side
           when "ClientSide"
             client(*args)
@@ -196,35 +190,13 @@ class Wkndr < Thor
         end
       end
       method_added :startup
-    
+
       default_command :startup
+
+      stack = start(args_outer, {})
+      runblock!(stack) if stack
+
+      log!(:cheese, self, stack, @stacks_to_care_about)
     end
-
-    server_or_client_side = self.to_s
-
-    case server_or_client_side
-      when "ClientSide"
-        stack = self.start(*args_outer)
-        self.runblock!(stack)
-
-      when "ServerSide"
-        stack = self.start(*args_outer)
-        self.runblock!(stack)
-        #TODO: figure out why install trap needs to be here???
-        #TODO: merge with runblock???
-        self.install_trap!
-        #foo_args = args[
-        self.block! if args_outer[0].length > 1
-
-    end
-  end
-
-  def self.update_with_timer!(run_loop_blocker = nil)
-    @stacks_to_care_about ||= []
-    @stacks_to_care_about << run_loop_blocker
-  end
-
-  def self.wizbang!
-    self.show!(self.first_stack)
   end
 end

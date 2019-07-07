@@ -2504,6 +2504,7 @@ class Thor
       #   script.invoke(:command, first_arg, second_arg, third_arg)
       #
       def start(given_args = ARGV, config = {})
+      log!(:start_wtf, given_args, config)
         config[:shell] ||= Thor::Base.shell.new
         dispatch(nil, given_args.dup, nil, config)
       rescue Thor::Error => e
@@ -3085,7 +3086,11 @@ class Thor
     # The method responsible for dispatching given the args.
     def dispatch(meth, given_args, given_opts, config) #:nodoc: # rubocop:disable MethodLength
       meth ||= retrieve_command_name(given_args)
+
+      log!(:all_commands, given_args, meth, retrieve_command_name(given_args), normalize_command_name(meth))
+
       command = all_commands[normalize_command_name(meth)]
+
 
       if !command && config[:invoked_via_subcommand]
         # We're a subcommand and our first argument didn't match any of our
@@ -3165,8 +3170,13 @@ class Thor
 
     # Retrieve the command name from given args.
     def retrieve_command_name(args) #:nodoc:
-      meth = args.first.to_s unless args.empty?
-      args.shift if meth && (map[meth]) #TODO:  || !(meth ~= /^\-/))
+      #meth = args.first.to_s unless args.empty?
+      #args.shift if meth && (map[meth]) #TODO:  || !(meth ~= /^\-/))
+      unless args.empty?
+        meth = args.first
+        args.shift if meth && map[meth]
+        meth
+      end
     end
     alias_method :retrieve_task_name, :retrieve_command_name
 

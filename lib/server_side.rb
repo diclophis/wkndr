@@ -10,6 +10,10 @@ class ServerSide < Wkndr
   end
 
   def self.block!
+    install_trap!
+
+    log!(:TRAPINSTALLED, self)
+
     while @keep_running && foo = self.cheese_cross!
       super
       UV.run(UV::UV_RUN_ONCE)
@@ -18,4 +22,18 @@ class ServerSide < Wkndr
     UV.run(UV::UV_RUN_ONCE)
     UV.default_loop.stop
   end
+
+  desc "server [dir]", ""
+  def server(*dir)
+    log!(:CHEEEEESE, dir)
+
+    stack = StackBlocker.new(true)
+
+    self.class.start_server(stack, dir.last || "public")
+
+    Wkndr.the_server.subscribe_to_wkndrfile("/")
+
+    stack
+  end
+  method_added :server
 end

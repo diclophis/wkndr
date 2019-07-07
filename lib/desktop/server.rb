@@ -151,7 +151,7 @@ class Server
   end
 
   def missing_response
-    "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 0\r\n\r\n"
+    "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 4\r\n\r\n404\n"
   end
 
   def server_error(exception)
