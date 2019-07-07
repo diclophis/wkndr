@@ -163,6 +163,7 @@ class Wkndr < Thor
   method_added :client
 
   def self.update_with_timer!(run_loop_blocker = nil)
+    log!(:ADDING, run_loop_blocker)
     @stacks_to_care_about ||= []
     @stacks_to_care_about << run_loop_blocker
   end
@@ -172,21 +173,16 @@ class Wkndr < Thor
   end
 
   def self.restartup(args_outer)
-    log!(:restartup, self, args_outer)
-
     class_eval do
       desc "startup", ""
       def startup(*args)
-        log!(:default_startup, args)
-
         server_or_client_side = self.class.to_s
-        log!(:startup_eval_class, server_or_client_side, args)
         
         case server_or_client_side
           when "ClientSide"
-            client(*args)
+            return client(*args)
           when "ServerSide"
-            server(*args)
+            return server(*args)
         end
       end
       method_added :startup
@@ -194,9 +190,8 @@ class Wkndr < Thor
       default_command :startup
 
       stack = start(args_outer, {})
+      log!(:STACK, stack)
       runblock!(stack) if stack
-
-      log!(:cheese, self, stack, @stacks_to_care_about)
     end
   end
 end

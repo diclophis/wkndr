@@ -12,7 +12,7 @@ class ServerSide < Wkndr
   def self.block!
     install_trap!
 
-    log!(:TRAPINSTALLED, self)
+    log!(:TRAPINSTALLED, self, @keep_running, @stacks_to_care_about)
 
     while @keep_running && foo = self.cheese_cross!
       super
@@ -36,4 +36,11 @@ class ServerSide < Wkndr
     stack
   end
   method_added :server
+
+  desc "client", ""
+  def client(*args)
+    log!(:outerclient_on_serverside, args)
+    nil
+  end
+  method_added :client
 end

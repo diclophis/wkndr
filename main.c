@@ -2327,12 +2327,19 @@ int main(int argc, char** argv) {
   }
 
 #ifdef TARGET_DESKTOP
-  if (argc == 1) {
+  //if (argc == 1) {
     mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
     if (mrb->exc) {
       fprintf(stderr, "Exception in SERVERBLOCK\n");
       mrb_print_error(mrb);
       mrb_print_backtrace(mrb);
+    }
+
+    mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "block!", 0, 0);
+    if (mrb_client->exc) {
+      fprintf(stderr, "Exception in CLIENTBLOCK\n");
+      mrb_print_error(mrb_client);
+      mrb_print_backtrace(mrb_client);
     }
 
     //if (!mrb->exc) {
@@ -2349,8 +2356,7 @@ int main(int argc, char** argv) {
 		//	mrb_locale_free(msg);
 		//	putc('\n', stdout);
     //}
-
-  }
+  //}
 #endif
 
 #ifdef PLATFORM_WEB
