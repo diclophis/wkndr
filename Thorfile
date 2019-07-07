@@ -148,18 +148,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: "#{APP}-cluster-service"
-spec:
-  type: ClusterIP
-  ports:
-  - port: 8000
-    protocol: TCP
-  selector:
-    app: #{APP}-app
----
-apiVersion: v1
-kind: Service
-metadata:
   name: "#{APP}-node-service"
 spec:
   type: NodePort

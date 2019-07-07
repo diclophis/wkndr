@@ -55,10 +55,10 @@ class Wkndr < Thor
   end
 
   def self.play(stack = nil, gl = nil, &block)
-    log!(:play_client_side, block, @stack, @gl, @the_server)
+    #log!(:play_client_side, block, @stack, @gl, @the_server)
 
     if block && !@stack && !@gl
-      log!(:server_side_skip, Wkndr.the_server)
+      #log!(:server_side_skip_play_block, Wkndr.the_server)
       return
     end
 
@@ -89,22 +89,22 @@ class Wkndr < Thor
   end
 
   def self.start_server(stack, *args)
-    log!(:StartServer, args)
+    #log!(:StartServer, args)
 
     if a_server = self.mk_server(*args)
       stack.up(a_server)
     end
 
-    log!(:StartedServer)
+    #log!(:StartedServer)
 
     stack
   end
 
   def self.mk_server(directory = "public")
-    log!(:wtfclass, self, self.class)
+    #log!(:wtfclass, self, self.class)
 
     unless self.to_s == "ClientSide"
-      log!(:makingSERVER)
+      #log!(:makingSERVER)
       a_server = Server.run!(directory)
       Wkndr.set_server(a_server)
       a_server
@@ -112,7 +112,7 @@ class Wkndr < Thor
   end
 
   def self.open_client!(stack, w, h)
-    log!(:client, w, h, self.class.to_s)
+    log!(:openclient_bang_width_height, w, h, self.class.to_s)
 
     gl = GameLoop.new
     stack.up(gl)
@@ -150,20 +150,9 @@ class Wkndr < Thor
     Wkndr.set_gl(gl)
   end
 
-  desc "client", ""
-  def client(w = 512, h = 512)
-    log!(:outerclient, w, h, self.class.to_s)
-
-    stack = StackBlocker.new(false)
-
-    self.class.open_client!(stack, w.to_i, h.to_i)
-
-    stack
-  end
-  method_added :client
-
   def self.update_with_timer!(run_loop_blocker = nil)
-    log!(:ADDING, run_loop_blocker)
+    #log!(:ADDING, run_loop_blocker)
+
     @stacks_to_care_about ||= []
     @stacks_to_care_about << run_loop_blocker
   end
@@ -190,7 +179,6 @@ class Wkndr < Thor
       default_command :startup
 
       stack = start(args_outer, {})
-      log!(:STACK, stack)
       runblock!(stack) if stack
     end
   end

@@ -31,7 +31,7 @@ Wkndr.play { |gl|
   }
 
   gl.update { |global_time, delta_time|
-    speed = 0.0 + (global_time * 10.0)
+    speed = 100.0 # + (global_time * 10.0)
 
     gl.drawmode {
       gl.threed {

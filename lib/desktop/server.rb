@@ -49,7 +49,8 @@ class Server
 
       @server = UV::TCP.new
       @server.bind(@address)
-      @server.listen(32) { |connection_error|
+      @server.simultaneous_accepts = 256
+      @server.listen(512) { |connection_error|
         self.on_connection(connection_error)
       }
 
@@ -161,15 +162,16 @@ class Server
   def match_dispatch(path)
     if @tree
       ids_from_path, handler = @tree.match(path)
-      log!(:matching_routes, path, @tree.routes, handler, ids_from_path)
+      #log!(:matching_routes, path, @tree.routes, handler, ids_from_path)
+
       if ids_from_path && handler
         begin
           mab = Markaby::Builder.new
           resp_from_handler = handler.call(ids_from_path, mab)
           bytes_to_return = mab.to_s
+
           "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{bytes_to_return.length}\r\n\r\n#{bytes_to_return}"
         rescue => e
-          log!(:html2, e)
           server_error(e.inspect)
         end
       else
@@ -206,11 +208,11 @@ class Server
             wkread = ffff.read(102400)
 
             #log!(:ffff, ffff)
-            log!(:outgoing_wkndrfile, wkread.length, wkread)
+            #log!(:outgoing_wkndrfile, wkread.length, wkread)
 
             begin
               did_parse = Kernel.eval(wkread)
-              log!(:outbound_party_parsed_ok, did_parse)
+              #log!(:outbound_party_parsed_ok, did_parse)
               write_back_connection.write_typed({"party" => wkread}) if write_back_connection
             rescue => e
               log!(:outbound_party_parsed_bad, e)

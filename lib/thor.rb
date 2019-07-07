@@ -3085,10 +3085,10 @@ class Thor
 
     # The method responsible for dispatching given the args.
     def dispatch(meth, given_args, given_opts, config) #:nodoc: # rubocop:disable MethodLength
+      log!(:dispatch, meth, given_args)
+
       meth ||= retrieve_command_name(given_args)
-
-      log!(:all_commands, given_args, meth, retrieve_command_name(given_args), normalize_command_name(meth))
-
+      #log!(:all_commands, given_args, meth, retrieve_command_name(given_args), normalize_command_name(meth))
       command = all_commands[normalize_command_name(meth)]
 
 
@@ -3174,7 +3174,7 @@ class Thor
       #args.shift if meth && (map[meth]) #TODO:  || !(meth ~= /^\-/))
       unless args.empty?
         meth = args.first
-        args.shift if meth && map[meth]
+        args.shift #if meth && map[meth]
         meth
       end
     end

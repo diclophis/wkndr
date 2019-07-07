@@ -14,22 +14,35 @@ class ServerSide < Wkndr
 
     log!(:TRAPINSTALLED, self, @keep_running, @stacks_to_care_about)
 
+i = UV::Idle.new
+
     while @keep_running && foo = self.cheese_cross!
+      #log!(:serverside_block_open)
+
       super
+
       UV.run(UV::UV_RUN_ONCE)
+
+#i.start {|x|
+#}
+
+      #t = UV::Timer.new
+      #t.start(16, 0) do |x|
+      #  #log!(:timer_serverside)
+      #end
+
+      #log!(:serverside_block_close)
     end
 
-    UV.run(UV::UV_RUN_ONCE)
-    UV.default_loop.stop
+    #UV.run(UV::UV_RUN_ONCE)
+    #UV.default_loop.stop
   end
 
   desc "server [dir]", ""
-  def server(*dir)
-    log!(:CHEEEEESE, dir)
-
+  def server(dir = "public")
     stack = StackBlocker.new(true)
 
-    self.class.start_server(stack, dir.last || "public")
+    self.class.start_server(stack, dir)
 
     Wkndr.the_server.subscribe_to_wkndrfile("/")
 
