@@ -12,25 +12,21 @@ class ServerSide < Wkndr
   def self.block!
     install_trap!
 
-    log!(:TRAPINSTALLED, self, @keep_running, @stacks_to_care_about)
     t = UV::Timer.new
-    t.start(5, 5) do |x|
+    t.start(1, 1) do |x|
       #log!(:timer_serverside)
     end
 
     while @keep_running && foo = self.cheese_cross!
       super
 
-      #UV.run(UV::UV_RUN_NOWAIT)
+      UV.run(UV::UV_RUN_NOWAIT)
     
       UV.run(UV::UV_RUN_ONCE)
-
-
-      #log!(:serverside_block_close)
     end
 
-    #UV.run(UV::UV_RUN_ONCE)
-    #UV.default_loop.stop
+    UV.run(UV::UV_RUN_ONCE)
+    UV.default_loop.stop
   end
 
   desc "server [dir]", ""

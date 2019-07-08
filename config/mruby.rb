@@ -37,6 +37,8 @@ MRuby::Build.new do |conf|
   #http faas routing
   conf.gem :github => "katzer/mruby-r3"
 
+  conf.gem :github => "iij/mruby-zlib"
+
   conf.cc do |cc|
     cc.flags = ["-lm"]
   end

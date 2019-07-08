@@ -8,6 +8,7 @@ apt-get update \
   && apt-get install --no-install-recommends -y \
        locales ruby2.5 rake git \
        build-essential make \
+       zlib1g-dev \
        python2.7 nodejs cmake \
        default-jre \
        bison \

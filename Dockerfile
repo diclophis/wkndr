@@ -54,6 +54,8 @@ RUN cd /var/lib/wkndr && ls -l && \
     git checkout cb3ee2d0501612f406e2d44b1e6d55b18861b1e1
 
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
+COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb
+COPY gigamock-transfer/static/ /var/lib/wkndr/gigamock-transfer/static/
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 
 RUN /var/lib/wkndr/iterate-web.sh build-mruby
@@ -71,9 +73,9 @@ RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/
 
-COPY public/index.html /var/lib/wkndr/public/index.html
-COPY public/index.js /var/lib/wkndr/public/index.js
-COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
+#COPY public/index.html /var/lib/wkndr/public/index.html
+#COPY public/index.js /var/lib/wkndr/public/index.js
+#COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
 
 RUN setcap cap_sys_chroot+ep /usr/sbin/chroot 
 

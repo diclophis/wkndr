@@ -31,7 +31,35 @@ class Wkndr < Thor
 
   def self.camp(&block)
     if @server
-      log!(:server_side_camp, block, @server)
+      #log!(:server_side_camp, block, @server)
+
+      #TODO: abstrace base interface
+      @server.get('/') { |ids_from_path, mab|
+        mab.html5 "lang" => "en" do
+          mab.head do
+            mab.title "wkndr"
+            mab.style do
+              GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
+            end
+          end
+          mab.body "id" => "wkndr-body" do
+            mab.div "id" => "wkndr-terminal-container" do
+              mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+              end
+            end
+            mab.div "id" => "wkndr-graphics-container", "oncontextmenu" => "event.preventDefault()" do
+              mab.canvas "id" => "canvas", "class" => "maxwh" do
+              end
+            end
+            mab.script do
+              GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
+            end
+            mab.script "async" => "async", "src" => "wkndr.js" do
+            end
+          end
+        end
+      }
+
       block.call(@server)
     else
       log!(:client_side_skip)

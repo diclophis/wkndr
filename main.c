@@ -138,6 +138,7 @@
 #include "server_side.h"
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
+#include "embed_static.h"
 
 #endif
 
@@ -1123,13 +1124,13 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   lights[0].target.x = tx + 0;
   lights[0].target.y = ty + 0;
   lights[0].target.z = tz + 0;
-  lights[0].intensity = 0.125;
+  lights[0].intensity = 0.075;
   lights[0].radius = 0.333;
-  lights[0].enabled = true;
+  lights[0].enabled = false;
 
   //white directional
-  lights[1].intensity = 0.33;
-  lights[1].enabled = true;
+  lights[1].intensity = 0.5;
+  lights[1].enabled = false;
 
   //blue spotlight
   lights[2].position.x = tx + 2;
@@ -1138,13 +1139,13 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   lights[2].target.x = tx;
   lights[2].target.y = ty;
   lights[2].target.z = tz;
-  lights[2].intensity = 0.5;
-  lights[2].coneAngle = 8.00;
+  lights[2].intensity = 0.000001;
+  lights[2].coneAngle = 20.00;
   lights[2].enabled = true;
 
-  lights[3].intensity = 0.33;
+  lights[3].intensity = 0.15;
   lights[3].radius = 3.0;
-  lights[3].enabled = true;
+  lights[3].enabled = false;
 
   UpdateLightValues(standardShader, lights[0]);
   UpdateLightValues(standardShader, lights[1]);
@@ -2288,6 +2289,8 @@ int main(int argc, char** argv) {
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
 #ifdef TARGET_DESKTOP
+  eval_static_libs(mrb, embed_static_js, embed_static_txt, embed_static_css, NULL);
+
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);

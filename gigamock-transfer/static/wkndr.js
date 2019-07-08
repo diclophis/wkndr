@@ -106,6 +106,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 var Module = {
   arguments: ['client', graphicsContainer.offsetWidth.toString(), graphicsContainer.offsetHeight.toString()],
   preRun: [(function() {
+    console.log("PRERUN");
+
     window.handle_js_websocket_event = Module.cwrap(
       'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
     );

@@ -23,6 +23,8 @@ class ClientSide < Wkndr
     supblock = super
 
     UV.run(UV::UV_RUN_NOWAIT)
+  
+    UV.run(UV::UV_RUN_ONCE)
 
     supblock
   end
