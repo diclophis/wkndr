@@ -14,6 +14,47 @@ Wkndr.camp { |sl|
       end
     end
   }
+
+  sl.get('/wkndr') { |ids_from_path, mab|
+    mab.html5 do
+      mab.head do
+        mab.meta "charset" => "utf-8"
+        mab.title "wkndr"
+        #map.link "rel" => "stylesheet", "href" => "xterm-dist/xterm.css"
+        mab.style do
+        end
+      end
+      mab.body "id" => "wkndr-body" do
+        mab.div "id" => "wkndr-terminal-container" do
+          mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+          end
+        end
+        mab.div "id" => "wkndr-graphics-container", "oncontextmenu" => "event.preventDefault()" do
+          mab.canvas "id" => "canvas", "class" => "maxwh" do
+          end
+        end
+      end
+    end
+  }
+#
+#    <style>
+#    </style>
+#  </head>
+#  <body id="wkndr-body">
+#    <div id="wkndr-terminal-container">
+#      <div id="wkndr-terminal" class="maxwh"></div>
+#    </div>
+#    <div id="wkndr-graphics-container" oncontextmenu="event.preventDefault()">
+#      <canvas id="canvas" class="maxwh"></canvas>
+#    </div>
+
+#    <script src='xterm-dist/xterm.js'></script>
+#    <script src='xterm-dist/fit/fit.js'></script>
+#    <script src='index.js'></script>
+
+#    <script async type="text/javascript" src="wkndr.js"></script>
+#  </body>
+#</html>
 }
 
 Wkndr.play { |gl|

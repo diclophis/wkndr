@@ -1,0 +1,5 @@
+div, canvas { margin: 0; padding: 0; }
+#wkndr-body { background-color: black; margin: 0; }
+#wkndr-graphics-container { position: fixed; width: calc(100% - 2em); height: calc(100% - 2em); margin: 1em; }
+#wkndr-terminal-container { position: fixed; width: calc(100% - 1em); height: calc(100% - 2em); margin: 1em 0 1em 1em; }
+.maxwh { width: 100%; height: 100%; position: absolute; }
