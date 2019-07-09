@@ -878,9 +878,9 @@ void SetWindowMinSize(int width, int height)
 // TODO: Issues on HighDPI scaling
 void SetWindowSize(int width, int height)
 {
-#if defined(PLATFORM_DESKTOP)
+//#if defined(PLATFORM_DESKTOP)
     glfwSetWindowSize(window, width, height);
-#endif
+//#endif
 }
 
 // Show the window

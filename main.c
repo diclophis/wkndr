@@ -501,15 +501,9 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int
   
   mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
 
-  //if (IsWindowReady()) {
+  if (IsWindowReady()) {
     SetWindowSize(w, h);
-  //}
-
-  //TODO: set window size here
-  //mrb_iv_set(
-  //    mrb, , mrb_intern_lit(mrb, "@pointer"), // set @data
-  //    mrb_obj_value(                           // with value hold in struct
-  //        Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, p_data)));
+  }
 
   return 0;
 }
@@ -523,7 +517,6 @@ size_t socket_connected(mrb_state* mrb, struct RObject* selfP, const char* buf, 
 
   return 0;
 }
-
 
 // Function to trigger alerts straight from C++
 EMSCRIPTEN_KEEPALIVE
@@ -882,6 +875,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
 
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
