@@ -487,7 +487,6 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   return 0;
 }
 
-
 EMSCRIPTEN_KEEPALIVE
 size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int w, int h) {
 
@@ -502,9 +501,9 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int
   
   mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
 
-  if (IsWindowReady()) {
+  //if (IsWindowReady()) {
     SetWindowSize(w, h);
-  }
+  //}
 
   //TODO: set window size here
   //mrb_iv_set(
@@ -514,7 +513,6 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int cols, int rows, int
 
   return 0;
 }
-
 
 EMSCRIPTEN_KEEPALIVE
 size_t socket_connected(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
@@ -1780,7 +1778,7 @@ static mrb_value fast_tty_resize(mrb_state* mrb, mrb_value self)
 static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
 {
 #ifdef TARGET_DESKTOP
-  struct winsize w = {21, 82, 0, 0};
+  struct winsize w = {1, 1, 0, 0};
 
   int fdm, fds, rc;
   static char ptyname[FILENAME_MAX];
@@ -2289,7 +2287,7 @@ int main(int argc, char** argv) {
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
 #ifdef TARGET_DESKTOP
-  eval_static_libs(mrb, embed_static_js, embed_static_txt, embed_static_css, NULL);
+  eval_static_libs(mrb, embed_static_js, embed_static_txt, embed_static_css, embed_static_ico, NULL);
 
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);

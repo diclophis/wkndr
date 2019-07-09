@@ -52,6 +52,7 @@ endif
 
 giga_static_js = gigamock-transfer/static/xterm-dist/xterm.js gigamock-transfer/static/xterm-dist/fit/fit.js gigamock-transfer/static/wkndr.js 
 giga_static_txt = gigamock-transfer/static/robots.txt
+giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/xterm-dist/xterm.css gigamock-transfer/static/wkndr.css 
 #gigamock-transfer/static/wkndr.png
 
@@ -95,12 +96,14 @@ endif
 $(build)/test.yml: $(target) config.ru
 	$(target) > $@
 
-$(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css)
+$(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_js)  > $(build)/embed_static_js.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
+	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_css) > $(build)/embed_static_css.rb
 	mruby/bin/mrbc -g -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
 	mruby/bin/mrbc -g -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
+	mruby/bin/mrbc -g -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
 	mruby/bin/mrbc -g -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 

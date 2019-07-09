@@ -1,19 +1,19 @@
 # this is wkndr
 
 Wkndr.camp { |sl|
-  sl.get('/boats') { |ids_from_path, mab|
-    mab.html5 do
-      mab.head { mab.title "Boats.com" }
-      mab.body do
-        mab.h1 "Boats.com has great deals"
-        mab.ul do
-          mab.li "$29 for a canoe"
-          mab.li "$39 for a raft"
-          mab.li "$4.99 for a huge boat that floats and can fit 5 people"
-        end
-      end
-    end
-  }
+  #sl.get('/boats') { |ids_from_path, mab|
+  #  mab.html5 do
+  #    mab.head { mab.title "Boats.com" }
+  #    mab.body do
+  #      mab.h1 "Boats.com has great deals"
+  #      mab.ul do
+  #        mab.li "$29 for a canoe"
+  #        mab.li "$39 for a raft"
+  #        mab.li "$4.99 for a huge boat that floats and can fit 5 people"
+  #      end
+  #    end
+  #  end
+  #}
 }
 
 Wkndr.play { |gl|

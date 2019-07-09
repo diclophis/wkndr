@@ -162,15 +162,12 @@ class Server
   def match_dispatch(path)
     if @tree
       ids_from_path, handler = @tree.match(path)
-      #log!(:matching_routes, path, @tree.routes, handler, ids_from_path)
 
       if ids_from_path && handler
         begin
-          mab = Markaby::Builder.new
-          resp_from_handler = handler.call(ids_from_path, mab)
-          bytes_to_return = mab.to_s
+          resp_from_handler = handler.call(ids_from_path)
 
-          "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{bytes_to_return.length}\r\n\r\n#{bytes_to_return}"
+          "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{resp_from_handler.length}\r\n\r\n#{resp_from_handler}"
         rescue => e
           server_error(e.inspect)
         end
@@ -185,9 +182,7 @@ class Server
   end
 
   def subscribe_to_wkndrfile(wkndrfile_path, write_back_connection = nil)
-    log!(:subscribe_to_wkndrfile, wkndrfile_path)
-
-    begin
+    #begin
       wkparts = wkndrfile_path.split("~", 2)  
 
       if wkndrfile_path == "/" || (wkparts.length != 2)
@@ -197,22 +192,20 @@ class Server
         reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
       end
 
+      log!(:intend_subscribe_to_wkndrfile, reqd_wkfile)
+
       UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
-        begin
+        #begin
           if actual_wkndrfile.is_a?(UVError)
-            log!(:desktop_connection_wkndrfile_path_error, actual_wkndrfile)
+            log!(:error_subscribe_to_wkndrfile, actual_wkndrfile)
           else
-            log!(:subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
+            log!(:actual_subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
 
             ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
             wkread = ffff.read(102400)
 
-            #log!(:ffff, ffff)
-            #log!(:outgoing_wkndrfile, wkread.length, wkread)
-
             begin
               did_parse = Kernel.eval(wkread)
-              #log!(:outbound_party_parsed_ok, did_parse)
               write_back_connection.write_typed({"party" => wkread}) if write_back_connection
             rescue => e
               log!(:outbound_party_parsed_bad, e)
@@ -227,12 +220,12 @@ class Server
               end
             end
           end
-        rescue => e
-          log!(:desktop_server_wkndrfile_realpath_error, e, e.backtrace)
-        end
+        #rescue => e
+        #  log!(:desktop_server_wkndrfile_realpath_error, e, e.backtrace)
+        #end
       }
-    rescue => e
-      log!(:desktop_server_wkndrfile_subscribe_error, e, e.backtrace)
-    end
+    #rescue => e
+    #  log!(:desktop_server_wkndrfile_subscribe_error, e, e.backtrace)
+    #end
   end
 end

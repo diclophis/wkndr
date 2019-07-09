@@ -34,7 +34,8 @@ class Wkndr < Thor
       #log!(:server_side_camp, block, @server)
 
       #TODO: abstrace base interface
-      @server.get('/') { |ids_from_path, mab|
+      @server.get('/') { |ids_from_path|
+        mab = Markaby::Builder.new
         mab.html5 "lang" => "en" do
           mab.head do
             mab.title "wkndr"
@@ -58,6 +59,15 @@ class Wkndr < Thor
             end
           end
         end
+        bytes_to_return = mab.to_s
+      }
+
+      @server.get('/robots.txt') { |ids_from_path|
+        GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT
+      }
+
+      @server.get('/favicon.ico') { |ids_from_path|
+        GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO
       }
 
       block.call(@server)
