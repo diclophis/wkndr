@@ -46,12 +46,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       });
 
       window.addEventListener('resize', function(resizeEvent) {
-        console.log("windowresize", resizeEvent);
         window.terminal.fit();
       });
 
       window.terminal.on('resize', function(newSize) {
-        console.log('onresize2', mrbPointer, callbackPointer);
         window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
       });
 
@@ -94,8 +92,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
           setTimeout(function() {
             window.terminal.fit();
           }, 1);
-          //window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
-          //console.log("resize456", mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
         }
         window.terminal.write(stringBits);
       } else if (channel == 1) {
@@ -116,8 +112,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 var Module = {
   arguments: ['client', graphicsContainer.offsetWidth.toString(), graphicsContainer.offsetHeight.toString()],
   preRun: [(function() {
-    console.log("PRERUN");
-
     window.handle_js_websocket_event = Module.cwrap(
       'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
     );
