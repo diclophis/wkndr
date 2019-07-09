@@ -606,7 +606,7 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 
   BeginDrawing();
 
-  ClearBackground(BLACK);
+  ClearBackground(BLANK);
 
   time = GetTime();
   dt = GetFrameTime();
@@ -1121,8 +1121,8 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   lights[0].enabled = false;
 
   //white directional
-  lights[1].intensity = 0.5;
-  lights[1].enabled = false;
+  lights[1].intensity = 0.05;
+  lights[1].enabled = true;
 
   //blue spotlight
   lights[2].position.x = tx + 2;

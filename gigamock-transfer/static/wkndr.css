@@ -1,8 +1,7 @@
 div, canvas { margin: 0; padding: 0; }
 #wkndr-body { background-color: black; margin: 0; }
 
-#wkndr-graphics-container { position: absolute; background: rgba(0, 0, 0, 0); }
-#wkndr-terminal-container { position: absolute; background: rgba(0, 0, 0, 0); }
+#wkndr-graphics-container, #wkndr-terminal-container, canvas { position: absolute; background: rgba(0, 0, 0, 0); }
 
 body.split-screen #wkndr-graphics-container { width: calc(50% - 2em); height: calc(100% - 2em); margin: 1em; }
 body.split-screen #wkndr-terminal-container { pointer-events: initial; left: 50%; width: calc(50% - 1em); height: calc(100% - 2em); margin: 1em 0 1em 1em; }

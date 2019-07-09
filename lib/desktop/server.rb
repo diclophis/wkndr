@@ -36,6 +36,39 @@ class Server
     @closed = false
     @handlers = {}
 
+    update_utmp = Proc.new {
+      #osx
+      # utmp_file = "/var/run/utmpx"
+      #fake
+      # utmp_file = "/var/tmp/cheese"
+      #kube
+      utmp_file = "/var/run/utmp"
+      @fsev_utmp = UV::FS::Event.new
+      @fsev_utmp.start(utmp_file, 0) do |path, event|
+        if event == :change
+          @fsev_utmp.stop
+
+          connections_by_pid = {}
+          @all_connections.each { |cn|
+            if cn.pid
+              connections_by_pid[cn.pid] = cn
+            end
+          }
+
+          FastUTMP.utmps.each { |pts, username|
+            if fcn = connections_by_pid[pts]
+              logged_in_users_wkndrfile_path = ("~" + username)
+              subscribe_to_wkndrfile(logged_in_users_wkndrfile_path, fcn)
+            end
+          }
+
+          update_utmp.call
+        end
+      end
+    }
+
+    update_utmp.call
+
     UV::FS.realpath(required_prefix) { |resolved_prefix|
       if resolved_prefix.is_a?(UVError)
         log!(:INITSERVER2ERR, required_prefix, resolved_prefix)
@@ -49,43 +82,11 @@ class Server
 
       @server = UV::TCP.new
       @server.bind(@address)
-      @server.simultaneous_accepts = 256
-      @server.listen(512) { |connection_error|
+      @server.simultaneous_accepts = 4
+      @server.listen(32) { |connection_error|
         self.on_connection(connection_error)
       }
 
-      update_utmp = Proc.new {
-        #osx
-        # utmp_file = "/var/run/utmpx"
-        utmp_file = "/var/run/utmp"
-        log!(:UTMP_WATCH, utmp_file)
-        @fsev = UV::FS::Event.new
-        @fsev.start(utmp_file, 0) do |path, event|
-          log!(:UTMP, event)
-          if event == :change
-            @fsev.stop
-
-            connections_by_pid = {}
-            @all_connections.each { |cn|
-              if cn.pid
-                connections_by_pid[cn.pid] = cn
-              end
-            }
-
-            FastUTMP.utmps.each { |pts, username|
-              log!(:TTY, pts, username)
-              if fcn = connections_by_pid[pts]
-                logged_in_users_wkndrfile_path = ("~" + username)
-                fcn.subscribe_to_wkndrfile(logged_in_users_wkndrfile_path)
-              end
-            }
-
-            update_utmp.call
-          end
-        end
-      }
-
-      update_utmp.call
     }
   end
 
@@ -99,6 +100,11 @@ class Server
     if @fsev
       @fsev.stop
       @fsev = nil
+    end
+
+    if @fsev_utmp
+      @fsev_utmp.stop
+      @fsev_utmp = nil
     end
   end
 

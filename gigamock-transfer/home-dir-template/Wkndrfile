@@ -1,10 +1,10 @@
 #
 
 Wkndr.play { |gl|
-  gl.lookat(0, 0.0, 200.0, 0.0, 0.0, 0.0, 0.01, 50.0)
+  gl.lookat(1, 0.0, 10.0, 0.0, 0.0, 0.0, 0.01, 30.0)
  
   total_msg = 0
-  cube = Cube.new(1.0, 1.0, 1.0, 5.0)
+  cube = Cube.new(1.0, 1.0, 1.0, 1.0)
   speed = 100.0
 
   gl.event { |typed_msg|
@@ -12,10 +12,14 @@ Wkndr.play { |gl|
   }
  
   gl.update { |global_time, delta_time|
+
+    wave_function = Math.sin(global_time)
+    distance = global_time * speed
+
     gl.drawmode {
       gl.threed {
         cube.draw(true)
-        cube.deltar(1.0, 1.0, 1.0, global_time * speed)
+        cube.deltar(1.0, wave_function, 1.0, distance)
       }
     }
   }
