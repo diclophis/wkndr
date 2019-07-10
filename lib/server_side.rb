@@ -46,7 +46,7 @@ class ServerSide < Wkndr
 
   desc "client", ""
   def client(*args)
-    log!(:outerclient_on_serverside, args)
+    #log!(:outerclient_on_serverside, args)
     nil
   end
   method_added :client

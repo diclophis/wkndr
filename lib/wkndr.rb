@@ -177,7 +177,7 @@ class Wkndr < Thor
   end
 
   def self.update_with_timer!(run_loop_blocker = nil)
-    #log!(:ADDING, run_loop_blocker)
+    log!(:ADDING, run_loop_blocker)
 
     @stacks_to_care_about ||= []
     @stacks_to_care_about << run_loop_blocker
@@ -205,7 +205,7 @@ class Wkndr < Thor
       default_command :startup
 
       stack = start(args_outer, {})
-      runblock!(stack) if stack
+      runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
     end
   end
 end
