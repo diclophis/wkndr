@@ -92,6 +92,7 @@ class Thor
       #
       def method_missing(method, *args)
         method = method.to_s
+        #TODO
         if method =~ /^(\w+)\?$/
           if args.empty?
             !!self[$1]
@@ -604,7 +605,7 @@ class Thor
     alias_method :human_name, :name
 
     def initialize(name, options = {})
-      class_name = self.class.name.split("::").last
+      class_name = self.class.to_s.split("::").last
 
       type = options[:type]
 
@@ -837,7 +838,7 @@ class Thor
       names = @non_assigned_required.map do |o|
         o.respond_to?(:switch_name) ? o.switch_name : o.human_name
       end.join("', '")
-      class_name = self.class.name.split("::").last.downcase
+      class_name = self.class.to_s.split("::").last.downcase
       raise RequiredArgumentMissingError, "No value provided for required #{class_name} '#{names}'"
     end
   end
@@ -1687,7 +1688,7 @@ class Thor
       super
       @lazy_default = options[:lazy_default]
       @group        = options[:group].to_s.capitalize if options[:group]
-      @aliases      = Array(options[:aliases])
+      @aliases      = nil #TODO: Array.new(options[:aliases])
       @hide         = options[:hide]
     end
 
@@ -1742,7 +1743,7 @@ class Thor
       when Numeric
         :numeric
       when Hash, Array, String
-        value.class.name.downcase.to_sym
+        value.class.to_s.downcase.to_sym
       end
 
       new(name.to_s, :required => required, :type => type, :default => default, :aliases => aliases)
@@ -1765,9 +1766,10 @@ class Thor
 
       sample = "[#{sample}]".dup unless required?
 
-      if boolean?
-        sample << ", [#{dasherize('no-' + human_name)}]" unless (name == "force") || name.start_with?("no-")
-      end
+      #TODO
+      #if boolean?
+      #  sample << ", [#{dasherize('no-' + human_name)}]" unless (name == "force") || name.start_with?("no-")
+      #end
 
       if aliases.empty?
         (" " * padding) << sample
@@ -1788,7 +1790,7 @@ class Thor
   protected
 
     def validate!
-      raise ArgumentError, "An option cannot be boolean and required." if boolean? && required?
+      #raise ArgumentError, "An option cannot be boolean and required." if boolean? && required?
       validate_default_type! if @check_default_type
     end
 
@@ -1803,7 +1805,7 @@ class Thor
       when Symbol
         :string
       when Hash, Array, String
-        @default.class.name.downcase.to_sym
+        @default.class.to_s.downcase.to_sym
       end
 
       raise ArgumentError, "Expected #{@type} default value for '#{switch_name}'; got #{@default.inspect} (#{default_type})" unless default_type == @type
@@ -1946,7 +1948,7 @@ class Thor
 
     def check_unknown!
       # an unknown option starts with - or -- and has no more --'s afterward.
-      unknown = @extra.select { |str| str =~ /^--?(?:(?!--).)*$/ }
+      unknown = [] #TODO @extra.select { |str| str =~ /^--?(?:(?!--).)*$/ }
       raise UnknownArgumentError, "Unknown switches '#{unknown.join(', ')}'" unless unknown.empty?
     end
 
@@ -2504,7 +2506,9 @@ class Thor
       #   script.invoke(:command, first_arg, second_arg, third_arg)
       #
       def start(given_args = ARGV, config = {})
-      log!(:start_wtf, given_args, config)
+        #TODO
+        log!(:start_wtf, given_args, config)
+
         config[:shell] ||= Thor::Base.shell.new
         dispatch(nil, given_args.dup, nil, config)
       rescue Thor::Error => e
@@ -2984,7 +2988,7 @@ class Thor
       @check_unknown_options ||= {}
       options.each do |key, value|
         if value
-          @check_unknown_options[key] = Array(value)
+          @check_unknown_options[key] = Array.new(value) #TODO: Array(value)
         else
           @check_unknown_options.delete(key)
         end
@@ -3085,12 +3089,13 @@ class Thor
 
     # The method responsible for dispatching given the args.
     def dispatch(meth, given_args, given_opts, config) #:nodoc: # rubocop:disable MethodLength
-      log!(:dispatch, meth, given_args)
+      #TODO
 
       meth ||= retrieve_command_name(given_args)
       #log!(:all_commands, given_args, meth, retrieve_command_name(given_args), normalize_command_name(meth))
       command = all_commands[normalize_command_name(meth)]
 
+      log!(:dispatch, meth, given_args, given_opts, command)
 
       if !command && config[:invoked_via_subcommand]
         # We're a subcommand and our first argument didn't match any of our
@@ -3174,7 +3179,8 @@ class Thor
       #args.shift if meth && (map[meth]) #TODO:  || !(meth ~= /^\-/))
       unless args.empty?
         meth = args.first
-        args.shift #if meth && map[meth]
+        #args.shift if meth && map[meth] || meth
+        args.shift if meth && (map[meth] || !meth.include?("--"))
         meth
       end
     end
