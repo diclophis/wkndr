@@ -92,8 +92,8 @@ class Thor
       #
       def method_missing(method, *args)
         method = method.to_s
-        #TODO
-        if method.match(/^(\w+)\?$/)
+        log!(:method_missing, method, args)
+        if method =~ /^(\w+)\?$/
           if args.empty?
             !!self[$1]
           else
@@ -292,23 +292,29 @@ class Thor
     def run(instance, args = [])
       arity = nil
       #TODO
+      #TODO
+      #TODO
       if private_method?(instance)
+      raise "wtf123"
         instance.class.handle_no_command_error(name)
       elsif public_method?(instance)
         #arity = instance.method(name).arity
-        instance.__send__(name, *args)
+        instance.send(name, *args)
       elsif local_method?(instance, :method_missing)
       raise "bar"
-        instance.__send__(:method_missing, name.to_sym, *args)
+        instance.send(:method_missing, name.to_sym, *args)
       else
       raise "biz"
         instance.class.handle_no_command_error(name)
       end
-    #rescue ArgumentError => e
-    #  handle_argument_error?(instance, e, caller) ? instance.class.handle_argument_error(self, e, args, arity) : (raise e)
-    #rescue NoMethodError => e
+    #TODO
+    #TODO
+    #TODO
+    rescue ArgumentError => e
+      handle_argument_error?(instance, e) ? instance.class.handle_argument_error(self, e, args, arity) : (raise e)
+    rescue NoMethodError => e
     #raise "asdasdasdasd"
-    #  handle_no_method_error?(instance, e, caller) ? instance.class.handle_no_command_error(name) : (raise e)
+      handle_no_method_error?(instance, e) ? instance.class.handle_no_command_error(name) : (raise e)
     end
 
     # Returns the formatted usage by injecting given required arguments
@@ -350,11 +356,15 @@ class Thor
     def required_options
       #@required_options ||= 
       #TODO????????
+      #TODO
+      #TODO
       options.map { |_, o| o.usage if o.required? }.compact.sort.join(" ")
     end
 
     # Given a target, checks if this class name is a public method.
     def public_method?(instance) #:nodoc:
+      #TODO
+      #TODO
       #TODO
       #raise "#{instance.public_methods} i--------------i #{[name.to_s, name.to_sym]}"
       #!(instance.public_methods & [name.to_s, name.to_sym]).empty?
@@ -371,23 +381,30 @@ class Thor
       !(methods & [name.to_s, name.to_sym]).empty?
     end
 
-    def sans_backtrace(backtrace, caller) #:nodoc:
-      #TODO!!!! |frame| frame =~ FILE_REGEXP || (frame =~ /\.java:/ && RUBY_PLATFORM =~ /java/) || (frame =~ %r{^kernel/} && RUBY_ENGINE =~ /rbx/) }
-      saned = backtrace.reject { }
-      saned - caller
+    #def sans_backtrace(backtrace, caller) #:nodoc:
+    #  #TODO
+    #  #TODO!!!! |frame| frame =~ FILE_REGEXP || (frame =~ /\.java:/ && RUBY_PLATFORM =~ /java/) || (frame =~ %r{^kernel/} && RUBY_ENGINE =~ /rbx/) }
+    #  #TODO
+    #  saned = backtrace.reject { }
+    #  saned - caller
+    #end
+
+    def handle_argument_error?(instance, error)
+      log!(:arg_error, instance, error)
+
+      #not_debugging?(instance) && (error.message =~ /wrong number of arguments/ || error.message =~ /given \d*, expected \d*/) && begin
+      #  #saned = sans_backtrace(error.backtrace, caller)
+      #  saned = error.backtrace
+      #  # Ruby 1.9 always include the called method in the backtrace
+      #  saned.empty? || (saned.size == 1 && RUBY_VERSION >= "1.9")
+      #end
     end
 
-    def handle_argument_error?(instance, error, caller)
-      not_debugging?(instance) && (error.message.match(/wrong number of arguments/) || error.message.match(/given \d*, expected \d*/)) && begin
-        saned = sans_backtrace(error.backtrace, caller)
-        # Ruby 1.9 always include the called method in the backtrace
-        saned.empty? || (saned.size == 1 && RUBY_VERSION >= "1.9")
-      end
-    end
+    def handle_no_method_error?(instance, error)
+    log!(:handl_no, instance, error)
 
-    def handle_no_method_error?(instance, error, caller)
       not_debugging?(instance) &&
-        error.message.match(/^undefined method `#{name}' for #{(instance.to_s)}$/)
+        error.message =~ /^undefined method `#{name}' for #{(instance.to_s)}$/
     end
   end
   Task = Command
@@ -408,6 +425,8 @@ class Thor
 
     def run(instance, args = [])
       #TODO?????
+      #TODO
+      #TODO
       if (instance.methods & [name.to_s, name.to_sym]).empty?
         instance.class.handle_no_command_error(name)
       else
@@ -521,7 +540,7 @@ class Thor
     #
     def invoke(name = nil, *args)
       if name.nil?
-        warn "[Thor] Calling invoke() without argument is deprecated. Please use invoke_all instead.\n#{caller.join("\n")}"
+        warn "[Thor] Calling invoke() without argument is deprecated. Please use invoke_all instead.\nTODO\n"
         return invoke_all
       end
 
@@ -533,7 +552,7 @@ class Thor
       raise "Expected Thor class, got #{klass}" unless klass <= Thor::Base
 
       args, opts, config = _parse_initialization_options(args, opts, config)
-      klass.__send__(:dispatch, command, args, opts, config) do |instance|
+      klass.send(:dispatch, command, args, opts, config) do |instance|
         instance.parent_options = options
       end
     end
@@ -679,7 +698,9 @@ class Thor
       arguments = []
 
       args.each do |item|
+log!(:split_self_bits, item, args)
         #break if item =~ /^-/
+        break if item[0] == "-"
         arguments << item
       end
 
@@ -688,7 +709,6 @@ class Thor
 
     def self.parse(*args)
       to_parse = args.pop
-      log!(:CHEEESEDDDDDDD)
       new(*args).parse(to_parse)
     end
 
@@ -728,8 +748,10 @@ class Thor
   private
 
     def no_or_skip?(arg)
-      arg.match(/^--(no|skip)-([-\w]+)$/)
-      $2
+      if arg
+        arg =~ /^--(no|skip)-([-\w]+)$/
+        $2
+      end
     end
 
     def last?
@@ -753,6 +775,7 @@ class Thor
     end
 
     def current_is_value?
+    log!(:currnet_is_v, peek)
       peek && peek.to_s !~ /^-/
     end
 
@@ -800,7 +823,7 @@ class Thor
     def parse_numeric(name)
       return shift if peek.is_a?(Numeric)
 
-      unless peek.match(NUMERIC) && $& == peek
+      unless peek =~ NUMERIC && $& == peek
         raise MalformattedArgumentError, "Expected numeric value for '#{name}'; got #{peek.inspect}"
       end
 
@@ -867,7 +890,7 @@ class Thor
       # namespace<String>:: The namespace to search for.
       #
       def find_by_namespace(namespace)
-        namespace = "default#{namespace}" if namespace.empty? || namespace.match(/^:/)
+        namespace = "default#{namespace}" if namespace.empty? || namespace =~ /^:/
         Thor::Base.subclasses.detect { |klass| klass.namespace == namespace }
       end
 
@@ -927,6 +950,9 @@ class Thor
           #raise "#{Thor::Base.subclasses}"
           #next unless subclass.name
           #stringfied_constants.include?(subclass.name.gsub("#{klass.name}::", ""))
+          #TODO
+          #TODO
+          #TODO
           subclass
         end
       end
@@ -940,8 +966,8 @@ class Thor
       # String
       #
       def snake_case(str)
-        return str.downcase if str.match(/^[A-Z_]+$/)
-        str.gsub(/\B[A-Z]/, '_\&').squeeze("_").match(/_*(.*)/)
+        return str.downcase if str =~ /^[A-Z_]+$/
+        str.gsub(/\B[A-Z]/, '_\&').squeeze("_") =~ /_*(.*)/
         $+.downcase
       end
 
@@ -954,8 +980,11 @@ class Thor
       # String
       #
       def camel_case(str)
-        return str if str !~ /_/ && str.match(/[A-Z]+.*/)
-        str.split("_").map(&:capitalize).join
+      log!(:camel_case, str)
+        return str if str && (str !~ /_/ && str =~ /[A-Z]+.*/)
+        if str
+          str.split("_").map(&:capitalize).join
+        end
       end
 
       # Receives a namespace and tries to retrieve a Thor or Thor::Group class
@@ -1215,14 +1244,14 @@ class Thor
       # ==== Example
       # say("I know you knew that.")
       #
-      def say(message = "", color = nil, force_new_line = nil)
-        #!(message.to_s && message.to_s.match(/( |\t)\Z/)))
+      def say(message = "", color = nil, force_new_line = true)
+        #(message.to_s !~ /( |\t)\Z/))
         buffer = prepare_message(message, *color)
         buffer += "\n" if force_new_line && !message.to_s.end_with?("\n")
 
         #stdout.print(buffer)
         #stdout.flush
-        log!(:say, buffer)
+        log!(:buffer, buffer)
       end
 
       # Say a status with the given color and appends the message. Since this
@@ -1241,22 +1270,23 @@ class Thor
         buffer = "#{status}#{spaces}#{message}"
         buffer = "#{buffer}\n" unless buffer.end_with?("\n")
 
-        stdout.print(buffer)
-        stdout.flush
+        #stdout.print(buffer)
+        #stdout.flush
+        log!(:buffer, buffer)
       end
 
       # Make a question the to user and returns true if the user replies "y" or
       # "yes".
       #
       def yes?(statement, color = nil)
-        !!(ask(statement, color, :add_to_history => false).match(is?(:yes)))
+        !!(ask(statement, color, :add_to_history => false) =~ is?(:yes))
       end
 
       # Make a question the to user and returns true if the user replies "n" or
       # "no".
       #
       def no?(statement, color = nil)
-        !!(ask(statement, color, :add_to_history => false).match(is?(:no)))
+        !!(ask(statement, color, :add_to_history => false) =~ is?(:no))
       end
 
       # Prints values in columns
@@ -1265,17 +1295,17 @@ class Thor
       # Array[String, String, ...]
       #
       def print_in_columns(array)
-        return if array.empty?
-        colwidth = (array.map { |el| el.to_s.size }.max || 0) + 2
-        array.each_with_index do |value, index|
-          # Don't output trailing spaces when printing the last column
-          if ((((index + 1) % (terminal_width / colwidth))).zero? && !index.zero?) || index + 1 == array.length
-            #stdout.puts value
-            log!(:vc, value)
-          else
-            #stdout.printf("%-#{colwidth}s", value)
-          end
-        end
+        log!(:print_col, array)
+        #return if array.empty?
+        #colwidth = (array.map { |el| el.to_s.size }.max || 0) + 2
+        #array.each_with_index do |value, index|
+        #  # Don't output trailing spaces when printing the last column
+        #  if ((((index + 1) % (terminal_width / colwidth))).zero? && !index.zero?) || index + 1 == array.length
+        #    #stdout.puts value
+        #  else
+        #    #stdout.printf("%-#{colwidth}s", value)
+        #  end
+        #end
       end
 
       # Prints a table.
@@ -1336,8 +1366,7 @@ class Thor
           end
 
           sentence = truncate(sentence, options[:truncate]) if options[:truncate]
-          #stdout.puts sentence
-          log!(:sentace, sentance)
+          log!(:sentance, sentence)
         end
       end
 
@@ -1361,13 +1390,12 @@ class Thor
         #  unwrapped.strip.tr("\n", " ").squeeze(" ").gsub(/.{1,#{width}}(?:\s|\Z)/) { ($& + 5.chr).gsub(/\n\005/, "\n").gsub(/\005/, "\n") }
         #end
 
-      
-        ##paras.each do |para|
-        ##  para.split("\n").each do |line|
-        ##    #stdout.puts line.insert(0, " " * indent)
-        ##  end
-        ##  #stdout.puts unless para == paras.last
-        ##end
+        #paras.each do |para|
+        #  para.split("\n").each do |line|
+        #    stdout.puts line.insert(0, " " * indent)
+        #  end
+        #  stdout.puts unless para == paras.last
+        #end
       end
 
       # Deals with file collision and returns true if the file should be
@@ -1437,7 +1465,7 @@ class Thor
       #
       def error(statement)
         #stderr.puts statement
-        log!(:error, statement)
+        log!(:error_statement, statement)
       end
 
       # Apply color to the given string with optional bold. Disabled in the
@@ -1522,7 +1550,7 @@ class Thor
       end
 
       def unix?
-        RUBY_PLATFORM.match(/(aix|darwin|linux|(net|free|open)bsd|cygwin|solaris|irix|hpux)/i)
+        RUBY_PLATFORM =~ /(aix|darwin|linux|(net|free|open)bsd|cygwin|solaris|irix|hpux)/i
       end
 
       def truncate(string, width)
@@ -1652,16 +1680,20 @@ class Thor
       @shell ||= Thor::Base.shell.new
     end
 
-    # Common methods that are delegated to the shell.
-    SHELL_DELEGATED_METHODS.each do |method|
-      #TODO
-      #, __FILE__, __LINE__
-        #def #{method}(*args,&block)
-        #  shell.#{method}(*args,&block)
-        #end
-      #module_eval <<-METHOD
-      #METHOD
-    end
+    ## Common methods that are delegated to the shell.
+    #log!(:cheese_DELEG, SHELL_DELEGATED_METHODS)
+
+    #SHELL_DELEGATED_METHODS.each do |method|
+    #  #TODO
+    #  #TODO
+    #  #TODO
+    #  #, __FILE__, __LINE__
+    #    #def #{method}(*args,&block)
+    #    #  shell.#{method}(*args,&block)
+    #    #end
+    #  #module_eval <<-METHOD
+    #  #METHOD
+    #end
 
     # Yields the given block with padding.
     def with_padding
@@ -1697,7 +1729,13 @@ class Thor
       super
       @lazy_default = options[:lazy_default]
       @group        = options[:group].to_s.capitalize if options[:group]
-      @aliases      = nil #TODO: Array.new(options[:aliases])
+      if options[:aliases] && options[:aliases].is_a?(Array)
+        @aliases      = (options[:aliases])
+      elsif options[:aliases]
+        @aliases = [options[:aliases]]
+      else
+        @aliases = nil
+      end
       @hide         = options[:hide]
     end
 
@@ -1755,6 +1793,8 @@ class Thor
         value.class.to_s.downcase.to_sym
       end
 
+log!(:GOOSE_ONE)
+
       new(name.to_s, :required => required, :type => type, :default => default, :aliases => aliases)
     end
 
@@ -1787,18 +1827,19 @@ class Thor
       end
     end
 
-    VALID_TYPES.each do |type|
-      #, __FILE__, __LINE__ + 1
-      #class_eval <<-RUBY
-      #  def #{type}?
-      #    self.type == #{type.inspect}
-      #  end
-      #RUBY
-    end
+    #VALID_TYPES.each do |type|
+    #  #, __FILE__, __LINE__ + 1
+    #  #class_eval <<-RUBY
+    #  #  def #{type}?
+    #  #    self.type == #{type.inspect}
+    #  #  end
+    #  #RUBY
+    #end
 
   protected
 
     def validate!
+      #TODO
       #raise ArgumentError, "An option cannot be boolean and required." if boolean? && required?
       validate_default_type! if @check_default_type
     end
@@ -1871,6 +1912,8 @@ class Thor
       options = hash_options.values
       super(options)
 
+log!(:here_one, options, defaults)
+
       # Add defaults
       defaults.each do |key, value|
         @assigns[key.to_s] = value
@@ -1881,14 +1924,22 @@ class Thor
       @switches = {}
       @extra = []
 
-      options.each do |option|
-        @switches[option.switch_name] = option
+log!(:here_two, options, defaults)
 
-        option.aliases.each do |short|
-          name = short.to_s.sub(/^(?!\-)/, "-")
-          @shorts[name] ||= option.switch_name
+      if options
+        options.each do |option|
+          @switches[option.switch_name] = option
+
+          if option.aliases #ALIASES@!@!#@!@#!@#
+            option.aliases.each do |short|
+              name = short.to_s.sub(/^(?!\-)/, "-")
+              @shorts[name] ||= option.switch_name
+            end
+          end
         end
       end
+
+log!(:here_three, @shorts, @switches, @extra)
     end
 
     def remaining
@@ -1939,7 +1990,20 @@ class Thor
             break
           elsif match
             @extra << shifted
-            @extra << shift while peek && peek !~ /^-/
+            while true
+              f = peek
+              log!(:shift_peek, f)
+
+              if f && f[0] == "-"
+                break
+              else
+                #break unless f !~ /^-/
+                @extra << shift 
+              end
+            end
+
+            log!(:GOOSE_THREE)
+
           else
             @extra << shifted
           end
@@ -1950,6 +2014,8 @@ class Thor
 
       check_requirement! unless @disable_required_check
 
+log!(:GOOSE_TWO)
+
       assigns = Thor::CoreExt::HashWithIndifferentAccess.new(@assigns)
       assigns.freeze
       assigns
@@ -1957,7 +2023,7 @@ class Thor
 
     def check_unknown!
       # an unknown option starts with - or -- and has no more --'s afterward.
-      unknown = [] #TODO @extra.select { |str| str =~ /^--?(?:(?!--).)*$/ }
+      unknown = @extra.select { |str| str =~ /^--?(?:(?!--).)*$/ }
       raise UnknownArgumentError, "Unknown switches '#{unknown.join(', ')}'" unless unknown.empty?
     end
 
@@ -2006,7 +2072,11 @@ class Thor
     # Check if the given argument is actually a shortcut.
     #
     def normalize_switch(arg)
-      (@shorts[arg] || arg).tr("_", "-")
+      first_bit = (@shorts[arg] || arg)
+      log!(:first_bit, first_bit)
+      if first_bit
+        first_bit.tr("_", "-")
+      end
     end
 
     def parsing_options?
@@ -2131,19 +2201,15 @@ class Thor
       to_parse += opts.remaining unless self.class.strict_args_position?(config)
 
       thor_args = Thor::Arguments.new(self.class.arguments)
-      found_parsed_args = thor_args.parse(to_parse)
-      log!(:wtf_found_p_args, found_parsed_args)
-      if found_parsed_args
-        found_parsed_args.each { |k, v| __send__("#{k}=", v) }
-      end
+      thor_args.parse(to_parse).each { |k, v| self.send("#{k}=", v) }
       @args = thor_args.remaining
     end
 
     class << self
       def included(base) #:nodoc:
         base.extend ClassMethods
-        base.__send__ :include, Invocation
-        base.__send__ :include, Shell
+        base.send :include, Invocation
+        base.send :include, Shell
       end
 
       # Returns the classes that inherits from Thor or Thor::Group.
@@ -2169,10 +2235,12 @@ class Thor
       #
       def register_klass_file(klass) #:nodoc:
         #TODO
+        #TODO
+        #TODO
         file = "Wkndrfile" #caller[1].match(/(.*):\d+/)[1]
         Thor::Base.subclasses << klass unless Thor::Base.subclasses.include?(klass)
 
-        file_subclasses = Thor::Base.subclass_files[file] #File.expand_path(file)]
+        file_subclasses = Thor::Base.subclass_files[File.expand_path(file)]
         file_subclasses << klass unless file_subclasses.include?(klass)
       end
     end
@@ -2306,8 +2374,6 @@ class Thor
 
         options[:required] = required
 
-log!(:CHEEEESE)
-
         arguments << Thor::Argument.new(name, options)
       end
 
@@ -2412,6 +2478,9 @@ log!(:CHEEEESE)
       #               objects as values.
       #
       def commands
+      #TODO
+      #raise "wtf"
+      #TODO
       #TODO
         @commands ||= Thor::CoreExt::OrderedHash.new
       end
@@ -2521,9 +2590,6 @@ log!(:CHEEEESE)
       #   script.invoke(:command, first_arg, second_arg, third_arg)
       #
       def start(given_args = ARGV, config = {})
-        #TODO
-        log!(:start_wtf, given_args, config)
-
         config[:shell] ||= Thor::Base.shell.new
         dispatch(nil, given_args.dup, nil, config)
       rescue Thor::Error => e
@@ -2677,6 +2743,8 @@ log!(:CHEEEESE)
         #TODO??????
         # Return if it's not a public instance method
         #return unless public_method_defined?(meth.to_sym)
+        #TODO
+        #TODO
 
         @no_commands ||= false
         return if @no_commands || !create_command(meth)
@@ -2690,10 +2758,12 @@ log!(:CHEEEESE)
       def from_superclass(method, default = nil)
       #TODO
       #raise "fooooooo"
+      #TODO
+      #TODO
         if self == baseclass || !superclass.respond_to?(method, true)
           default
         else
-          value = superclass.__send__(method)
+          value = superclass.send(method)
 
           # Ruby implements `dup` on Object, but raises a `TypeError`
           # if the method is called on immediates. As a result, we
@@ -2718,6 +2788,8 @@ log!(:CHEEEESE)
       #
       def basename
         #TODO???????????????
+        #TODO
+        #TODO
         File.basename("Wkndrfile").split(" ").first
       end
 
@@ -2947,6 +3019,8 @@ class Thor
       #if defined?(@package_name) && @package_name
       #  shell.say "#{@package_name} commands:"
       #else
+      #TODO
+      #TODO
         shell.say "Commands:"
       #end
 
@@ -2958,6 +3032,8 @@ class Thor
     # Returns commands ready to be printed.
     def printable_commands(all = true, subcommand = false)
       #raise "#{all_commands}"
+      #TODO
+      #TODO
       #TODO
       (all ? all_commands : commands).map do |_, command|
         next if command.hidden?
@@ -2984,6 +3060,7 @@ class Thor
       subcommand_classes[subcommand.to_s] = subcommand_class
 
       define_method(subcommand) do |*args|
+        log!(:args_split, args)
         args, opts = Thor::Arguments.split(args)
         invoke_args = [args, opts, {:invoked_via_subcommand => true, :class_options => options}]
         invoke_args.unshift "help" if opts.delete("--help") || opts.delete("-h")
@@ -3002,8 +3079,13 @@ class Thor
     def check_unknown_options!(options = {})
       @check_unknown_options ||= {}
       options.each do |key, value|
+        #TODO: Array(value)
         if value
-          @check_unknown_options[key] = [] #Array.new(value) #TODO: Array(value)
+          if value.is_a?(Array)
+            @check_unknown_options[key] = value
+          else
+            @check_unknown_options[key] = [value] #TODO: Array(value)
+          end
         else
           @check_unknown_options.delete(key)
         end
@@ -3104,13 +3186,8 @@ class Thor
 
     # The method responsible for dispatching given the args.
     def dispatch(meth, given_args, given_opts, config) #:nodoc: # rubocop:disable MethodLength
-      #TODO
-
       meth ||= retrieve_command_name(given_args)
-      #log!(:all_commands, given_args, meth, retrieve_command_name(given_args), normalize_command_name(meth))
       command = all_commands[normalize_command_name(meth)]
-
-      log!(:dispatch, meth, given_args, given_opts, command)
 
       if !command && config[:invoked_via_subcommand]
         # We're a subcommand and our first argument didn't match any of our
@@ -3120,6 +3197,8 @@ class Thor
       end
 
       if command
+      log!(:args_split_two, given_args)
+
         args, opts = Thor::Options.split(given_args)
         if stop_on_unknown_option?(command) && !args.empty?
           # given_args starts with a non-option, so we treat everything as
@@ -3133,12 +3212,18 @@ class Thor
         command = dynamic_command_class.new(meth)
       end
 
+log!(:CHEESE_one)
+
       opts = given_opts || opts || []
       config[:current_command] = command
       config[:command_options] = command.options
 
+
       instance = new(args, opts, config)
       yield instance if block_given?
+
+log!(:CHEESE_two)
+
       args = instance.args
       trailing = args[Range.new(arguments.size, -1)]
       instance.invoke_command(command, trailing || [])
@@ -3175,9 +3260,9 @@ class Thor
       elsif all_commands[meth] || meth == "method_missing"
         true
       else
-        log! "[WARNING] Attempted to create command #{meth.inspect} without usage or description. " +
+        puts "[WARNING] Attempted to create command #{meth.inspect} without usage or description. " +
              "Call desc if you want this method to be available as command or declare it inside a " +
-             "no_commands{} block. Invoked from #{caller[1].inspect}."
+             "no_commands{} block. Invoked from TODO."
         false
       end
     end
@@ -3191,13 +3276,14 @@ class Thor
     # Retrieve the command name from given args.
     def retrieve_command_name(args) #:nodoc:
       #meth = args.first.to_s unless args.empty?
-      #args.shift if meth && (map[meth]) #TODO:  || !(meth ~= /^\-/))
-      unless args.empty?
-        meth = args.first
-        #args.shift if meth && map[meth] || meth
-        args.shift if meth && (map[meth] || !meth.include?("--"))
-        meth
+      #args.shift if meth && (map[meth] || meth !~ /^\-/)
+      meth = args.first.to_s unless args.empty?
+      last_r = meth
+      if meth && (map[meth] || meth[0] != "-")
+        last_r = args.shift
       end
+      log!(:args, args, map, meth, last_r)
+      last_r
     end
     alias_method :retrieve_task_name, :retrieve_command_name
 
@@ -3254,10 +3340,11 @@ class Thor
   end
 
   include Thor::Base
-  ####
 
   #TODO!!!!!!!!!!!!
-  #map HELP_MAPPINGS => :help
+  map HELP_MAPPINGS => :help
+  #TODO
+  #TODO
 
   desc "help [COMMAND]", "Describe available commands or one specific command"
   def help(command = nil, subcommand = false)
@@ -3325,6 +3412,8 @@ class Thor::Group
     def invoke(*names, &block)
       options = names.last.is_a?(Hash) ? names.pop : {}
       verbose = options.fetch(:verbose, true)
+
+log!(:CHEESE_names)
 
       names.each do |name|
         invocations[name] = false
@@ -3426,7 +3515,7 @@ class Thor::Group
     #
     def class_options_help(shell, groups = {}) #:nodoc:
       get_options_from_invocations(groups, class_options) do |klass|
-        klass.__send__(:get_options_from_invocations, groups, class_options)
+        klass.send(:get_options_from_invocations, groups, class_options)
       end
       super(shell, groups)
     end
