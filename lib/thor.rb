@@ -93,7 +93,7 @@ class Thor
       def method_missing(method, *args)
         method = method.to_s
         #TODO
-        if method =~ /^(\w+)\?$/
+        if method.match(/^(\w+)\?$/)
           if args.empty?
             !!self[$1]
           else
@@ -378,7 +378,7 @@ class Thor
     end
 
     def handle_argument_error?(instance, error, caller)
-      not_debugging?(instance) && (error.message =~ /wrong number of arguments/ || error.message =~ /given \d*, expected \d*/) && begin
+      not_debugging?(instance) && (error.message.match(/wrong number of arguments/) || error.message.match(/given \d*, expected \d*/)) && begin
         saned = sans_backtrace(error.backtrace, caller)
         # Ruby 1.9 always include the called method in the backtrace
         saned.empty? || (saned.size == 1 && RUBY_VERSION >= "1.9")
@@ -387,7 +387,7 @@ class Thor
 
     def handle_no_method_error?(instance, error, caller)
       not_debugging?(instance) &&
-        error.message =~ /^undefined method `#{name}' for #{(instance.to_s)}$/
+        error.message.match(/^undefined method `#{name}' for #{(instance.to_s)}$/)
     end
   end
   Task = Command
@@ -688,6 +688,7 @@ class Thor
 
     def self.parse(*args)
       to_parse = args.pop
+      log!(:CHEEESEDDDDDDD)
       new(*args).parse(to_parse)
     end
 
@@ -727,7 +728,7 @@ class Thor
   private
 
     def no_or_skip?(arg)
-      arg =~ /^--(no|skip)-([-\w]+)$/
+      arg.match(/^--(no|skip)-([-\w]+)$/)
       $2
     end
 
@@ -799,7 +800,7 @@ class Thor
     def parse_numeric(name)
       return shift if peek.is_a?(Numeric)
 
-      unless peek =~ NUMERIC && $& == peek
+      unless peek.match(NUMERIC) && $& == peek
         raise MalformattedArgumentError, "Expected numeric value for '#{name}'; got #{peek.inspect}"
       end
 
@@ -866,7 +867,7 @@ class Thor
       # namespace<String>:: The namespace to search for.
       #
       def find_by_namespace(namespace)
-        namespace = "default#{namespace}" if namespace.empty? || namespace =~ /^:/
+        namespace = "default#{namespace}" if namespace.empty? || namespace.match(/^:/)
         Thor::Base.subclasses.detect { |klass| klass.namespace == namespace }
       end
 
@@ -939,8 +940,8 @@ class Thor
       # String
       #
       def snake_case(str)
-        return str.downcase if str =~ /^[A-Z_]+$/
-        str.gsub(/\B[A-Z]/, '_\&').squeeze("_") =~ /_*(.*)/
+        return str.downcase if str.match(/^[A-Z_]+$/)
+        str.gsub(/\B[A-Z]/, '_\&').squeeze("_").match(/_*(.*)/)
         $+.downcase
       end
 
@@ -953,7 +954,7 @@ class Thor
       # String
       #
       def camel_case(str)
-        return str if str !~ /_/ && str =~ /[A-Z]+.*/
+        return str if str !~ /_/ && str.match(/[A-Z]+.*/)
         str.split("_").map(&:capitalize).join
       end
 
@@ -1006,11 +1007,11 @@ class Thor
         begin
           Thor::Sandbox.class_eval(content, path)
         rescue StandardError => e
-          $stderr.puts("WARNING: unable to load thorfile #{path.inspect}: #{e.message}")
+          log!("WARNING: unable to load thorfile #{path.inspect}: #{e.message}")
           if debug
-            $stderr.puts(*e.backtrace)
+            log!(*e.backtrace)
           else
-            $stderr.puts(e.backtrace.first)
+            log!(e.backtrace.first)
           end
         end
       end
@@ -1214,12 +1215,14 @@ class Thor
       # ==== Example
       # say("I know you knew that.")
       #
-      def say(message = "", color = nil, force_new_line = (message.to_s !~ /( |\t)\Z/))
+      def say(message = "", color = nil, force_new_line = nil)
+        #!(message.to_s && message.to_s.match(/( |\t)\Z/)))
         buffer = prepare_message(message, *color)
         buffer += "\n" if force_new_line && !message.to_s.end_with?("\n")
 
-        stdout.print(buffer)
-        stdout.flush
+        #stdout.print(buffer)
+        #stdout.flush
+        log!(:say, buffer)
       end
 
       # Say a status with the given color and appends the message. Since this
@@ -1246,14 +1249,14 @@ class Thor
       # "yes".
       #
       def yes?(statement, color = nil)
-        !!(ask(statement, color, :add_to_history => false) =~ is?(:yes))
+        !!(ask(statement, color, :add_to_history => false).match(is?(:yes)))
       end
 
       # Make a question the to user and returns true if the user replies "n" or
       # "no".
       #
       def no?(statement, color = nil)
-        !!(ask(statement, color, :add_to_history => false) =~ is?(:no))
+        !!(ask(statement, color, :add_to_history => false).match(is?(:no)))
       end
 
       # Prints values in columns
@@ -1267,9 +1270,10 @@ class Thor
         array.each_with_index do |value, index|
           # Don't output trailing spaces when printing the last column
           if ((((index + 1) % (terminal_width / colwidth))).zero? && !index.zero?) || index + 1 == array.length
-            stdout.puts value
+            #stdout.puts value
+            log!(:vc, value)
           else
-            stdout.printf("%-#{colwidth}s", value)
+            #stdout.printf("%-#{colwidth}s", value)
           end
         end
       end
@@ -1332,7 +1336,8 @@ class Thor
           end
 
           sentence = truncate(sentence, options[:truncate]) if options[:truncate]
-          stdout.puts sentence
+          #stdout.puts sentence
+          log!(:sentace, sentance)
         end
       end
 
@@ -1346,20 +1351,23 @@ class Thor
       # indent<Integer>:: Indent each line of the printed paragraph by indent value.
       #
       def print_wrapped(message, options = {})
-        indent = options[:indent] || 0
-        width = terminal_width - indent
-        paras = message.split("\n\n")
+        log!(:message, message)
 
-        paras.map! do |unwrapped|
-          unwrapped.strip.tr("\n", " ").squeeze(" ").gsub(/.{1,#{width}}(?:\s|\Z)/) { ($& + 5.chr).gsub(/\n\005/, "\n").gsub(/\005/, "\n") }
-        end
+        #indent = options[:indent] || 0
+        #width = terminal_width - indent
+        #paras = message.split("\n\n")
 
-        paras.each do |para|
-          para.split("\n").each do |line|
-            stdout.puts line.insert(0, " " * indent)
-          end
-          stdout.puts unless para == paras.last
-        end
+        #paras.map! do |unwrapped|
+        #  unwrapped.strip.tr("\n", " ").squeeze(" ").gsub(/.{1,#{width}}(?:\s|\Z)/) { ($& + 5.chr).gsub(/\n\005/, "\n").gsub(/\005/, "\n") }
+        #end
+
+      
+        ##paras.each do |para|
+        ##  para.split("\n").each do |line|
+        ##    #stdout.puts line.insert(0, " " * indent)
+        ##  end
+        ##  #stdout.puts unless para == paras.last
+        ##end
       end
 
       # Deals with file collision and returns true if the file should be
@@ -1428,7 +1436,8 @@ class Thor
       # will be rescued and wrapped in the method below.
       #
       def error(statement)
-        stderr.puts statement
+        #stderr.puts statement
+        log!(:error, statement)
       end
 
       # Apply color to the given string with optional bold. Disabled in the
@@ -1513,7 +1522,7 @@ class Thor
       end
 
       def unix?
-        RUBY_PLATFORM =~ /(aix|darwin|linux|(net|free|open)bsd|cygwin|solaris|irix|hpux)/i
+        RUBY_PLATFORM.match(/(aix|darwin|linux|(net|free|open)bsd|cygwin|solaris|irix|hpux)/i)
       end
 
       def truncate(string, width)
@@ -2122,7 +2131,11 @@ class Thor
       to_parse += opts.remaining unless self.class.strict_args_position?(config)
 
       thor_args = Thor::Arguments.new(self.class.arguments)
-      thor_args.parse(to_parse).each { |k, v| __send__("#{k}=", v) }
+      found_parsed_args = thor_args.parse(to_parse)
+      log!(:wtf_found_p_args, found_parsed_args)
+      if found_parsed_args
+        found_parsed_args.each { |k, v| __send__("#{k}=", v) }
+      end
       @args = thor_args.remaining
     end
 
@@ -2292,6 +2305,8 @@ class Thor
         end
 
         options[:required] = required
+
+log!(:CHEEEESE)
 
         arguments << Thor::Argument.new(name, options)
       end
@@ -2988,7 +3003,7 @@ class Thor
       @check_unknown_options ||= {}
       options.each do |key, value|
         if value
-          @check_unknown_options[key] = Array.new(value) #TODO: Array(value)
+          @check_unknown_options[key] = [] #Array.new(value) #TODO: Array(value)
         else
           @check_unknown_options.delete(key)
         end
@@ -3160,7 +3175,7 @@ class Thor
       elsif all_commands[meth] || meth == "method_missing"
         true
       else
-        puts "[WARNING] Attempted to create command #{meth.inspect} without usage or description. " +
+        log! "[WARNING] Attempted to create command #{meth.inspect} without usage or description. " +
              "Call desc if you want this method to be available as command or declare it inside a " +
              "no_commands{} block. Invoked from #{caller[1].inspect}."
         false
