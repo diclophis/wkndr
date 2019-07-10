@@ -13,7 +13,7 @@ class ClientSide < Wkndr
 
   desc "server", ""
   def server(*args)
-    log!(:outerserver_on_clientside_ignore, args)
+    #log!(:outerserver_on_clientside_ignore, args)
 
     nil
   end

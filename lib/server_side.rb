@@ -30,7 +30,10 @@ class ServerSide < Wkndr
   end
 
   desc "server [dir]", ""
+  option "watch-utmp", :type => :string, :default => nil
   def server(dir = "public")
+  log!(:options, options)
+
     stack = StackBlocker.new(true)
 
     self.class.start_server(stack, dir)
