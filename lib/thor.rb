@@ -290,6 +290,8 @@ class Thor
     # By default, a command invokes a method in the thor class. You can change this
     # implementation to create custom commands.
     def run(instance, args = [])
+    log!(:RUUUUUUUUUUN, instance, args)
+
       arity = nil
       #TODO
       #TODO
@@ -403,8 +405,9 @@ class Thor
     def handle_no_method_error?(instance, error)
     log!(:handl_no, instance, error)
 
-      not_debugging?(instance) &&
-        error.message =~ /^undefined method `#{name}' for #{(instance.to_s)}$/
+      #not_debugging?(instance) &&
+      #  error.message =~ /^undefined method `#{name}' for #{(instance.to_s)}$/
+      true
     end
   end
   Task = Command
@@ -460,6 +463,8 @@ class Thor
 
     # Make initializer aware of invocations and the initialization args.
     def initialize(args = [], options = {}, config = {}, &block) #:nodoc:
+      log!(:AAAAA, args, options, config)
+
       @_invocations = config[:invocations] || Hash.new { |h, k| h[k] = [] }
       @_initializer = [args, options, config]
       super
@@ -539,6 +544,8 @@ class Thor
     #   invoke Rspec::RR, [], :style => :foo
     #
     def invoke(name = nil, *args)
+    log!(:wtf_invoke, name, args)
+
       if name.nil?
         warn "[Thor] Calling invoke() without argument is deprecated. Please use invoke_all instead.\nTODO\n"
         return invoke_all
@@ -552,6 +559,8 @@ class Thor
       raise "Expected Thor class, got #{klass}" unless klass <= Thor::Base
 
       args, opts, config = _parse_initialization_options(args, opts, config)
+      log!(:DISPATCH_BIT, command, args, opts, config)
+
       klass.send(:dispatch, command, args, opts, config) do |instance|
         instance.parent_options = options
       end
@@ -601,8 +610,10 @@ class Thor
     end
     alias_method :_retrieve_class_and_task, :_retrieve_class_and_command
 
-    # Initialize klass using values stored in the @_initializer.
+    #trailing Initialize klass using values stored in the @_initializer.
     def _parse_initialization_options(args, opts, config) #:nodoc:
+      log!(:BBBBB, args, opts, config)
+
       stored_args, stored_opts, stored_config = @_initializer
 
       args ||= stored_args.dup
@@ -1729,13 +1740,14 @@ class Thor
       super
       @lazy_default = options[:lazy_default]
       @group        = options[:group].to_s.capitalize if options[:group]
-      if options[:aliases] && options[:aliases].is_a?(Array)
-        @aliases      = (options[:aliases])
-      elsif options[:aliases]
-        @aliases = [options[:aliases]]
-      else
-        @aliases = nil
-      end
+      #if options[:aliases] && options[:aliases].is_a?(Array)
+      #  @aliases      = (options[:aliases])
+      #elsif options[:aliases]
+      #  @aliases = [options[:aliases]]
+      #else
+      #  @aliases = nil
+      #end
+      @aliases = []
       @hide         = options[:hide]
     end
 
@@ -1994,7 +2006,7 @@ log!(:here_three, @shorts, @switches, @extra)
               f = peek
               log!(:shift_peek, f)
 
-              if f && f[0] == "-"
+              if !f || (f && f[0] == "-")
                 break
               else
                 #break unless f !~ /^-/
@@ -3060,7 +3072,7 @@ class Thor
       subcommand_classes[subcommand.to_s] = subcommand_class
 
       define_method(subcommand) do |*args|
-        log!(:args_split, args)
+        log!(:args_split_abc, args)
         args, opts = Thor::Arguments.split(args)
         invoke_args = [args, opts, {:invoked_via_subcommand => true, :class_options => options}]
         invoke_args.unshift "help" if opts.delete("--help") || opts.delete("-h")
@@ -3197,10 +3209,15 @@ class Thor
       end
 
       if command
-      log!(:args_split_two, given_args)
+      log!(:args_split_def, given_args)
 
         args, opts = Thor::Options.split(given_args)
+
+      log!(:args_split_def_after, args, opts)
+
         if stop_on_unknown_option?(command) && !args.empty?
+        log!(:STOP_ON_INKONWOWN, command, args)
+
           # given_args starts with a non-option, so we treat everything as
           # ordinary arguments
           args.concat opts
@@ -3222,11 +3239,20 @@ log!(:CHEESE_one)
       instance = new(args, opts, config)
       yield instance if block_given?
 
-log!(:CHEESE_two)
+      args_other = instance.args
+      trailing = args_other[Range.new(opts.size, -1)]
 
-      args = instance.args
-      trailing = args[Range.new(arguments.size, -1)]
-      instance.invoke_command(command, trailing || [])
+#[:CHEESE_two, #<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5605ba034a80 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=nil, @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>, ["public", "--watch-utmp=/var/run/cheese"], ["public", "--watch-utmp=/var/run/cheese"]]
+#[:RUUUUUUUUUUN, #<ServerSide:0x5605b9ea8800 @_invocations={ServerSide=>["server"]}, @_initializer=[["public"], ["--watch-utmp=/var/run/cheese"], {:shell=>#<Thor::Shell::Basic:0x5605b9c7cc90 @base=#<ServerSide:0x5605b9ea8800>, @mute=false, @padding=0, @always_force=false>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5605ba034a80 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=nil, @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["public", "--watch-utmp=/var/run/cheese"], @shell=#<Thor::Shell::Basic:0x5605b9c7cc90>>, ["public", "--watch-utmp=/var/run/cheese"]]
+#[:arg_error, #<ServerSide:0x5605b9ea8800 @_invocations={ServerSide=>["server"]}, @_initializer=[["public"], ["--watch-utmp=/var/run/cheese"], {:shell=>#<Thor::Shell::Basic:0x5605b9c7cc90 @base=#<ServerSide:0x5605b9ea8800>, @mute=false, @padding=0, @always_force=false>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5605ba034a80 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=nil, @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["public", "--watch-utmp=/var/run/cheese"], @shell=#<Thor::Shell::Basic:0x5605b9c7cc90>>, lib/thor.rb:272: 'server': wrong number of arguments (2 for 0) (ArgumentError)]
+#[:error_statement, "ERROR: \"Wkndrfile server\" was called with arguments [\"public\", \"--watch-utmp=/var/run/cheese\"]\nUsage: \"Wkndrfile server [dir] \""]
+
+#[:CHEESE_two, #<ServerSide:0x55f5a9f5f980 @_invocations={}, @_initializer=[[], ["--watch-utmp", "foo"], {:shell=>#<Thor::Shell::Basic:0x55f5a9d310c0 @base=#<ServerSide:0x55f5a9f5f980>, @mute=false, @padding=0, @always_force=false>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x55f5aa0e9380 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["--watch-utmp", "foo"], @shell=#<Thor::Shell::Basic:0x55f5a9d310c0>>, []]
+
+log!(:CHEESE_two, args, opts)
+#ancestor_name=nil>, ["public", "--watch-utmp=/var/run/cheese"], ["public", "--watch-utmp=/var/run/cheese"]]
+
+      instance.invoke_command(command, (args || [])) # + (opts || []))
     end
 
     # The banner for this class. You can customize it if you are invoking the
@@ -3618,6 +3644,8 @@ protected
   # Shortcut to invoke with padding and block handling. Use internally by
   # invoke and invoke_from_option class methods.
   def _invoke_for_class_method(klass, command = nil, *args, &block) #:nodoc:
+    log!(:top_bottom_invoke, klass, command, args)
+
     with_padding do
       if block
         case block.arity
@@ -3629,6 +3657,9 @@ protected
           instance_exec(klass, &block)
         end
       else
+
+      log!(:bottom_invoke, klass, command, args)
+
         invoke klass, command, *args
       end
     end
