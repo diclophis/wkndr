@@ -571,8 +571,9 @@ class Thor
 
     # Invoke the given command if the given args.
     def invoke_command(command, *args) #:nodoc:
-#    log!(:ATINVOKE_HERE, command, args)
-#
+    log!(:ATINVOKE_HERETODOOOO, self, command, args)
+    raise "cheese"
+
 #      current = @_invocations[self.class]
 #
 #      unless current.include?(command.name)
@@ -634,38 +635,38 @@ end
 
 class Thor
   class Argument #:nodoc:
-#    VALID_TYPES = [:numeric, :hash, :array, :string]
-#
-#    attr_reader :name, :description, :enum, :required, :type, :default, :banner
-#    alias_method :human_name, :name
-#
-#    def initialize(name, options = {})
-#      class_name = self.class.to_s.split("::").last
-#
-#      type = options[:type]
-#
-#      raise ArgumentError, "#{class_name} name can't be nil."                         if name.nil?
-#      raise ArgumentError, "Type :#{type} is not valid for #{class_name.downcase}s."  if type && !valid_type?(type)
-#
-#      @name        = name.to_s
-#      @description = options[:desc]
-#      @required    = options.key?(:required) ? options[:required] : true
-#      @type        = (type || :string).to_sym
-#      @default     = options[:default]
-#      @banner      = options[:banner] || default_banner
-#      @enum        = options[:enum]
-#
-#      validate! # Trigger specific validations
-#    end
-#
+    VALID_TYPES = [:numeric, :hash, :array, :string]
+
+    attr_reader :name, :description, :enum, :required, :type, :default, :banner
+    alias_method :human_name, :name
+
+    def initialize(name, options = {})
+      class_name = self.class.to_s.split("::").last
+
+      type = options[:type]
+
+      raise ArgumentError, "#{class_name} name can't be nil."                         if name.nil?
+      raise ArgumentError, "Type :#{type} is not valid for #{class_name.downcase}s."  if type && !valid_type?(type)
+
+      @name        = name.to_s
+      @description = options[:desc]
+      @required    = options.key?(:required) ? options[:required] : true
+      @type        = (type || :string).to_sym
+      @default     = options[:default]
+      @banner      = options[:banner] || default_banner
+      @enum        = options[:enum]
+
+      validate! # Trigger specific validations
+    end
+
 #    def usage
 #      required? ? banner : "[#{banner}]"
 #    end
-#
-#    def required?
-#      required
-#    end
-#
+
+    def required?
+      required
+    end
+
 #    def show_default?
 #      case default
 #      when Array, String, Hash
@@ -677,29 +678,29 @@ class Thor
 
   protected
 
-#    def validate!
-#      raise ArgumentError, "An argument cannot be required and have default value." if required? && !default.nil?
-#      raise ArgumentError, "An argument cannot have an enum other than an array." if @enum && !@enum.is_a?(Array)
-#    end
-#
-#    def valid_type?(type)
-#      self.class::VALID_TYPES.include?(type.to_sym)
-#    end
-#
-#    def default_banner
-#      case type
-#      when :boolean
-#        nil
-#      when :string, :default
-#        human_name.upcase
-#      when :numeric
-#        "N"
-#      when :hash
-#        "key:value"
-#      when :array
-#        "one two three"
-#      end
-#    end
+    def validate!
+      raise ArgumentError, "An argument cannot be required and have default value." if required? && !default.nil?
+      raise ArgumentError, "An argument cannot have an enum other than an array." if @enum && !@enum.is_a?(Array)
+    end
+
+    def valid_type?(type)
+      self.class::VALID_TYPES.include?(type.to_sym)
+    end
+
+    def default_banner
+      case type
+      when :boolean
+        nil
+      when :string, :default
+        human_name.upcase
+      when :numeric
+        "N"
+      when :hash
+        "key:value"
+      when :array
+        "one two three"
+      end
+    end
   end
 end
 
@@ -1735,27 +1736,27 @@ end
 
 class Thor
   class Option < Argument #:nodoc:
-#    attr_reader :aliases, :group, :lazy_default, :hide
-#
-#    VALID_TYPES = [:boolean, :numeric, :hash, :array, :string]
-#
-#    def initialize(name, options = {})
-#      @check_default_type = options[:check_default_type]
-#      options[:required] = false unless options.key?(:required)
-#      super
-#      @lazy_default = options[:lazy_default]
-#      @group        = options[:group].to_s.capitalize if options[:group]
-#      #if options[:aliases] && options[:aliases].is_a?(Array)
-#      #  @aliases      = (options[:aliases])
-#      #elsif options[:aliases]
-#      #  @aliases = [options[:aliases]]
-#      #else
-#      #  @aliases = nil
-#      #end
-#      @aliases = []
-#      @hide         = options[:hide]
-#    end
-#
+    attr_reader :aliases, :group, :lazy_default, :hide
+
+    VALID_TYPES = [:boolean, :numeric, :hash, :array, :string]
+
+    def initialize(name, options = {})
+      @check_default_type = options[:check_default_type]
+      options[:required] = false unless options.key?(:required)
+      super
+      @lazy_default = options[:lazy_default]
+      @group        = options[:group].to_s.capitalize if options[:group]
+      #if options[:aliases] && options[:aliases].is_a?(Array)
+      #  @aliases      = (options[:aliases])
+      #elsif options[:aliases]
+      #  @aliases = [options[:aliases]]
+      #else
+      #  @aliases = nil
+      #end
+      @aliases = []
+      @hide         = options[:hide]
+    end
+
 #    # This parse quick options given as method_options. It makes several
 #    # assumptions, but you can be more specific using the option method.
 #    #
@@ -1814,15 +1815,15 @@ class Thor
 #
 #      new(name.to_s, :required => required, :type => type, :default => default, :aliases => aliases)
 #    end
-#
-#    def switch_name
-#      @switch_name ||= dasherized? ? name : dasherize(name)
-#    end
-#
-#    def human_name
-#      @human_name ||= dasherized? ? undasherize(name) : name
-#    end
-#
+
+    def switch_name
+      @switch_name ||= dasherized? ? name : dasherize(name)
+    end
+
+    def human_name
+      @human_name ||= dasherized? ? undasherize(name) : name
+    end
+
 #    def usage(padding = 0)
 #      sample = if banner && !banner.to_s.empty?
 #        "#{switch_name}=#{banner}".dup
@@ -1877,18 +1878,18 @@ class Thor
 #
 #      raise ArgumentError, "Expected #{@type} default value for '#{switch_name}'; got #{@default.inspect} (#{default_type})" unless default_type == @type
 #    end
-#
-#    def dasherized?
-#      name.index("-") == 0
-#    end
-#
-#    def undasherize(str)
-#      str.sub(/^-{1,2}/, "")
-#    end
-#
-#    def dasherize(str)
-#      (str.length > 1 ? "--" : "-") + str.tr("_", "-")
-#    end
+
+    def dasherized?
+      name.index("-") == 0
+    end
+
+    def undasherize(str)
+      str.sub(/^-{1,2}/, "")
+    end
+
+    def dasherize(str)
+      (str.length > 1 ? "--" : "-") + str.tr("_", "-")
+    end
   end
 end
 
@@ -2150,11 +2151,11 @@ class Thor
 #
 #  # Shortcuts for help.
 #  HELP_MAPPINGS       = %w(-h -? --help -D)
-#
-#  # Thor methods that should not be overwritten by the user.
-#  THOR_RESERVED_WORDS = %w(invoke shell options behavior root destination_root relative_root
-#                           action add_file create_file in_root inside run run_ruby_script)
-#
+
+  # Thor methods that should not be overwritten by the user.
+  THOR_RESERVED_WORDS = %w(invoke shell options behavior root destination_root relative_root
+                           action add_file create_file in_root inside run run_ruby_script)
+
 #  TEMPLATE_EXTNAME = ".tt"
 #
   module Base
@@ -2229,37 +2230,37 @@ class Thor
         base.send :include, Shell
       end
 
-#      # Returns the classes that inherits from Thor or Thor::Group.
-#      #
-#      # ==== Returns
-#      # Array[Class]
-#      #
-#      def subclasses
-#        @subclasses ||= []
-#      end
-#
-#      # Returns the files where the subclasses are kept.
-#      #
-#      # ==== Returns
-#      # Hash[path<String> => Class]
-#      #
-#      def subclass_files
-#        @subclass_files ||= Hash.new { |h, k| h[k] = [] }
-#      end
-#
-#      # Whenever a class inherits from Thor or Thor::Group, we should track the
-#      # class and the file on Thor::Base. This is the method responsible for it.
-#      #
-#      def register_klass_file(klass) #:nodoc:
-#        #TODO
-#        #TODO
-#        #TODO
-#        file = "Wkndrfile" #caller[1].match(/(.*):\d+/)[1]
-#        Thor::Base.subclasses << klass unless Thor::Base.subclasses.include?(klass)
-#
-#        file_subclasses = Thor::Base.subclass_files[File.expand_path(file)]
-#        file_subclasses << klass unless file_subclasses.include?(klass)
-#      end
+      # Returns the classes that inherits from Thor or Thor::Group.
+      #
+      # ==== Returns
+      # Array[Class]
+      #
+      def subclasses
+        @subclasses ||= []
+      end
+
+      # Returns the files where the subclasses are kept.
+      #
+      # ==== Returns
+      # Hash[path<String> => Class]
+      #
+      def subclass_files
+        @subclass_files ||= Hash.new { |h, k| h[k] = [] }
+      end
+
+      # Whenever a class inherits from Thor or Thor::Group, we should track the
+      # class and the file on Thor::Base. This is the method responsible for it.
+      #
+      def register_klass_file(klass) #:nodoc:
+        #TODO
+        #TODO
+        #TODO
+        file = "Wkndrfile" #caller[1].match(/(.*):\d+/)[1]
+        Thor::Base.subclasses << klass unless Thor::Base.subclasses.include?(klass)
+
+        file_subclasses = Thor::Base.subclass_files[File.expand_path(file)]
+        file_subclasses << klass unless file_subclasses.include?(klass)
+      end
     end
 
     module ClassMethods
@@ -2695,12 +2696,12 @@ class Thor
 #        shell.print_table(list, :indent => 2)
 #        shell.say ""
 #      end
-#
-#      # Raises an error if the word given is a Thor reserved word.
-#      def is_thor_reserved_word?(word, type) #:nodoc:
-#        return false unless THOR_RESERVED_WORDS.include?(word.to_s)
-#        raise "#{word.inspect} is a Thor reserved word and cannot be defined as #{type}"
-#      end
+
+      # Raises an error if the word given is a Thor reserved word.
+      def is_thor_reserved_word?(word, type) #:nodoc:
+        return false unless THOR_RESERVED_WORDS.include?(word.to_s)
+        raise "#{word.inspect} is a Thor reserved word and cannot be defined as #{type}"
+      end
 
       # Build an option and adds it to the given scope.
       #
@@ -3198,14 +3199,17 @@ class Thor
 
     # The method responsible for dispatching given the args.
     def dispatch(meth, given_args, given_opts, config) #:nodoc: # rubocop:disable MethodLength
+
 log!(:one_a)
 
       meth ||= retrieve_command_name(given_args)
 
 log!(:one_b)
+
       command = all_commands[normalize_command_name(meth)]
 
-log!(:one_c)
+log!(:one_c, meth, command, all_commands)
+
       if !command && config[:invoked_via_subcommand]
         # We're a subcommand and our first argument didn't match any of our
         # commands. So we put it back and call our default command.
@@ -3280,28 +3284,28 @@ log!(:CHEESE_two, args, opts)
       Thor::DynamicCommand
     end
 
-#    def create_command(meth) #:nodoc:
-#      @usage ||= nil
-#      @desc ||= nil
-#      @long_desc ||= nil
-#      @hide ||= nil
-#
-#      if @usage && @desc
-#        base_class = @hide ? Thor::HiddenCommand : Thor::Command
-#        commands[meth] = base_class.new(meth, @desc, @long_desc, @usage, method_options)
-#        @usage, @desc, @long_desc, @method_options, @hide = nil
-#        true
-#      elsif all_commands[meth] || meth == "method_missing"
-#        true
-#      else
-#        puts "[WARNING] Attempted to create command #{meth.inspect} without usage or description. " +
-#             "Call desc if you want this method to be available as command or declare it inside a " +
-#             "no_commands{} block. Invoked from TODO."
-#        false
-#      end
-#    end
-#    alias_method :create_task, :create_command
-#
+    def create_command(meth) #:nodoc:
+      @usage ||= nil
+      @desc ||= nil
+      @long_desc ||= nil
+      @hide ||= nil
+
+      if @usage && @desc
+        base_class = @hide ? Thor::HiddenCommand : Thor::Command
+        commands[meth] = base_class.new(meth, @desc, @long_desc, @usage, method_options)
+        @usage, @desc, @long_desc, @method_options, @hide = nil
+        true
+      elsif all_commands[meth] || meth == "method_missing"
+        true
+      else
+        puts "[WARNING] Attempted to create command #{meth.inspect} without usage or description. " +
+             "Call desc if you want this method to be available as command or declare it inside a " +
+             "no_commands{} block. Invoked from TODO."
+        false
+      end
+    end
+    alias_method :create_task, :create_command
+
 #    def initialize_added #:nodoc:
 #      class_options.merge!(method_options)
 #      @method_options = nil
