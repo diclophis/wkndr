@@ -289,8 +289,8 @@ class Thor
 
     ## By default, a command invokes a method in the thor class. You can change this
     ## implementation to create custom commands.
-    #def run(instance, args = [])
-    #log!(:RUUUUUUUUUUN, instance, args)
+    def run(instance, args = [])
+    log!(:RUUUUUUUUUUN, instance, args)
 
     #  arity = nil
     #  #TODO
@@ -317,7 +317,7 @@ class Thor
     #rescue NoMethodError => e
     ##raise "asdasdasdasd"
     #  handle_no_method_error?(instance, e) ? instance.class.handle_no_command_error(name) : (raise e)
-    #end
+    end
 
     ## Returns the formatted usage by injecting given required arguments
     ## and required options into the given usage.
@@ -464,14 +464,14 @@ class Thor
 #      end
     end
 
-#    # Make initializer aware of invocations and the initialization args.
-#    def initialize(args = [], options = {}, config = {}, &block) #:nodoc:
-#      log!(:AAAAA, args, options, config)
-#
-#      @_invocations = config[:invocations] || Hash.new { |h, k| h[k] = [] }
-#      @_initializer = [args, options, config]
-#      super
-#    end
+    # Make initializer aware of invocations and the initialization args.
+    def initialize(args = [], options = {}, config = {}, &block) #:nodoc:
+      log!(:AAAAAAAAAAAAAAAAAAAAAAAAAAA, args, options, config)
+
+      @_invocations = config[:invocations] || Hash.new { |h, k| h[k] = [] }
+      @_initializer = [args, options, config]
+      super
+    end
 #
 #    # Make the current command chain accessible with in a Thor-(sub)command
 #    def current_command_chain
@@ -572,14 +572,21 @@ class Thor
     # Invoke the given command if the given args.
     def invoke_command(command, *args) #:nodoc:
     log!(:ATINVOKE_HERETODOOOO, self, command, args)
-    raise "cheese"
+    #[:ATINVOKE_HERETODOOOO, #<ServerSide:0x56268202ad50 @options={}, @args=[]>, #<struct Thor::Command name="startup", description="", long_description=nil, usage="startup", options={}, ancestor_name=nil>, [[]]]
+    #[:ATINVOKE_HERETODOOOO, #<ServerSide:0x55c3816c71c0 @options={}, @args=["public", "--watch-utmp"]>, #<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x55c38178f740 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>, [["public"]]]
+    #[:ATINVOKE_HERETODOOOO, #<ServerSide:0x5600261f9f30 @_invocations={}, @_initializer=[["public"], ["--watch-utmp=/var/tmp/fart"], {:shell=>#<Thor::Shell::Basic:0x560026370360>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5600262c2930 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["public", "--watch-utmp=/var/tmp/fart"]>, #<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5600262c2930 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>, [["public", "--watch-utmp=/var/tmp/fart"]]]
 
-#      current = @_invocations[self.class]
-#
-#      unless current.include?(command.name)
-#        current << command.name
-#        command.run(self, *args)
-#      end
+
+    #raise "cheese"
+
+      log!(:current_pre, @_invocations, self.class)
+      current = @_invocations[self.class]
+      log!(:current, current, command.name)
+
+      unless current.include?(command.name)
+        current << command.name
+        command.run(self, *args)
+      end
     end
     alias_method :invoke_task, :invoke_command
 
@@ -3244,15 +3251,20 @@ log!(:CHEESE_one, config)
       config[:current_command] = command
       config[:command_options] = command.options
 
-log!(:CHEESE_seven, config)
+log!(:CHEESE_seven, args, opts, config, given_opts)
+#[:CHEESE_seven, {:shell=>#<Thor::Shell::Basic:0x55eca850bd20>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x55eca845e760 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil>}, ancestor_name=nil>, :command_options=>{"watch-utmp"=>#<Thor::Option:0x55eca845e760 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil>}}, ["--watch-utmp"], nil]
+#[:CHEESE_seven, ["public"], ["--watch-utmp=/var/tmp/fart"], {:shell=>#<Thor::Shell::Basic:0x555a95b1f340>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x555a95a71910 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil>}, ancestor_name=nil>, :command_options=>{"watch-utmp"=>#<Thor::Option:0x555a95a71910 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil>}}, nil]
+
 
       instance = new(args, opts, config)
       yield instance if block_given?
 
 log!(:CHEESE_nine, config, instance, instance.args)
+#[:CHEESE_nine, {:shell=>#<Thor::Shell::Basic:0x555a95b1f340>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x555a95a71910 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}, #<ServerSide:0x555a959a8d70 @_invocations={}, @_initializer=[["public"], ["--watch-utmp=/var/tmp/fart"], {:shell=>#<Thor::Shell::Basic:0x555a95b1f340>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x555a95a71910 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["public", "--watch-utmp=/var/tmp/fart"]>, ["public", "--watch-utmp=/var/tmp/fart"]]
+
 
       args_other = instance.args
-      trailing = args_other[Range.new(opts.size, -1)]
+      trailing = args_other[Range.new(instance.args.size, -1)]
 
 #[:CHEESE_two, #<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5605ba034a80 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=nil, @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>, ["public", "--watch-utmp=/var/run/cheese"], ["public", "--watch-utmp=/var/run/cheese"]]
 #[:RUUUUUUUUUUN, #<ServerSide:0x5605b9ea8800 @_invocations={ServerSide=>["server"]}, @_initializer=[["public"], ["--watch-utmp=/var/run/cheese"], {:shell=>#<Thor::Shell::Basic:0x5605b9c7cc90 @base=#<ServerSide:0x5605b9ea8800>, @mute=false, @padding=0, @always_force=false>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x5605ba034a80 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=nil, @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["public", "--watch-utmp=/var/run/cheese"], @shell=#<Thor::Shell::Basic:0x5605b9c7cc90>>, ["public", "--watch-utmp=/var/run/cheese"]]
@@ -3261,10 +3273,13 @@ log!(:CHEESE_nine, config, instance, instance.args)
 
 #[:CHEESE_two, #<ServerSide:0x55f5a9f5f980 @_invocations={}, @_initializer=[[], ["--watch-utmp", "foo"], {:shell=>#<Thor::Shell::Basic:0x55f5a9d310c0 @base=#<ServerSide:0x55f5a9f5f980>, @mute=false, @padding=0, @always_force=false>, :current_command=>#<struct Thor::Command name="server", description="", long_description=nil, usage="server [dir]", options={"watch-utmp"=>#<Thor::Option:0x55f5aa0e9380 @check_default_type=false, @name="watch-utmp", @description=nil, @required=false, @type=:string, @default=nil, @human_name="watch-utmp", @banner="WATCH-UTMP", @enum=nil, @lazy_default=nil, @aliases=[], @hide=nil, @switch_name="--watch-utmp">}, ancestor_name=nil>}], @options={}, @args=["--watch-utmp", "foo"], @shell=#<Thor::Shell::Basic:0x55f5a9d310c0>>, []]
 
-log!(:CHEESE_two, args, opts)
+log!(:CHEESE_two, args, opts, trailing)
+#[:CHEESE_two, ["public"], ["--watch-utmp"]]
 #ancestor_name=nil>, ["public", "--watch-utmp=/var/run/cheese"], ["public", "--watch-utmp=/var/run/cheese"]]
+#[:CHEESE_two, ["public"], ["--watch-utmp=/var/tmp/fart"], []]
 
-      instance.invoke_command(command, (args || [])) # + (opts || []))
+
+      instance.invoke_command(command, args || []) # + (opts || []))
     end
 
 #    # The banner for this class. You can customize it if you are invoking the
