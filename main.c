@@ -2179,6 +2179,9 @@ int main(int argc, char** argv) {
   mrb_define_global_const(mrb, "ARGV", args_server);
   mrb_define_global_const(mrb_client, "ARGV", args);
 
+  eval_static_libs(mrb, globals, NULL);
+  eval_static_libs(mrb_client, globals, NULL);
+
   struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
   mrb_define_class_method(mrb, fast_utmp, "utmps", fast_utmp_utmps, MRB_ARGS_NONE());
 
@@ -2260,9 +2263,6 @@ int main(int argc, char** argv) {
   mrb_define_method(mrb_client, socket_stream_class_client, "connect!", socket_stream_connect, MRB_ARGS_REQ(0));
   mrb_define_method(mrb_client, socket_stream_class_client, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
   mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
-
-  eval_static_libs(mrb, globals, NULL);
-  eval_static_libs(mrb_client, globals, NULL);
 
   eval_static_libs(mrb_client, socket_stream, NULL);
 
