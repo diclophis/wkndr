@@ -1,7 +1,12 @@
-
 ##!/usr/bin/env ruby
+#
+#
+#
+#
+#"dsds".gsub("a", "b")
 
 ENV={}
+
 
 begin
 
@@ -856,7 +861,7 @@ class Thor
       # Returns the root where thor files are located, depending on the OS.
       #
       def thor_root
-        File.join(user_home, ".thor").tr('\\', "/")
+        File.join(user_home, ".thor").gsub('\\', "/")
       end
 
       # Returns the files in the thor root. On Windows thor_root will be something
@@ -1181,6 +1186,8 @@ class Thor
     # and one with switches.
     #
     def self.split(args)
+    log!(:gonna_split_0000000000000, args)
+
       arguments = []
 
       args.each do |item|
@@ -1233,8 +1240,9 @@ class Thor
   private
 
     def no_or_skip?(arg)
-      arg =~ /^--(no|skip)-([-\w]+)$/
-      $2
+      #arg =~ /^--(no|skip)-([-\w]+)$/
+      #$2
+      false
     end
 
     def last?
@@ -1258,7 +1266,7 @@ class Thor
     end
 
     def current_is_value?
-      peek && peek.to_s !~ /^-/
+      peek && peek.to_s[0] != "-" #TODO:  !~ /^-/
     end
 
     # Runs through the argument array getting strings that contains ":" and
@@ -1530,7 +1538,7 @@ class Thor
             break
           elsif match
             @extra << shifted
-            @extra << shift while peek && peek !~ /^-/
+            @extra << shift while peek && peek[0] != "-" #TODO: !~ /^-/
           else
             @extra << shifted
           end
@@ -1561,6 +1569,8 @@ class Thor
     # Two booleans are returned.  The first is true if the current value
     # starts with a hyphen; the second is true if it is a registered switch.
     def current_is_switch?
+    log!(:PEEK, peek)
+
       case peek
       when LONG_RE, SHORT_RE, EQ_RE, SHORT_NUM
         [true, switch?($1)]
@@ -1599,7 +1609,8 @@ class Thor
     # Check if the given argument is actually a shortcut.
     #
     def normalize_switch(arg)
-      (@shorts[arg] || arg).tr("_", "-")
+    log!(:NORMO, arg)
+      ((@shorts[arg] || arg) || "").gsub("_", "-")
     end
 
     def parsing_options?
@@ -1795,7 +1806,7 @@ class Thor
     end
 
     def dasherize(str)
-      (str.length > 1 ? "--" : "-") + str.tr("_", "-")
+      (str.length > 1 ? "--" : "-") + str.gsub("_", "-")
     end
   end
 end
@@ -1918,7 +1929,12 @@ class Thor
       raise "Missing Thor class for invoke #{name}" unless klass
       raise "Expected Thor class, got #{klass}" unless klass <= Thor::Base
 
+log!(:BEFORE, args, opts, config)
+
       args, opts, config = _parse_initialization_options(args, opts, config)
+
+log!(:AFTER, args, opts, config)
+
       klass.send(:dispatch, command, args, opts, config) do |instance|
         instance.parent_options = options
       end
@@ -1942,6 +1958,8 @@ class Thor
 
     # Invokes using shell padding.
     def invoke_with_padding(*args)
+    log!(:WTFWTFWTF, args)
+
       with_padding { invoke(*args) }
     end
 
@@ -2349,7 +2367,7 @@ class Thor
         #arity = instance.method(name).arity
         instance.send(name, *args)
       #elsif local_method?(instance, :method_missing)
-      #  instance.__send__(:method_missing, name.to_sym, *args)
+        #instance.send(:method_missing, name.to_sym, *args)
       #else
       #  instance.class.handle_no_command_error(name)
       #end
@@ -3179,6 +3197,7 @@ class Thor
     # description<String>:: Description for the subcommand
     def register(klass, subcommand_name, usage, description, options = {})
       if klass <= Thor::Group
+        log!(:REGISTER)
         desc usage, description, options
         define_method(subcommand_name) { |*args| invoke(klass, args) }
       else
@@ -3378,6 +3397,7 @@ class Thor
         args, opts = Thor::Arguments.split(args)
         invoke_args = [args, opts, {:invoked_via_subcommand => true, :class_options => options}]
         invoke_args.unshift "help" if opts.delete("--help") || opts.delete("-h")
+        log!(:SUBCOMMAND, invoke_args)
         invoke subcommand_class, *invoke_args
       end
       subcommand_class.commands.each do |_meth, command|
@@ -3527,11 +3547,15 @@ class Thor
 
       instance = new(args, opts, config)
 
-      #yield instance if block_given?
-      #args = instance.args
-      #trailing = args[Range.new(arguments.size, -1)]
+      yield instance if block_given?
+
+      args = instance.args
+
+      trailing = args[Range.new(arguments.size, -1)]
       #instance.invoke_command(command, trailing || [])
-      log!(:instance, instance)
+
+      log!(:instance, instance, opts, args, trailing)
+      instance.invoke_command(command, trailing || [])
     end
 
     # The banner for this class. You can customize it if you are invoking the
@@ -3611,7 +3635,7 @@ class Thor
     # +normalize_command_name+ also converts names like +animal-prison+
     # into +animal_prison+.
     def normalize_command_name(meth) #:nodoc:
-      return default_command.to_s.tr("-", "_") unless meth
+      return default_command.to_s.gsub("-", "_") unless meth
 
       possibilities = find_command_possibilities(meth)
       raise AmbiguousTaskError, "Ambiguous command #{meth} matches [#{possibilities.join(', ')}]" if possibilities.size > 1
@@ -3624,7 +3648,7 @@ class Thor
         meth = possibilities.first
       end
 
-      meth.to_s.tr("-", "_") # treat foo-bar as foo_bar
+      meth.to_s.gsub("-", "_") # treat foo-bar as foo_bar
     end
     alias_method :normalize_task_name, :normalize_command_name
 
