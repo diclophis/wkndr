@@ -10,6 +10,7 @@ ENV={}
 
 begin
 
+
 class String
   def end_with?(chr)
     self[length-1] == chr
@@ -758,6 +759,8 @@ class Thor
       # String
       #
       def snake_case(str)
+      log!(:SNAKESNAKESNAKESNAKE, str)
+
         return str.downcase if str =~ /^[A-Z_]+$/
         str.gsub(/\B[A-Z]/, '_\&').squeeze("_") =~ /_*(.*)/
         $+.downcase
@@ -772,6 +775,8 @@ class Thor
       # String
       #
       def camel_case(str)
+      log!(:CAMELCAMELCAMEL, str)
+
         return str if str !~ /_/ && str =~ /[A-Z]+.*/
         str.split("_").map(&:capitalize).join
       end
@@ -1507,6 +1512,8 @@ class Thor
     end
 
     def parse(args) # rubocop:disable MethodLength
+log!(:PARSE_OPTIONS_AND_ARGS, args)
+
       @pile = args.dup
       @parsing_options = true
 
@@ -1514,6 +1521,10 @@ class Thor
         if parsing_options?
           match, is_switch = current_is_switch?
           shifted = shift
+
+log!(:is_switch_shifted, match, is_switch, shifted, $1, $2)
+#[:is_switch_shifted, true, nil, "--watch-utmp"]
+
 
           if is_switch
             case shifted
