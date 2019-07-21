@@ -32,6 +32,25 @@ class ServerSide < Wkndr
   desc "server [dir]", ""
   option "watch-utmp", :type => :string, :default => nil
   def server(dir = "public")
+#EQ_RE_TEST       = /^(--\w+(?:-\w+)*|-[a-z])=(.*)$/i
+#
+#a = "--cheese-bar=foo"
+##a = "bar=foo"
+#
+##log!(:a, a)
+#
+##match = (a =~ (EQ_RE_TEST))
+#
+##log!(:match, match, $1, $2)
+#
+#case a
+#  when EQ_RE_TEST
+#    log!(:match, $1, $2)
+#    log! :cheese
+#else
+#  log! :bar
+#end
+
     log!(:OOOOOOOOOOOOOOOOOOOOOoptions, options, @options, self)
 
     stack = StackBlocker.new(true)
