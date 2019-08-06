@@ -1,52 +1,52 @@
-# this is wkndr
-
-Wkndr.camp { |sl|
-  #sl.get('/boats') { |ids_from_path, mab|
-  #  mab.html5 do
-  #    mab.head { mab.title "Boats.com" }
-  #    mab.body do
-  #      mab.h1 "Boats.com has great deals"
-  #      mab.ul do
-  #        mab.li "$29 for a canoe"
-  #        mab.li "$39 for a raft"
-  #        mab.li "$4.99 for a huge boat that floats and can fit 5 people"
-  #      end
-  #    end
-  #  end
-  #}
-}
-
-Wkndr.play { |gl|
-  gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
-
-  total_msg = 0
-
-  cubes = []
-  cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
-  cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
-  cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
-
-  gl.event { |typed_msg|
-    total_msg += 1
-  }
-
-  gl.update { |global_time, delta_time|
-    speed = 100.0 # + (global_time * 10.0)
-
-    gl.drawmode {
-      gl.threed {
-        cubes.each_with_index do |cube,i|
-          cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
-          #cube.deltar(0.5, 0, 1, global_time * speed)
-          cube.draw(true)
-        end
-      }
-
-      gl.twod {
-        gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{'%0.2f' % global_time}") {
-          gl.emit({"c" => "tty"})
-        }
-      }
-    }
-  }
-}
+#  # this is wkndr
+#  
+#  Wkndr.camp { |sl|
+#    #sl.get('/boats') { |ids_from_path, mab|
+#    #  mab.html5 do
+#    #    mab.head { mab.title "Boats.com" }
+#    #    mab.body do
+#    #      mab.h1 "Boats.com has great deals"
+#    #      mab.ul do
+#    #        mab.li "$29 for a canoe"
+#    #        mab.li "$39 for a raft"
+#    #        mab.li "$4.99 for a huge boat that floats and can fit 5 people"
+#    #      end
+#    #    end
+#    #  end
+#    #}
+#  }
+#  
+#  Wkndr.play { |gl|
+#    gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
+#  
+#    total_msg = 0
+#  
+#    cubes = []
+#    cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
+#    cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
+#    cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
+#  
+#    gl.event { |typed_msg|
+#      total_msg += 1
+#    }
+#  
+#    gl.update { |global_time, delta_time|
+#      speed = 100.0 # + (global_time * 10.0)
+#  
+#      gl.drawmode {
+#        gl.threed {
+#          cubes.each_with_index do |cube,i|
+#            cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+#            #cube.deltar(0.5, 0, 1, global_time * speed)
+#            cube.draw(true)
+#          end
+#        }
+#  
+#        gl.twod {
+#          gl.button(50.0, 50.0, 250.0, 20.0, "login test #{total_msg}/#{'%0.2f' % global_time}") {
+#            gl.emit({"c" => "tty"})
+#          }
+#        }
+#      }
+#    }
+#  }

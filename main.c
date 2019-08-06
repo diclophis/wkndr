@@ -2235,28 +2235,39 @@ int main(int argc, char** argv) {
   struct RClass *sphere_class = mrb_define_class(mrb_client, "Sphere", model_class);
   mrb_define_method(mrb_client, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
+  //TODO: x-platofmr these???
+  eval_static_libs(mrb, markaby, NULL);
   eval_static_libs(mrb_client, window, NULL);
+  eval_static_libs(mrb_client, box, NULL);
 
-  eval_static_libs(mrb, thor, NULL);
-  eval_static_libs(mrb_client, thor, NULL);
-
-  eval_static_libs(mrb, wkndr, NULL);
-  eval_static_libs(mrb_client, wkndr, NULL);
-
-  struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
-
-  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
-  mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
+  eval_static_libs(mrb, stack_blocker, NULL);
+  eval_static_libs(mrb_client, stack_blocker, NULL);
 
   eval_static_libs(mrb, theseus, NULL);
   eval_static_libs(mrb_client, theseus, NULL);
 
-  eval_static_libs(mrb, stack_blocker, NULL);
+  eval_static_libs(mrb, game_loop, NULL);
+  eval_static_libs(mrb_client, game_loop, NULL);
+
+  //TODO: full thor???
+  //eval_static_libs(mrb, thor, NULL);
+  //eval_static_libs(mrb_client, thor, NULL);
+
+  //eval_static_libs(mrb, thess, NULL);
+  //eval_static_libs(mrb_client, thess, NULL);
+
 
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
-
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
-  //mrb_define_class_method(mrb, thor_class, "parse!", global_parse, MRB_ARGS_REQ(1));
+
+  struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
+  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
+
+  eval_static_libs(mrb, wkndr, NULL);
+  eval_static_libs(mrb_client, wkndr, NULL);
+
+  //TODO: this is related to Window
+  mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   struct RClass *socket_stream_class_client = mrb_define_class(mrb_client, "SocketStream", mrb_client->object_class);
@@ -2265,15 +2276,6 @@ int main(int argc, char** argv) {
   mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb_client, socket_stream, NULL);
-
-  eval_static_libs(mrb, game_loop, NULL);
-  eval_static_libs(mrb_client, game_loop, NULL);
-
-  eval_static_libs(mrb_client, box, NULL);
-
-  eval_static_libs(mrb, markaby, NULL);
-
-  eval_static_libs(mrb_client, stack_blocker, NULL);
 
   mrb_value the_stack;
   mrb_value the_stack_client;
@@ -2304,6 +2306,7 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 
+  //TODO: re-bootstrap centalized shell3
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "restartup", 1, args_server);
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER\n");
@@ -2314,29 +2317,31 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
-  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
-  if (mrb_client->exc) {
-    fprintf(stderr, "Exception in CLIENT\n");
-    mrb_print_error(mrb_client);
-    mrb_print_backtrace(mrb_client);
-  }
+  //TODO: re-bootstrap centalized shell3
+  //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
+  //if (mrb_client->exc) {
+  //  fprintf(stderr, "Exception in CLIENT\n");
+  //  mrb_print_error(mrb_client);
+  //  mrb_print_backtrace(mrb_client);
+  //}
 
 #ifdef TARGET_DESKTOP
+    //TODO:
+    //mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
+    //if (mrb->exc) {
+    //  fprintf(stderr, "Exception in SERVERBLOCK\n");
+    //  mrb_print_error(mrb);
+    //  mrb_print_backtrace(mrb);
+    //}
+
+    //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "block!", 0, 0);
+    //if (mrb_client->exc) {
+    //  fprintf(stderr, "Exception in CLIENTBLOCK\n");
+    //  mrb_print_error(mrb_client);
+    //  mrb_print_backtrace(mrb_client);
+    //}
+
   //if (argc == 1) {
-    mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
-    if (mrb->exc) {
-      fprintf(stderr, "Exception in SERVERBLOCK\n");
-      mrb_print_error(mrb);
-      mrb_print_backtrace(mrb);
-    }
-
-    mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "block!", 0, 0);
-    if (mrb_client->exc) {
-      fprintf(stderr, "Exception in CLIENTBLOCK\n");
-      mrb_print_error(mrb_client);
-      mrb_print_backtrace(mrb_client);
-    }
-
     //if (!mrb->exc) {
     //  fputs(" => ", stdout);
     //} else {

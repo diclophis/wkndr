@@ -1,72 +1,72 @@
-#
-
-class ServerSide < Wkndr
-  def self.install_trap!
-    @keep_running = true
-
-    UV::Signal.new.start(UV::Signal::SIGINT) do
-      @keep_running = false
-    end
-  end
-
-  def self.block!
-    install_trap!
-
-    t = UV::Timer.new
-    t.start(1, 1) do |x|
-      #log!(:timer_serverside)
-    end
-
-    while @keep_running && foo = self.cheese_cross!
-      super
-
-      UV.run(UV::UV_RUN_NOWAIT)
-    
-      UV.run(UV::UV_RUN_ONCE)
-    end
-
-    UV.run(UV::UV_RUN_ONCE)
-    UV.default_loop.stop
-  end
-
-  desc "server [dir]", ""
-  option "watch-utmp", :type => :string, :default => nil
-  def server(dir = "public")
-#EQ_RE_TEST       = /^(--\w+(?:-\w+)*|-[a-z])=(.*)$/i
-#
-#a = "--cheese-bar=foo"
-##a = "bar=foo"
-#
-##log!(:a, a)
-#
-##match = (a =~ (EQ_RE_TEST))
-#
-##log!(:match, match, $1, $2)
-#
-#case a
-#  when EQ_RE_TEST
-#    log!(:match, $1, $2)
-#    log! :cheese
-#else
-#  log! :bar
-#end
-
-    log!(:OOOOOOOOOOOOOOOOOOOOOoptions, options, @options, self)
-
-    stack = StackBlocker.new(true)
-
-    self.class.start_server(stack, dir)
-
-    Wkndr.the_server.subscribe_to_wkndrfile("/")
-
-    stack
-  end
-  method_added :server
-
-  desc "client", ""
-  def client(*args)
-    #log!(:outerclient_on_serverside, args)
-    nil
-  end
-  method_added :client
-end
+# #
+# 
+# class ServerSide < Wkndr
+#   def self.install_trap!
+#     @keep_running = true
+# 
+#     UV::Signal.new.start(UV::Signal::SIGINT) do
+#       @keep_running = false
+#     end
+#   end
+# 
+#   def self.block!
+#     install_trap!
+# 
+#     t = UV::Timer.new
+#     t.start(1, 1) do |x|
+#       #log!(:timer_serverside)
+#     end
+# 
+#     while @keep_running && foo = self.cheese_cross!
+#       super
+# 
+#       UV.run(UV::UV_RUN_NOWAIT)
+#     
+#       UV.run(UV::UV_RUN_ONCE)
+#     end
+# 
+#     UV.run(UV::UV_RUN_ONCE)
+#     UV.default_loop.stop
+#   end
+# 
+#   desc "server [dir]", ""
+#   option "watch-utmp", :type => :string, :default => nil
+#   def server(dir = "public")
+# #EQ_RE_TEST       = /^(--\w+(?:-\w+)*|-[a-z])=(.*)$/i
+# #
+# #a = "--cheese-bar=foo"
+# ##a = "bar=foo"
+# #
+# ##log!(:a, a)
+# #
+# ##match = (a =~ (EQ_RE_TEST))
+# #
+# ##log!(:match, match, $1, $2)
+# #
+# #case a
+# #  when EQ_RE_TEST
+# #    log!(:match, $1, $2)
+# #    log! :cheese
+# #else
+# #  log! :bar
+# #end
+# 
+#     log!(:OOOOOOOOOOOOOOOOOOOOOoptions, options, @options, self)
+# 
+#     stack = StackBlocker.new(true)
+# 
+#     self.class.start_server(stack, dir)
+# 
+#     Wkndr.the_server.subscribe_to_wkndrfile("/")
+# 
+#     stack
+#   end
+#   method_added :server
+# 
+#   desc "client", ""
+#   def client(*args)
+#     #log!(:outerclient_on_serverside, args)
+#     nil
+#   end
+#   method_added :client
+# end
