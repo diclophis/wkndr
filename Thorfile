@@ -17,7 +17,7 @@ require 'fcntl'
 #require_relative './lib/termios'
 
 WKNDR = "wkndr"
-APP = File.basename(Dir.pwd).gsub(/[^a-z0-9]/, "") #TODO: better dirname support??
+APP = File.basename(Dir.pwd).gsub(/[^a-z0-9\-]/, "") #TODO: better dirname support??
 
 FileUtils.mkdir_p("/var/tmp/wkndr")
 
