@@ -423,8 +423,8 @@ HEREDOC
     execute_procfile(ENV['PWD'], procfile) unless options["only-prepare"]
   end
 
-  desc "rcp", ""
-  def rcp(app, origin)
+  desc "rcp [APP] [ORIGIN]", ""
+  def rcp(app, origin = nil)
     #TODO: this is where the getpty fix from server.rb goes!
     #if $stdin.tty?
     #  oldt = Termios.tcgetattr($stdin)
@@ -723,7 +723,7 @@ HEREDOC
         count_of_finished = completed.length
         max_queued = count_of_started - count_of_finished
 
-        if max_queued < 6
+        if max_queued < 1
           unless started_commands.include?(fjob)
             if !just_this_job || (just_this_job && just_this_job == fjob)
               #TODO: abstract all these seperate bits into WorkUnit class
@@ -1123,186 +1123,6 @@ HEREDOC
         return [stdin, stdout, stderr, wait_thr, exit_proc]
 
     end
-  end
-
-  def execute_procfile(working_directory, procfile = "Procfile")
-    time_started = Time.now
-    chunk = 1024
-    exiting = false
-    exit_grace_counter = 0
-    term_threshold = 3
-    kill_threshold = term_threshold + 5 #NOTE: timing controls exit status
-    total_kill_count = kill_threshold + 7
-    select_timeout = 10.0
-    needs_winsize_update = false
-    trapped = false
-    ljustp_padding = 0
-    self_reader, self_write = IO.pipe
-
-    trap 'INT' do
-      self_write.write_nonblock("\0")
-
-      if exiting && exit_grace_counter < kill_threshold
-        exit_grace_counter += 1
-      end
-
-      exiting = true
-      trapped = true
-      select_timeout = 1.0
-    end
-
-    trap 'WINCH' do
-      needs_winsize_update = true
-    end
-
-    Dir.chdir(working_directory || Dir.mktmpdir)
-
-    pipeline_commands = File.readlines(procfile).collect { |line|
-      process_name, process_cmd = line.split(":", 2)
-      process_name.strip!
-      process_cmd.strip!
-      process_options = {}
-
-      if process_name.length > ljustp_padding
-        ljustp_padding = process_name.length
-      end
-
-      process_stdin, process_stdout, process_stderr, process_waiter = execute_simple(:async, process_cmd, process_options)
-      {
-        :process_name => process_name,
-        :process_cmd => process_cmd,
-        :process_env => {},
-        :process_options => process_options,
-        :process_stdin => process_stdin,
-        :process_stdout => process_stdout,
-        :process_stderr => process_stderr,
-        :process_waiter => process_waiter
-      }
-    }
-
-    ljustp_padding += 1 #NOTE: for readability
-
-    process_stdouts = pipeline_commands.collect { |pipeline_command| pipeline_command[:process_stdout] }
-    process_stdouts += [self_reader]
-
-    process_stderrs = pipeline_commands.collect { |pipeline_command| pipeline_command[:process_stderr] }
-    process_stderrs += [self_reader]
-
-    detected_exited = []
-
-    until pipeline_commands.all? { |pipeline_command| !pipeline_command[:process_waiter].alive? }
-      if exiting
-        exit_grace_counter += 1
-
-        $stdout.write(" ... trying to exit gracefully, please wait #{exit_grace_counter} / #{total_kill_count}")
-        $stdout.write($/)
-
-        pipeline_commands.each do |pipeline_command|
-          process_name = pipeline_command[:process_name]
-          pid = pipeline_command[:process_waiter][:pid]
-
-          unless detected_exited.include?(pid)
-            begin
-              resolution = :SIGINT
-
-              if exit_grace_counter > kill_threshold
-                resolution = :SIGKILL
-                Process.kill('KILL', pid)
-              end
-
-              if exit_grace_counter > term_threshold
-                resolution = :SIGTERM
-                Process.kill('TERM', pid)
-              end
-
-              Process.kill('INT', pid)
-
-              #$stdout.write("#{process_name} signaled... #{resolution}")
-              #$stdout.write($/)
-            rescue Errno::EPERM, Errno::ECHILD, Errno::ESRCH => e
-              detected_exited << pid
-            end
-          end
-        end
-      end
-
-      ready_for_reading, _w, _e = IO.select(process_stdouts + process_stderrs, nil, nil, select_timeout)
-      $stdout.flush
-
-      self_reader.read_nonblock(chunk) rescue nil
-
-      ready_for_reading && pipeline_commands.each { |pipeline_command|
-        process_name = pipeline_command[:process_name]
-        stdout = pipeline_command[:process_stdout]
-        stderr = pipeline_command[:process_stderr]
-
-        begin
-          if ready_for_reading.include?(stdout)
-            stdout_chunk = stdout.read_nonblock(chunk)
-            #should_newline = !stdout_chunk.end_with?($/)
-            #if should_newline
-
-            stdout_chunk.split($/).each do |sc|
-              $stdout.write(process_name.ljust(ljustp_padding) + "OUT: ")
-              $stdout.write(sc)
-              $stdout.write($/)
-            end
-          end
-
-        rescue EOFError => e
-          process_stdouts.delete(stdout)
-        rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR=> e
-          nil
-        end
-
-        begin
-          if ready_for_reading.include?(stderr)
-            stderr_chunk = stderr.read_nonblock(chunk)
-            should_newline = !stderr_chunk.end_with?($/)
-
-            $stdout.write(process_name.ljust(ljustp_padding) + "ERR: ")
-            $stdout.write(stderr_chunk)
-            $stdout.write($/) if should_newline
-          end
-        rescue EOFError => e
-          process_stderrs.delete(stderr)
-        rescue IO::EAGAINWaitReadable, Errno::EIO, Errno::EAGAIN, Errno::EINTR=> e
-          nil
-        end
-      }
-
-      pipeline_commands.each { |pipeline_command|
-        pid = pipeline_command[:process_waiter][:pid]
-        process_name = pipeline_command[:process_name]
-        process_waiter = pipeline_command[:process_waiter]
-
-        unless process_waiter.alive? || detected_exited.include?(pid)
-          detected_exited << pid
-          process_result = process_waiter.value
-
-          $stdout.write("#{process_name} exited... #{process_result.success?}")
-          $stdout.write($/)
-        end
-      }
-    end
-
-    trap 'INT', 'DEFAULT'
-    trap 'WINCH', 'DEFAULT'
-
-    pipeline_commands.each { |pipeline_command|
-      process_name = pipeline_command[:process_name]
-      process_waiter = pipeline_command[:process_waiter]
-      process_result = process_waiter.value
-
-      #$stdout.write("#{process_name} trapped ... #{process_result.success?}")
-      #$stdout.write($/)
-    }
-
-    # ensure nothing is left around
-    Process.wait rescue Errno::ECHILD
-
-    $stdout.write(" ... exiting")
-    $stdout.write($/)
   end
 
   def systemx(*args)

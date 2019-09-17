@@ -55,21 +55,21 @@ RUN cd /var/lib/wkndr && ls -l && \
 
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb
-RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
-
-RUN /var/lib/wkndr/iterate-web.sh build-mruby
-
-COPY raylib-src /var/lib/wkndr/raylib-src
-RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
-RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
-
-COPY main.c /var/lib/wkndr/
-COPY lib /var/lib/wkndr/lib
-COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
-RUN /var/lib/wkndr/iterate-server.sh
-
-COPY resources /var/lib/wkndr/resources
-RUN /var/lib/wkndr/iterate-web.sh
+#RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
+#
+#RUN /var/lib/wkndr/iterate-web.sh build-mruby
+#
+#COPY raylib-src /var/lib/wkndr/raylib-src
+#RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
+#RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
+#
+#COPY main.c /var/lib/wkndr/
+#COPY lib /var/lib/wkndr/lib
+#COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
+#RUN /var/lib/wkndr/iterate-server.sh
+#
+#COPY resources /var/lib/wkndr/resources
+#RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/
 
