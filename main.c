@@ -2256,7 +2256,6 @@ int main(int argc, char** argv) {
   //eval_static_libs(mrb, thess, NULL);
   //eval_static_libs(mrb_client, thess, NULL);
 
-
   struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
 
@@ -2318,21 +2317,21 @@ int main(int argc, char** argv) {
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
   //TODO: re-bootstrap centalized shell3
-  //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
-  //if (mrb_client->exc) {
-  //  fprintf(stderr, "Exception in CLIENT\n");
-  //  mrb_print_error(mrb_client);
-  //  mrb_print_backtrace(mrb_client);
-  //}
+  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
+  if (mrb_client->exc) {
+    fprintf(stderr, "Exception in CLIENT\n");
+    mrb_print_error(mrb_client);
+    mrb_print_backtrace(mrb_client);
+  }
 
 #ifdef TARGET_DESKTOP
     //TODO:
-    //mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
-    //if (mrb->exc) {
-    //  fprintf(stderr, "Exception in SERVERBLOCK\n");
-    //  mrb_print_error(mrb);
-    //  mrb_print_backtrace(mrb);
-    //}
+    mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
+    if (mrb->exc) {
+      fprintf(stderr, "Exception in SERVERBLOCK\n");
+      mrb_print_error(mrb);
+      mrb_print_backtrace(mrb);
+    }
 
     //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "block!", 0, 0);
     //if (mrb_client->exc) {
