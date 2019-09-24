@@ -27,51 +27,6 @@ class Wkndr
     @stacks_to_care_about << run_loop_blocker
   end
 
-  #def self.restartup(args_outer)
-  #  #log!(:restartup, self.to_s, args_outer)
-  #  stack = begin
-  #    server_or_client_side = self.to_s
-  #    
-  #    case server_or_client_side
-  #      when "ClientSide"
-  #        client() #(*args_outer)
-  #      when "ServerSide"
-  #        server() #(*args_outer)
-  #    end
-  #  end
-  #
-  #  log!(:runblock!, self.to_s, args_outer, stack)
-  #  runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
-  #end
-
-  #def self.server_side
-  #  server_or_client_side = self.class.to_s
-  #  case server_or_client_side
-  #    when "ClientSide"
-  #      return nil
-  #    when "ServerSide"
-  #      yield
-  #  end
-  #end
-
-  #def self.client_side
-  #  server_or_client_side = self.class.to_s
-  #  case server_or_client_side
-  #    when "ClientSide"
-  #      yield
-  #    when "ServerSide"
-  #      return nil
-  #  end
-  #end
-
-  #def self.play(stack = nil, gl = nil, &block)
-  #  # play is imp in ClientSide
-  #end
-
-  #def self.camp(&block)
-  #  # camping is impl in ServerSide
-  #end
-
   def self.play(stack = nil, gl = nil, &block)
     begin
       log!(:CHEEEESE, @stack, @gl)
