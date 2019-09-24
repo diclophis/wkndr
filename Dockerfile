@@ -98,6 +98,7 @@ COPY gigamock-transfer/issue /etc/issue
 
 #COPY gigamock-transfer/Procfile.init /var/lib/wkndr/
 #RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
+COPY gigamock-transfer/exgetty.rb /var/lib/wkndr/exgetty.rb
 
 WORKDIR /var/lib/wkndr
 

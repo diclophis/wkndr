@@ -316,8 +316,10 @@ class Connection
 
                     @ps = UV::Process.new({
                       'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
-                      'file' => '/usr/bin/ruby',
-                      'args' => ['/var/lib/wkndr/Thorfile', 'getty', @pid],
+                      #'file' => '/usr/bin/ruby',
+                      #'args' => ['/var/lib/wkndr/Thorfile', 'getty', @pid],
+                      'file' => '/sbin/agetty',
+                      'args' => ["--timeout", "30", "--login-program", "/usr/bin/ruby", "--login-options", "/var/lib/wkndr/exgetty.rb login -- \\u", "115200", @pid, "xterm-256color"],
                       'detached' => true,
                       'env' => []
                     })
