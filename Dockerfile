@@ -96,11 +96,11 @@ COPY gigamock-transfer/iterate-motd.sh /var/lib/wkndr/iterate-motd.sh
 RUN rm /etc/legal /etc/update-motd.d/* && mv /var/lib/wkndr/iterate-motd.sh /etc/update-motd.d/00-wkndr
 COPY gigamock-transfer/issue /etc/issue
 
-COPY Thorfile gigamock-transfer/Procfile.init /var/lib/wkndr/
-RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
+#COPY gigamock-transfer/Procfile.init /var/lib/wkndr/
+#RUN ln -fs /var/lib/wkndr/Thorfile /usr/bin/wkndr && wkndr help
 
 WORKDIR /var/lib/wkndr
 
-CMD ["/var/lib/wkndr/release/wkndr.mruby", "server", "/var/lib/wkndr/public"]
+CMD ["/var/lib/wkndr/release/wkndr.mruby", "--server=/var/lib/wkndr/public", "--no-client"]
 #CMD ["bash"]
 #CMD ["sleep", "infinity"]

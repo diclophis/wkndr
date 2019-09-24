@@ -119,7 +119,7 @@
 #include "main_menu.h"
 #include "socket_stream.h"
 #include "window.h"
-#include "thor.h"
+//#include "thor.h"
 #include "stack_blocker.h"
 #include "client_side.h"
 #include "wkndr.h"
@@ -2256,11 +2256,11 @@ int main(int argc, char** argv) {
   //eval_static_libs(mrb, thess, NULL);
   //eval_static_libs(mrb_client, thess, NULL);
 
-  struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
-  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", thor_b_class);
+  //struct RClass *thor_b_class = mrb_define_class(mrb, "Thor", mrb->object_class);
+  struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
 
-  struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
-  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", thor_b_class_client);
+  //struct RClass *thor_b_class_client = mrb_define_class(mrb_client, "Thor", mrb_client->object_class);
+  struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", mrb_client->object_class);
 
   eval_static_libs(mrb, wkndr, NULL);
   eval_static_libs(mrb_client, wkndr, NULL);

@@ -1,5 +1,5 @@
-#  # this is wkndr
-#  
+#  this is wkndr
+
 Wkndr.camp { |sl|
   sl.get('/boats') { |ids_from_path|
     mab = Markaby::Builder.new
@@ -19,8 +19,6 @@ Wkndr.camp { |sl|
 }
 
 Wkndr.play { |gl|
-log!(:LKJLKJLKJLKJLKJKLJLJKLJ)
-
   gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
 
   total_msg = 0

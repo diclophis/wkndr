@@ -2,17 +2,25 @@
 
 class ClientSide < Wkndr
   def self.startup_clientside(args)
-    w, h = *args
-    w ||= 512
-    h ||= 512
+    if args.include?("--no-client")
+      return
+    end
+
+    client_args = args.find { |arg| arg[0,9] == "--client=" }
+
+    w = 512
+    h = 512
+
+    if client_args
+      a,b = client_args.split("=")
+      w, h = (b.split("x"))
+    end
 
     stack = StackBlocker.new(false)
 
     self.open_client!(stack, w.to_i, h.to_i)
 
     runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
-
-    stack
   end
 
   def self.open_client!(stack, w, h)
@@ -56,11 +64,11 @@ class ClientSide < Wkndr
     self.show!(self.first_stack)
   end
 
-  def self.block!
-    supblock = super
-    UV.run(UV::UV_RUN_NOWAIT)
-  
-    UV.run(UV::UV_RUN_ONCE)
-    supblock
-  end
+  #def self.block!
+  #  supblock = super
+  #  UV.run(UV::UV_RUN_NOWAIT)
+  #
+  #  UV.run(UV::UV_RUN_ONCE)
+  #  supblock
+  #end
 end

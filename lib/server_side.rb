@@ -30,9 +30,18 @@ class ServerSide < Wkndr
   end
 
   def self.startup_serverside(args)
-    directory = args[0] || "public"
+    if args.include?("--no-server")
+      return
+    end
 
-    log!(:startup_serverside, directory)
+    server_args = args.find { |arg| arg[0,9] == "--server=" }
+
+    directory = "public"
+
+    if server_args
+      a,b = server_args.split("=")
+      directory = b
+    end
 
     stack = StackBlocker.new(true)
  
@@ -43,7 +52,5 @@ class ServerSide < Wkndr
     end
 
     runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
-
-    stack
   end
 end

@@ -258,7 +258,7 @@ endif
 #  -Werror=pointer-arith    catch unportable code that does direct arithmetic on void pointers
 #  -fno-strict-aliasing     jar_xm.h does shady stuff (breaks strict aliasing)
 #CFLAGS += -O1 -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
-CFLAGS += -g3 -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
+CFLAGS += -g3 -Wall -std=gnu99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
 
 ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
     CFLAGS += -g

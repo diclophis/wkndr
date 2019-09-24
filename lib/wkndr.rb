@@ -29,8 +29,6 @@ class Wkndr
 
   def self.play(stack = nil, gl = nil, &block)
     begin
-      log!(:CHEEEESE, @stack, @gl)
-
       if block && !@stack && !@gl
         return
       end
@@ -65,7 +63,7 @@ class Wkndr
   end
 
   def self.camp(&block)
-    log!(:server_side_camp, block, @server)
+    #log!(:server_side_camp, block, @server)
     return unless @server
 
     #TODO: abstrace base interface

@@ -42,9 +42,9 @@ MRuby::Build.new do |conf|
   #centralization of thor into shell3
   conf.gem :github => 'hfm/mruby-fileutils'
 
-  conf.gem :git => "git@github.com:Asmod4n/mruby-linenoise", :branch => "master"
+  #conf.gem :git => "git@github.com:Asmod4n/mruby-linenoise", :branch => "master"
   #conf.gem :git => "git@github.com:mattn/mruby-uv", :branch => "master"
-  conf.gem :git => "git@github.com:fastly/mruby-optparse", :branch => "master"
+  #conf.gem :git => "git@github.com:fastly/mruby-optparse", :branch => "master"
 
   conf.cc do |cc|
     cc.flags = ["-lm"]
