@@ -1,5 +1,5 @@
-# #
-# 
+#
+
 class ServerSide < Wkndr
   def self.install_trap!
     @keep_running = true
@@ -28,44 +28,22 @@ class ServerSide < Wkndr
     UV.run(UV::UV_RUN_ONCE)
     UV.default_loop.stop
   end
-# 
-#   desc "server [dir]", ""
-#   option "watch-utmp", :type => :string, :default => nil
-  def self.server(dir = "public")
-# #EQ_RE_TEST       = /^(--\w+(?:-\w+)*|-[a-z])=(.*)$/i
-# #
-# #a = "--cheese-bar=foo"
-# ##a = "bar=foo"
-# #
-# ##log!(:a, a)
-# #
-# ##match = (a =~ (EQ_RE_TEST))
-# #
-# ##log!(:match, match, $1, $2)
-# #
-# #case a
-# #  when EQ_RE_TEST
-# #    log!(:match, $1, $2)
-# #    log! :cheese
-# #else
-# #  log! :bar
-# #end
-# 
-#     log!(:OOOOOOOOOOOOOOOOOOOOOoptions, options, @options, self)
-# 
+
+  def self.startup_serverside(args)
+    directory = args[0] || "public"
+
+    log!(:startup_serverside, directory)
+
     stack = StackBlocker.new(true)
  
-    self.start_server(stack, dir)
- 
-    Wkndr.the_server.subscribe_to_wkndrfile("/")
+    if a_server = Server.run!(directory)
+      Wkndr.set_server(a_server)
+      Wkndr.the_server.subscribe_to_wkndrfile("/")
+      stack.up(a_server)
+    end
+
+    runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
 
     stack
   end
-# 
-#   desc "client", ""
-#   def client(*args)
-#     #log!(:outerclient_on_serverside, args)
-#     nil
-#   end
-#   method_added :client
 end

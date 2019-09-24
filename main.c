@@ -2306,9 +2306,9 @@ int main(int argc, char** argv) {
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 
   //TODO: re-bootstrap centalized shell3
-  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "restartup", 1, args_server);
+  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "startup_serverside", 1, args_server);
   if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVER\n");
+    fprintf(stderr, "Exception in SERVERSTARTUP\n");
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
   }
@@ -2317,49 +2317,29 @@ int main(int argc, char** argv) {
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
   //TODO: re-bootstrap centalized shell3
-  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "restartup", 1, args);
+  mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "startup_clientside", 1, args);
   if (mrb_client->exc) {
-    fprintf(stderr, "Exception in CLIENT\n");
+    fprintf(stderr, "Exception in CLIENTSTARTUP\n");
     mrb_print_error(mrb_client);
     mrb_print_backtrace(mrb_client);
   }
 
 #ifdef TARGET_DESKTOP
-    //TODO:
-    mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
-    if (mrb->exc) {
-      fprintf(stderr, "Exception in SERVERBLOCK\n");
-      mrb_print_error(mrb);
-      mrb_print_backtrace(mrb);
-    }
-
-    //mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "block!", 0, 0);
-    //if (mrb_client->exc) {
-    //  fprintf(stderr, "Exception in CLIENTBLOCK\n");
-    //  mrb_print_error(mrb_client);
-    //  mrb_print_backtrace(mrb_client);
-    //}
-
-  //if (argc == 1) {
-    //if (!mrb->exc) {
-    //  fputs(" => ", stdout);
-    //} else {
-    //  mrb_value val = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
-		//	//if (!mrb_string_p(val)) {
-		//	//	val = mrb_obj_as_string(mrb, obj);
-		//	//}
-    //  char *msg;
-		//	msg = mrb_locale_from_utf8(RSTRING_PTR(val), (int)RSTRING_LEN(val));
-		//	fwrite(msg, strlen(msg), 1, stdout);
-    //  mrb_print_backtrace(mrb);
-		//	mrb_locale_free(msg);
-		//	putc('\n', stdout);
-    //}
-  //}
+  mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVERBLOCK\n");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+  }
 #endif
 
 #ifdef PLATFORM_WEB
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "wizbang!", 0, 0);
+  if (mrb_client->exc) {
+    fprintf(stderr, "Exception in CLIENTBLOCK\n");
+    mrb_print_error(mrb_client);
+    mrb_print_backtrace(mrb_client);
+  }
 #endif
 
   fprintf(stderr, "closing ... \n");
