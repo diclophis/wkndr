@@ -1,6 +1,132 @@
 #  this is wkndr
 
+#  sl.live_index { |conn|
+#    #LiveView.Controller.live_render(conn, MyAppWeb.GithubDeployView, session: %{})
+#  }
+#
+#  render_todos = lambda { |assigns|
+#
+#    mab = Markaby::Builder.new
+#    mab.ul do
+#      assigns[:todos].each { |todo|
+#        mab.li todo
+#      }
+#    end
+#    mab.to_s
+#  end
+#
+#  def mount(socket)
+#    :ok, Wkndr.assign(socket, {:todos => []})
+#  end
+#
+#	sl.handle_event("github_deploy", _value, socket) do
+#  # do the deploy process
+#  {:noreply, assign(socket, deploy_step: "Starting deploy...")}
+#end
+#  def mount(%{id: id, current_user_id: user_id}, socket) do
+#    if connected?(socket), do: :timer.send_interval(30000, self(), :update)
+#
+#    case Thermostat.get_user_reading(user_id, id) do
+#      {:ok, temperature} ->
+#        {:ok, assign(socket, temperature: temperature, id: id)}
+#
+#      {:error, reason} ->
+#        {:error, reason}
+#    end
+#  end
+#
+#  def handle_info(:update, socket) do
+#    {:ok, temperature} = Thermostat.get_reading(socket.assigns.id)
+#    {:noreply, assign(socket, :temperature, temperature)}
+#  end
+# LiveView is first rendered statically as part of regular HTTP requests, which provides quick times for "First Meaningful Paint" and also help search and indexing engines;
+# All of the data in a LiveView is stored in the socket as assigns. 
+# live_render socket, MyLiveView, container: {:tr, class: "highlight"}
+# <button wkndr-click="inc_temperature">+</button>
+# Params	phx-value-*
+# Click Events	phx-click
+# Focus/Blur Events	phx-blur, phx-focus, phx-target
+# Form Events	phx-change, phx-submit, data-phx-error-for, phx-disable-with
+# Key Events	phx-keydown, phx-keyup, phx-target
+# Rate Limiting	phx-debounce, phx-throttle
+# Custom DOM Patching	phx-update
+# JS Interop	phx-hook
+#Any number of optional phx-value- prefixed attributes, such as:
+#
+#<div phx-click="inc" phx-value-myvar1="val1" phx-value-myvar2="val2">
+#
+#will send the following map of params to the server:
+#
+#def handle_event("inc", %{"myvar1" => "val1", "myvar2" => "val2"}, socket) do
+#def error_tag(form, field) do
+#  Enum.map(Keyword.get_values(form.errors, field), fn error ->
+#    content_tag(:span, translate_error(error),
+#      class: "help-block",
+#      data: [phx_error_for: input_id(form, field)]
+#    )
+#  end)
+#end
+#def render(assigns) ...
+#
+#def mount(_session, socket) do
+#  {:ok, assign(socket, %{changeset: Accounts.change_user(%User{})})}
+#end
+#
+#def handle_event("validate", %{"user" => params}, socket) do
+#  changeset =
+#    %User{}
+#    |> Accounts.change_user(params)
+#    |> Map.put(:action, :insert)
+#
+#  {:noreply, assign(socket, changeset: changeset)}
+#end
+#
+#def handle_event("save", %{"user" => user_params}, socket) do
+#  case Accounts.create_user(user_params) do
+#    {:ok, user} ->
+#      {:stop,
+#       socket
+#       |> put_flash(:info, "user created")
+#       |> redirect(to: Routes.user_path(AppWeb.Endpoint, AppWeb.User.ShowView, user))}
+#
+#    {:error, %Ecto.Changeset{} = changeset} ->
+#      {:noreply, assign(socket, changeset: changeset)}
+#  end
+#end
+
+class TodoLive
+  def index
+  end
+
+# ??? handle_call(msg, from, socket)
+# ??? terminate(reason, socket)
+handle_event(event, unsigned_params, socket) # from client
+handle_info(msg, socket) # like handle event, but from internal event source
+handle_params(unsigned_params, uri, socket) # from internal re-routing of queryString params, like sort filter
+mount(session, socket)
+render(assigns)
+
+end
+
+
 Wkndr.camp { |sl|
+	
+
+  sl.get('/bloops') { |ids_from_path|
+	}
+
+  sl.get('/todos') { |ids_from_path|
+    mab = Markaby::Builder.new
+    mab.html5 {
+      mab.head { mab.title "TODOS" }
+      mab.body {
+        mab.h1 "TODOS"
+        sl.live(mab, render_todos, )
+      }
+    }
+    bytes_to_return = mab.to_s
+  }
+
   sl.get('/boats') { |ids_from_path|
     mab = Markaby::Builder.new
     mab.html5 do

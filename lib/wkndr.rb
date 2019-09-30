@@ -16,6 +16,13 @@
 # #   IO
 # #
 # 
+# #
+# # LiveView
+# #   GET
+# #   MOUNT
+# #   RENDER
+# #   CONNECT
+# #   STATE
 
 class Wkndr
   def self.runblock!(stack)
