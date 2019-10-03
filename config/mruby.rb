@@ -20,7 +20,7 @@ MRuby::Build.new do |conf|
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
 
-  conf.gem :github => "h2so5/mruby-pure-regexp"
+  #conf.gem :github => "h2so5/mruby-pure-regexp"
   conf.gem :github => "yui-knk/mruby-set"
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
@@ -38,6 +38,14 @@ MRuby::Build.new do |conf|
   conf.gem :github => "katzer/mruby-r3"
 
   conf.gem :github => "iij/mruby-zlib"
+
+  #centralization of thor into shell3
+  conf.gem :github => 'hfm/mruby-fileutils'
+
+  #conf.gem :git => "git@github.com:Asmod4n/mruby-linenoise", :branch => "master"
+  #conf.gem :git => "git@github.com:mattn/mruby-uv", :branch => "master"
+  #conf.gem :git => "git@github.com:fastly/mruby-optparse", :branch => "master"
+  conf.gem :github => "fastly/mruby-optparse"
 
   conf.cc do |cc|
     cc.flags = ["-lm"]

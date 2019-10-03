@@ -118,7 +118,7 @@ $(build):
 $(build)/%.o: %.c $(static_ruby_headers) $(sources)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(mruby_static_lib): config/mruby.rb $(mruby_static_lib_deps)
+$(mruby_static_lib): config/mruby.rb #$(mruby_static_lib_deps)
 ifeq ($(TARGET),desktop)
 	cd mruby && MRUBY_CONFIG=../config/mruby.rb $(MAKE) -j
 else

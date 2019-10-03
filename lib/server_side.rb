@@ -29,22 +29,28 @@ class ServerSide < Wkndr
     UV.default_loop.stop
   end
 
-  desc "server [dir]", ""
-  def server(dir = "public")
+  def self.startup_serverside(args)
+    if args.include?("--no-server")
+      return
+    end
+
+    server_args = args.find { |arg| arg[0,9] == "--server=" }
+
+    directory = "public"
+
+    if server_args
+      a,b = server_args.split("=")
+      directory = b
+    end
+
     stack = StackBlocker.new(true)
+ 
+    if a_server = Server.run!(directory)
+      Wkndr.set_server(a_server)
+      Wkndr.the_server.subscribe_to_wkndrfile("/")
+      stack.up(a_server)
+    end
 
-    self.class.start_server(stack, dir)
-
-    Wkndr.the_server.subscribe_to_wkndrfile("/")
-
-    stack
+    runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
   end
-  method_added :server
-
-  desc "client", ""
-  def client(*args)
-    log!(:outerclient_on_serverside, args)
-    nil
-  end
-  method_added :client
 end

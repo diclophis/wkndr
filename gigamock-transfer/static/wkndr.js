@@ -36,7 +36,12 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       Terminal.applyAddon(fit);
 
-      window.terminal = new Terminal({cursorBlink: true, scrollback: 100, tabStopWidth: 2});
+      window.terminal = new Terminal({
+        cursorBlink: true,
+        scrollback: 100,
+        tabStopWidth: 2,
+        allowTransparency: false
+      });
       window.terminal.open(terminalContainer);
 
       window.terminal.on('data', function(termInputData) {
@@ -86,14 +91,15 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       }
 
       if (channel == 0) {
-        var stringBits = ab2str(bufView);
         if (document.body.className != splitScreen) {
           document.body.className = splitScreen;
           setTimeout(function() {
             window.terminal.fit();
           }, 1);
         }
-        window.terminal.write(stringBits);
+        //var stringBits = ab2str(bufView);
+        //window.terminal.write(stringBits);
+        window.terminal.writeUtf8(bufView);
       } else if (channel == 1) {
         var sent = window.conn.send(buf);
       }
@@ -110,7 +116,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var Module = {
-  arguments: ['client', graphicsContainer.offsetWidth.toString(), graphicsContainer.offsetHeight.toString()],
+  arguments: ['--client=' + graphicsContainer.offsetWidth.toString() + 'x' + graphicsContainer.offsetHeight.toString()],
   preRun: [(function() {
     window.handle_js_websocket_event = Module.cwrap(
       'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']

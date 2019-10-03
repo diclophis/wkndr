@@ -43,6 +43,8 @@ class Server
       # utmp_file = "/var/tmp/cheese"
       #kube
       utmp_file = "/var/run/utmp"
+      log!(:watch_utmp, utmp_file)
+
       @fsev_utmp = UV::FS::Event.new
       @fsev_utmp.start(utmp_file, 0) do |path, event|
         if event == :change
