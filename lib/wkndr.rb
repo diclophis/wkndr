@@ -148,4 +148,15 @@ class Wkndr
       return true
     end
   end
+
+  def self.wkndr_scoped_eval(ruby_string)
+    #module Foop
+    #class_eval do
+    #instance_eval do
+      Wkndr.eval("module Anon\n" + ruby_string + "\nend")
+    #end
+  end
+
+  def self.registry
+  end
 end

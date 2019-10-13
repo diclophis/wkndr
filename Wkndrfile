@@ -1,3 +1,27 @@
+@foos ||= []
+
+module ProllyNestedMod
+end
+
+class ProllyNestedClass
+  def cheese
+  end
+end
+
+module ::MyModule
+end
+
+class ::MyClass
+end
+
+@foos << ProllyNestedClass.new
+
+log!(:self, Wkndr, self, ::MyModule, ::MyClass, ProllyNestedMod, ProllyNestedClass)
+log!(@foos.object_id, @foos)
+
+@foos[0].cheese
+
+
 ##  this is wkndr
 #
 ##  sl.live_index { |conn|

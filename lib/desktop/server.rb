@@ -216,7 +216,8 @@ class Server
             wkread = ffff.read(102400)
 
             begin
-              did_parse = Kernel.eval(wkread)
+              did_parse = Wkndr.wkndr_scoped_eval(wkread)
+              #did_parse = Kernel.eval(wkread)
               write_back_connection.write_typed({"party" => wkread}) if write_back_connection
             rescue => e
               log!(:outbound_party_parsed_bad, e)

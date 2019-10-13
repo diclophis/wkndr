@@ -50,7 +50,7 @@ static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h,
 static_ruby_headers += $(build)/embed_static.h
 endif
 
-giga_static_js = gigamock-transfer/static/xterm-dist/xterm.js gigamock-transfer/static/xterm-dist/fit/fit.js gigamock-transfer/static/wkndr.js 
+giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/xterm-dist/xterm.js gigamock-transfer/static/xterm-dist/fit/fit.js gigamock-transfer/static/wkndr.js 
 giga_static_txt = gigamock-transfer/static/robots.txt
 giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/xterm-dist/xterm.css gigamock-transfer/static/wkndr.css 
