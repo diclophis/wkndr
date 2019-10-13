@@ -113,14 +113,12 @@ class Wkndr
     block.call(@server)
   end
 
-  def self.first_stack
-    if @stacks_to_care_about
-      @stacks_to_care_about[0]
-    end
-  end
-
   def self.set_stack(stack)
     @stack = stack
+  end
+
+  def self.the_stack
+    @stack
   end
 
   def self.set_gl(gl)

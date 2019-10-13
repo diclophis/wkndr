@@ -60,8 +60,14 @@ class ClientSide < Wkndr
     Wkndr.set_gl(gl)
   end
 
+  #def self.first_stack
+  #  if @stacks_to_care_about
+  #    @stacks_to_care_about[0]
+  #  end
+  #end
+
   def self.wizbang!
-    self.show!(self.first_stack)
+    self.show!(self.the_stack)
   end
 
   #def self.block!
