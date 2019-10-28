@@ -139,6 +139,7 @@
 #include "uv_io.h"
 #include "wslay_socket_stream.h"
 #include "embed_static.h"
+#include "protocol.h"
 
 #endif
 
@@ -2287,6 +2288,7 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
   eval_static_libs(mrb, connection, NULL);
   eval_static_libs(mrb, server, NULL);
+  eval_static_libs(mrb, protocol, NULL);
 
   eval_static_libs(mrb_client, wslay_socket_stream, uv_io, NULL);
 

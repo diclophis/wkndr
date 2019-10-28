@@ -1,33 +1,13 @@
 #
 
-def Integer(f)
-  f.to_i
-end
-
-##TODO: move this somewhere
-$stdout = UV::Pipe.new
-$stdout.open(1)
-$stdout.read_stop
-
-def log!(*args, &block)
-  $stdout.write(args.inspect + "\n") {
-    yield if block
-  }
-end
-
-def spinlock!
-  $stdout.write("")
-end
-
 class Server
   def self.run!(directory)
     Server.new(directory)
   end
 
   def initialize(required_prefix)
-
     #TODO: where does this go????
-    UV.disable_stdio_inheritance
+    #UV.disable_stdio_inheritance
 
     @all_connections = []
     @idents = -1
@@ -88,7 +68,6 @@ class Server
       @server.listen(32) { |connection_error|
         self.on_connection(connection_error)
       }
-
     }
   end
 
@@ -162,14 +141,6 @@ class Server
     @tree = tree
   end
 
-  def missing_response
-    "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 4\r\n\r\n404\n"
-  end
-
-  def server_error(exception)
-    "HTTP/1.1 500 Server Error\r\nConnection: Close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: #{exception.length}\r\n\r\n#{exception}"
-  end
-
   def match_dispatch(path)
     if @tree
       ids_from_path, handler = @tree.match(path)
@@ -178,14 +149,14 @@ class Server
         begin
           resp_from_handler = handler.call(ids_from_path)
 
-          "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{resp_from_handler.length}\r\n\r\n#{resp_from_handler}"
+          return Protocol.ok(resp_from_handler)
         rescue => e
-          server_error(e.inspect)
+          return Protocol.error(e.inspect)
         end
-      else
-        missing_response
       end
     end
+    
+    return Protocol.missing
   end
 
   def block_accept
@@ -193,7 +164,6 @@ class Server
   end
 
   def subscribe_to_wkndrfile(wkndrfile_path, write_back_connection = nil)
-    #begin
       wkparts = wkndrfile_path.split("~", 2)  
 
       if wkndrfile_path == "/" || (wkparts.length != 2)
@@ -206,38 +176,31 @@ class Server
       log!(:intend_subscribe_to_wkndrfile, reqd_wkfile)
 
       UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
-        #begin
-          if actual_wkndrfile.is_a?(UVError)
-            log!(:error_subscribe_to_wkndrfile, actual_wkndrfile)
-          else
-            log!(:actual_subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
+        if actual_wkndrfile.is_a?(UVError)
+          log!(:error_subscribe_to_wkndrfile, actual_wkndrfile)
+        else
+          log!(:actual_subscribe_to_wkndrfile, wkndrfile_path, actual_wkndrfile)
 
-            ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
-            wkread = ffff.read(102400)
+          ffff = UV::FS::open(actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+          wkread = ffff.read(102400)
 
-            begin
-              did_parse = Wkndr.wkndr_scoped_eval(wkread)
-              #did_parse = Kernel.eval(wkread)
-              write_back_connection.write_typed({"party" => wkread}) if write_back_connection
-            rescue => e
-              log!(:outbound_party_parsed_bad, e)
-            end
+          begin
+            did_parse = Wkndr.wkndr_scoped_eval(wkread)
+            #did_parse = Kernel.eval(wkread)
+            write_back_connection.write_typed({"party" => wkread}) if write_back_connection
+          rescue => e
+            log!(:outbound_party_parsed_bad, e)
+          end
 
-            ffff.close
-            @fsev = UV::FS::Event.new
-            @fsev.start(actual_wkndrfile, 0) do |path, event|
-              if event == :change
-                @fsev.stop
-                subscribe_to_wkndrfile(wkndrfile_path, write_back_connection)
-              end
+          ffff.close
+          @fsev = UV::FS::Event.new
+          @fsev.start(actual_wkndrfile, 0) do |path, event|
+            if event == :change
+              @fsev.stop
+              subscribe_to_wkndrfile(wkndrfile_path, write_back_connection)
             end
           end
-        #rescue => e
-        #  log!(:desktop_server_wkndrfile_realpath_error, e, e.backtrace)
-        #end
+        end
       }
-    #rescue => e
-    #  log!(:desktop_server_wkndrfile_subscribe_error, e, e.backtrace)
-    #end
   end
 end

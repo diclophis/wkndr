@@ -63,27 +63,10 @@ class Connection
     file_size =  fd.stat.size
     sent = 0
 
-    file_type_guess = filename.split(".").last
+    header = Protocol.chunked_header(file_size, filename)
 
-    content_type = case file_type_guess
-      when "wasm"
-        "Content-Type: application/wasm\r\n"
-      when "js"
-        "Content-Type: text/javascript\r\n"
-      when "css"
-        "Content-Type: text/css\r\n"
-      when "html"
-        "Content-Type: text/html\r\n"
-      when "txt"
-        "Content-Type: text/plain\r\n"
-      else
-        ""
-      end
-
-    header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: #{file_size}\r\nTransfer-Coding: chunked\r\n#{content_type}\r\n"
-    #header = "HTTP/1.1 200 OK\r\nContent-Length: #{file_size}\r\n#{content_type}\r\n"
     self.socket.write(header) {
-      max_chunk = 10240 #(self.socket.recv_buffer_size / 2).to_i
+      max_chunk = 10240
       sending = false
 
       send_proc = Proc.new {
@@ -124,11 +107,9 @@ class Connection
           self.socket.close
           self.socket = nil
 
-          #idle.stop
           self.processing_handshake = true
         end
       }
-      #end
 
       send_proc.call
     }
@@ -144,7 +125,7 @@ class Connection
       when Fixnum
         case phr.path
         when "/status"
-          self.socket && self.socket.write("HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: 0\r\n\r\n") {
+          self.socket && self.socket.write(Protocol.empty) {
             self.halt!
           }
 
@@ -171,11 +152,9 @@ class Connection
               }
             }
 
-            if filename == "/" #|| filename[0, 2] == "/~"
+            if filename == "/" #TODO: tildedir handling #|| filename[0, 2] == "/~"
               do_upstream_handling.call
             else
-              #  filename = "/index.html"
-              #end
               requested_path = "#{@required_prefix}#{filename}"
               UV::FS.realpath(requested_path) { |resolved_filename|
                 if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
@@ -183,7 +162,6 @@ class Connection
                 else
                   self.processing_handshake = -1
                   self.ss = self.ss[@offset..-1]
-                  #self.phr.reset
                   serve_static_file!(resolved_filename)
                 end
               }

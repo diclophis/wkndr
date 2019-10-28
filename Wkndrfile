@@ -1,26 +1,177 @@
-@foos ||= []
+#
 
-module ProllyNestedMod
-end
+class BasicEntity
+  attr_accessor :speed, :cube
 
-class ProllyNestedClass
-  def cheese
+  def initialize(*args)
+    self.speed = 100.0
+    self.cube = Cube.new(*args)
   end
 end
 
-module ::MyModule
+module BasicDrawing
+  def self.process(entity, global_time, delta_time)
+    entity.draw
+  end
 end
 
-class ::MyClass
+module BasicTransform
+  def self.process(entity, global_time, delta_time)
+    entity.deltar(Math.cos((entity.object_id) * -global_time), Math.sin((entity.object_id + 1) * global_time), 1.0, global_time * entity.speed)
+  end
 end
 
-@foos << ProllyNestedClass.new
+class ExampleSystem
+  attr_accessor :entities
 
-log!(:self, Wkndr, self, ::MyModule, ::MyClass, ProllyNestedMod, ProllyNestedClass)
-log!(@foos.object_id, @foos)
+  def initialize
+    super
 
-@foos[0].cheese
+    self.entities = []
+    self.entities << BasicEntity.new(0.13, 0.70, 0.15, 1.00)
+    self.entities << BasicEntity.new(0.17, 0.30, 0.90, 1.00)
+    self.entities << BasicEntity.new(1.10, 0.19, 0.40, 1.00)
+  end
 
+  def process(manager)
+    self.entities.each { |entity|
+      manager.process(entity, BasicTransform, BasicDrawing)
+    }
+  end
+end
+
+module StaticFileServing
+  server_side do
+    static_files "public"
+  end
+end
+
+module HtmlLiveView
+  server_side do
+    get "/" do
+    end
+  end
+end
+
+module DynamicBackendApi
+  server_side do
+    post "/api" do
+    end
+  end
+end
+
+module PubSubEvents
+  connected do
+    :open
+    :ok
+  end
+
+  disconnected do
+    :close
+    :ok
+  end
+
+  on "ping" do |from, msg|
+    send(from, "pong")
+
+    :ok
+  end
+
+  client_side do
+    connected do
+      :detected_server_accepted_connection
+
+      :allowed || :rejected
+
+      #@example = ExampleSystem.new
+      #run(@example)
+
+      :ok
+    end
+
+    disconnected do
+      :detected_server_gone_away
+
+      # reason
+
+      :ok
+    end
+  end
+
+  server_side do
+    connected do
+      :detected_client_desires_connection
+
+      # request
+
+      :allowed || :rejected
+    end
+
+    disconnected do
+      :detected_client_gone_away
+
+      :ok
+    end
+  end
+end
+
+module PingPongHeartbeat
+  every 30 do |global_time, delta_time|
+    #@manager.broadcast("ping")
+  end
+end
+
+module ServerSideLogic
+  server_side do
+    continuously do |global_time, delta_time|
+      log!(:server_side_continous_logic, global_time, delta_time)
+    end
+  end
+end
+
+module GraphicalUserInterface
+  client_side do
+    continuously do |global_time, delta_time|
+      #@manager.threed {
+      #  #@manager.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
+      #}
+      ##@manager.twod {
+      ##  @manager.button(50.0, 50.0, 250.0, 20.0, "login test #{'%0.2f' % global_time}") {
+      ##    @mananger.emit({"c" => "tty"})
+      ##  }
+      ##}
+    end
+  end
+end
+
+#include StaticFileServing
+#include HtmlLiveView
+#include DynamicBackendApi
+#include GraphicalUserInterface
+#include PubSubEvents
+
+#@foos ||= []
+#
+#module ProllyNestedMod
+#end
+#
+#class ProllyNestedClass
+#  def cheese
+#  end
+#end
+#
+#module ::MyModule
+#end
+#
+#class ::MyClass
+#end
+#
+#@foos << ProllyNestedClass.new
+#
+#log!(:self, Wkndr, self, ::MyModule, ::MyClass, ProllyNestedMod, ProllyNestedClass)
+#log!(@foos.object_id, @foos)
+#
+#@foos[0].cheese
 
 ##  this is wkndr
 #

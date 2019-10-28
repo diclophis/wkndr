@@ -73,42 +73,42 @@ class Wkndr
     #log!(:server_side_camp, block, @server)
     return unless @server
 
-    #TODO: abstrace base interface
-    @server.get('/') { |ids_from_path|
-      mab = Markaby::Builder.new
-      mab.html5 "lang" => "en" do
-        mab.head do
-          mab.title "wkndr"
-          mab.style do
-            GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
-          end
-        end
-        mab.body "id" => "wkndr-body" do
-          mab.div "id" => "wkndr-terminal-container" do
-            mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
-            end
-          end
-          mab.div "id" => "wkndr-graphics-container", "oncontextmenu" => "event.preventDefault()" do
-            mab.canvas "id" => "canvas", "class" => "maxwh" do
-            end
-          end
-          mab.script do
-            GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
-          end
-          mab.script "async" => "async", "src" => "wkndr.js" do
-          end
-        end
-      end
-      bytes_to_return = mab.to_s
-    }
+    #:#TODO: abstrace base interface
+    #:@server.get('/') { |ids_from_path|
+    #:  mab = Markaby::Builder.new
+    #:  mab.html5 "lang" => "en" do
+    #:    mab.head do
+    #:      mab.title "wkndr"
+    #:      mab.style do
+    #:        GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
+    #:      end
+    #:    end
+    #:    mab.body "id" => "wkndr-body" do
+    #:      mab.div "id" => "wkndr-terminal-container" do
+    #:        mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+    #:        end
+    #:      end
+    #:      mab.div "id" => "wkndr-graphics-container", "oncontextmenu" => "event.preventDefault()" do
+    #:        mab.canvas "id" => "canvas", "class" => "maxwh" do
+    #:        end
+    #:      end
+    #:      mab.script do
+    #:        GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
+    #:      end
+    #:      mab.script "async" => "async", "src" => "wkndr.js" do
+    #:      end
+    #:    end
+    #:  end
+    #:  bytes_to_return = mab.to_s
+    #:}
 
-    @server.get('/robots.txt') { |ids_from_path|
-      GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT
-    }
+    #:@server.get('/robots.txt') { |ids_from_path|
+    #:  GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT
+    #:}
 
-    @server.get('/favicon.ico') { |ids_from_path|
-      GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO
-    }
+    #:@server.get('/favicon.ico') { |ids_from_path|
+    #:  GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO
+    #:}
 
     block.call(@server)
   end
