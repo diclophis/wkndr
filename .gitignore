@@ -1,4 +1,5 @@
 *.crt
+*.swp
 tmp
 *bundle
 build

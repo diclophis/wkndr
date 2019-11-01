@@ -1805,7 +1805,8 @@ static mrb_value fast_tty_fd(mrb_state* mrb, mrb_value self)
   int foo = FILENAME_MAX;
   ptyname[FILENAME_MAX-1] = '\0';
   
-  ptsname_r(fdm, ptyname, foo);
+  //ptsname_r(fdm, ptyname, foo);
+  ttyname_r(fdm, ptyname, foo);
 
   //TODO
   //strncpy(ptyname, ptsname(fdm, ), FILENAME_MAX-1);

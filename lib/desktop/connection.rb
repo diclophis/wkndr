@@ -7,16 +7,20 @@ class Connection
                 :phr,
                 :processing_handshake,
                 :ss,
-                :socket,
-                :ident,
-                :server
+                :socket
+                #:ident,
+                #:server
 
-  def initialize(server, ident, required_prefix)
-    self.socket = server.block_accept
+  def initialize(socket)
+    log!(:connection_newed_up, self)
 
-    self.server = server
-    
-    self.ident = ident
+    #, ident, required_prefix)
+    #server.block_accept
+
+    self.socket = socket
+
+    #self.server = server
+    #self.ident = ident
 
     self.ss = ""
     self.last_buf = ""
@@ -24,10 +28,18 @@ class Connection
 
     self.phr = Phr.new
 
-    @required_prefix = required_prefix
+    #@required_prefix = required_prefix
 
     @closing = false
     @closed = false
+
+    self.socket.read_start { |b|
+      log!(:got_b, b, self)
+
+      read_bytes_safely(b)
+    }
+
+    log!(:connection_newed_up, self)
   end
 
   def shutdown
@@ -136,37 +148,40 @@ class Connection
           upgrade_to_websocket!
 
         else
-          unless @required_prefix
-            response_bytes = server.missing_response
-            self.socket && self.socket.write(response_bytes) {
-              self.halt!
-            }
-          else
-            filename = phr.path
+          log!(:DISPATCH, phr)
 
-            do_upstream_handling = Proc.new {
-              response_bytes = server.match_dispatch(filename)
+          # DISPATCH HANDLER
+          #unless @required_prefix
+          #  response_bytes = server.missing_response
+          #  self.socket && self.socket.write(response_bytes) {
+          #    self.halt!
+          #  }
+          #else
+          #  filename = phr.path
 
-              self.socket && response_bytes && self.socket.write(response_bytes) {
-                self.halt!
-              }
-            }
+          #  do_upstream_handling = Proc.new {
+          #    response_bytes = server.match_dispatch(filename)
 
-            if filename == "/" #TODO: tildedir handling #|| filename[0, 2] == "/~"
-              do_upstream_handling.call
-            else
-              requested_path = "#{@required_prefix}#{filename}"
-              UV::FS.realpath(requested_path) { |resolved_filename|
-                if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-                  do_upstream_handling.call
-                else
-                  self.processing_handshake = -1
-                  self.ss = self.ss[@offset..-1]
-                  serve_static_file!(resolved_filename)
-                end
-              }
-            end
-          end
+          #    self.socket && response_bytes && self.socket.write(response_bytes) {
+          #      self.halt!
+          #    }
+          #  }
+
+          #  if filename == "/" #TODO: tildedir handling #|| filename[0, 2] == "/~"
+          #    do_upstream_handling.call
+          #  else
+          #    requested_path = "#{@required_prefix}#{filename}"
+          #    UV::FS.realpath(requested_path) { |resolved_filename|
+          #      if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
+          #        do_upstream_handling.call
+          #      else
+          #        self.processing_handshake = -1
+          #        self.ss = self.ss[@offset..-1]
+          #        serve_static_file!(resolved_filename)
+          #      end
+          #    }
+          #  end
+          #end
         end
       when :incomplete
         log!("desktop_connection_incomplete")
@@ -276,7 +291,9 @@ class Connection
 
               when "party"
                 wkndrfile_req = typed_msg[channel]
-                self.server.subscribe_to_wkndrfile(wkndrfile_req, self)
+                log!(:client_wants, wkndrfile_req)
+
+                ####NOTE:TODO: self.server.subscribe_to_wkndrfile(wkndrfile_req, self)
 
               when "c"
                 dispatch_req = typed_msg[channel]
@@ -384,7 +401,7 @@ class Connection
         outg
       end
     rescue Wslay::Err => e
-      log!(:server_out_err, e)
+      log!(:connection_out_err, e)
 
       self.halt!
       self.shutdown

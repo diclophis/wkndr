@@ -36,21 +36,24 @@ class ServerSide < Wkndr
 
     server_args = args.find { |arg| arg[0,9] == "--server=" }
 
-    directory = "public"
+    wkndrfile_arg = nil
 
     if server_args
-      a,b = server_args.split("=")
-      directory = b
+      _, wkndrfile_arg = server_args.split("=")
     end
 
     stack = StackBlocker.new(true)
  
-    if a_server = Server.run!(directory)
-      Wkndr.set_server(a_server)
-      Wkndr.the_server.subscribe_to_wkndrfile("/")
-      stack.up(a_server)
+    if protocol_server = ProtocolServer.new(wkndrfile_arg)
+    #  Wkndr.set_server(a_server)
+    #  Wkndr.the_server.subscribe_to_wkndrfile("/")
+      stack.up(protocol_server)
     end
 
     runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
+  end
+
+  def self.server_side
+    yield
   end
 end

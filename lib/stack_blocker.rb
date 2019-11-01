@@ -49,7 +49,10 @@ class StackBlocker
   def cheese
     #TODO: remove for_server abstraction its broken
     if @for_server
+      update
     else
+      log!(:cheese_signal, self, self.class)
+
       signal
     end
   end

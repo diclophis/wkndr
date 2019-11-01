@@ -1,150 +1,154 @@
+log!(:wkndr, self, self.class, Wkndr)
+
+##
+# 
+# class BasicEntity
+#   attr_accessor :speed, :cube
+# 
+#   def initialize(*args)
+#     self.speed = 100.0
+#     self.cube = Cube.new(*args)
+#   end
+# end
+# 
+# module BasicDrawing
+#   def self.process(entity, global_time, delta_time)
+#     entity.draw
+#   end
+# end
+# 
+# module BasicTransform
+#   def self.process(entity, global_time, delta_time)
+#     entity.deltar(Math.cos((entity.object_id) * -global_time), Math.sin((entity.object_id + 1) * global_time), 1.0, global_time * entity.speed)
+#   end
+# end
+# 
+# class ExampleSystem
+#   attr_accessor :entities
+# 
+#   def initialize
+#     super
+# 
+#     self.entities = []
+#     self.entities << BasicEntity.new(0.13, 0.70, 0.15, 1.00)
+#     self.entities << BasicEntity.new(0.17, 0.30, 0.90, 1.00)
+#     self.entities << BasicEntity.new(1.10, 0.19, 0.40, 1.00)
+#   end
+# 
+#   def process(manager)
+#     self.entities.each { |entity|
+#       manager.process(entity, BasicTransform, BasicDrawing)
+#     }
+#   end
+# end
+
+#module StaticFileServingSystem
+#  include ServerSideSystem
 #
+#  static_files "public", "/"
+#  static_files "public", "/nested"
+#end
 
-class BasicEntity
-  attr_accessor :speed, :cube
-
-  def initialize(*args)
-    self.speed = 100.0
-    self.cube = Cube.new(*args)
-  end
-end
-
-module BasicDrawing
-  def self.process(entity, global_time, delta_time)
-    entity.draw
-  end
-end
-
-module BasicTransform
-  def self.process(entity, global_time, delta_time)
-    entity.deltar(Math.cos((entity.object_id) * -global_time), Math.sin((entity.object_id + 1) * global_time), 1.0, global_time * entity.speed)
-  end
-end
-
-class ExampleSystem
-  attr_accessor :entities
-
-  def initialize
-    super
-
-    self.entities = []
-    self.entities << BasicEntity.new(0.13, 0.70, 0.15, 1.00)
-    self.entities << BasicEntity.new(0.17, 0.30, 0.90, 1.00)
-    self.entities << BasicEntity.new(1.10, 0.19, 0.40, 1.00)
-  end
-
-  def process(manager)
-    self.entities.each { |entity|
-      manager.process(entity, BasicTransform, BasicDrawing)
-    }
-  end
-end
-
-module StaticFileServing
-  server_side do
-    static_files "public"
-  end
-end
-
-module HtmlLiveView
-  server_side do
-    get "/" do
-    end
-  end
-end
-
-module DynamicBackendApi
-  server_side do
-    post "/api" do
-    end
-  end
-end
-
-module PubSubEvents
-  connected do
-    :open
-    :ok
-  end
-
-  disconnected do
-    :close
-    :ok
-  end
-
-  on "ping" do |from, msg|
-    send(from, "pong")
-
-    :ok
-  end
-
-  client_side do
-    connected do
-      :detected_server_accepted_connection
-
-      :allowed || :rejected
-
-      #@example = ExampleSystem.new
-      #run(@example)
-
-      :ok
-    end
-
-    disconnected do
-      :detected_server_gone_away
-
-      # reason
-
-      :ok
-    end
-  end
-
-  server_side do
-    connected do
-      :detected_client_desires_connection
-
-      # request
-
-      :allowed || :rejected
-    end
-
-    disconnected do
-      :detected_client_gone_away
-
-      :ok
-    end
-  end
-end
-
-module PingPongHeartbeat
-  every 30 do |global_time, delta_time|
-    #@manager.broadcast("ping")
-  end
-end
-
-module ServerSideLogic
-  server_side do
-    continuously do |global_time, delta_time|
-      log!(:server_side_continous_logic, global_time, delta_time)
-    end
-  end
-end
-
-module GraphicalUserInterface
-  client_side do
-    continuously do |global_time, delta_time|
-      #@manager.threed {
-      #  #@manager.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
-      #}
-      ##@manager.twod {
-      ##  @manager.button(50.0, 50.0, 250.0, 20.0, "login test #{'%0.2f' % global_time}") {
-      ##    @mananger.emit({"c" => "tty"})
-      ##  }
-      ##}
-    end
-  end
-end
+#module HtmlLiveView
+#  server_side do
+#    get "/" do
+#    end
+#  end
+#end
+#
+#module DynamicBackendApi
+#  server_side do
+#    post "/api" do
+#    end
+#  end
+#end
+#
+#module PubSubEvents
+#  connected do
+#    :open
+#    :ok
+#  end
+#
+#  disconnected do
+#    :close
+#    :ok
+#  end
+#
+#  on "ping" do |from, msg|
+#    send(from, "pong")
+#
+#    :ok
+#  end
+#
+#  client_side do
+#    connected do
+#      :detected_server_accepted_connection
+#
+#      :allowed || :rejected
+#
+#      #@example = ExampleSystem.new
+#      #run(@example)
+#
+#      :ok
+#    end
+#
+#    disconnected do
+#      :detected_server_gone_away
+#
+#      # reason
+#
+#      :ok
+#    end
+#  end
+#
+#  server_side do
+#    connected do
+#      :detected_client_desires_connection
+#
+#      # request
+#
+#      :allowed || :rejected
+#    end
+#
+#    disconnected do
+#      :detected_client_gone_away
+#
+#      :ok
+#    end
+#  end
+#end
+#
+#module PingPongHeartbeat
+#  every 30 do |global_time, delta_time|
+#    #@manager.broadcast("ping")
+#  end
+#end
+#
+#module ServerSideLogic
+#  server_side do
+#    continuously do |global_time, delta_time|
+#      log!(:server_side_continous_logic, global_time, delta_time)
+#    end
+#  end
+#end
+#
+#module GraphicalUserInterface
+#  client_side do
+#    continuously do |global_time, delta_time|
+#      #@manager.threed {
+#      #  #@manager.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
+#      #}
+#      ##@manager.twod {
+#      ##  @manager.button(50.0, 50.0, 250.0, 20.0, "login test #{'%0.2f' % global_time}") {
+#      ##    @mananger.emit({"c" => "tty"})
+#      ##  }
+#      ##}
+#    end
+#  end
+#end
 
 #include StaticFileServing
+
 #include HtmlLiveView
 #include DynamicBackendApi
 #include GraphicalUserInterface
@@ -376,3 +380,124 @@ end
 ##Out of the box, it is only possible to process (or try to process) every object, in every system, each frame. But the framework also allows a system to process individual entities. This could lead to a "group" class that manages its own list of entity ID's, preventing wasted cycles on "blank" entries in systems. It would still use the Entity Manager to create and destroy entities.
 ##
 ##
+#
+# Components in GameEcs are ordinary Ruby classes. In most cases, they should be struct-like classes with attr_accessor properties only. Adding default values in the constructor is as advanced as these objects should get.
+#
+# An Entity is simply a collection of Components joined together by an id. To create one, simply call the add_entity method with a list of the Components you want the Entity to initially have:
+#
+#
+# The great thing about ECS is the ability to add/remove components at runtime. Here's how to do it:
+
+#  # add a Color component
+#  store.add_component(id: ent_id, component: Color.new(red: 255, green: 255, blue: 0))
+#  
+#  # we remove by class
+#  store.remove_component(id: ent_id, klass: Color)
+#  
+#  # remove an entire entity
+#  store.remove_entity(id: ent_id)
+#  
+#  # remove many entities
+#  store.remove_entities(ids: list_of_ids)
+#  
+# 
+#  Querying by Components
+# GameEcs has a Query class that can be used for more advanced queries, but the most common case is that you want all enitities that have all the components you're interested in. musts is short had for building these types of queries:
+# 
+# ents_that_need_move = store.musts(Position, Velocity)
+# ents_that_need_move.each do |ent|
+#   pos,vel = ent.components
+#   # modify pos based on vel
+# end
+# 
+## store.each_entity(Position, Velocity) do |ent|
+#  pos,vel = ent.components
+#  # modify pos based on vel
+#end
+#
+#  class Game
+#    def intialize
+#      @store = GameEcs::EntityStore.new
+#      @render_system = RenderSystem.new(@store)
+#      @systems = [
+#        MovementSystem.new(@store),
+#        # .. other systems
+#        @render_system
+#      ]
+#    end
+#  
+#    def update(time_delta, inputs)
+#      @systems.each{|sys| sys.update(time_delta, inputs) }
+#    end
+#  
+#    def draw
+#      @render_system.render
+#    end
+#  end
+#  
+#  class MovementSystem
+#    def initialize(store)
+#      @store = store
+#    end
+#  
+#    def update(dt, inputs)
+#      @store.each_entity(Position, Velocity) do |ent|
+#        pos,vel = ent.components
+#        pos.x += vel.x * dt
+#        pos.y += vel.y * dt
+#      end
+#    end
+#  end
+
+#  # So far I know that an Entity should be pretty barebones. A collection of components and possibly a transform component since it'll be so common. Probably an unique ID and/or name too.
+#  
+#  Components should be pure data, no logic. A renderable component could contain a mesh and material for example.
+#  
+#  Systems do the work and act on entities which meet their requirements. So a physics system will work on entities which have a physics component. A enemy soldier controller system will act on entities which have an enemy and soldier component.
+#  
+#  
+#  The EntityManager is a class that governs the EC system. It is the fundamental kernel of EC. Its responsibilities include:
+#  
+#      Create and kill entities
+#      Maintain a list of all known entities
+#      Map entities to their components
+#      Retrieve entities’ component functionality on demand
+#  
+# # Philosophically speaking, how do we define components? What should they be?
+# 
+# A component should encapsulate the data necessary to drive a behavior, an aspect, or a feature of the entity who owns it. Remember, we’re striving for composition over inheritance, so ask yourself: what are the things that the entity in question is composed of?
+# 
+# In this blog post series we are working our way toward a “Lunar Lander” type game. So let’s begin by thinking about our lander entity. What are some of the behaviors or features it should have? What is a lander composed of?
+# 
+#     It should be sensitive to gravity
+#     It should have an engine
+#     It needs fuel to burn in the engine
+#     It needs an X-Y position
+#     It needs a graphic to render
+#     It needs to have velocity
+# 
+# # class Fuel < Component
+#   attr_accessor :remaining
+#  
+#   def initialize(remaining)
+#     super()
+#     @remaining=remaining
+#   end
+#  
+#   def burn(qty)
+#     @remaining -= qty
+#     @remaining = 0 if @remaining < 0
+#   end
+# end
+
+# tank_entity = @entity_manager.create_tagged_entity(‘blue_side’)
+# @entity_manager.add_component(tank_entity, WorldPosition.new(45.123,–123.234))
+#  
+# air_entity = @entity_manager.create_tagged_entity(‘red_side’)
+# @entity_manager.add_component(air_entity, WorldPosition.new(47.5,–121.3))
+# @entity_manager.add_component(air_entity, Flight.new(3000))
+
+# class EngineSystem < System
+#   def process_one_game_tick(delta, entity_mgr)
+# 	end
+# end
