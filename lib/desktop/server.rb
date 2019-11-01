@@ -1,10 +1,12 @@
 #
 
 class ProtocolServer
-  def initialize(wkndrfile, host = '0.0.0.0', port = 8000)
+  def initialize(safety_dir, host = '0.0.0.0', port = 8000)
+
     #TODO: where does this go????
     #UV.disable_stdio_inheritance
 
+    @required_prefix = safety_dir
 
     @all_connections = []
     @clients_to_notify = {}
@@ -15,16 +17,10 @@ class ProtocolServer
     @closed = false
     @handlers = {}
 
-    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      cn.add_subscription!(path, phr)
-      cn.upgrade_to_websocket!
-    }
-
     upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
       cn.upgrade_to_websocket!
     }
 
-    @handlers["/ws"] = upgrade_to_websocket_handler
     @handlers["/wsb"] = upgrade_to_binary_websocket_handler
 
     rebuild_tree!
@@ -39,7 +35,7 @@ class ProtocolServer
       create_connection(connection_error)
     }
 
-    subscribe_to_wkndrfile(wkndrfile)
+    subscribe_to_wkndrfile
   end
 
   def signal
@@ -65,8 +61,7 @@ class ProtocolServer
           request = cn.pop_request!
           response_from_handler = match_dispatch(cn, request)
 
-          if response_from_handler == :upgrade
-            log!(:UPGRADE_IN_UPDATE)
+          if response_from_handler == :upgrade || response_from_handler == :async
           elsif response_from_handler
             cn.write_response(response_from_handler)
           else
@@ -130,7 +125,7 @@ class ProtocolServer
   end
 
   def raw(path, &block)
-    #log!(:register_handler, path, block)
+    log!(:register_handler, path, block)
 
     @handlers[path] = block
 
@@ -138,6 +133,15 @@ class ProtocolServer
   end
 
   def live(path, title, &block)
+    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
+      log!(:fooooows, cn, phr, mab)
+
+      cn.add_subscription!(path, phr)
+      cn.upgrade_to_websocket!
+    }
+
+    @handlers["/ws"] = upgrade_to_websocket_handler
+
     @all_connections.each { |cn|
       if phr = cn.subscribed_to?(path)
         inner_mab = Markaby::Builder.new
@@ -191,6 +195,52 @@ class ProtocolServer
     rebuild_tree!
   end
 
+  def wsb(path, &block)
+    log!(:server_side_camp, block, self)
+    #return unless @server
+
+    #:#TODO: abstrace base interface
+    raw('/') { |cn, ids_from_path|
+      mab = Markaby::Builder.new
+      mab.html5 "lang" => "en" do
+        mab.head do
+          mab.title "wkndr"
+          mab.style do
+            GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
+          end
+        end
+        mab.body "id" => "wkndr-body" do
+          mab.div "id" => "wkndr-terminal-container" do
+            mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+            end
+          end
+          mab.div "id" => "wkndr-graphics-container", "oncontextmenu" => "event.preventDefault()" do
+            mab.canvas "id" => "canvas", "class" => "maxwh" do
+            end
+          end
+          mab.script do
+            GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
+          end
+          mab.script "async" => "async", "src" => "wkndr.js" do
+          end
+        end
+      end
+      bytes_to_return = mab.to_s
+    }
+
+    raw(path + 'robots.txt') { |cn, ids_from_path|
+      GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT
+    }
+
+    raw(path + 'favicon.ico') { |cn, ids_from_path|
+      GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO
+    }
+
+    @allow_static = true
+
+    #block.call(@server) if block
+  end
+
   def rebuild_tree!
     tree = R3::Tree.new
 
@@ -211,14 +261,28 @@ class ProtocolServer
         begin
           resp_from_handler = handler.call(cn, ids_from_path)
 
-          if resp_from_handler == :upgrade
-            return :upgrade
+          if resp_from_handler == :upgrade #|| response_from_handler == :async
+            return resp_from_handler
           elsif resp_from_handler
             return Protocol.ok(resp_from_handler)
           end
         rescue => e
           return Protocol.error(e.inspect)
         end
+      else
+        requested_path = "#{@required_prefix}#{request.path}"
+        log!(:look_for, requested_path)
+
+        UV::FS.realpath(requested_path) { |resolved_filename|
+          if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
+            log!(:hackz, resolved_filename)
+            cn.halt!
+          else
+            cn.serve_static_file!(resolved_filename)
+          end
+        }
+
+        return :async
       end
     end
     
@@ -247,6 +311,8 @@ class ProtocolServer
         log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
         @actual_wkndrfile = actual_wkndrfile
         @symbolic_wkndrfile = reqd_wkfile
+
+        handle_wkndrfile_change
       end
     }
   end

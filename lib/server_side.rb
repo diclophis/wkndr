@@ -36,17 +36,15 @@ class ServerSide < Wkndr
 
     server_args = args.find { |arg| arg[0,9] == "--server=" }
 
-    wkndrfile_arg = nil
+    safety_dir_arg = nil
 
     if server_args
-      _, wkndrfile_arg = server_args.split("=")
+      _, safety_dir_arg = server_args.split("=")
     end
 
     stack = StackBlocker.new(true)
  
-    if protocol_server = ProtocolServer.new(wkndrfile_arg)
-    #  Wkndr.set_server(a_server)
-    #  Wkndr.the_server.subscribe_to_wkndrfile("/")
+    if protocol_server = ProtocolServer.new(safety_dir_arg)
       stack.up(protocol_server)
     end
 

@@ -1,12 +1,15 @@
 #
 
 Wkndr.server_side { |server|
+  server.wsb("/") do |cn, phr|
+  end
+
   server.raw("/status") do |cn, phr|
     "OK\n"
   end
 
-  server.live("/", "todo") do |cn, phr, mab|
-    mab.h1 "stuff todo w/ text"
+  server.live("/todos", "todos") do |cn, phr, mab|
+    mab.h1 "stuff todo w/ name"
 
     mab.input "type" => "text"
 

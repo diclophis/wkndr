@@ -2,6 +2,7 @@
 
 var splitScreen = "split-screen";
 var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
+var wsbUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/wsb");
 
 function ab2str(buf) {
   return String.fromCharCode.apply(null, buf); //new Uint8Array(buf));
@@ -20,7 +21,7 @@ function str2ab(str) {
 
 window.startConnection = function(mrbPointer, callbackPointer) {
   if (window["WebSocket"]) {
-    window.conn = new WebSocket(wsUrl);
+    window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
@@ -101,7 +102,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //TODO: memory cleanup??????
       buf = null;
       bufView = null;
-    }, 'vvi');
+    }, 'viii');
 
     return window.writePackedPointer;
   } else {

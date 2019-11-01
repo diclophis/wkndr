@@ -74,11 +74,18 @@ class Connection
   def halt!
     @halting = true
 
-    self.socket.close
-    self.socket = nil
+    if self.socket
+      self.socket.close
+      self.socket = nil
+    end
   end
 
   def serve_static_file!(filename)
+    log!(:SERVER_STATIC, filename)
+
+    self.processing_handshake = -1
+    self.ss = self.ss[@offset..-1]
+
     fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0) #, UV::FS::S_IREAD)
     file_size =  fd.stat.size
     sent = 0
