@@ -1,8 +1,6 @@
 #
 
 Wkndr.server_side { |server|
-  log!(:wkndr_server_side, self, self.class, Wkndr, server)
-
   server.raw("/status") do |cn, phr|
     "OK\n"
   end
@@ -13,31 +11,54 @@ Wkndr.server_side { |server|
     mab.input "type" => "text"
 
     mab.ul do
-      mab.li do
-        mab.label do
-          mab.input "type" => "checkbox"
-          mab.text "one"
-        end
-      end
-
-      mab.li do
-        mab.label do
-          mab.input "type" => "checkbox"
-          mab.text "two"
-        end
-      end
-
-      mab.li do
-        mab.label do
-          mab.input "type" => "checkbox"
-          mab.text "three"
+      3.times do |i|
+        mab.li do
+          mab.label do
+            mab.input "type" => "checkbox"
+            mab.text "task #{i}"
+          end
         end
       end
     end
   end
 }
 
-log!(:wkndr_end, self, self.class, Wkndr)
+Wkndr.client_side { |gl|
+  total_msg = 0
+
+  cubes = []
+  cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
+  cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
+  cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
+
+  gl.event { |typed_msg|
+    total_msg += 1
+  }
+
+  gl.update { |global_time, delta_time|
+    gl.lookat(1, 7.0 + Math.sin(global_time * 0.133) * 11.0, 7.0 + Math.cos(global_time), 11.0 - Math.cos(global_time * 1.111) * 3.0, 0.0, 1.0, 0.0, 33.0)
+
+    speed = 100.0 # + (global_time * 10.0)
+
+    gl.drawmode {
+      gl.threed {
+        gl.draw_grid(20, 1.0)
+        cubes.each_with_index do |cube,i|
+          cube.deltap(0, (i * 1.33) + 1.0, 0)
+          cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+          #cube.deltar(0.5, 0, 1, global_time * speed)
+          cube.draw(true)
+        end
+      }
+
+      gl.twod {
+        gl.button(25.0, 25.0, 33.0, 20.0, "login") {
+          gl.emit({"c" => "tty"})
+        }
+      }
+    }
+  }
+}
 
 #sl.live(mab, render_todos, )
 

@@ -100,7 +100,7 @@ class WslaySocketStream < SocketStream
           begin
             reset_handshake!
             @socket.read_start(&on_read_start)
-            did_connect("/")
+            did_connect("Wkndrfile") #NOTE: this is where client reqs new Wkndrfile
           rescue => e
             log!(:wslay_socket_stream_write_ws_request_error, e, e.backtrace)
           end
@@ -163,7 +163,7 @@ class WslaySocketStream < SocketStream
   end
 
   def write_ws_request!
-    path = "/ws"
+    path = "/wsb"
     key = B64.encode(Sysrandom.buf(16)).chomp!
     @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@host}:#{@port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
       yield

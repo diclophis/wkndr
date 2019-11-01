@@ -51,8 +51,6 @@ class StackBlocker
     if @for_server
       update
     else
-      log!(:cheese_signal, self, self.class)
-
       signal
     end
   end

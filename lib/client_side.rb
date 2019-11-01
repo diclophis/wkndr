@@ -41,7 +41,7 @@ class ClientSide < Wkndr
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 10)
+    gl.open("wkndr", w, h, 0) # screenSize and FPS
 
     gl.update { |global_time, delta_time|
       gl.drawmode {

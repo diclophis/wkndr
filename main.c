@@ -1023,7 +1023,7 @@ static mrb_value game_loop_draw_grid(mrb_state* mrb, mrb_value self)
   mrb_get_args(mrb, "if", &a, &b);
 
   DrawGrid(a, b);
-  DrawPlane((Vector3){0.0, -10.0, 0.0}, (Vector2){100.0, 100.0}, BLUE);                                       // Draw a plane XZ
+  DrawPlane((Vector3){0.0, 0.0, 0.0}, (Vector2){a*b, a*b}, BLUE);                                       // Draw a plane XZ
 
   return mrb_nil_value();
 }
@@ -1122,7 +1122,7 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   lights[0].enabled = false;
 
   //white directional
-  lights[1].intensity = 0.05;
+  lights[1].intensity = 0.25;
   lights[1].enabled = true;
 
   //blue spotlight

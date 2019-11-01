@@ -180,7 +180,6 @@ var liveContainer = document.getElementById('wkndr-live-container');
 window.startLiveConnection = function() {
   if (window["WebSocket"]) {
     window.conn = new WebSocket(wsUrl);
-    //TODO:???? window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
       console.log("connected");

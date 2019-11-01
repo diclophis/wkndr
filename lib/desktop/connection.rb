@@ -33,6 +33,7 @@ class Connection
     @closing = false
     @closed = false
     @pending_requests = []
+    @pending_parties = []
     @subscriptions = {}
 
     self.socket.read_start { |b|
@@ -220,6 +221,14 @@ class Connection
     @pending_requests.pop
   end
 
+  def has_pending_parties?
+    running? && (@pending_parties.count > 0)
+  end
+
+  def pop_party!
+    @pending_parties.pop
+  end
+
   def write_response(response_bytes)
     self.socket && response_bytes && self.socket.write(response_bytes) {
       self.halt!
@@ -294,7 +303,12 @@ class Connection
       # :internal_server_error, :tls_handshake
       # to_str => returns the message revieced
 
-      if msg[:opcode] == :binary_frame
+      #log!(:OPCODE, msg[:opcode])
+
+      if msg[:opcode] == :connection_close
+        self.halt!
+        self.shutdown
+      elsif msg[:opcode] == :binary_frame
         process_as_msgpack_stream(msg.msg) { |typed_msg|
           channels = typed_msg.keys
 
@@ -321,7 +335,7 @@ class Connection
                 wkndrfile_req = typed_msg[channel]
                 log!(:client_wants, wkndrfile_req)
 
-                ####NOTE:TODO: self.server.subscribe_to_wkndrfile(wkndrfile_req, self)
+                @pending_parties << wkndrfile_req
 
               when "c"
                 dispatch_req = typed_msg[channel]

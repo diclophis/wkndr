@@ -7,11 +7,25 @@ class ProtocolServer
 
 
     @all_connections = []
+    @clients_to_notify = {}
+
     @idents = -1
 
     @closing = false
     @closed = false
     @handlers = {}
+
+    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
+      cn.add_subscription!(path, phr)
+      cn.upgrade_to_websocket!
+    }
+
+    upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
+      cn.upgrade_to_websocket!
+    }
+
+    @handlers["/ws"] = upgrade_to_websocket_handler
+    @handlers["/wsb"] = upgrade_to_binary_websocket_handler
 
     rebuild_tree!
 
@@ -37,7 +51,6 @@ class ProtocolServer
     #log!(:tick)
 
     if @actual_wkndrfile && !@fsev
-      log!(:rewatch)
       watch_wkndrfile
     end
 
@@ -46,18 +59,29 @@ class ProtocolServer
     @all_connections.each { |cn|
       if !cn.running?
         connections_to_drop << cn    
-      elsif cn.has_pending_request?
-        request = cn.pop_request!
-        response_from_handler = match_dispatch(cn, request)
+        log!(:should_drop, cn)
+      else
+        if cn.has_pending_request?
+          request = cn.pop_request!
+          response_from_handler = match_dispatch(cn, request)
 
-        if response_from_handler == :upgrade
-          log!(:UPGRADE_IN_UPDATE)
-        elsif response_from_handler
-          cn.write_response(response_from_handler)
-        else
-          cn.write_response(Protocol.empty)
+          if response_from_handler == :upgrade
+            log!(:UPGRADE_IN_UPDATE)
+          elsif response_from_handler
+            cn.write_response(response_from_handler)
+          else
+            cn.write_response(Protocol.empty)
+          end
         end
-        #log!(:should_handle_request, cn, request.path)
+
+        if cn.has_pending_parties?
+          party = cn.pop_party!
+
+          notify_client_of_new_wkndrfile(party, cn)
+
+          wkread = read_wkndrfile 
+          cn.write_typed({"party" => wkread})
+        end
       end
     }
 
@@ -106,20 +130,14 @@ class ProtocolServer
   end
 
   def raw(path, &block)
-    log!(:register_handler, path, block)
+    #log!(:register_handler, path, block)
+
     @handlers[path] = block
 
     rebuild_tree!
   end
 
   def live(path, title, &block)
-    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      cn.add_subscription!(path, phr)
-      cn.upgrade_to_websocket!
-    }
-
-    @handlers["/ws"] = upgrade_to_websocket_handler
-
     @all_connections.each { |cn|
       if phr = cn.subscribed_to?(path)
         inner_mab = Markaby::Builder.new
@@ -194,8 +212,6 @@ class ProtocolServer
           resp_from_handler = handler.call(cn, ids_from_path)
 
           if resp_from_handler == :upgrade
-            log!(:UPGRADE_IN_MATCH)
-
             return :upgrade
           elsif resp_from_handler
             return Protocol.ok(resp_from_handler)
@@ -209,11 +225,7 @@ class ProtocolServer
     return Protocol.missing
   end
 
-  #def block_accept
-  #  @server.accept
-  #end
-
-  def subscribe_to_wkndrfile(wkndrfile_path = nil, write_back_connection = nil)
+  def subscribe_to_wkndrfile(wkndrfile_path = nil)
     wkparts = nil
     if wkndrfile_path
       wkparts = wkndrfile_path.split("~", 2)  
@@ -226,9 +238,7 @@ class ProtocolServer
     #  reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??
     #  reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
     #end
-
-    log!(:intend_subscribe_to_wkndrfile, reqd_wkfile, wkparts)
-
+    #log!(:intend_subscribe_to_wkndrfile, reqd_wkfile, wkparts)
 
     UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
       if actual_wkndrfile.is_a?(UVError)
@@ -236,11 +246,7 @@ class ProtocolServer
       else
         log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
         @actual_wkndrfile = actual_wkndrfile
-
-        parse_wkndrfile
-
-        #watch_wkndrfile(actual_wkndrfile)
-        #parse_wkndrfile.call(actual_wkndrfile, write_back_connection)
+        @symbolic_wkndrfile = reqd_wkfile
       end
     }
   end
@@ -248,38 +254,53 @@ class ProtocolServer
   def watch_wkndrfile
     @fsev = UV::FS::Event.new
     @fsev.start(@actual_wkndrfile, 0) do |path, event|
-      log!(:fsev, self, @fsev, path, event)
+      #log!(:fsev, self, @fsev, path, event)
 
       if event == :change
         @fsev.stop
 
-        parse_wkndrfile
+        handle_wkndrfile_change
 
         @fsev = nil
       end
     end
   end
 
-  def parse_wkndrfile
-    log!(:PARSEPARSE, @actual_wkndrfile)
-
+  def read_wkndrfile
     ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
     wkread = ffff.read(102400)
+    ffff.close
+    wkread
+  end
+
+  def notify_client_of_new_wkndrfile(wkndrfile, cn)
+    @clients_to_notify[wkndrfile] ||= []
+    @clients_to_notify[wkndrfile] << cn
+  end
+
+  def handle_wkndrfile_change
+    wkread = read_wkndrfile 
+
+    @clients_to_notify.each { |wkndrfile, clients|
+      clients.each { |cn|
+        cn.write_typed({"party" => wkread})
+      }
+    }
 
     did_parse = nil
-
     begin
       did_parse = Wkndr.wkndr_server_eval(wkread, self)
-      #did_parse = Kernel.eval(wkread)
-      #write_back_connection.write_typed({"party" => wkread}) if write_back_connection
     rescue => e
-      log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
-      log!(e.backtrace)
+     log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
+     log!(e.backtrace)
     end
 
-    ffff.close
-
-    did_parse
+        #if write_back_connection
+        #else
+        #  parse_wkndrfile(wkread)
+        #end
+        #watch_wkndrfile(actual_wkndrfile)
+        #parse_wkndrfile.call(actual_wkndrfile, write_back_connection)
   end
 end
 

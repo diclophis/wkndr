@@ -34,7 +34,7 @@ class Wkndr
     @stacks_to_care_about << run_loop_blocker
   end
 
-  def self.play(stack = nil, gl = nil, &block)
+  def self.client_side(&block)
     begin
       if block && !@stack && !@gl
         return
