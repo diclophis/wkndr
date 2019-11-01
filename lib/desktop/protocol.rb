@@ -1,8 +1,8 @@
 #
 
 class Protocol
-  def ok(response_from_handler)
-    "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{resp_from_handler.length}\r\n\r\n#{resp_from_handler}"
+  def self.ok(response_from_handler)
+    "HTTP/1.1 200 OK\r\nConnection: Close\r\nContent-Length: #{response_from_handler.length}\r\n\r\n#{response_from_handler}"
   end
 
   def self.missing

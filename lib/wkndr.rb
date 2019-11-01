@@ -149,14 +149,38 @@ class Wkndr
     end
   end
 
-  def self.wkndr_scoped_eval(ruby_string)
-    #module Foop
-    #class_eval do
-    #instance_eval do
-      Wkndr.eval("module Anon\n" + ruby_string + "\nend")
-    #end
+  #def self.wkndr_scoped_eval(ruby_string, scopish)
+  #  #module Foop
+  #  #class_eval do
+  #  #instance_eval do
+
+  #    @scope = scopish
+
+  #    #Wkndr.eval("module Anon\n" + ruby_string + "\nend")
+  #    Kernel.eval(ruby_string)
+  #  #end
+  #end
+
+  def self.wkndr_server_eval(ruby_string, scopish)
+  #  #module Foop
+  #  #class_eval do
+  #  #instance_eval do
+
+  #    @scope = scopish
+
+  #    #Wkndr.eval("module Anon\n" + ruby_string + "\nend")
+      self.set_server(scopish)
+
+      Kernel.eval(ruby_string)
+  #  #end
   end
 
   def self.registry
+  end
+
+  def self.server_side
+    if @server
+      yield @server
+    end
   end
 end

@@ -32,6 +32,8 @@ class Connection
 
     @closing = false
     @closed = false
+    @pending_requests = []
+    @subscriptions = {}
 
     self.socket.read_start { |b|
       log!(:got_b, b, self)
@@ -58,14 +60,19 @@ class Connection
       @t = nil
     end
 
-    if @fsev
-      @fsev.stop
-      @fsev = nil
-    end
+    #if @fsev
+    #  @fsev.stop
+    #  @fsev = nil
+    #end
+  end
+
+  def running?
+    !@halting
   end
 
   def halt!
     @halting = true
+
     self.socket.close
     self.socket = nil
   end
@@ -135,54 +142,60 @@ class Connection
       @offset = self.phr.parse_request(self.ss)
       case @offset
       when Fixnum
-        case phr.path
-        when "/status"
-          self.socket && self.socket.write(Protocol.empty) {
-            self.halt!
-          }
+        @pending_requests << phr
 
-        #when "/debug"
-        #  serve_static_file!("/var/tmp/big.data")
+        #case phr.path
 
-        when "/ws"
-          upgrade_to_websocket!
+        ###TODO: modularize this???
+        ##when "/status"
+        ##  self.socket && self.socket.write(Protocol.empty) {
+        ##    self.halt!
+        ##  }
 
-        else
-          log!(:DISPATCH, phr)
+        ##when "/debug"
+        ##  serve_static_file!("/var/tmp/big.data")
 
-          # DISPATCH HANDLER
-          #unless @required_prefix
-          #  response_bytes = server.missing_response
-          #  self.socket && self.socket.write(response_bytes) {
-          #    self.halt!
-          #  }
-          #else
-          #  filename = phr.path
+        #when "/ws"
+        #  upgrade_to_websocket!
 
-          #  do_upstream_handling = Proc.new {
-          #    response_bytes = server.match_dispatch(filename)
+        #else
+        #  log!(:DISPATCH, phr)
 
-          #    self.socket && response_bytes && self.socket.write(response_bytes) {
-          #      self.halt!
-          #    }
-          #  }
+        #  @pending_requests << phr
 
-          #  if filename == "/" #TODO: tildedir handling #|| filename[0, 2] == "/~"
-          #    do_upstream_handling.call
-          #  else
-          #    requested_path = "#{@required_prefix}#{filename}"
-          #    UV::FS.realpath(requested_path) { |resolved_filename|
-          #      if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-          #        do_upstream_handling.call
-          #      else
-          #        self.processing_handshake = -1
-          #        self.ss = self.ss[@offset..-1]
-          #        serve_static_file!(resolved_filename)
-          #      end
-          #    }
-          #  end
-          #end
-        end
+        #  # DISPATCH HANDLER
+        #  #unless @required_prefix
+        #  #  response_bytes = server.missing_response
+        #  #  self.socket && self.socket.write(response_bytes) {
+        #  #    self.halt!
+        #  #  }
+        #  #else
+        #  #  filename = phr.path
+
+        #  #  do_upstream_handling = Proc.new {
+        #  #    response_bytes = server.match_dispatch(filename)
+
+        #  #    self.socket && response_bytes && self.socket.write(response_bytes) {
+        #  #      self.halt!
+        #  #    }
+        #  #  }
+
+        #  #  if filename == "/" #TODO: tildedir handling #|| filename[0, 2] == "/~"
+        #  #    do_upstream_handling.call
+        #  #  else
+        #  #    requested_path = "#{@required_prefix}#{filename}"
+        #  #    UV::FS.realpath(requested_path) { |resolved_filename|
+        #  #      if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
+        #  #        do_upstream_handling.call
+        #  #      else
+        #  #        self.processing_handshake = -1
+        #  #        self.ss = self.ss[@offset..-1]
+        #  #        serve_static_file!(resolved_filename)
+        #  #      end
+        #  #    }
+        #  #  end
+        #  #end
+        #end
       when :incomplete
         log!("desktop_connection_incomplete")
       when :parser_error
@@ -197,6 +210,20 @@ class Connection
         end
       end
     end
+  end
+
+  def has_pending_request?
+    running? && (@pending_requests.count > 0)
+  end
+
+  def pop_request!
+    @pending_requests.pop
+  end
+
+  def write_response(response_bytes)
+    self.socket && response_bytes && self.socket.write(response_bytes) {
+      self.halt!
+    }
   end
 
   def pid
@@ -227,6 +254,7 @@ class Connection
     if @halting
       #NO
     elsif (b && b.is_a?(UVError))
+      self.halt!
       self.shutdown
     else
       if b && b.is_a?(String)
@@ -378,7 +406,8 @@ class Connection
     self.write_ws_response!(sec_websocket_key) {
       @t = UV::Timer.new
       @t.start(100, 100) {
-        self.write_typed({"c" => "ping"})
+        #self.write_typed({"c" => "ping"})
+        #self.write_text("ping")
       }
     }
 
@@ -389,6 +418,8 @@ class Connection
       log!(:wss_handshake_error)
       self.halt!
     end
+
+    return :upgrade
   end
 
   #TODO: merge this with class with SocketStream
@@ -406,5 +437,30 @@ class Connection
       self.halt!
       self.shutdown
     end
+  end
+
+  def write_text(txt)
+    begin
+      if self.ws
+        self.ws.queue_msg(txt, :text_frame)
+        outg = self.ws.send
+        outg
+      end
+    rescue Wslay::Err => e
+      log!(:connection_out_err, e)
+
+      self.halt!
+      self.shutdown
+    end
+  end
+
+  def subscribed_to?(path)
+    if running?
+      @subscriptions[path]
+    end
+  end
+
+  def add_subscription!(path, phr)
+    @subscriptions[path] = phr
   end
 end

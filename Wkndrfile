@@ -1,4 +1,45 @@
-log!(:wkndr, self, self.class, Wkndr)
+#
+
+Wkndr.server_side { |server|
+  log!(:wkndr_server_side, self, self.class, Wkndr, server)
+
+  server.raw("/status") do |cn, phr|
+    "OK\n"
+  end
+
+  server.live("/", "todo") do |cn, phr, mab|
+    mab.h1 "stuff todo w/ text"
+
+    mab.input "type" => "text"
+
+    mab.ul do
+      mab.li do
+        mab.label do
+          mab.input "type" => "checkbox"
+          mab.text "one"
+        end
+      end
+
+      mab.li do
+        mab.label do
+          mab.input "type" => "checkbox"
+          mab.text "two"
+        end
+      end
+
+      mab.li do
+        mab.label do
+          mab.input "type" => "checkbox"
+          mab.text "three"
+        end
+      end
+    end
+  end
+}
+
+log!(:wkndr_end, self, self.class, Wkndr)
+
+#sl.live(mab, render_todos, )
 
 ##
 # 

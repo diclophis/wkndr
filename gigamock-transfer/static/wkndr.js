@@ -1,10 +1,7 @@
 /* */
 
-var graphicsContainer = document.getElementById('canvas');
-// As a default initial behavior, pop up an alert when webgl context is lost. To make your
-// application robust, you may want to override this behavior before shipping!
-// See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-graphicsContainer.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+var splitScreen = "split-screen";
+var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
 
 function ab2str(buf) {
   return String.fromCharCode.apply(null, buf); //new Uint8Array(buf));
@@ -22,9 +19,6 @@ function str2ab(str) {
 }
 
 window.startConnection = function(mrbPointer, callbackPointer) {
-  var splitScreen = "split-screen";
-  var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
-
   if (window["WebSocket"]) {
     window.conn = new WebSocket(wsUrl);
     window.conn.binaryType = 'arraybuffer';
@@ -115,59 +109,110 @@ window.startConnection = function(mrbPointer, callbackPointer) {
   }
 };
 
-var Module = {
-  arguments: ['--client=' + graphicsContainer.offsetWidth.toString() + 'x' + graphicsContainer.offsetHeight.toString()],
-  preRun: [(function() {
-    window.handle_js_websocket_event = Module.cwrap(
-      'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
-    );
+var graphicsContainer = document.getElementById('canvas');
 
-    window.pack_outbound_tty = Module.cwrap(
-      'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
-    );
+if (graphicsContainer) {
+  // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+  // application robust, you may want to override this behavior before shipping!
+  // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+  graphicsContainer.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
 
-    window.socket_connected = Module.cwrap(
-      'socket_connected', 'number', ['number', 'number', 'number', 'number']
-    );
+  var Module = {
+    arguments: ['--client=' + graphicsContainer.offsetWidth.toString() + 'x' + graphicsContainer.offsetHeight.toString()],
+    preRun: [(function() {
+      window.handle_js_websocket_event = Module.cwrap(
+        'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
+      );
 
-    window.resize_tty = Module.cwrap(
-      'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
-    );
+      window.pack_outbound_tty = Module.cwrap(
+        'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
+      );
 
-    GLFW.exitFullscreen = function() {
-      //TODO: replace hack later
-    };
-  })],
-  postRun: [],
-  print: (function() {
-    return function(text) {
+      window.socket_connected = Module.cwrap(
+        'socket_connected', 'number', ['number', 'number', 'number', 'number']
+      );
+
+      window.resize_tty = Module.cwrap(
+        'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
+      );
+
+      GLFW.exitFullscreen = function() {
+        //TODO: replace hack later
+      };
+    })],
+    postRun: [],
+    print: (function() {
+      return function(text) {
+        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+        console.log(text);
+      };
+    })(),
+    printErr: function(text) {
       if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-      console.log(text);
+      console.error(text);
+    },
+    canvas: (function() {
+      return graphicsContainer;
+    })(),
+    setStatus: function(text) {
+      if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+      if (text === Module.setStatus.text) return;
+    },
+    totalDependencies: 0,
+    monitorRunDependencies: function(left) {
+      this.totalDependencies = Math.max(this.totalDependencies, left);
+      Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+    }
+  };
+
+  window.onerror = function(event) {
+    Module.setStatus('Exception thrown, see JavaScript console');
+    Module.setStatus = function(text) {
+      if (text) Module.printErr('[post-exception status] ' + text);
     };
-  })(),
-  printErr: function(text) {
-    if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-    console.error(text);
-  },
-  canvas: (function() {
-    return graphicsContainer;
-  })(),
-  setStatus: function(text) {
-    if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
-    if (text === Module.setStatus.text) return;
-  },
-  totalDependencies: 0,
-  monitorRunDependencies: function(left) {
-    this.totalDependencies = Math.max(this.totalDependencies, left);
-    Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+  };
+
+  Module.setStatus('Downloading...');
+}
+
+var liveContainer = document.getElementById('wkndr-live-container');
+
+window.startLiveConnection = function() {
+  if (window["WebSocket"]) {
+    window.conn = new WebSocket(wsUrl);
+    //TODO:???? window.conn.binaryType = 'arraybuffer';
+
+    window.conn.onopen = function (event) {
+      console.log("connected");
+    };
+
+    window.conn.onclose = function (event) {
+      console.log("Connection closed.");
+    };
+
+    window.conn.onmessage = function (event) {
+      var origData = event.data;
+
+      morphdom(liveContainer.childNodes[0], origData, {
+        onBeforeElUpdated: function(fromEl, toEl) {
+          console.log(fromEl.tagName, toEl.tagName);
+          if (toEl.tagName === 'INPUT') {
+            if (fromEl.checked) {
+              toEl.checked = fromEl.checked;
+            } else {
+              toEl.value = fromEl.value;
+            }
+          }
+
+          return true;
+        }
+      });
+    };
+  } else {
+    console.log("Your browser does not support WebSockets.");
   }
 };
 
-window.onerror = function(event) {
-  Module.setStatus('Exception thrown, see JavaScript console');
-  Module.setStatus = function(text) {
-    if (text) Module.printErr('[post-exception status] ' + text);
-  };
-};
-
-Module.setStatus('Downloading...');
+if (liveContainer) {
+  startLiveConnection();
+}

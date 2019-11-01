@@ -52,8 +52,4 @@ class ServerSide < Wkndr
 
     runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
   end
-
-  def self.server_side
-    yield
-  end
 end

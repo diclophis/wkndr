@@ -5,6 +5,7 @@ class ProtocolServer
     #TODO: where does this go????
     #UV.disable_stdio_inheritance
 
+
     @all_connections = []
     @idents = -1
 
@@ -12,7 +13,7 @@ class ProtocolServer
     @closed = false
     @handlers = {}
 
-    subscribe_to_wkndrfile(wkndrfile)
+    rebuild_tree!
 
     address = UV.ip4_addr(host, port)
     @server = UV::TCP.new
@@ -22,6 +23,46 @@ class ProtocolServer
       log!(:on_connection, connection_error, self)
 
       create_connection(connection_error)
+    }
+
+    subscribe_to_wkndrfile(wkndrfile)
+  end
+
+  def signal
+    self.update(0, 0)
+  end
+
+  def update(gt = nil, dt = nil)
+    #NOOP: TODO????
+    #log!(:tick)
+
+    if @actual_wkndrfile && !@fsev
+      log!(:rewatch)
+      watch_wkndrfile
+    end
+
+    connections_to_drop = []
+
+    @all_connections.each { |cn|
+      if !cn.running?
+        connections_to_drop << cn    
+      elsif cn.has_pending_request?
+        request = cn.pop_request!
+        response_from_handler = match_dispatch(cn, request)
+
+        if response_from_handler == :upgrade
+          log!(:UPGRADE_IN_UPDATE)
+        elsif response_from_handler
+          cn.write_response(response_from_handler)
+        else
+          cn.write_response(Protocol.empty)
+        end
+        #log!(:should_handle_request, cn, request.path)
+      end
+    }
+
+    connections_to_drop.each { |dcn|
+      @all_connections.delete(dcn)
     }
   end
 
@@ -64,51 +105,109 @@ class ProtocolServer
     end
   end
 
-  def signal
-    self.update(0, 0)
+  def raw(path, &block)
+    log!(:register_handler, path, block)
+    @handlers[path] = block
+
+    rebuild_tree!
   end
 
-  def update(gt = nil, dt = nil)
-    #NOOP: TODO????
-    #log!(:tick)
+  def live(path, title, &block)
+    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
+      cn.add_subscription!(path, phr)
+      cn.upgrade_to_websocket!
+    }
 
-    if @actual_wkndrfile && !@fsev
-      log!(:rewatch)
-      watch_wkndrfile
+    @handlers["/ws"] = upgrade_to_websocket_handler
+
+    @all_connections.each { |cn|
+      if phr = cn.subscribed_to?(path)
+        inner_mab = Markaby::Builder.new
+        inner_mab.div "id" => "wkndr-live-throwaway" do
+          inner_mab_config = block.call(cn, phr, inner_mab)
+        end
+        next_inner_mab_bytes = inner_mab.to_s
+
+        cn.write_text(next_inner_mab_bytes)
+      end
+    }
+
+    handler = Proc.new { |cn, phr|
+      inner_mab = Markaby::Builder.new
+      inner_mab.div "id" => "wkndr-live-throwaway" do
+        inner_mab_config = block.call(cn, phr, inner_mab)
+      end
+      initial_inner_mab_bytes = inner_mab.to_s
+
+      mab = Markaby::Builder.new
+
+      mab.html5 "lang" => "en" do
+        mab.head do
+          mab.title title
+          #mab.style do
+          #  GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
+          #end
+        end
+
+        mab.body "id" => "wkndr-body" do
+          mab.div "id" => "wkndr-terminal-container" do
+            mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+            end
+          end
+
+          mab.div "id" => "wkndr-live-container" do
+            initial_inner_mab_bytes
+          end
+
+          mab.script do
+            GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
+          end
+        end
+      end
+
+      mab.to_s
+    }
+
+    @handlers[path] = handler
+
+    rebuild_tree!
+  end
+
+  def rebuild_tree!
+    tree = R3::Tree.new
+
+    @handlers.each { |k,v|
+      tree.add(k, R3::ANY, v)
+    }
+
+    tree.compile
+
+    @tree = tree
+  end
+
+  def match_dispatch(cn, request)
+    if @tree
+      ids_from_path, handler = @tree.match(request.path)
+
+      if ids_from_path && handler
+        begin
+          resp_from_handler = handler.call(cn, ids_from_path)
+
+          if resp_from_handler == :upgrade
+            log!(:UPGRADE_IN_MATCH)
+
+            return :upgrade
+          elsif resp_from_handler
+            return Protocol.ok(resp_from_handler)
+          end
+        rescue => e
+          return Protocol.error(e.inspect)
+        end
+      end
     end
+    
+    return Protocol.missing
   end
-
-  #def get(path, &block)
-  #  log!(:register_handler, path, block)
-  #  tree = R3::Tree.new
-
-  #  @handlers[path] = block
-
-  #  @handlers.each { |k,v|
-  #    tree.add(k, R3::ANY, v)
-  #  }
-  #  tree.compile
-
-  #  @tree = tree
-  #end
-
-  #def match_dispatch(path)
-  #  if @tree
-  #    ids_from_path, handler = @tree.match(path)
-
-  #    if ids_from_path && handler
-  #      begin
-  #        resp_from_handler = handler.call(ids_from_path)
-
-  #        return Protocol.ok(resp_from_handler)
-  #      rescue => e
-  #        return Protocol.error(e.inspect)
-  #      end
-  #    end
-  #  end
-  #  
-  #  return Protocol.missing
-  #end
 
   #def block_accept
   #  @server.accept
@@ -137,6 +236,8 @@ class ProtocolServer
       else
         log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
         @actual_wkndrfile = actual_wkndrfile
+
+        parse_wkndrfile
 
         #watch_wkndrfile(actual_wkndrfile)
         #parse_wkndrfile.call(actual_wkndrfile, write_back_connection)
@@ -168,7 +269,7 @@ class ProtocolServer
     did_parse = nil
 
     begin
-      did_parse = Wkndr.wkndr_scoped_eval(wkread)
+      did_parse = Wkndr.wkndr_server_eval(wkread, self)
       #did_parse = Kernel.eval(wkread)
       #write_back_connection.write_typed({"party" => wkread}) if write_back_connection
     rescue => e
