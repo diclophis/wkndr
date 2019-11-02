@@ -12,7 +12,7 @@ class Connection
                 #:server
 
   def initialize(socket)
-    log!(:connection_newed_up, self)
+    #log!(:connection_newed_up, self)
 
     #, ident, required_prefix)
     #server.block_accept
@@ -37,12 +37,12 @@ class Connection
     @subscriptions = {}
 
     self.socket.read_start { |b|
-      log!(:got_b, b, self)
+      #log!(:got_b, b, self)
 
       read_bytes_safely(b)
     }
 
-    log!(:connection_newed_up, self)
+    #log!(:connection_newed_up, self)
   end
 
   def shutdown
@@ -81,7 +81,7 @@ class Connection
   end
 
   def serve_static_file!(filename)
-    log!(:SERVER_STATIC, filename)
+    #log!(:SERVER_STATIC, filename)
 
     self.processing_handshake = -1
     self.ss = self.ss[@offset..-1]
@@ -310,7 +310,7 @@ class Connection
       # :internal_server_error, :tls_handshake
       # to_str => returns the message revieced
 
-      #log!(:OPCODE, msg[:opcode])
+      log!(:OPCODE, msg[:opcode])
 
       if msg[:opcode] == :connection_close
         self.halt!
@@ -425,11 +425,11 @@ class Connection
 
     #NOTE: this is the server to client side
     self.write_ws_response!(sec_websocket_key) {
-      @t = UV::Timer.new
-      @t.start(100, 100) {
-        #self.write_typed({"c" => "ping"})
-        #self.write_text("ping")
-      }
+      #@t = UV::Timer.new
+      #@t.start(100, 100) {
+      #  self.write_typed({"c" => "ping"})
+      #  #self.write_text("ping")
+      #}
     }
 
     self.processing_handshake = false

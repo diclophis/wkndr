@@ -1,5 +1,9 @@
 #
 
+#Wkndr.server_side { |server|
+#  server.wsb("/")
+#}
+
 Wkndr.server_side { |server|
   server.wsb("/") do |cn, phr|
   end
@@ -27,6 +31,8 @@ Wkndr.server_side { |server|
 }
 
 Wkndr.client_side { |gl|
+  gl.lookat(1, 0.0, 10.0, 0.0, 0.0, 0.0, 0.01, 30.0)
+
   total_msg = 0
 
   cubes = []

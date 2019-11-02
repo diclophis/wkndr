@@ -41,35 +41,28 @@ class ClientSide < Wkndr
       socket_stream.write(msg)
     }
 
-    gl.open("wkndr", w, h, 0) # screenSize and FPS
+    gl.open("wkndr", w, h, 60) # screenSize and FPS
 
-    gl.update { |global_time, delta_time|
-      gl.drawmode {
-        gl.threed {
-        }
-        gl.twod {
-          gl.draw_fps(0, 0)
-          gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
-            gl.emit({"z" => "zzz"})
-          }
-        }
-      }
-    }
+    #gl.update { |global_time, delta_time|
+    #  gl.drawmode {
+    #    gl.threed {
+    #    }
+    #    gl.twod {
+    #      gl.draw_fps(0, 0)
+    #      gl.button(50.0, 50.0, 250.0, 20.0, "zzz #{global_time} #{delta_time}") {
+    #        gl.emit({"z" => "zzz"})
+    #      }
+    #    }
+    #  }
+    #}
+
+    log!(:before_stac, stack)
 
     Wkndr.set_stack(stack)
     Wkndr.set_gl(gl)
+
+    log!(:after, Wkndr.the_stack)
   end
-
-  #def self.first_stack
-  #  if @stacks_to_care_about
-  #    @stacks_to_care_about[0]
-  #  end
-  #end
-
-  def self.wizbang!
-    self.show!(self.the_stack)
-  end
-
   #def self.block!
   #  supblock = super
   #  UV.run(UV::UV_RUN_NOWAIT)

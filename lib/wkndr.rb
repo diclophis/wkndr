@@ -36,7 +36,11 @@ class Wkndr
 
   def self.client_side(&block)
     begin
+      log!(:start_client_side)
+
       if block && !@stack && !@gl
+        log!(:skip_client_side)
+
         return
       end
 
@@ -138,5 +142,18 @@ class Wkndr
     if @server
       yield @server
     end
+  end
+
+  def self.first_stack
+    if @stacks_to_care_about
+      @stacks_to_care_about[0]
+    end
+  end
+
+
+  def self.wizbang!
+    log!(:inwizbang, self.the_stack, self.first_stack, @stack, @stacks_to_care_about)
+
+    self.show!(self.first_stack)
   end
 end

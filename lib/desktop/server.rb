@@ -30,7 +30,7 @@ class ProtocolServer
     @server.simultaneous_accepts = 4
     @server.bind(address)
     @server.listen(32) { |connection_error|
-      log!(:on_connection, connection_error, self)
+      #log!(:on_connection, connection_error, self)
 
       create_connection(connection_error)
     }
@@ -112,7 +112,7 @@ class ProtocolServer
 
       http = Connection.new(@server.accept)
 
-      log!(:accepted, http)
+      #log!(:accepted, http)
 
       @all_connections << http
 
@@ -271,11 +271,12 @@ class ProtocolServer
         end
       else
         requested_path = "#{@required_prefix}#{request.path}"
-        log!(:look_for, requested_path)
+        #log!(:look_for, requested_path)
 
         UV::FS.realpath(requested_path) { |resolved_filename|
           if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
             log!(:hackz, resolved_filename)
+
             cn.halt!
           else
             cn.serve_static_file!(resolved_filename)

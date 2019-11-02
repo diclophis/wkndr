@@ -7,7 +7,8 @@ cd /root/emsdk
 
 ./emsdk list
 #./emsdk activate sdk-1.38.36-64bit
-./emsdk activate latest
+#./emsdk activate latest
+./emsdk activate latest-fastcomp
 
 . ./emsdk_env.sh
 

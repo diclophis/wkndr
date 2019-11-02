@@ -16,7 +16,10 @@ cd emsdk
 
 ./emsdk list
 
-./emsdk install latest
+./emsdk install latest-fastcomp
+
+#1.39.0
+#latest
 #emscripten-1.38.36
 #./emsdk install emscripten-1.38.36
 #./emsdk install sdk-master-64bit

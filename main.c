@@ -648,6 +648,8 @@ void platform_bits_update_void(void* arg) {
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
+  fprintf(stderr, "preShowShoSshow!\n");
+
   mrb_value stack_self;
 
   mrb_get_args(mrb, "o", &stack_self);
@@ -659,7 +661,7 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   loop_data->self_pointer = mrb_obj_ptr(stack_self);
 
 #ifdef PLATFORM_WEB
-  emscripten_sample_gamepad_data();
+  //emscripten_sample_gamepad_data();
 
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 #endif
@@ -875,8 +877,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
 
-  //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
@@ -2278,8 +2280,8 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb_client, socket_stream, NULL);
 
-  mrb_value the_stack;
-  mrb_value the_stack_client;
+  //mrb_value the_stack;
+  //mrb_value the_stack_client;
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
@@ -2337,6 +2339,8 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef PLATFORM_WEB
+  fprintf(stderr, "going for wizbang ... \n");
+
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "wizbang!", 0, 0);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTBLOCK\n");
