@@ -36,9 +36,10 @@ class SocketStream
             self.write_tty(cmsg)
           when "party"
             begin
-              did_parse = Kernel.eval(cmsg)
+              did_parse = Wkndr.wkndr_client_eval(cmsg)
             rescue => e
               log!(:cmsg_bad, e)
+              log!(e.backtrace)
             end
 
         else

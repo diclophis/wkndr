@@ -3,9 +3,6 @@
 class ProtocolServer
   def initialize(safety_dir, host = '0.0.0.0', port = 8000)
 
-    #TODO: where does this go????
-    #UV.disable_stdio_inheritance
-
     @required_prefix = safety_dir
 
     @all_connections = []
@@ -30,8 +27,6 @@ class ProtocolServer
     @server.simultaneous_accepts = 4
     @server.bind(address)
     @server.listen(32) { |connection_error|
-      #log!(:on_connection, connection_error, self)
-
       create_connection(connection_error)
     }
 
@@ -43,9 +38,6 @@ class ProtocolServer
   end
 
   def update(gt = nil, dt = nil)
-    #NOOP: TODO????
-    #log!(:tick)
-
     if @actual_wkndrfile && !@fsev
       watch_wkndrfile
     end
@@ -112,8 +104,6 @@ class ProtocolServer
 
       http = Connection.new(@server.accept)
 
-      #log!(:accepted, http)
-
       @all_connections << http
 
       http
@@ -125,8 +115,6 @@ class ProtocolServer
   end
 
   def raw(path, &block)
-    log!(:register_handler, path, block)
-
     @handlers[path] = block
 
     rebuild_tree!
@@ -166,9 +154,6 @@ class ProtocolServer
       mab.html5 "lang" => "en" do
         mab.head do
           mab.title title
-          #mab.style do
-          #  GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
-          #end
         end
 
         mab.body "id" => "wkndr-body" do
@@ -196,10 +181,6 @@ class ProtocolServer
   end
 
   def wsb(path, &block)
-    log!(:server_side_camp, block, self)
-    #return unless @server
-
-    #:#TODO: abstrace base interface
     raw('/') { |cn, ids_from_path|
       mab = Markaby::Builder.new
       mab.html5 "lang" => "en" do
@@ -237,8 +218,6 @@ class ProtocolServer
     }
 
     @allow_static = true
-
-    #block.call(@server) if block
   end
 
   def rebuild_tree!
@@ -271,9 +250,12 @@ class ProtocolServer
         end
       else
         requested_path = "#{@required_prefix}#{request.path}"
-        #log!(:look_for, requested_path)
+
+        log!(:req, requested_path, @required_prefix)
 
         UV::FS.realpath(requested_path) { |resolved_filename|
+          log!(:reqres, resolved_filename)
+
           if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
             log!(:hackz, resolved_filename)
 
@@ -356,7 +338,7 @@ class ProtocolServer
 
     did_parse = nil
     begin
-      did_parse = Wkndr.wkndr_server_eval(wkread, self)
+      did_parse = Wkndr.wkndr_server_eval(wkread)
     rescue => e
      log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
      log!(e.backtrace)

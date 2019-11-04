@@ -56,13 +56,14 @@ class ClientSide < Wkndr
     #  }
     #}
 
-    log!(:before_stac, stack)
+    #log!(:before_stac, stack)
 
     Wkndr.set_stack(stack)
     Wkndr.set_gl(gl)
 
-    log!(:after, Wkndr.the_stack)
+    #log!(:after, Wkndr.the_stack)
   end
+
   #def self.block!
   #  supblock = super
   #  UV.run(UV::UV_RUN_NOWAIT)

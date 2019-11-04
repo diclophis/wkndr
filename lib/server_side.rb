@@ -12,10 +12,10 @@ class ServerSide < Wkndr
   def self.block!
     install_trap!
 
-    t = UV::Timer.new
-    t.start(1, 1) do |x|
-      #log!(:timer_serverside)
-    end
+    #t = UV::Timer.new
+    #t.start(1, 1) do |x|
+    #  #log!(:timer_serverside)
+    #end
 
     while @keep_running && foo = self.cheese_cross!
       super
@@ -36,7 +36,7 @@ class ServerSide < Wkndr
 
     server_args = args.find { |arg| arg[0,9] == "--server=" }
 
-    safety_dir_arg = nil
+    safety_dir_arg = "public"
 
     if server_args
       _, safety_dir_arg = server_args.split("=")
@@ -46,6 +46,7 @@ class ServerSide < Wkndr
  
     if protocol_server = ProtocolServer.new(safety_dir_arg)
       stack.up(protocol_server)
+      Wkndr.set_server(protocol_server)
     end
 
     runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case

@@ -1,28 +1,7 @@
 #
-# ########
-# #
-# # ClientSide / FarSide / LightSide / ExploreSide / PlaySide / WindowSide
-# #   sandboxed mruby context, minimal dependencies, NO SYSTEM INTERFACE
-# #
-# #
-# # WindowSide
-# # EtlSide
-# #  shape of data?
-# #
-# # ServerSide / NearSide / HeavySide / CampSide / BuildSide / WindowSide
-# #   full raw mruby context, all deps for all project, includes several system interfaces
-# #   libuv
-# #   Thread
-# #   IO
-# #
-# 
-# #
-# # LiveView
-# #   GET
-# #   MOUNT
-# #   RENDER
-# #   CONNECT
-# #   STATE
+
+module Anon
+end
 
 class Wkndr
   def self.runblock!(stack)
@@ -36,11 +15,7 @@ class Wkndr
 
   def self.client_side(&block)
     begin
-      log!(:start_client_side)
-
       if block && !@stack && !@gl
-        log!(:skip_client_side)
-
         return
       end
 
@@ -63,10 +38,6 @@ class Wkndr
             }
           }
         end
-      end
-
-      if @gl && @stack
-        @stack.cheese
       end
     rescue => e
       log!(:einplay, e, e.backtrace)
@@ -109,34 +80,26 @@ class Wkndr
     end
   end
 
-  #def self.wkndr_scoped_eval(ruby_string, scopish)
-  #  #module Foop
-  #  #class_eval do
-  #  #instance_eval do
+  def self.wkndr_server_eval(ruby_string)
+    #self.set_server(scopish)
 
-  #    @scope = scopish
+    ruby_string = "module Anon\n" + ruby_string + "\nend"
 
-  #    #Wkndr.eval("module Anon\n" + ruby_string + "\nend")
-  #    Kernel.eval(ruby_string)
-  #  #end
+    eval(ruby_string)
+  end
+
+#Wkndr.eval("module Anon\n" + ruby_string + "\nend")
+
+  def self.wkndr_client_eval(ruby_string)
+    #self.set_stack(scopish)
+
+    ruby_string = "module Anon\n" + ruby_string + "\nend"
+
+    eval(ruby_string)
+  end
+
+  #def self.registry
   #end
-
-  def self.wkndr_server_eval(ruby_string, scopish)
-  #  #module Foop
-  #  #class_eval do
-  #  #instance_eval do
-
-  #    @scope = scopish
-
-  #    #Wkndr.eval("module Anon\n" + ruby_string + "\nend")
-      self.set_server(scopish)
-
-      Kernel.eval(ruby_string)
-  #  #end
-  end
-
-  def self.registry
-  end
 
   def self.server_side
     if @server
@@ -152,8 +115,15 @@ class Wkndr
 
 
   def self.wizbang!
-    log!(:inwizbang, self.the_stack, self.first_stack, @stack, @stacks_to_care_about)
+    #log!(:inwizbang, self.the_stack, self.first_stack, @stack, @stacks_to_care_about)
 
     self.show!(self.first_stack)
+  end
+
+  def self.nonce
+    unless @nonce
+      @nonce = true
+      yield
+    end
   end
 end
