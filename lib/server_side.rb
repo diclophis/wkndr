@@ -12,10 +12,11 @@ class ServerSide < Wkndr
   def self.block!
     install_trap!
 
-    #t = UV::Timer.new
-    #t.start(1, 1) do |x|
-    #  #log!(:timer_serverside)
-    #end
+    #NOTE: what is this doing????
+    t = UV::Timer.new
+    t.start(1, 1) do |x|
+      #log!(:timer_serverside)
+    end
 
     while @keep_running && foo = self.cheese_cross!
       super

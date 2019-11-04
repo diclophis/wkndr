@@ -15,14 +15,16 @@ class Wkndr
 
   def self.server_side(&block)
     if @server && block
+      log!(:WTFINSIDESERVER)
+
       block.call(@server)
     end
   end
 
   def self.client_side(&block)
-    log!(:WTFINSIDECLI)
-
     if @gl && block
+      log!(:WTFINSIDECLI)
+
       block.call(@gl)
     end
 
@@ -92,32 +94,22 @@ class Wkndr
   end
 
   def self.wkndr_server_eval(ruby_string)
-    #self.set_server(scopish)
-
     ruby_string = "module Anon\n" + ruby_string + "\nend"
 
     eval(ruby_string)
   end
-
-#Wkndr.eval("module Anon\n" + ruby_string + "\nend")
 
   def self.wkndr_client_eval(ruby_string)
-    #self.set_stack(scopish)
-
     ruby_string = "module Anon\n" + ruby_string + "\nend"
 
     eval(ruby_string)
   end
-
-  #def self.registry
-  #end
 
   def self.first_stack
     if @stacks_to_care_about
       @stacks_to_care_about[0]
     end
   end
-
 
   def self.wizbang!
     #log!(:inwizbang, self.the_stack, self.first_stack, @stack, @stacks_to_care_about)
