@@ -58,8 +58,9 @@ class ClientSide < Wkndr
 
     #log!(:before_stac, stack)
 
-    Wkndr.set_stack(stack)
-    Wkndr.set_gl(gl)
+    Wkndr.set_client(gl)
+
+    #Wkndr.set_gl(gl)
 
     #log!(:after, Wkndr.the_stack)
   end

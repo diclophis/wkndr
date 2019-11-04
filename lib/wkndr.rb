@@ -13,48 +13,59 @@ class Wkndr
     @stacks_to_care_about << run_loop_blocker
   end
 
-  def self.client_side(&block)
-    begin
-      if block && !@stack && !@gl
-        return
-      end
-
-      if @stack && @gl && block
-        begin
-          block.call(@gl)
-        rescue => e
-          log!(:e, e, e.backtrace)
-          #@gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
-          @gl.update { |global_time, delta_time|
-            @gl.drawmode {
-              @gl.threed {
-              }
-              @gl.twod {
-                @gl.draw_fps(0, 0)
-                @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
-                  @gl.emit({"c" => "tty"})
-                }
-              }
-            }
-          }
-        end
-      end
-    rescue => e
-      log!(:einplay, e, e.backtrace)
+  def self.server_side(&block)
+    if @server && block
+      block.call(@server)
     end
   end
 
-  def self.set_stack(stack)
-    @stack = stack
+  def self.client_side(&block)
+    log!(:WTFINSIDECLI)
+
+    if @gl && block
+      block.call(@gl)
+    end
+
+    #begin
+    #  if block && !@stack && !@gl
+    #    return
+    #  end
+    #  if @stack && @gl && block
+    #    begin
+    #      block.call(@gl)
+    #    rescue => e
+    #      log!(:e, e, e.backtrace)
+    #      #@gl.lookat(0, 0.0, 500.0, 0.0, 0.0, 0.0, 0.01, 200.0)
+    #      @gl.update { |global_time, delta_time|
+    #        @gl.drawmode {
+    #          @gl.threed {
+    #          }
+    #          @gl.twod {
+    #            @gl.draw_fps(0, 0)
+    #            @gl.button(50.0, 50.0, 250.0, 20.0, "error %s" % [e]) {
+    #              @gl.emit({"c" => "tty"})
+    #            }
+    #          }
+    #        }
+    #      }
+    #    end
+    #  end
+    #rescue => e
+    #  log!(:einplay, e, e.backtrace)
+    #end
   end
 
-  def self.the_stack
-    @stack
+  def self.set_client(gl)
+    @client = gl
   end
 
-  def self.set_gl(gl)
-    @gl = gl
+  def self.the_client
+    @client
   end
+
+  #def self.set_gl(gl)
+  #  @gl = gl
+  #end
 
   def self.set_server(server)
     @server = server
@@ -100,12 +111,6 @@ class Wkndr
 
   #def self.registry
   #end
-
-  def self.server_side
-    if @server
-      yield @server
-    end
-  end
 
   def self.first_stack
     if @stacks_to_care_about

@@ -5,6 +5,8 @@
 #}
 
 Wkndr.server_side { |server|
+  log!(:WTFSERVER, server)
+
   server.wsb("/") do |cn, phr|
   end
 
@@ -176,7 +178,11 @@ class TagComponent
 end
 
 Wkndr.nonce {
-  if Wkndr.the_stack #TODO: client_only
+  log!(:WTFNONCE)
+
+  Wkndr.client_side { |gl|
+    log!(:WTFCLIENT, gl)
+
     @store = StorageManager.new
     
     @first = @store.add(Entity.new, TagComponent.new("1"), RandomSpinComponent.new, RandomColorComponent.new)
@@ -191,16 +197,16 @@ Wkndr.nonce {
       @camera,
       @transform_rotate
     ]
-  end
+  }
 }
 
-if Wkndr.the_stack
+Wkndr.client_side { |gl|
   @store.each_having_all(*@query) { |thing, components|
     tag, spin, color = *components
 
     log!(tag.label)
   }
-end
+}
 
 #Wkndr.client_side { |gl|
 #}
