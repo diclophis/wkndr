@@ -46,12 +46,12 @@ class StackBlocker
     @stack.each { |srb| srb.update(gt, dt) }
   end
 
-  def cheese
-    #TODO: remove for_server abstraction its broken
-    if @for_server
-      update
-    else
-      signal
-    end
-  end
+  #def cheese
+  #  #TODO: remove for_server abstraction its broken
+  #  if @for_server
+  #    update
+  #  else
+  #    signal
+  #  end
+  #end
 end

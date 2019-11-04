@@ -33,9 +33,9 @@ class ProtocolServer
     subscribe_to_wkndrfile
   end
 
-  def signal
-    self.update(0, 0)
-  end
+  #def signal
+  #  self.update(0, 0)
+  #end
 
   def update(gt = nil, dt = nil)
     if @actual_wkndrfile && !@fsev
@@ -470,10 +470,6 @@ end
 #    }
 #
 #    http
-#  end
-#
-#  def signal
-#    self.update(0, 0)
 #  end
 #
 #  def update(gt = nil, dt = nil)

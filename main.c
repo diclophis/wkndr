@@ -591,19 +591,21 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 }
 
 
+//TODO
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef TARGET_DESKTOP
   //TODO: this should have logic on ruby side based on if is window or not
-  if (WindowShouldClose()) {
-    return mrb_nil_value();
-  }
+  //if (WindowShouldClose()) {
+    //return mrb_true_value();
+    //return mrb_nil_value();
+  //}
 #endif
 
   double time;
   float dt;
 
-  double itime;
-  float idt;
+  //double itime;
+  //float idt;
 
   BeginDrawing();
 
@@ -636,6 +638,7 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 }
 
 
+//TODO
 void platform_bits_update_void(void* arg) {
   loop_data_s* loop_data = arg;
 
@@ -647,6 +650,7 @@ void platform_bits_update_void(void* arg) {
 }
 
 
+//TODO
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
   fprintf(stderr, "preShowShoSshow!\n");
 
@@ -663,6 +667,7 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 #ifdef PLATFORM_WEB
   //emscripten_sample_gamepad_data();
 
+  //void emscripten_set_main_loop_arg(em_arg_callback_func func, void *arg, int fps, int simulate_infinite_loop)
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 #endif
 
@@ -685,7 +690,8 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "block!", 0, 0);
+  //TODO
+  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "common_cheese_process!", 0, 0);
 
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in SERVER_CHEESE_CROSS");
@@ -2198,10 +2204,12 @@ int main(int argc, char** argv) {
   mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
   mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
 
-  // class PlatformBits
-  struct RClass *stack_blocker_class = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  mrb_define_method(mrb_client, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
+  //TODO /////// class PlatformBits
+  struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
+  mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
+
+  //struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
+  //mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);
@@ -2332,7 +2340,7 @@ int main(int argc, char** argv) {
 #ifdef TARGET_DESKTOP
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
   if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVERBLOCK\n");
+    fprintf(stderr, "Exception in SERVERBLOCKINIT\n");
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
   }
@@ -2359,5 +2367,5 @@ int main(int argc, char** argv) {
 
   fprintf(stderr, "exiting ... \n");
 
-  return 0;
+  return 33;
 }

@@ -18,9 +18,11 @@ class ClientSide < Wkndr
 
     stack = StackBlocker.new(false)
 
-    self.open_client!(stack, w.to_i, h.to_i)
+    #self.open_client!(stack, w.to_i, h.to_i)
 
-    runblock!(stack) if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
+    runblock!(stack)
+    
+    ###if stack && stack.is_a?(StackBlocker) #TODO: fix odd start() dispatch case
   end
 
   def self.open_client!(stack, w, h)
@@ -63,6 +65,14 @@ class ClientSide < Wkndr
     #Wkndr.set_gl(gl)
 
     #log!(:after, Wkndr.the_stack)
+  end
+
+  def self.block!
+    log!(:client_side_block_class)
+  end
+
+  def block!
+    log!(:client_side_block_instance)
   end
 
   #def self.block!
