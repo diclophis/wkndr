@@ -14,18 +14,18 @@ class Wkndr
   end
 
   def self.server_side(&block)
-    if @server && block
-      log!(:WTFINSIDESERVER)
+    log!(:WTFINSISERVERS, self.object_id, Wkndr.object_id, block)
 
+    if @server && block
       block.call(@server)
     end
   end
 
   def self.client_side(&block)
-    if @gl && block
-      log!(:WTFINSIDECLI)
+    log!(:WTFINSIDECLI, self.object_id, Wkndr.object_id, Wkndr.the_client, self.first_stack, @client, block)
 
-      block.call(@gl)
+    if @client && block
+      block.call(@client)
     end
 
     #begin
@@ -65,10 +65,6 @@ class Wkndr
     @client
   end
 
-  #def self.set_gl(gl)
-  #  @gl = gl
-  #end
-
   def self.set_server(server)
     @server = server
   end
@@ -78,6 +74,7 @@ class Wkndr
   end
 
   def self.common_cheese_process!
+    #log!(:wtf, @stacks_to_care_about)
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
       if running_stacks.length > 0

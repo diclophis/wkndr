@@ -33,11 +33,9 @@ class ProtocolServer
     subscribe_to_wkndrfile
   end
 
-  #def signal
-  #  self.update(0, 0)
-  #end
-
   def update(gt = nil, dt = nil)
+    #log!(:server_dt, gt, dt, Time.now.to_f)
+
     if @actual_wkndrfile && !@fsev
       watch_wkndrfile
     end
@@ -47,7 +45,6 @@ class ProtocolServer
     @all_connections.each { |cn|
       if !cn.running?
         connections_to_drop << cn    
-        log!(:should_drop, cn)
       else
         if cn.has_pending_request?
           request = cn.pop_request!
@@ -122,7 +119,7 @@ class ProtocolServer
 
   def live(path, title, &block)
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      log!(:fooooows, cn, phr, mab)
+      #log!(:fooooows, cn, phr, mab)
 
       cn.add_subscription!(path, phr)
       cn.upgrade_to_websocket!

@@ -4,33 +4,6 @@
 #  server.wsb("/")
 #}
 
-Wkndr.server_side { |server|
-  log!(:WTFSERVER, server)
-
-  server.wsb("/") do |cn, phr|
-  end
-
-  server.raw("/status") do |cn, phr|
-    "OK\n"
-  end
-
-  server.live("/todos", "todos") do |cn, phr, mab|
-    mab.h1 "stuff todo w/ name"
-
-    mab.input "type" => "text"
-
-    mab.ul do
-      4.times do |i|
-        mab.li do
-          mab.label do
-            mab.input "type" => "checkbox"
-            mab.text "task #{i+1}"
-          end
-        end
-      end
-    end
-  end
-}
 
 class Entity
 end
@@ -178,34 +151,76 @@ class TagComponent
 end
 
 Wkndr.nonce {
-  log!(:WTFNONCE)
+  @store = StorageManager.new
+  
+  @first = @store.add(Entity.new, TagComponent.new("1"), RandomSpinComponent.new, RandomColorComponent.new)
+  @second = @store.add(Entity.new, TagComponent.new("2"), RandomSpinComponent.new, RandomColorComponent.new)
+
+  @query = [TagComponent, RandomSpinComponent, RandomColorComponent]
+
+  @transform_rotate = TransformRotateSystem.new(@store)
+  @camera = CameraSystem.new(@store)
+
+  @systems = [
+    @camera,
+    @transform_rotate
+  ]
 
   Wkndr.client_side { |gl|
-    log!(:WTFCLIENT, gl)
-
-    @store = StorageManager.new
-    
-    @first = @store.add(Entity.new, TagComponent.new("1"), RandomSpinComponent.new, RandomColorComponent.new)
-    @second = @store.add(Entity.new, TagComponent.new("2"), RandomSpinComponent.new, RandomColorComponent.new)
-
-    @query = [TagComponent, RandomSpinComponent, RandomColorComponent]
-
-    @transform_rotate = TransformRotateSystem.new(@store)
-    @camera = CameraSystem.new(@store)
-
-    @systems = [
-      @camera,
-      @transform_rotate
-    ]
+    gl.open_default_view!
   }
 }
 
 Wkndr.client_side { |gl|
-  @store.each_having_all(*@query) { |thing, components|
-    tag, spin, color = *components
+  gl.update { |global_time, delta_time|
+    gl.drawmode {
+      @store.each_having_all(*@query) { |thing, components|
+        tag, spin, color = *components
 
-    log!(tag.label)
+        tag.label = global_time.to_s
+
+        #log!(tag.label)
+      }
+    }
   }
+}
+
+Wkndr.server_side { |server|
+  server.wsb("/") do |cn, phr|
+  end
+
+  server.raw("/status") do |cn, phr|
+    "OK\n"
+  end
+
+  server.live("/todos", "todos") do |cn, phr, mab|
+    mab.h1 "stuff todo w/ name"
+
+    mab.input "type" => "text"
+
+    mab.ul do
+      3.times do |i|
+        mab.li do
+          mab.label do
+            mab.input "type" => "checkbox"
+            mab.text "task #{i+1}"
+          end
+        end
+      end
+    end
+
+    #store = @store
+    #query = @query
+    #mab.p store.class
+    #mab.ul do
+    #  store.each_having_all(*query) { |thing, components|
+    #    thing_tag, _, _ = *components
+    #    li do
+    #      span thing_tag.label
+    #    end
+    #  }
+    #end
+  end
 }
 
 #Wkndr.client_side { |gl|

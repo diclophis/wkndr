@@ -43,27 +43,22 @@ class ServerSide < Wkndr
       #log!(:timer_serverside)
     end
 
-    ##TODO
+    ##TODO: trap exit condition from UI
     foo = true
     while @keep_running
+      #NOTE: this sends a signal to the client to tick
+      foo = self.cheese_cross!
+
       common_cheese_process!
 
-      #foo = self.cheese_cross!
-    #  super
-
       UV.run(UV::UV_RUN_NOWAIT)
-    #
-    #  UV.run(UV::UV_RUN_ONCE)
+      #UV.run(UV::UV_RUN_ONCE)
     end
 
-    log!(:WTFWTWFSDSDSDSD)
-
+    #TODO
+    #UV.run(UV::UV_RUN_ONCE)
     #UV.run(UV::UV_RUN_ONCE)
 
     UV.default_loop.stop
-  end
-
-  def block!
-    log!(:server_side_block_instance)
   end
 end

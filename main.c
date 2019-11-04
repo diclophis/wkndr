@@ -604,15 +604,12 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   double time;
   float dt;
 
-  //double itime;
-  //float idt;
-
-  BeginDrawing();
-
-  ClearBackground(BLANK);
 
   time = GetTime();
   dt = GetFrameTime();
+
+  //double itime;
+  //float idt;
 
   //int cnt = 3;
   //for (int i=0; i<cnt; i++) {
@@ -631,8 +628,6 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
     }
 
   //}
-
-  EndDrawing();
 
   return mrb_true_value();
 }
@@ -1234,17 +1229,24 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   mrb_value block;
   mrb_get_args(mrb, "&", &block);
 
-  play_data_s *p_data = NULL;
-  mrb_value data_value;     // this IV holds the data
-  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+  //TODO....
+  //play_data_s *p_data = NULL;
+  //mrb_value data_value;     // this IV holds the data
+  //data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
 
-  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
-  if (!p_data) {
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  //if (!p_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
+
+  {
+    BeginDrawing();
+    ClearBackground(BLANK);
+    {
+      mrb_yield_argv(mrb, block, 0, NULL);
+    }
+    EndDrawing();
   }
-
-
-  mrb_yield_argv(mrb, block, 0, NULL);
 
   return mrb_nil_value();
 }
@@ -2208,8 +2210,8 @@ int main(int argc, char** argv) {
   struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
   mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
 
-  //struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  //mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
+  struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
+  mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
 
   // class GameLoop
   struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);
