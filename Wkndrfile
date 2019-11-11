@@ -8,6 +8,9 @@
 class Entity
 end
 
+class Camera
+end
+
 class StorageManager
   attr_accessor :things
   attr_accessor :things_to_components
@@ -106,11 +109,11 @@ class StorageManager
   end
 end
 
-class CameraSystem
-  attr_accessor :storage
+class CameraFollowSystem
+  attr_accessor :camera
+  attr_accessor :target
 
-  def initialize(the_storage)
-    self.storage = the_storage
+  def initialize
   end
 
   def process(gt, dt)
@@ -118,27 +121,37 @@ class CameraSystem
 end
 
 class TransformRotateSystem
-  attr_accessor :storage
-
-  def initialize(the_storage)
-    self.storage = the_storage
+  def initialize
   end
 
   def process(gt, dt)
   end
 end
 
+class PositionComponent
+  attr_accessor :position
+
+  def initialize(x, y, z)
+    self.position = [x, y, z]
+  end
+end
+
 class RandomColorComponent
-  attr_accessor :r, :g, :b
+  attr_accessor :color
 
   def initialize
+    #r, g, b
+    self.color = [1, 0, 0]
   end
 end
 
 class RandomSpinComponent
-  attr_accessor :x, :y, :z
+  attr_accessor :axis
+  attr_accessor :angle
 
   def initialize
+    self.axis = [0, 1, 0]
+    self.angle = 45
   end
 end
 
@@ -151,36 +164,51 @@ class TagComponent
 end
 
 Wkndr.nonce {
-  @store = StorageManager.new
-  
-  @first = @store.add(Entity.new, TagComponent.new("1"), RandomSpinComponent.new, RandomColorComponent.new)
-  @second = @store.add(Entity.new, TagComponent.new("2"), RandomSpinComponent.new, RandomColorComponent.new)
-
-  @query = [TagComponent, RandomSpinComponent, RandomColorComponent]
-
-  @transform_rotate = TransformRotateSystem.new(@store)
-  @camera = CameraSystem.new(@store)
-
-  @systems = [
-    @camera,
-    @transform_rotate
-  ]
-
   Wkndr.client_side { |gl|
+    @store = StorageManager.new
+
+    @first = @store.add(Entity.new, TagComponent.new("1"), PositionComponent.new(0, 1, 0), RandomSpinComponent.new, RandomColorComponent.new)
+    @second = @store.add(Entity.new, TagComponent.new("2"), PositionComponent.new(0, 2, 0), RandomSpinComponent.new, RandomColorComponent.new)
+
+    @query = [TagComponent, PositionComponent, RandomSpinComponent, RandomColorComponent]
+
+    @transform_rotate = TransformRotateSystem.new
+
+    @camera = @store.add(Camera.new, TagComponent.new("camera"), PositionComponent.new(-10, 0, -10))
+
+    @camera_follow = CameraFollowSystem.new
+    @camera_follow.camera = @camera
+    @camera_follow.target = @first
+
+    #@systems = [
+    #  @camera_follow,
+    #  @transform_rotate
+    #]
+
     gl.open_default_view!
   }
 }
 
 Wkndr.client_side { |gl|
   gl.update { |global_time, delta_time|
+    @store.each_having_all(*@query) { |thing, components|
+      tag, position, spin, color = *components
+
+      #tag.label = global_time.to_s
+
+      #log!(tag.label)
+    }
+
+    
+    
     gl.drawmode {
-      @store.each_having_all(*@query) { |thing, components|
-        tag, spin, color = *components
+      #@store.each_having_all(*@query) { |thing, components|
+      #  tag, spin, color = *components
 
-        tag.label = global_time.to_s
+      #  tag.label = global_time.to_s
 
-        #log!(tag.label)
-      }
+      #  #log!(tag.label)
+      #}
     }
   }
 }

@@ -14,7 +14,7 @@ class Wkndr
   end
 
   def self.server_side(&block)
-    log!(:WTFINSISERVERS, self.object_id, Wkndr.object_id, block)
+    #log!(:WTFINSISERVERS, self.object_id, Wkndr.object_id, block)
 
     if @server && block
       block.call(@server)
@@ -22,7 +22,7 @@ class Wkndr
   end
 
   def self.client_side(&block)
-    log!(:WTFINSIDECLI, self.object_id, Wkndr.object_id, Wkndr.the_client, self.first_stack, @client, block)
+    log!(:WTFINSIDECLI, self, self.object_id, Wkndr.object_id, Wkndr.the_client, self.first_stack, @client, block)
 
     if @client && block
       block.call(@client)
