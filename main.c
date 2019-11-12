@@ -1056,6 +1056,18 @@ static mrb_value game_loop_draw_fps(mrb_state* mrb, mrb_value self)
 }
 
 
+static mrb_value game_loop_draw_circle(mrb_state* mrb, mrb_value self)
+{
+  mrb_float radius,x,y,z,r,g,b,a;
+
+  mrb_get_args(mrb, "ffffffff", &radius, &x, &y, &z, &r, &g, &b, &a);
+
+  DrawCircle(x, y, radius, (Color){ r, g, b, a });
+
+  return mrb_nil_value();
+}
+
+
 //TODO: implenent on_shutdown
 static mrb_value platform_bits_shutdown(mrb_state* mrb, mrb_value self) {
 //  //mrb_funcall(mrb, self, "play", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
@@ -1263,6 +1275,7 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 
   Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
   if (!p_data) {
+    fprintf(stderr, "WTFWTF\n");
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
@@ -2230,6 +2243,7 @@ int main(int argc, char** argv) {
   mrb_define_method(mrb_client, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
   mrb_define_method(mrb_client, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
   mrb_define_method(mrb_client, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
+  mrb_define_method(mrb_client, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
 
   // class Model
   struct RClass *model_class = mrb_define_class(mrb_client, "Model", mrb->object_class);

@@ -1,10 +1,5 @@
 #
 
-#Wkndr.server_side { |server|
-#  server.wsb("/")
-#}
-
-
 class Entity
 end
 
@@ -128,6 +123,66 @@ class TransformRotateSystem
   end
 end
 
+class OrderingSystem
+  attr_accessor :compare_proc
+  attr_accessor :items
+  attr_accessor :item_components
+
+	def initialize(&the_compare_proc)
+    self.compare_proc = the_compare_proc
+		reset!
+	end
+
+	def reset!
+		self.items = []
+    self.item_components = {}
+		@i = 0
+	end
+
+	def order_by(key, component)
+    self.item_components[key] = component
+
+    ## Iterate through the length of the array, push into this method
+		if @i == 0
+			self.items[@i] = key
+		else
+      ## beginning with the second element items[i]
+			j = @i - 1
+
+			# If element to left of key is larger then
+			# move it one position over at a time
+			while j >= 0 and self.compare_proc.call(self.item_components[self.items[j]], component)
+				self.items[j + 1] = self.items[j]
+				j = j - 1
+			end
+
+			# Update key position
+			self.items[j+1] = key
+		end
+
+    @i += 1
+  end
+end
+
+class ByIndexSystem
+  attr_accessor :process_proc
+
+	def initialize(&the_process_proc)
+    self.process_proc = the_process_proc
+    reset!
+	end
+
+  def reset!
+    @i = 0
+  end
+
+	def process(item)
+    self.process_proc.call(item, @i)
+
+    @i += 1
+  end
+end
+
 class PositionComponent
   attr_accessor :position
 
@@ -136,12 +191,19 @@ class PositionComponent
   end
 end
 
-class RandomColorComponent
+class ColorComponent
+  attr_accessor :color
+
+  def initialize(r, g, b, a)
+    self.color = [r, g, b, a]
+  end
+end
+
+class RandomColorComponent < ColorComponent
   attr_accessor :color
 
   def initialize
-    #r, g, b
-    self.color = [1, 0, 0]
+    super(rand * 255.0, rand * 255.0, rand * 255.0, 255.0)
   end
 end
 
@@ -163,6 +225,14 @@ class TagComponent
   end
 end
 
+class CircleComponent
+  attr_accessor :radius
+
+  def initialize(the_radius)
+    self.radius = the_radius
+  end
+end
+
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     @store = StorageManager.new
@@ -172,43 +242,89 @@ Wkndr.nonce {
 
     @query = [TagComponent, PositionComponent, RandomSpinComponent, RandomColorComponent]
 
+    @shapes = []
+
+    16.times { |i|
+      @shapes  << @store.add(Entity.new, CircleComponent.new(16.0 + (i*6)), PositionComponent.new(0, 0, 0), RandomColorComponent.new)
+    }
+
+    @query_shapes = [CircleComponent, PositionComponent, RandomColorComponent]
+
     @transform_rotate = TransformRotateSystem.new
 
-    @camera = @store.add(Camera.new, TagComponent.new("camera"), PositionComponent.new(-10, 0, -10))
+    @camera_one = @store.add(Camera.new, TagComponent.new("camera one"), PositionComponent.new(-10, 0, -10))
+    @camera_two = @store.add(Camera.new, TagComponent.new("camera two"), PositionComponent.new(10, 0, 10))
 
-    @camera_follow = CameraFollowSystem.new
-    @camera_follow.camera = @camera
-    @camera_follow.target = @first
+    @camera_one_follow = CameraFollowSystem.new
+    @camera_one_follow.camera = @camera_one
+    @camera_one_follow.target = @first
 
-    #@systems = [
-    #  @camera_follow,
-    #  @transform_rotate
-    #]
+    @camera_two_follow = CameraFollowSystem.new
+    @camera_two_follow.camera = @camera_two
+    @camera_two_follow.target = @second
+
+    @twod_grid_system = ByIndexSystem.new
+
+    @first_ordering_system = OrderingSystem.new
+
+    @second_ordering_system = OrderingSystem.new
 
     gl.open_default_view!
   }
 }
 
 Wkndr.client_side { |gl|
+  twod_proc = Proc.new {
+    @first_ordering_system.items.each { |thing_sorted_by_screen_position|
+      shape, position, color = @store.things_to_components[thing_sorted_by_screen_position]
+      gl.draw_circle(shape.radius, *position.position, *color.color)
+    }
+  }
+
+  @first_ordering_system.compare_proc = Proc.new { |a, b|
+    a.position[1] > b.position[1]
+  }
+
+  @second_ordering_system.compare_proc = Proc.new { |a, b|
+    a.radius < b.radius
+  }
+
   gl.update { |global_time, delta_time|
-    @store.each_having_all(*@query) { |thing, components|
-      tag, position, spin, color = *components
+    @twod_grid_system.process_proc = Proc.new { |a, i|
+      max_w = 64
 
-      #tag.label = global_time.to_s
+      width = 4
+      height = (@shapes.length / width).to_i
+      offset = 64.0
 
-      #log!(tag.label)
+      x = (i % width)
+      y = ((i / width).to_i)
+
+      a.position[0] = (256.0 + (max_w * 0.5) - ((width * offset) * 0.5)) + (x * offset)
+      a.position[1] = (256.0 + (max_w * 0.5) - ((height * offset) * 0.5)) + (y * offset)
     }
 
-    
+    @first_ordering_system.reset!
+    @second_ordering_system.reset!
+    @twod_grid_system.reset!
+
+    @store.each_having_all(*@query_shapes) { |thing, components|
+      shape, position, color = *components
+      @second_ordering_system.order_by(thing, shape)
+    }
+
+    @second_ordering_system.items.each { |thing_sorted_by_size|
+      shape, position, color = @store.things_to_components[thing_sorted_by_size]
+      @twod_grid_system.process(position)
+      @first_ordering_system.order_by(thing_sorted_by_size, position)
+    }
+
+    @first_ordering_system.items.each { |thing_sorted_by_screen_position|
+      shape, position, color = @store.things_to_components[thing_sorted_by_screen_position]
+    }
     
     gl.drawmode {
-      #@store.each_having_all(*@query) { |thing, components|
-      #  tag, spin, color = *components
-
-      #  tag.label = global_time.to_s
-
-      #  #log!(tag.label)
-      #}
+      gl.twod(&twod_proc)
     }
   }
 }
@@ -236,18 +352,6 @@ Wkndr.server_side { |server|
         end
       end
     end
-
-    #store = @store
-    #query = @query
-    #mab.p store.class
-    #mab.ul do
-    #  store.each_having_all(*query) { |thing, components|
-    #    thing_tag, _, _ = *components
-    #    li do
-    #      span thing_tag.label
-    #    end
-    #  }
-    #end
   end
 }
 
