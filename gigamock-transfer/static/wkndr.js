@@ -21,46 +21,42 @@ function str2ab(str) {
 
 window.startConnection = function(mrbPointer, callbackPointer) {
   if (window["WebSocket"]) {
-    console.log("connectingTo", wsbUrl);
-
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      console.log("connected");
+      var terminalContainer = document.getElementById("wkndr-terminal");
 
-      //var terminalContainer = document.getElementById("wkndr-terminal");
+      Terminal.applyAddon(fit);
 
-      //Terminal.applyAddon(fit);
+      window.terminal = new Terminal({
+        cursorBlink: true,
+        scrollback: 100,
+        tabStopWidth: 2,
+        allowTransparency: false
+      });
+      window.terminal.open(terminalContainer);
 
-      //window.terminal = new Terminal({
-      //  cursorBlink: true,
-      //  scrollback: 100,
-      //  tabStopWidth: 2,
-      //  allowTransparency: false
-      //});
-      //window.terminal.open(terminalContainer);
+      window.terminal.on('data', function(termInputData) {
+        var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
+        window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+        Module._free(ptr);
+      });
 
-      //window.terminal.on('data', function(termInputData) {
-      //  var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
-      //  window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-      //  Module._free(ptr);
-      //});
+      window.addEventListener('resize', function(resizeEvent) {
+        window.terminal.fit();
+      });
 
-      //window.addEventListener('resize', function(resizeEvent) {
-      //  window.terminal.fit();
-      //});
+      window.terminal.on('resize', function(newSize) {
+        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
+      });
 
-      //window.terminal.on('resize', function(newSize) {
-      //  window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
-      //});
+      window.terminal.fit();
 
-      //window.terminal.fit();
-
-      //window.onbeforeunload = function() {
-      //  window.conn.onclose = function () {};
-      //  window.conn.close();
-      //};
+      window.onbeforeunload = function() {
+        window.conn.onclose = function () {};
+        window.conn.close();
+      };
 
       var ptr = allocate(intArrayFromString(window.location.pathname), 'i8', ALLOC_NORMAL);
       window.socket_connected(mrbPointer, callbackPointer, ptr, window.location.pathname.length);
@@ -71,8 +67,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
-      console.log(event);
-
       var origData = event.data;
 
       var typedData = new Uint8Array(origData);
@@ -83,8 +77,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-      console.log("wtf writePackedP");
-
       var buf = new ArrayBuffer(length); // 2 bytes for each char
       var bufView = new Uint8Array(buf);
       for (var i=0; i < length; i++) {
@@ -99,12 +91,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
             window.terminal.fit();
           }, 1);
         }
-        //var stringBits = ab2str(bufView);
-        //window.terminal.write(stringBits);
+        var stringBits = ab2str(bufView);
+        window.terminal.write(stringBits);
         window.terminal.writeUtf8(bufView);
       } else if (channel == 1) {
-        console.log("OUTBOUND", buf);
-
         var sent = window.conn.send(buf);
       }
 
@@ -130,8 +120,6 @@ if (graphicsContainer) {
   var Module = {
     arguments: ['--no-server', '--client=' + graphicsContainer.offsetWidth.toString() + 'x' + graphicsContainer.offsetHeight.toString()],
     preRun: [(function() {
-      console.log("preRun");
-
       window.handle_js_websocket_event = Module.cwrap(
         'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
       );
@@ -191,8 +179,6 @@ var liveContainer = document.getElementById('wkndr-live-container');
 
 window.startLiveConnection = function() {
   if (window["WebSocket"]) {
-    console.log("connectingTo", wsUrl);
-
     window.conn = new WebSocket(wsUrl);
 
     window.conn.onopen = function (event) {
@@ -208,7 +194,6 @@ window.startLiveConnection = function() {
 
       morphdom(liveContainer.childNodes[0], origData, {
         onBeforeElUpdated: function(fromEl, toEl) {
-          console.log(fromEl.tagName, toEl.tagName);
           if (toEl.tagName === 'INPUT') {
             if (fromEl.checked) {
               toEl.checked = fromEl.checked;
