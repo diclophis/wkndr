@@ -1,6 +1,0 @@
-ruby-stderr: ruby -e error 
-normal-stdout: echo foo
-sleep: sleep 10
-hang: nc 8.8.8.8 80
-successful-job: true
-failed-job: false
