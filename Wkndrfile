@@ -282,11 +282,11 @@ Wkndr.client_side { |gl|
   }
 
   @first_ordering_system.compare_proc = Proc.new { |a, b|
-    a.position[1] > b.position[1]
+    a.position[1] < b.position[1]
   }
 
   @second_ordering_system.compare_proc = Proc.new { |a, b|
-    a.radius < b.radius
+    a.radius > b.radius
   }
 
   gl.update { |global_time, delta_time|
@@ -343,11 +343,11 @@ Wkndr.server_side { |server|
     mab.input "type" => "text"
 
     mab.ul do
-      3.times do |i|
+      10.times do |i|
         mab.li do
           mab.label do
             mab.input "type" => "checkbox"
-            mab.text "task #{i+1}"
+            mab.text "Task #{i+1}"
           end
         end
       end

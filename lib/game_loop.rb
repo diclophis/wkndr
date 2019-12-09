@@ -62,10 +62,10 @@ class GameLoop
     socket_stream
   end
 
-  def open_default_view!
+  def open_default_view!(fps = 0)
     log!("wkndr", self.width, self.height, 0) # screenSize and FPS
 
-    self.open("wkndr", self.width.to_i, self.height.to_i, 0) # screenSize and FPS
+    self.open("wkndr", self.width.to_i, self.height.to_i, fps) # screenSize and FPS
 
     self.update { |global_time, delta_time|
       self.drawmode {
