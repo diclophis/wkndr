@@ -22,7 +22,7 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
 
-  conf.gem :github => "h2so5/mruby-pure-regexp"
+  #conf.gem :github => "h2so5/mruby-pure-regexp"
   conf.gem :github => "yui-knk/mruby-set"
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
