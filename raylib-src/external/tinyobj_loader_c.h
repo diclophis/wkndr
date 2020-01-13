@@ -453,6 +453,11 @@ static void parseFloat3(float *x, float *y, float *z, const char **token) {
   (*z) = parseFloat(token);
 }
 
+static unsigned int my_strnlen(const char *s, unsigned int n) {
+    const char *p = memchr(s, 0, n);
+    return p ? (unsigned int)(p - s) : n;
+}
+
 static char *my_strdup(const char *s, unsigned int max_length) {
   char *d;
   unsigned int len;
@@ -478,15 +483,13 @@ static char *my_strndup(const char *s, unsigned int len) {
   if (s == NULL) return NULL;
   if (len == 0) return NULL;
 
-  d = (char *)TINYOBJ_MALLOC(len + 1); /* + '\0' */
-  slen = strlen(s);
-  if (slen < len) {
-    memcpy(d, s, slen);
-    d[slen] = '\0';
-  } else {
-    memcpy(d, s, len);
-    d[len] = '\0';
+  slen = my_strnlen(s, len);
+  d = (char *)TINYOBJ_MALLOC(slen + 1); /* + '\0' */
+  if (!d) {
+    return NULL;
   }
+  memcpy(d, s, slen);
+  d[slen] = '\0';
 
   return d;
 }
@@ -544,7 +547,7 @@ static void initMaterial(tinyobj_material_t *material) {
 #define HASH_TABLE_ERROR 1 
 #define HASH_TABLE_SUCCESS 0
 
-#define HASH_TABLE_DEFAULT_SIZE 512
+#define HASH_TABLE_DEFAULT_SIZE 10
 
 typedef struct hash_table_entry_t
 {
@@ -576,7 +579,7 @@ static unsigned long hash_djb2(const unsigned char* str)
   return hash;
 }
 
-void create_hash_table(unsigned int start_capacity, hash_table_t* hash_table)
+static void create_hash_table(unsigned int start_capacity, hash_table_t* hash_table)
 {
   if (start_capacity < 1)
     start_capacity = HASH_TABLE_DEFAULT_SIZE;
@@ -675,12 +678,12 @@ static void hash_table_maybe_grow(unsigned int new_n, hash_table_t* hash_table)
   (*hash_table) = new_hash_table;
 }
 
-int hash_table_exists(const char* name, hash_table_t* hash_table)
+static int hash_table_exists(const char* name, hash_table_t* hash_table)
 {
   return hash_table_find(hash_djb2((const unsigned char*)name), hash_table) != NULL;
 }
 
-void hash_table_set(const char* name, unsigned int val, hash_table_t* hash_table)
+static void hash_table_set(const char* name, unsigned int val, hash_table_t* hash_table)
 {
   /* Hash name */
   unsigned long hash = hash_djb2((const unsigned char *)name);
@@ -702,7 +705,7 @@ void hash_table_set(const char* name, unsigned int val, hash_table_t* hash_table
   while (hash_table_insert(hash, (long)val, hash_table) != HASH_TABLE_SUCCESS);
 }
 
-long hash_table_get(const char* name, hash_table_t* hash_table)
+static long hash_table_get(const char* name, hash_table_t* hash_table)
 {
   hash_table_entry_t* ret = hash_table_find(hash_djb2((const unsigned char*)(name)), hash_table);
   return ret->value;
@@ -724,7 +727,7 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
                                             const char *filename,
                                             hash_table_t* material_table) {
   tinyobj_material_t material;
-  unsigned int buffer_size = 512;
+  unsigned int buffer_size = 128;
   char *linebuf;
   FILE *fp;
   unsigned int num_materials = 0;
@@ -770,7 +773,6 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
     if ((0 == strncmp(token, "newmtl", 6)) && IS_SPACE((token[6]))) {
       char namebuf[4096];
 
-
       /* flush previous material. */
       if (has_previous_material) {
         materials = tinyobj_material_add(materials, num_materials, &material);
@@ -792,9 +794,8 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
       material.name = my_strdup(namebuf, (unsigned int) (line_end - token));
 
       /* Add material to material table */
-      if (material_table) {
+      if (material_table)
         hash_table_set(material.name, num_materials, material_table);
-      }
 
       continue;
     }
@@ -1136,11 +1137,7 @@ static int parseLine(Command *command, const char *p, unsigned int p_len,
     skip_space(&token);
     command->material_name = p + (token - linebuf);
     command->material_name_len = (unsigned int)length_until_newline(
-                                                                    token, (p_len - (unsigned int)(token - linebuf))) + 1;
-
-    //command->group_name = command->material_name;
-    //command->group_name_len = command->material_name_len;
-
+                                                                    token, (p_len - (unsigned int)(token - linebuf)) + 1);
     command->type = COMMAND_USEMTL;
 
     return 1;
@@ -1154,7 +1151,8 @@ static int parseLine(Command *command, const char *p, unsigned int p_len,
     skip_space(&token);
     command->mtllib_name = p + (token - linebuf);
     command->mtllib_name_len = (unsigned int)length_until_newline(
-                                                                  token, p_len - (unsigned int)(token - linebuf)) + 1;
+                                                                  token, p_len - (unsigned int)(token - linebuf)) +
+      1;
     command->type = COMMAND_MTLLIB;
 
     return 1;
@@ -1331,6 +1329,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
   }
 
   /* Construct attributes */
+
   {
     unsigned int v_count = 0;
     unsigned int n_count = 0;
@@ -1378,13 +1377,12 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
           /* Create a null terminated string */
           char* material_name_null_term = (char*) TINYOBJ_MALLOC(commands[i].material_name_len + 1);
           memcpy((void*) material_name_null_term, (const void*) commands[i].material_name, commands[i].material_name_len);
-          material_name_null_term[commands[i].material_name_len] = 0;
+          material_name_null_term[commands[i].material_name_len - 1] = 0;
 
-          if (hash_table_exists(material_name_null_term, &material_table)) {
+          if (hash_table_exists(material_name_null_term, &material_table))
             material_id = (int)hash_table_get(material_name_null_term, &material_table);
-          } else {
+          else
             material_id = -1;
-          }
 
           TINYOBJ_FREE(material_name_null_term);
         }
@@ -1442,7 +1440,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
     /* Find the number of shapes in .obj */
     for (i = 0; i < num_lines; i++) {
-      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G) { // || commands[i].type == COMMAND_USEMTL) {
+      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G) {
         n++;
       }
     }
@@ -1453,13 +1451,10 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
     (*shapes) = (tinyobj_shape_t*)TINYOBJ_MALLOC(sizeof(tinyobj_shape_t) * (n + 1));
 
     for (i = 0; i < num_lines; i++) {
-      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G) { // || commands[i].type == COMMAND_USEMTL) {
+      if (commands[i].type == COMMAND_O || commands[i].type == COMMAND_G) {
         if (commands[i].type == COMMAND_O) {
           shape_name = commands[i].object_name;
           shape_name_len = commands[i].object_name_len;
-        //} else if (commands[i].type == COMMAND_USEMTL) {
-        //  shape_name = commands[i].mtllib_name;
-        //  shape_name_len = commands[i].mtllib_name_len;
         } else {
           shape_name = commands[i].group_name;
           shape_name_len = commands[i].group_name_len;
@@ -1474,13 +1469,8 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
         } else {
           if (shape_idx == 0) {
             /* 'o' or 'g' after some 'v' lines. */
-            //if (prev_shape_name) {
-            //  (*shapes)[shape_idx].name = my_strndup(
-            //                                         prev_shape_name, prev_shape_name_len); /* may be NULL */
-            //} else {
-              (*shapes)[shape_idx].name = 0; //"foobar";
-            //}
-
+            (*shapes)[shape_idx].name = my_strndup(
+                                                   prev_shape_name, prev_shape_name_len); /* may be NULL */
             (*shapes)[shape_idx].face_offset = prev_shape.face_offset;
             (*shapes)[shape_idx].length = face_count - prev_face_offset;
             shape_idx++;
@@ -1489,8 +1479,8 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
           } else {
             if ((face_count - prev_face_offset) > 0) {
-              (*shapes)[shape_idx].name = 0;
-                //my_strndup(prev_shape_name, prev_shape_name_len);
+              (*shapes)[shape_idx].name =
+                my_strndup(prev_shape_name, prev_shape_name_len);
               (*shapes)[shape_idx].face_offset = prev_face_offset;
               (*shapes)[shape_idx].length = face_count - prev_face_offset;
               shape_idx++;
@@ -1512,8 +1502,8 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
     if ((face_count - prev_face_offset) > 0) {
       unsigned int length = face_count - prev_shape_face_offset;
       if (length > 0) {
-        (*shapes)[shape_idx].name = 0;
-          //my_strndup(prev_shape_name, prev_shape_name_len);
+        (*shapes)[shape_idx].name =
+          my_strndup(prev_shape_name, prev_shape_name_len);
         (*shapes)[shape_idx].face_offset = prev_face_offset;
         (*shapes)[shape_idx].length = face_count - prev_face_offset;
         shape_idx++;
