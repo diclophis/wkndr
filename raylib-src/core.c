@@ -1270,7 +1270,8 @@ void EndDrawing(void)
     previousTime = currentTime;
 
     frameTime = updateTime + drawTime;
-    
+
+/*
     // Wait for some milliseconds...
     if (frameTime < targetTime)
     {
@@ -1286,6 +1287,7 @@ void EndDrawing(void)
         //               (float)updateTime, (float)drawTime, (float)(targetTime - (updateTime + drawTime)), 
         //               (float)waitTime, (float)frameTime, (float)targetTime));
     }
+*/
 }
 
 // Initialize 2D mode with custom camera (2D)
@@ -5082,7 +5084,7 @@ static void *EventThread(void *arg)
         }
         else
         {
-            usleep(5000); // Sleep for 5ms to avoid hogging CPU time
+            //usleep(5000); // Sleep for 5ms to avoid hogging CPU time
         }
     }
 
@@ -5173,7 +5175,7 @@ static void *GamepadThread(void *arg)
             }
             else
             {
-                usleep(1000); //Sleep for 1ms to avoid hogging CPU time
+                //usleep(1000); //Sleep for 1ms to avoid hogging CPU time
             }
         }
     }

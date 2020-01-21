@@ -279,6 +279,8 @@ Wkndr.client_side { |gl|
       shape, position, color = @store.things_to_components[thing_sorted_by_screen_position]
       gl.draw_circle(shape.radius, *position.position, *color.color)
     }
+
+    #gl.draw_fps(15, 15)
   }
 
   @first_ordering_system.compare_proc = Proc.new { |a, b|

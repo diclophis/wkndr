@@ -13,7 +13,7 @@
 //#define RLGL_IMPLEMENTATION 1
 //#define GRAPHICS_API_OPENGL_33 1
 //
-#if defined(GRAPHICS_API_OPENGL_33)
+//#if defined(GRAPHICS_API_OPENGL_33)
 //    #if defined(__APPLE__)
 //        #include <OpenGL/gl3.h>         // OpenGL 3 library for OSX
 //        #include <OpenGL/gl3ext.h>      // OpenGL 3 extensions library for OSX
@@ -21,22 +21,22 @@
 //        #if defined(RLGL_STANDALONE)
 //            #include "glad.h"           // GLAD extensions loading library, includes OpenGL headers
 //        #else
-            #include "external/glad.h"  // GLAD extensions loading library, includes OpenGL headers
+//            #include "external/glad.h"  // GLAD extensions loading library, includes OpenGL headers
 //        #endif
 //    #endif
-#endif
+//#endif
 
 #if defined(GRAPHICS_API_OPENGL_ES2)
-    #include <EGL/egl.h>                // EGL library
-    #include <GLES2/gl2.h>              // OpenGL ES 2.0 library
-    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
+    //#include <EGL/egl.h>                // EGL library
+    //#include <GLES2/gl2.h>              // OpenGL ES 2.0 library
+    //#include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
 #endif
 
-#if defined(GRAPHICS_API_OPENGL_ES3)
-    #include <EGL/egl.h>                // EGL library
-    #include <GLES3/gl3.h>              // OpenGL ES 2.0 library
-    #include <GLES3/gl2ext.h>           // OpenGL ES 2.0 extensions library
-#endif
+//#if defined(GRAPHICS_API_OPENGL_ES3)
+//    //#include <EGL/egl.h>                // EGL library
+//    #include <GLES3/gl3.h>              // OpenGL ES 2.0 library
+//    #include <GLES3/gl2ext.h>           // OpenGL ES 2.0 extensions library
+//#endif
 
 #include <raylib.h>
 #include <raymath.h>
@@ -593,13 +593,13 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 
 //TODO
 static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
-#ifdef TARGET_DESKTOP
-  //TODO: this should have logic on ruby side based on if is window or not
-  //if (WindowShouldClose()) {
-    //return mrb_true_value();
-    //return mrb_nil_value();
-  //}
-#endif
+//#ifdef TARGET_DESKTOP
+//  //TODO: this should have logic on ruby side based on if is window or not
+//  //if (WindowShouldClose()) {
+//    //return mrb_true_value();
+//    //return mrb_nil_value();
+//  //}
+//#endif
 
   double time;
   float dt;
@@ -615,6 +615,7 @@ static mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   //for (int i=0; i<cnt; i++) {
   //  idt = dt / (float)cnt;
   //  itime = time - ((float)i*(idt));
+  //fprintf(stderr, "Exception in SERVER_UPDATE_BITS %f\n", dt);
 
     //self is instance of StackBlocker.new !!!!!!!!!!
     //mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, itime), mrb_float_value(mrb, idt));
@@ -662,15 +663,16 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 #ifdef PLATFORM_WEB
   //emscripten_sample_gamepad_data();
 
-  //void emscripten_set_main_loop_arg(em_arg_callback_func func, void *arg, int fps, int simulate_infinite_loop)
+  emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
+
 #endif
 
 #ifdef PLATFORM_DESKTOP
   
 #endif
 
-  fprintf(stderr, "wtf show!\n");
+  //fprintf(stderr, "wtf show!\n");
 
   return self;
 }
@@ -895,7 +897,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   standardShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(standardShader, "viewPos");
   standardShader.locs[LOC_COLOR_DIFFUSE] = GetShaderLocation(standardShader, "colDiffuse");
   
-  glBindAttribLocation(standardShader.id, 3, "vertexColor");
+  //glBindAttribLocation(standardShader.id, 3, "vertexColor");
 
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 3, 0 }, Vector3Zero(), WHITE, standardShader);
   lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 5, 7 }, Vector3Zero(), WHITE, standardShader);
