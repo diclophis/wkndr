@@ -38,10 +38,10 @@ class ServerSide < Wkndr
     install_trap!
 
     #NOTE: what is this doing????
-    @t = UV::Timer.new
-    @t.start(1, 1) do |x|
-      #log!(:timer_serverside)
-    end
+    #@t = UV::Timer.new
+    #@t.start(1, 1) do |x|
+    #  #log!(:timer_serverside)
+    #end
 
     ##TODO: trap exit condition from UI
     foo = true

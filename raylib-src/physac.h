@@ -842,9 +842,13 @@ PHYSACDEF void DestroyPhysicsBody(PhysicsBody body)
             }
         }
 
+        if (index == -1)
+        {
         #if defined(PHYSAC_DEBUG)
-        if (index == -1) printf("[PHYSAC] cannot find body id %i in pointers array\n", id);
+            printf("[PHYSAC] Not possible to find body id %i in pointers array\n", id);
         #endif
+            return;     // Prevent access to index -1
+        }
 
         // Free body allocated memory
         PHYSAC_FREE(body);
@@ -1249,9 +1253,13 @@ static void DestroyPhysicsManifold(PhysicsManifold manifold)
             }
         }
 
+        if (index == -1)
+        {
         #if defined(PHYSAC_DEBUG)
-            if (index == -1) printf("[PHYSAC] cannot find manifold id %i in pointers array\n", id);
+            printf("[PHYSAC] Not possible to manifold id %i in pointers array\n", id);
         #endif
+            return;     // Prevent access to index -1
+        }      
 
         // Free manifold allocated memory
         PHYSAC_FREE(manifold);
@@ -1896,7 +1904,7 @@ static Vector2 TriangleBarycenter(Vector2 v1, Vector2 v2, Vector2 v3)
 static void InitTimer(void)
 {
     srand(time(NULL));              // Initialize random seed
-    
+
 #if defined(_WIN32)
     QueryPerformanceFrequency((unsigned long long int *) &frequency);
 #endif
@@ -1911,7 +1919,7 @@ static void InitTimer(void)
     mach_timebase_info(&timebase);
     frequency = (timebase.denom*1e9)/timebase.numer;
 #endif
-    
+
     baseTime = GetTimeCount();      // Get MONOTONIC clock time offset
     startTime = GetCurrentTime();   // Get current time
 }
@@ -1920,7 +1928,7 @@ static void InitTimer(void)
 static uint64_t GetTimeCount(void)
 {
     uint64_t value = 0;
-    
+
 #if defined(_WIN32)
     QueryPerformanceCounter((unsigned long long int *) &value);
 #endif
