@@ -1,8 +1,10 @@
-#version 140
+#version 300 es
 
-#define highp
-#define mediump
-#define lowp
+//#version 100
+//
+//#define highp
+//#define mediump
+//#define lowp
 
 #ifdef GL_ES
 precision mediump float;

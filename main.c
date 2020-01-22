@@ -304,9 +304,9 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
-        light.radius = 2.0;
+        light.radius = 5.0;
         light.intensity = 1.0;
-        light.coneAngle = 7.0;
+        light.coneAngle = 10.0;
 
 
 //                case LIGHT_DIRECTIONAL:
@@ -383,8 +383,6 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
 //        strcpy(locNameUpdated, locName);
 //        strcat(locNameUpdated, "coneAngle\0");
 //        lightsLocs[i][7] = GetShaderLocation(shader, locNameUpdated);
-
-        UpdateLightValues(shader, light);
         
         lightsCount++;
     }
@@ -900,16 +898,43 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //glBindAttribLocation(standardShader.id, 3, "vertexColor");
 
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 3, 0 }, Vector3Zero(), WHITE, standardShader);
-  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 5, 7 }, Vector3Zero(), WHITE, standardShader);
-  lights[2] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
+  lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 33, 55, 77 }, Vector3Zero(), WHITE, standardShader);
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0, 3, 0 }, Vector3Zero(), BLUE, standardShader);
   lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
+
+  lights[0].intensity = 0.1;
+  lights[0].enabled = 0;
+  UpdateLightValues(standardShader, lights[0]);
+
+  lights[1].intensity = 0.1;
+  lights[1].enabled = 0;
+  UpdateLightValues(standardShader, lights[1]);
+
+  lights[2].intensity = 0.33;
+  lights[2].enabled = 1;
+  UpdateLightValues(standardShader, lights[2]);
+
+  lights[3].intensity = 0.0;
+  lights[3].enabled = 0;
+  UpdateLightValues(standardShader, lights[3]);
+
+  //lights[0] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
+  //lights[0].intensity = 10.0;
+
+  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 3, 0 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0].intensity = 10.0;
+
+  //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 5, 7 }, Vector3Zero(), WHITE, standardShader);
+  //lights[0].intensity = 10.0;
+
+  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
 
   SetExitKey(0);
 
 //#ifdef TARGET_DESKTOP
   //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
   //SetWindowMonitor(0);
-  SetTargetFPS(screenFps);
+  //SetTargetFPS(screenFps);
 //#endif
 
   return self;
@@ -1126,36 +1151,36 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
   SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
-  //updateLighting
-  //white closeup point
-  lights[0].position.x = tx + 0;
-  lights[0].position.y = ty + 0.5;
-  lights[0].position.z = tz + 0;
-  lights[0].target.x = tx + 0;
-  lights[0].target.y = ty + 0;
-  lights[0].target.z = tz + 0;
-  lights[0].intensity = 0.075;
-  lights[0].radius = 0.333;
-  lights[0].enabled = false;
+  ////updateLighting
+  ////white closeup point
+  //lights[0].position.x = tx + 0;
+  //lights[0].position.y = ty + 0.5;
+  //lights[0].position.z = tz + 0;
+  //lights[0].target.x = tx + 0;
+  //lights[0].target.y = ty + 0;
+  //lights[0].target.z = tz + 0;
+  //lights[0].intensity = 0.075;
+  //lights[0].radius = 0.333;
+  //lights[0].enabled = false;
 
-  //white directional
-  lights[1].intensity = 0.25;
-  lights[1].enabled = true;
+  ////white directional
+  //lights[1].intensity = 0.25;
+  //lights[1].enabled = true;
 
-  //blue spotlight
-  lights[2].position.x = tx + 2;
-  lights[2].position.y = ty + 3;
-  lights[2].position.z = tz - 2;
-  lights[2].target.x = tx;
-  lights[2].target.y = ty;
-  lights[2].target.z = tz;
-  lights[2].intensity = 0.000001;
-  lights[2].coneAngle = 20.00;
-  lights[2].enabled = true;
+  ////blue spotlight
+  //lights[2].position.x = tx + 2;
+  //lights[2].position.y = ty + 3;
+  //lights[2].position.z = tz - 2;
+  //lights[2].target.x = tx;
+  //lights[2].target.y = ty;
+  //lights[2].target.z = tz;
+  //lights[2].intensity = 0.000001;
+  //lights[2].coneAngle = 20.00;
+  //lights[2].enabled = true;
 
-  lights[3].intensity = 0.15;
-  lights[3].radius = 3.0;
-  lights[3].enabled = false;
+  //lights[3].intensity = 0.15;
+  //lights[3].radius = 3.0;
+  //lights[3].enabled = false;
 
   UpdateLightValues(standardShader, lights[0]);
   UpdateLightValues(standardShader, lights[1]);

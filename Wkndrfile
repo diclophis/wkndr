@@ -233,6 +233,14 @@ class CircleComponent
   end
 end
 
+@compare_position_proc = Proc.new { |a, b|
+  a.position[1] < b.position[1]
+}
+
+@compare_radius_proc = Proc.new { |a, b|
+  a.radius > b.radius
+}
+
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     @store = StorageManager.new
@@ -273,6 +281,7 @@ Wkndr.nonce {
   }
 }
 
+
 Wkndr.client_side { |gl|
   twod_proc = Proc.new {
     @first_ordering_system.items.each { |thing_sorted_by_screen_position|
@@ -280,50 +289,47 @@ Wkndr.client_side { |gl|
       gl.draw_circle(shape.radius, *position.position, *color.color)
     }
 
-    #gl.draw_fps(15, 15)
+    gl.draw_fps(15, 15)
   }
 
-  @first_ordering_system.compare_proc = Proc.new { |a, b|
-    a.position[1] < b.position[1]
+  @first_ordering_system.compare_proc = @compare_position_proc
+
+  @second_ordering_system.compare_proc = @compare_radius_proc
+
+  @twod_grid_system.process_proc = Proc.new { |a, i|
+    max_w = 64
+
+    width = 4
+    height = (@shapes.length / width).to_i
+    offset = 64.0
+
+    x = (i % width)
+    y = ((i / width).to_i)
+
+    a.position[0] = (256.0 + (max_w * 0.5) - ((width * offset) * 0.5)) + (x * offset)
+    a.position[1] = (256.0 + (max_w * 0.5) - ((height * offset) * 0.5)) + (y * offset)
   }
 
-  @second_ordering_system.compare_proc = Proc.new { |a, b|
-    a.radius > b.radius
+  @first_ordering_system.reset!
+  @second_ordering_system.reset!
+  @twod_grid_system.reset!
+
+  @store.each_having_all(*@query_shapes) { |thing, components|
+    shape, position, color = *components
+    @second_ordering_system.order_by(thing, shape)
+  }
+
+  @second_ordering_system.items.each { |thing_sorted_by_size|
+    shape, position, color = @store.things_to_components[thing_sorted_by_size]
+    @twod_grid_system.process(position)
+    @first_ordering_system.order_by(thing_sorted_by_size, position)
+  }
+
+  @first_ordering_system.items.each { |thing_sorted_by_screen_position|
+    shape, position, color = @store.things_to_components[thing_sorted_by_screen_position]
   }
 
   gl.update { |global_time, delta_time|
-    @twod_grid_system.process_proc = Proc.new { |a, i|
-      max_w = 64
-
-      width = 4
-      height = (@shapes.length / width).to_i
-      offset = 64.0
-
-      x = (i % width)
-      y = ((i / width).to_i)
-
-      a.position[0] = (256.0 + (max_w * 0.5) - ((width * offset) * 0.5)) + (x * offset)
-      a.position[1] = (256.0 + (max_w * 0.5) - ((height * offset) * 0.5)) + (y * offset)
-    }
-
-    @first_ordering_system.reset!
-    @second_ordering_system.reset!
-    @twod_grid_system.reset!
-
-    @store.each_having_all(*@query_shapes) { |thing, components|
-      shape, position, color = *components
-      @second_ordering_system.order_by(thing, shape)
-    }
-
-    @second_ordering_system.items.each { |thing_sorted_by_size|
-      shape, position, color = @store.things_to_components[thing_sorted_by_size]
-      @twod_grid_system.process(position)
-      @first_ordering_system.order_by(thing_sorted_by_size, position)
-    }
-
-    @first_ordering_system.items.each { |thing_sorted_by_screen_position|
-      shape, position, color = @store.things_to_components[thing_sorted_by_screen_position]
-    }
     
     gl.drawmode {
       gl.twod(&twod_proc)
