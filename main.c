@@ -304,9 +304,9 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
-        light.radius = 5.0;
+        light.radius = 1.0;
         light.intensity = 1.0;
-        light.coneAngle = 10.0;
+        light.coneAngle = 1.0;
 
 
 //                case LIGHT_DIRECTIONAL:
@@ -897,25 +897,26 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   
   //glBindAttribLocation(standardShader.id, 3, "vertexColor");
 
-  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 3, 0 }, Vector3Zero(), WHITE, standardShader);
+  lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 30, 0 }, Vector3Zero(), WHITE, standardShader);
   lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -33, 55, -77 }, Vector3Zero(), WHITE, standardShader);
-  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0, 3, 0 }, Vector3Zero(), BLUE, standardShader);
-  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0, 100, 0 }, Vector3Zero(), BLUE, standardShader);
+  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 20, 20, 20 }, Vector3Zero(), WHITE, standardShader);
 
   lights[0].intensity = 0.1;
-  lights[0].enabled = 0;
+  lights[0].enabled = 1;
   UpdateLightValues(standardShader, lights[0]);
 
-  lights[1].intensity = 0.025;
+  lights[1].intensity = 0.1;
   lights[1].enabled = 1;
   UpdateLightValues(standardShader, lights[1]);
 
-  lights[2].intensity = 0.33;
+  lights[2].intensity = 0.1;
   lights[2].enabled = 1;
+  lights[2].coneAngle = 33.00;
   UpdateLightValues(standardShader, lights[2]);
 
-  lights[3].intensity = 0.0;
-  lights[3].enabled = 0;
+  lights[3].intensity = 0.1;
+  lights[3].enabled = 1;
   UpdateLightValues(standardShader, lights[3]);
 
   //lights[0] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
@@ -1168,12 +1169,14 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   //lights[1].enabled = true;
 
   ////blue spotlight
-  lights[2].position.x = tx;
-  lights[2].position.y = ty + 3;
-  lights[2].position.z = tz;
-  lights[2].target.x = tx;
-  lights[2].target.y = ty;
-  lights[2].target.z = tz;
+
+  //lights[2].position.x = tx;
+  //lights[2].position.y = ty + 3;
+  //lights[2].position.z = tz;
+  //lights[2].target.x = tx;
+  //lights[2].target.y = ty;
+  //lights[2].target.z = tz;
+
   //lights[2].intensity = 0.000001;
   //lights[2].coneAngle = 20.00;
   //lights[2].enabled = true;
@@ -1231,9 +1234,9 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
   mrb_yield_argv(mrb, block, 0, NULL);
 
   //drawLighting
-  //for (int i=0; i<MAX_LIGHTS; i++) {
-  //  DrawLight(lights[i]);
-  //}
+  for (int i=0; i<MAX_LIGHTS; i++) {
+    DrawLight(lights[i]);
+  }
 
   EndMode3D();
 
