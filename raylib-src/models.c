@@ -3551,12 +3551,19 @@ static Model LoadGLTF(const char *fileName)
                 //if (model.materials[i].name && data->materials[i].name) strcpy(model.materials[i].name, data->materials[i].name);
 
                 // TODO: REview: shouldn't these be *255 ???
-                tint.r = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[0]*255);
-                tint.g = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[1]*255);
-                tint.b = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[2]*255);
-                tint.a = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[3]*255);
+                //tint = RED;
+                tint.r = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[0]*255.0);
+                tint.g = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[1]*255.0);
+                tint.b = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[2]*255.0);
+                tint.a = (unsigned char)(data->materials[i].pbr_metallic_roughness.base_color_factor[3]*255.0);
 
                 model.materials[i].maps[MAP_ROUGHNESS].color = tint;
+
+                model.materials[i].maps[MAP_DIFFUSE].color = tint;
+                model.materials[i].maps[MAP_DIFFUSE].value = 0.0f;
+
+                model.materials[i].maps[MAP_SPECULAR].color = tint;
+                model.materials[i].maps[MAP_SPECULAR].value = 0.0f;
 
                 if (data->materials[i].pbr_metallic_roughness.base_color_texture.texture) 
                 {

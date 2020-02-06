@@ -886,37 +886,39 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //startLighting
   standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
 
-  // ambient light level
+  //TODO
+  //// ambient light level
   int ambientLoc = GetShaderLocation(standardShader, "ambient");
-  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.125f, 0.125f, 0.125f, 1.0f }, UNIFORM_VEC4);
+  SetShaderValue(standardShader, ambientLoc, (float[4]){ 0.0125f, 0.0125f, 0.0125f, 1.0f }, UNIFORM_VEC4);
 
   // Get some shader loactions
   standardShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(standardShader, "matModel");
   standardShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(standardShader, "viewPos");
   standardShader.locs[LOC_COLOR_DIFFUSE] = GetShaderLocation(standardShader, "colDiffuse");
+  standardShader.locs[LOC_COLOR_SPECULAR] = GetShaderLocation(standardShader, "colSpecular");
   
   //glBindAttribLocation(standardShader.id, 3, "vertexColor");
 
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 30, 0 }, Vector3Zero(), WHITE, standardShader);
   lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -33, 55, -77 }, Vector3Zero(), WHITE, standardShader);
-  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0, 100, 0 }, Vector3Zero(), BLUE, standardShader);
+  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0, 100, 0 }, Vector3Zero(), WHITE, standardShader);
   lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 20, 20, 20 }, Vector3Zero(), WHITE, standardShader);
 
   lights[0].intensity = 0.1;
-  lights[0].enabled = 1;
+  lights[0].enabled = 0;
   UpdateLightValues(standardShader, lights[0]);
 
-  lights[1].intensity = 0.1;
+  lights[1].intensity = 0.00001;
   lights[1].enabled = 1;
   UpdateLightValues(standardShader, lights[1]);
 
-  lights[2].intensity = 0.1;
+  lights[2].intensity = 0.00001;
   lights[2].enabled = 1;
   lights[2].coneAngle = 33.00;
   UpdateLightValues(standardShader, lights[2]);
 
-  lights[3].intensity = 0.1;
-  lights[3].enabled = 1;
+  lights[3].intensity = 0.001;
+  lights[3].enabled = 0;
   UpdateLightValues(standardShader, lights[3]);
 
   //lights[0] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
