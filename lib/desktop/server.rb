@@ -1,5 +1,3 @@
-#
-
 class ProtocolServer
   def initialize(safety_dir, host = '0.0.0.0', port = 8000)
 
@@ -37,13 +35,16 @@ class ProtocolServer
   end
 
   def update(gt = nil, dt = nil)
-    #NOTE: this method is dispatched in an reactor style event loop continously
-
     if @actual_wkndrfile && !@fsev
       watch_wkndrfile
     end
 
     connections_to_drop = []
+
+    if @clear_wkndrfile_change
+      handle_wkndrfile_change
+      @clear_wkndrfile_change = false
+    end
 
     @all_connections.each { |cn|
       if !cn.running?
@@ -52,47 +53,14 @@ class ProtocolServer
         if cn.has_pending_request?
           request = cn.pop_request!
 
-          case request
-            when Phr
-              response = match_dispatch(cn, request)
+          response = match_dispatch(cn, request)
 
-              case response
-                when String
-                  log!(:retfromdispstr, request)
-                  cn.write_response(response)
+          case response
+            when String
+              cn.write_response(response)
 
-                when UV::Req
-                  log!(:retfromdispreq, request, response)
-                  #cn.enqueue_request(response)
-
-              else
-                log!(:WTF, response)
-
-              end
             when UV::Req
-              #TODO
 
-#log!(:sssss, request.type_name)
-
-              case request.uvtype
-                when 0
-                  log!(:uvreqzero, request, request.uvtype, request.type_name)
-                  #log!(:wtffstype, request.path)
-
-                  #cn.enqueue_request(request)
-
-                when 6
-                  if request.result == 0
-                    log!(:uvreqredo, request, request.uvtype, request.result, request.type_name)
-
-                    cn.enqueue_request(request)
-                  else
-                    log!(:uvreqdone, request, request.uvtype, request.result, request.path)
-                  end
-
-              else
-                log!(:WTFUVREQ, request)
-              end
           end
         end
 
@@ -131,6 +99,7 @@ class ProtocolServer
   def create_connection(connection_error)
     if connection_error
       log!(:server_on_connection_connection_error, connection_error)
+
       return nil
     end
 
@@ -157,8 +126,6 @@ class ProtocolServer
 
   def live(path, title, &block)
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      #log!(:fooooows, cn, phr, mab)
-
       cn.add_subscription!(path, phr)
       cn.upgrade_to_websocket!
     }
@@ -207,10 +174,18 @@ class ProtocolServer
         end
       end
 
-      mab.to_s
+      Protocol.ok(mab.to_s)
     }
 
     @handlers[path] = handler
+
+    raw(path + 'robots.txt') { |cn, ids_from_path|
+      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
+    }
+
+    raw(path + 'favicon.ico') { |cn, ids_from_path|
+      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
+    }
 
     rebuild_tree!
   end
@@ -272,24 +247,12 @@ class ProtocolServer
       ids_from_path, handler = @tree.match(request.path)
 
       if ids_from_path && handler
-        #begin
           resp_from_handler = handler.call(cn, ids_from_path)
-
-          return resp_from_handler
-
-        #rescue => e
-        #  return Protocol.error(e.inspect)
-        #end
+          return (resp_from_handler)
       else
-      #log!(:LOOOP, UV.current_yarn)
-
         requested_path = "#{@required_prefix}#{request.path}"
 
-        log!(:req, requested_path, @required_prefix)
-
-        #xyz = UV::FS.realpath(requested_path, &@async_place_holder) #, &handle_static_file(cn))
         xyz = UV::FS.realpath(requested_path, &handle_static_file(cn))
-        log!(:xyz, xyz)
 
         return xyz
       end
@@ -299,21 +262,13 @@ class ProtocolServer
   end
 
   def handle_static_file(cn)
-    #@handler ||= 
-    
     Proc.new { |resolved_filename|
-      #log!(:reqres, cn, resolved_filename)
-
       if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-        log!(:hackz, resolved_filename)
-
         cn.write_response(Protocol.missing)
       else
         cn.serve_static_file!(resolved_filename)
       end
     }
-
-    #@handler
   end
 
   def subscribe_to_wkndrfile(wkndrfile_path = nil)
@@ -324,21 +279,15 @@ class ProtocolServer
 
     reqd_wkfile = "Wkndrfile"
 
-    #if wkndrfile_path == nil #|| wkndrfile_path == "/" || (wkparts.length != 2)
-    #else
-    #  reqd_wkfile_user = wkparts[1].scan(/[a-z]/).join #TODO: better username support??
-    #  reqd_wkfile = "/var/tmp/chroot/home/#{reqd_wkfile_user}/Wkndrfile"
-    #end
-    #log!(:intend_subscribe_to_wkndrfile, reqd_wkfile, wkparts)
-
     UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
       if actual_wkndrfile.is_a?(UVError)
         log!(:error_subscribe_to_wkndrfile_no_exists, actual_wkndrfile)
       else
         log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
+
         @actual_wkndrfile = actual_wkndrfile
         @symbolic_wkndrfile = reqd_wkfile
-
+    
         handle_wkndrfile_change
       end
     }
@@ -346,15 +295,13 @@ class ProtocolServer
 
   def watch_wkndrfile
     @fsev = UV::FS::Event.new
-    @fsev.start(@actual_wkndrfile, 0) do |path, event|
-      #log!(:fsev, self, @fsev, path, event)
-
+    @fsev.start(@actual_wkndrfile, 1) do |path, event|
       if event == :change
-        @fsev.stop
+        #handle_wkndrfile_change
 
-        handle_wkndrfile_change
+        @clear_wkndrfile_change = true
 
-        @fsev = nil
+        #@fsev = nil
       end
     end
   end

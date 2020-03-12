@@ -314,8 +314,6 @@ class Connection
       # :internal_server_error, :tls_handshake
       # to_str => returns the message revieced
 
-      log!(:OPCODE, msg[:opcode])
-
       if msg[:opcode] == :connection_close
         self.halt!
         self.shutdown
@@ -410,7 +408,11 @@ class Connection
       # the I/O object must be in non blocking mode and raise EAGAIN/EWOULDBLOCK when sending would block
 
       if self.socket && !@halted
-        self.socket.try_write(buf)
+        #self.socket.try_write(buf)
+        self.socket && buf && self.socket.write(buf) {
+          #self.halt!
+        }
+        buf.length
       else
         0
       end
@@ -435,8 +437,6 @@ class Connection
       #  #self.write_text("ping")
       #}
     }
-
-    log!(:write_ws_resp, abc)
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset
