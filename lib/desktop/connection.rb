@@ -150,7 +150,7 @@ class Connection
       @offset = self.phr.parse_request(self.ss)
       case @offset
       when Fixnum
-        @pending_requests << phr
+        self.enqueue_request(phr)
 
         #case phr.path
 
@@ -218,6 +218,10 @@ class Connection
         end
       end
     end
+  end
+
+  def enqueue_request(request)
+    @pending_requests << request
   end
 
   def has_pending_request?
@@ -424,13 +428,15 @@ class Connection
     }[1]
 
     #NOTE: this is the server to client side
-    self.write_ws_response!(sec_websocket_key) {
+    abc = self.write_ws_response!(sec_websocket_key) {
       #@t = UV::Timer.new
       #@t.start(100, 100) {
       #  self.write_typed({"c" => "ping"})
       #  #self.write_text("ping")
       #}
     }
+
+    log!(:write_ws_resp, abc)
 
     self.processing_handshake = false
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset
@@ -440,7 +446,7 @@ class Connection
       self.halt!
     end
 
-    return :upgrade
+    return abc
   end
 
   #TODO: merge this with class with SocketStream
