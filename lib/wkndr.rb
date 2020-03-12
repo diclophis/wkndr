@@ -24,6 +24,7 @@ class Wkndr
       block.call(@client)
     end
 
+    #TODO: startup screen???
     #begin
     #  if block && !@stack && !@gl
     #    return
@@ -104,8 +105,6 @@ class Wkndr
   end
 
   def self.wizbang!
-    #log!(:inwizbang, self.the_stack, self.first_stack, @stack, @stacks_to_care_about)
-
     self.show!(self.first_stack)
   end
 

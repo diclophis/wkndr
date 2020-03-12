@@ -37,32 +37,15 @@ class ServerSide < Wkndr
 
     install_trap!
 
-    #NOTE: what is this doing????
-    #@t = UV::Timer.new
-    #@t.start(1, 1) do |x|
-    #  #log!(:timer_serverside)
-    #end
-
     ##TODO: trap exit condition from UI
     foo = true
     while @keep_running
-
-  #begin
-      #NOTE: this sends a signal to the client to tick
       foo = self.cheese_cross!
-
       common_cheese_process!
-  #rescue => e
-  #  log!(:e, e)
-  #end
 
-      #UV.run(UV::UV_RUN_NOWAIT)
-      UV.run(UV::UV_RUN_ONCE)
+      UV.run(UV::UV_RUN_NOWAIT)
+      #UV.run(UV::UV_RUN_ONCE)
     end
-
-    #TODO
-    #UV.run(UV::UV_RUN_ONCE)
-    #UV.run(UV::UV_RUN_ONCE)
 
     UV.default_loop.stop
   end

@@ -8,27 +8,15 @@ class Connection
                 :processing_handshake,
                 :ss,
                 :socket
-                #:ident,
-                #:server
 
   def initialize(socket)
-    #log!(:connection_newed_up, self)
-
-    #, ident, required_prefix)
-    #server.block_accept
-
     self.socket = socket
-
-    #self.server = server
-    #self.ident = ident
 
     self.ss = ""
     self.last_buf = ""
     self.processing_handshake = true
 
     self.phr = Phr.new
-
-    #@required_prefix = required_prefix
 
     @closing = false
     @closed = false
@@ -37,12 +25,8 @@ class Connection
     @subscriptions = {}
 
     self.socket.read_start { |b|
-      #log!(:got_b, b, self)
-
       read_bytes_safely(b)
     }
-
-    #log!(:connection_newed_up, self)
   end
 
   def shutdown
@@ -81,12 +65,10 @@ class Connection
   end
 
   def serve_static_file!(filename)
-    #log!(:SERVER_STATIC, filename)
-
     self.processing_handshake = -1
     self.ss = self.ss[@offset..-1]
 
-    fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0) #, UV::FS::S_IREAD)
+    fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0)
     file_size =  fd.stat.size
     sent = 0
 
@@ -149,65 +131,15 @@ class Connection
       self.ss += b
       @offset = self.phr.parse_request(self.ss)
       case @offset
-      when Fixnum
-        self.enqueue_request(phr)
+        when Fixnum
+          self.enqueue_request(phr)
 
-        #case phr.path
+        when :incomplete
+          log!("desktop_connection_incomplete")
 
-        ###TODO: modularize this???
-        ##when "/status"
-        ##  self.socket && self.socket.write(Protocol.empty) {
-        ##    self.halt!
-        ##  }
+        when :parser_error
+          log!(:desktop_connection_parser_error, @offset)
 
-        ##when "/debug"
-        ##  serve_static_file!("/var/tmp/big.data")
-
-        #when "/ws"
-        #  upgrade_to_websocket!
-
-        #else
-        #  log!(:DISPATCH, phr)
-
-        #  @pending_requests << phr
-
-        #  # DISPATCH HANDLER
-        #  #unless @required_prefix
-        #  #  response_bytes = server.missing_response
-        #  #  self.socket && self.socket.write(response_bytes) {
-        #  #    self.halt!
-        #  #  }
-        #  #else
-        #  #  filename = phr.path
-
-        #  #  do_upstream_handling = Proc.new {
-        #  #    response_bytes = server.match_dispatch(filename)
-
-        #  #    self.socket && response_bytes && self.socket.write(response_bytes) {
-        #  #      self.halt!
-        #  #    }
-        #  #  }
-
-        #  #  if filename == "/" #TODO: tildedir handling #|| filename[0, 2] == "/~"
-        #  #    do_upstream_handling.call
-        #  #  else
-        #  #    requested_path = "#{@required_prefix}#{filename}"
-        #  #    UV::FS.realpath(requested_path) { |resolved_filename|
-        #  #      if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
-        #  #        do_upstream_handling.call
-        #  #      else
-        #  #        self.processing_handshake = -1
-        #  #        self.ss = self.ss[@offset..-1]
-        #  #        serve_static_file!(resolved_filename)
-        #  #      end
-        #  #    }
-        #  #  end
-        #  #end
-        #end
-      when :incomplete
-        log!("desktop_connection_incomplete")
-      when :parser_error
-        log!(:desktop_connection_parser_error, @offset)
       end
     else
       if self.ws
@@ -408,9 +340,9 @@ class Connection
       # the I/O object must be in non blocking mode and raise EAGAIN/EWOULDBLOCK when sending would block
 
       if self.socket && !@halted
-        #self.socket.try_write(buf)
         self.socket && buf && self.socket.write(buf) {
           #self.halt!
+          #TODO: ???
         }
         buf.length
       else
@@ -420,17 +352,13 @@ class Connection
 
     self.ws = Wslay::Event::Context::Server.new self.wslay_callbacks
 
-    #TODO??? !!! !!!! !!!!
-    #unless WebSocket.create_accept(key).securecmp(phr.headers.to_h.fetch('sec-websocket-accept'))
-    #   raise Error, "Handshake failure"
-    #end
-
     sec_websocket_key = self.phr.headers.detect { |k,v|
       k == "sec-websocket-key"
     }[1]
 
     #NOTE: this is the server to client side
     abc = self.write_ws_response!(sec_websocket_key) {
+      #TODO: ???
       #@t = UV::Timer.new
       #@t.start(100, 100) {
       #  self.write_typed({"c" => "ping"})

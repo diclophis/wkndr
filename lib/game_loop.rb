@@ -82,11 +82,3 @@ class GameLoop
     }
   end
 end
-
-    #self.open_client!(stack, w.to_i, h.to_i)
-    #log!(:CONNECT__WINDOW)
-
-  #  stack.did_connect {
-  #    socket_stream.did_connect
-  #  }
-

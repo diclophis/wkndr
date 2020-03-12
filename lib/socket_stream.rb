@@ -43,7 +43,6 @@ class SocketStream
             end
 
         else
-          #log!(:userdefined_events_next, cmsg)
           @got_bytes_block.call(cmsg)
         end
       end

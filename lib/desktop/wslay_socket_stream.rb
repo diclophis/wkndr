@@ -3,8 +3,6 @@
 class WslaySocketStream < SocketStream
   def shutdown
     if @socket
-      #&& @socket.has_ref?
-      #@socket.read_stop 
       @socket.close
       @socket = nil
     end
@@ -130,7 +128,7 @@ class WslaySocketStream < SocketStream
       offset = @phr.parse_response(@ss)
       case offset
       when Fixnum
-        #TODO??? !!!!! !!!!
+        #TODO??? !!!!! !!!! SECURITY #TODO
         #unless WebSocket.create_accept(key).securecmp(phr.headers.to_h.fetch('sec-websocket-accept'))
         #   raise Error, "Handshake failure"
         #end

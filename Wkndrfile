@@ -233,14 +233,6 @@ class CircleComponent
   end
 end
 
-@compare_position_proc = Proc.new { |a, b|
-  a.position[1] < b.position[1]
-}
-
-@compare_radius_proc = Proc.new { |a, b|
-  a.radius > b.radius
-}
-
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     @store = StorageManager.new
@@ -283,6 +275,15 @@ Wkndr.nonce {
 
 
 Wkndr.client_side { |gl|
+
+@compare_position_proc = Proc.new { |a, b|
+  a.position[1] < b.position[1]
+}
+
+@compare_radius_proc = Proc.new { |a, b|
+  a.radius > b.radius
+}
+
   twod_proc = Proc.new {
     @first_ordering_system.items.each { |thing_sorted_by_screen_position|
       shape, position, color = @store.things_to_components[thing_sorted_by_screen_position]

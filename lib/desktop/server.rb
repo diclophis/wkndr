@@ -35,15 +35,16 @@ class ProtocolServer
   end
 
   def update(gt = nil, dt = nil)
-    if @actual_wkndrfile && !@fsev
-      watch_wkndrfile
-    end
 
     connections_to_drop = []
 
-    if @clear_wkndrfile_change
+    if @actual_wkndrfile && !@fsev
+      watch_wkndrfile
+    elsif @clear_wkndrfile_change && ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
       handle_wkndrfile_change
-      @clear_wkndrfile_change = false
+      #watch_wkndrfile
+      @clear_wkndrfile_change = nil
+      @fsev = nil
     end
 
     @all_connections.each { |cn|
@@ -216,18 +217,17 @@ class ProtocolServer
           end
         end
       end
-      bytes_to_return = mab.to_s
+
+      Protocol.ok(mab.to_s)
     }
 
     raw(path + 'robots.txt') { |cn, ids_from_path|
-      GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT
+      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
     }
 
     raw(path + 'favicon.ico') { |cn, ids_from_path|
-      GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO
+      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
     }
-
-    @allow_static = true
   end
 
   def rebuild_tree!
@@ -295,18 +295,23 @@ class ProtocolServer
 
   def watch_wkndrfile
     @fsev = UV::FS::Event.new
-    @fsev.start(@actual_wkndrfile, 1) do |path, event|
-      if event == :change
-        #handle_wkndrfile_change
+    fsev_cb = Proc.new { |path, event|
+      log!(:wtf)
 
-        @clear_wkndrfile_change = true
+      #if event == :change
+        @clear_wkndrfile_change = Time.now.to_f
+        #@fsev.start
+        #@fsev.start(@actual_wkndrfile, 0)
+      #end
 
-        #@fsev = nil
-      end
-    end
+    }
+    
+    @fsev.start(@actual_wkndrfile, 0, &fsev_cb)
   end
 
   def read_wkndrfile
+  log!(:wtf2, @actual_wkndrfile)
+
     ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
     wkread = ffff.read(102400)
     ffff.close
@@ -319,6 +324,8 @@ class ProtocolServer
   end
 
   def handle_wkndrfile_change
+  log!(:wtf_handle)
+
     wkread = read_wkndrfile 
 
     @clients_to_notify.each { |wkndrfile, clients|
