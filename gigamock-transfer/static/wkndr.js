@@ -201,6 +201,16 @@ window.startLiveConnection = function() {
               toEl.value = fromEl.value;
             }
           }
+        },
+
+        onNodeAdded: function(node) {
+          console.log(node, node.src);
+
+          if (node.nodeName === 'SCRIPT' && node.src) {
+            var script = document.createElement('script');
+            script.src = node.src;
+            node.replaceWith(script)
+          }
 
           return true;
         }
