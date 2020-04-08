@@ -90,6 +90,7 @@
 #include <mruby/irep.h>
 #include <mruby/compile.h>
 #include <mruby/string.h>
+#include <mruby/numeric.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -776,9 +777,23 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
   nearestHit.hit = false;
   Color cursorColor = WHITE;
 
+
+  Vector2 mousePosition = { -0.0f, -0.0f };
+
+  mousePosition = GetMousePosition();
+
+    mrb_ary_set(mrb, mousexyz, 0, mrb_float_value(mrb, mousePosition.x));
+    mrb_ary_set(mrb, mousexyz, 1, mrb_float_value(mrb, mousePosition.y));
+    mrb_ary_set(mrb, mousexyz, 2, mrb_int_value(mrb, IsMouseButtonDown(MOUSE_LEFT_BUTTON)));
+
+    return mrb_yield_argv(mrb, block, 3, &mousexyz);
+
+
+
+/*
   Ray ray; // Picking ray
 
-  ray = GetMouseRay(p_data->mousePosition, p_data->camera);
+  ray = GetMouseRay(p_data->mousePosition, p_data->cameraTwo);
 
   // Check ray collision aginst ground plane
   RayHitInfo groundHitInfo = GetCollisionRayGround(ray, 0.0f);
@@ -790,11 +805,13 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
     mrb_ary_set(mrb, mousexyz, 0, mrb_float_value(mrb, nearestHit.position.x));
     mrb_ary_set(mrb, mousexyz, 1, mrb_float_value(mrb, nearestHit.position.y));
     mrb_ary_set(mrb, mousexyz, 2, mrb_float_value(mrb, nearestHit.position.z));
+    mrb_ary_set(mrb, mousexyz, 3, mrb_int_value(mrb, IsMouseButtonDown(MOUSE_LEFT_BUTTON)));
 
-    return mrb_yield_argv(mrb, block, 3, &mousexyz);
+    return mrb_yield_argv(mrb, block, 4, &mousexyz);
   } else {
     return mrb_nil_value();
   }
+*/
 }
 
 

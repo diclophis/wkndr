@@ -12,12 +12,14 @@ module ECS
     attr_accessor :things_to_components
     attr_accessor :components_to_things
     attr_accessor :multi_components_to_things
+    attr_accessor :watches
 
     def initialize
       self.things = []
       self.things_to_components = {}
       self.components_to_things = {}
       self.multi_components_to_things = {}
+      self.watches = {}
     end
 
     def add(thing, *compos)
@@ -47,6 +49,12 @@ module ECS
       }
 
       self.multi_klass_cache(*klasses) << thing
+
+      self.watches.each { |klasses, watched_things|
+        if (compos.collect { |compo| compo.class } & klasses) == klasses
+          watched_things << [thing, compos]
+        end
+      }
 
       thing
     end
@@ -115,6 +123,11 @@ module ECS
       }
       found_things.count
     end
+
+    def watch(*klasses)
+      self.watches[klasses] ||= []
+      self.watches[klasses]
+    end
   end
 
   class CameraFollowSystem
@@ -133,12 +146,13 @@ module ECS
     attr_accessor :selector
 
     def initialize(store)
-      self.store = store
-      self.selector = [PositionComponent, VelocityComponent]
+      #self.store = store
+      self.selector = store.watch(PositionComponent, VelocityComponent)
     end
 
     def process(gt, dt)
-      self.store.each_having(*self.selector) { |thing, components|
+      #self.store.each_having(*self.selector) 
+      self.selector.each { |thing, components|
         _, position, velocity, _, _ = *components
 
         #log!(position, velocity)

@@ -5,18 +5,24 @@ include ECS
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     @store = StorageManager.new
-
-    @entities = 100.times.collect { |i|
-      @store.add(
-        Entity.new, TagComponent.new("thing #{i}"),
-        PositionComponent.new(150, 150, 0), VelocityComponent.new((10.0 * rand) - 5.0, (10.0 * rand) - 5.0, 0),
-        HunterComponent.new,
-        SpriteComponent.new
-      )
-    }
-
     @transformer = TransformerSystem.new(@store)
     @movement = MovementSystem.new(@store)
+    @z_ordering_system = OrderingSystem.new
+    @z_ordering_system.compare_proc = Proc.new { |a, b|
+      a.y > b.y
+    }
+    @z_ordering_system.reset!
+
+    @entities = []
+    
+    #100.times.collect { |i|
+    #  @store.add(
+    #    Entity.new, TagComponent.new("thing #{i}"),
+    #    PositionComponent.new(150, 150, 0), VelocityComponent.new((10.0 * rand) - 5.0, (10.0 * rand) - 5.0, 0),
+    #    HunterComponent.new,
+    #    SpriteComponent.new
+    #  )
+    #}
 
     gl.open_default_view!
   }
@@ -24,20 +30,45 @@ Wkndr.nonce {
 
 
 Wkndr.client_side { |gl|
-  twod_proc = Proc.new {
-    @entities.each { |e|
-      t,p,v,h,s = *(@store.things_to_components[e])
-      gl.draw_circle(10.0, p.x, p.y, p.z, 255, 1, 1, 128)
-    }
-
-    gl.draw_fps(15, 15)
-  }
-
   gl.update { |global_time, delta_time|
-    @movement.process(global_time, delta_time)
-
     gl.drawmode {
-      gl.twod(&twod_proc)
+      gl.twod {
+        @movement.process(global_time, delta_time)
+
+        gl.mousep { |xyl|
+          x, y, l = *xyl
+
+          if (l == 1)
+            5.times {
+              new_entity = @store.add(
+                Entity.new, TagComponent.new("thing"),
+                PositionComponent.new(x, y, 0), VelocityComponent.new((50.0 * rand) - 25.0, (50.0 * rand) - 25.0, 0),
+                HunterComponent.new,
+                SpriteComponent.new,
+                RandomColorComponent.new
+              )
+              @entities << new_entity
+            }
+
+            #@entities.each { |e|
+            #  t,p,v,h,s,c = *(@store.things_to_components[e])
+            #  @z_ordering_system.order_by(e, p)
+            #}
+          end
+        }
+
+        #@z_ordering_system.items.each { |e|
+        @entities.each { |e|
+          t,p,v,h,s,c = *(@store.things_to_components[e])
+          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+        }
+
+        gl.button(175.0, 15.0, 50.0, 20.0, " #{@entities.length} ") {
+          @entities.clear
+        }
+
+        gl.draw_fps(15, 15)
+      }
     }
   }
 }

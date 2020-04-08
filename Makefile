@@ -2,6 +2,7 @@
 
 TARGET ?= desktop
 TARGET_OS ?= $(shell uname)
+DEBUG ?= #-g
 
 ifeq ($(TARGET),desktop)
   product=wkndr.mruby
@@ -72,7 +73,7 @@ endif
 RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 ifeq ($(TARGET),desktop)
   #CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
-  CFLAGS=-DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES2 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) -g3 -ggdb -std=c99 -Imruby/include -Iraylib-src/external/glfw/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
+  CFLAGS=-O3 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES2 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Imruby/include -Iraylib-src/external/glfw/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
@@ -97,7 +98,7 @@ ifeq ($(TARGET),desktop)
 #OBJS += rglfw.o
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -g4 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://localhost:8000/ --preload-file resources
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://localhost:8000/ --preload-file resources
 endif
 
 $(build)/test.yml: $(target) config.ru
@@ -108,10 +109,10 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_css) > $(build)/embed_static_css.rb
-	mruby/bin/mrbc -g -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
-	mruby/bin/mrbc -g -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
-	mruby/bin/mrbc -g -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
-	mruby/bin/mrbc -g -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
@@ -144,7 +145,7 @@ build-mruby: $(mruby_static_lib)
 $(mrbc): $(mruby_static_lib)
 
 $(build)/%.h: lib/desktop/%.rb $(mrbc)
-	mruby/bin/mrbc -g -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
+	mruby/bin/mrbc $(DEBUG) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
 
 $(build)/%.h: lib/%.rb $(mrbc)
-	mruby/bin/mrbc -g -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
+	mruby/bin/mrbc $(DEBUG) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
