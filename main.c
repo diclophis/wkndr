@@ -126,6 +126,10 @@
 #include "theseus.h"
 
 
+// ecs stuff
+#include "ecs.h"
+
+
 //server stuff
 #ifdef TARGET_DESKTOP
 
@@ -1092,7 +1096,8 @@ static mrb_value game_loop_draw_circle(mrb_state* mrb, mrb_value self)
 
   mrb_get_args(mrb, "ffffffff", &radius, &x, &y, &z, &r, &g, &b, &a);
 
-  DrawCircle(x, y, radius, (Color){ r, g, b, a });
+  //DrawCircle(x, y, radius, (Color){ r, g, b, a });
+  DrawCircleV((Vector2){ x, y }, radius, (Color){ r, g, b, a });
 
   return mrb_nil_value();
 }
@@ -2324,6 +2329,9 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, wkndr, NULL);
   eval_static_libs(mrb_client, wkndr, NULL);
+
+  eval_static_libs(mrb, ecs, NULL);
+  eval_static_libs(mrb_client, ecs, NULL);
 
   //TODO: this is related to Window
   mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
