@@ -58,7 +58,7 @@ module ECS
 
       self.watches.each { |klasses, watched_things|
         if (compos.collect { |compo| compo.class } & klasses) == klasses
-          watched_things << [thing, compos]
+          watched_things << [thing, compos.select { |a| klasses.include?(a.class) }]
         end
       }
 
@@ -125,7 +125,7 @@ module ECS
       }
       found_things.uniq!
       found_things.each { |thing|
-        yield thing, self.things_to_components[thing] #.select { |a| klasses.include?(a.class) }
+        yield thing, self.things_to_components[thing]
       }
       found_things.count
     end
@@ -159,7 +159,8 @@ module ECS
     def process(gt, dt)
       #self.store.each_having(*self.selector) 
       self.selector.each { |thing, components|
-        _, position, velocity, _, _ = *components
+        #_, position, velocity, _, _ = *components
+        position, velocity = *components
 
         #log!(position, velocity)
 
