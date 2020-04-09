@@ -13,8 +13,6 @@ Wkndr.nonce {
     }
     @z_ordering_system.reset!
 
-    @entities = []
-    
     #100.times.collect { |i|
     #  @store.add(
     #    Entity.new, TagComponent.new("thing #{i}"),
@@ -40,14 +38,13 @@ Wkndr.client_side { |gl|
 
           if (l == 1)
             5.times {
-              new_entity = @store.add(
-                Entity.new, TagComponent.new("thing"),
+              @store.add(
+                TagComponent.new("thing"),
                 PositionComponent.new(x, y, 0), VelocityComponent.new((50.0 * rand) - 25.0, (50.0 * rand) - 25.0, 0),
                 HunterComponent.new,
                 SpriteComponent.new,
                 RandomColorComponent.new
               )
-              @entities << new_entity
             }
 
             #@entities.each { |e|
@@ -58,16 +55,27 @@ Wkndr.client_side { |gl|
         }
 
         #@z_ordering_system.items.each { |e|
-        @entities.each { |e|
+        @store.things.each { |e|
           t,p,v,h,s,c = *(@store.things_to_components[e])
-          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+
+          begin
+            gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+          rescue NoMethodError
+            log!(t,p,v,h,s,c)
+
+#[#<ECS::TagComponent:0x56489cec0830 @label="thing">, 
+#<ECS::PositionComponent:0x56489cec07d0 @x=36.41949475142123, @y=26.5972002234202, @z=0.0, @r=0.0>, 
+#<ECS::VelocityComponent:0x56489cec0740 @x=12.84290355114334, @y=3.169994423671156, @z=0, @r=0>, 
+#<ECS::HunterComponent:0x56489cec06e0 @speed=254.8643782367847, @agi=0.06910371200099144, @color=225.4008482094856>, 
+#<ECS::SpriteComponent:0x56489cec06b0 @frame=nil, @props=nil>, nil]
+
+          end
         }
 
-        gl.button(175.0, 15.0, 50.0, 20.0, " #{@entities.length} ") {
-          @entities.clear
+        gl.button(15.0, 15.0, 50.0, 20.0, "  #{@store.things.length} #{"%0.2f" % (1.0 / delta_time)} fps  ") {
+          @store.reset!
         }
-
-        gl.draw_fps(15, 15)
+        #gl.draw_fps(15, 15)
       }
     }
   }

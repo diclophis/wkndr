@@ -1,9 +1,6 @@
 #
 
 module ECS
-  class Camera
-  end
-
   class Entity
   end
 
@@ -15,14 +12,23 @@ module ECS
     attr_accessor :watches
 
     def initialize
+      self.reset!
+    end
+
+    def reset!
       self.things = []
       self.things_to_components = {}
       self.components_to_things = {}
       self.multi_components_to_things = {}
-      self.watches = {}
+      self.watches ||= {}
+      self.watches.each { |k,v|
+        v.clear
+      }
     end
 
-    def add(thing, *compos)
+    def add(*compos)
+      thing = Entity.new
+
       self.things << thing
 
       self.attach_components(thing, *compos)
