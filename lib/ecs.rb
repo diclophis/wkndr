@@ -58,7 +58,7 @@ module ECS
 
       self.watches.each { |klasses, watched_things|
         if (compos.collect { |compo| compo.class } & klasses) == klasses
-          watched_things << [thing, compos.select { |a| klasses.include?(a.class) }]
+          watched_things << [thing, *compos.select { |a| klasses.include?(a.class) }]
         end
       }
 
@@ -88,6 +88,7 @@ module ECS
           end
         }
       }
+      #TODO: clear watches
     end
 
     def single_klass_cache(compo_klass)
@@ -152,18 +153,11 @@ module ECS
     attr_accessor :selector
 
     def initialize(store)
-      #self.store = store
       self.selector = store.watch(PositionComponent, VelocityComponent)
     end
 
     def process(gt, dt)
-      #self.store.each_having(*self.selector) 
-      self.selector.each { |thing, components|
-        #_, position, velocity, _, _ = *components
-        position, velocity = *components
-
-        #log!(position, velocity)
-
+      self.selector.each { |thing, position, velocity|
         position.add(velocity.dup.mul(dt))
         position.r += (velocity.r * dt)
       }
