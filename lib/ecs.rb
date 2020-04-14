@@ -37,24 +37,24 @@ module ECS
     end
 
     def attach_components(thing, *compos)
-      thing_to_compos = self.things_to_components[thing]
+      #thing_to_compos = self.things_to_components[thing]
 
-      unless thing_to_compos
-        thing_to_compos = []
-        self.things_to_components[thing] = thing_to_compos
-      end
+      #unless thing_to_compos
+      #  thing_to_compos = []
+      #  self.things_to_components[thing] = thing_to_compos
+      #end
 
-      klasses = []
-      compos.each { |compo|
-        compo_klass = compo.class
-        klasses << compo_klass
+      #klasses = []
+      #compos.each { |compo|
+      #  compo_klass = compo.class
+      #  klasses << compo_klass
 
-        thing_to_compos << compo
+      #  thing_to_compos << compo
 
-        self.single_klass_cache(compo_klass) << thing
-      }
+      #  self.single_klass_cache(compo_klass) << thing
+      #}
 
-      self.multi_klass_cache(*klasses) << thing
+      #self.multi_klass_cache(*klasses) << thing
 
       self.watches.each { |klasses, watched_things|
         if (compos.collect { |compo| compo.class } & klasses) == klasses
@@ -68,68 +68,74 @@ module ECS
     def remove(thing)
       self.things.delete(thing)
 
-      if attached_compos = self.things_to_components.delete(thing)
-        klasses = []
-        attached_compos.each { |attached_compo|
-          klasses << attached_compo.class
+      #if attached_compos = self.things_to_components.delete(thing)
+      #  klasses = []
+      #  attached_compos.each { |attached_compo|
+      #    klasses << attached_compo.class
+      #  }
+      #
+      #  self.detach_components(thing, *klasses)
+      #end
+
+
+      self.watches.each { |klasses, watched_things|
+        watched_things.reject! { |watched_thing, *compos|
+          thing == watched_thing
         }
-      
-        self.detach_components(thing, *klasses)
-      end
+      }
     end
 
     def detach_components(thing, *compo_klasses)
-      self.multi_components_to_things.each { |multi_compo_klasses, things|
-        compo_klasses.each { |compo_klass|
-          self.single_klass_cache(compo_klass).delete(thing)
+      #self.multi_components_to_things.each { |multi_compo_klasses, things|
+      #  compo_klasses.each { |compo_klass|
+      #    self.single_klass_cache(compo_klass).delete(thing)
 
-          if multi_compo_klasses.include?(compo_klass)
-            things.delete(thing)
-          end
-        }
-      }
-      #TODO: clear watches
+      #    if multi_compo_klasses.include?(compo_klass)
+      #      things.delete(thing)
+      #    end
+      #  }
+      #} #TODO: clear watches
     end
 
-    def single_klass_cache(compo_klass)
-      compo_klass_to_things = self.components_to_things[compo_klass] 
-      unless compo_klass_to_things
-        compo_klass_to_things = []
-        self.components_to_things[compo_klass] = compo_klass_to_things
-      end
+    #def single_klass_cache(compo_klass)
+    #  compo_klass_to_things = self.components_to_things[compo_klass] 
+    #  unless compo_klass_to_things
+    #    compo_klass_to_things = []
+    #    self.components_to_things[compo_klass] = compo_klass_to_things
+    #  end
 
-      compo_klass_to_things
-    end
+    #  compo_klass_to_things
+    #end
 
-    def multi_klass_cache(*klasses)
-      multi_compo_klass_to_things = self.multi_components_to_things[klasses] 
-      unless multi_compo_klass_to_things
-        multi_compo_klass_to_things = []
-        self.multi_components_to_things[klasses] = multi_compo_klass_to_things
-      end
+    #def multi_klass_cache(*klasses)
+    #  multi_compo_klass_to_things = self.multi_components_to_things[klasses] 
+    #  unless multi_compo_klass_to_things
+    #    multi_compo_klass_to_things = []
+    #    self.multi_components_to_things[klasses] = multi_compo_klass_to_things
+    #  end
 
-      multi_compo_klass_to_things
-    end
+    #  multi_compo_klass_to_things
+    #end
 
-    def each_having_all(*klasses)
-      found_things = self.multi_klass_cache(*klasses)
-      found_things.each { |thing|
-        yield thing, self.things_to_components[thing]
-      }
-      found_things.count
-    end
+    #def each_having_all(*klasses)
+    #  found_things = self.multi_klass_cache(*klasses)
+    #  found_things.each { |thing|
+    #    yield thing, self.things_to_components[thing]
+    #  }
+    #  found_things.count
+    #end
 
-    def each_having(*klasses)
-      found_things = []
-      klasses.each { |compo_klass|
-        found_things += single_klass_cache(compo_klass)
-      }
-      found_things.uniq!
-      found_things.each { |thing|
-        yield thing, self.things_to_components[thing]
-      }
-      found_things.count
-    end
+    #def each_having(*klasses)
+    #  found_things = []
+    #  klasses.each { |compo_klass|
+    #    found_things += single_klass_cache(compo_klass)
+    #  }
+    #  found_things.uniq!
+    #  found_things.each { |thing|
+    #    yield thing, self.things_to_components[thing]
+    #  }
+    #  found_things.count
+    #end
 
     def watch(*klasses)
       self.watches[klasses] ||= []
@@ -159,7 +165,7 @@ module ECS
     def process(gt, dt)
       self.selector.each { |thing, position, velocity|
         position.add(velocity.dup.mul(dt))
-        position.r += (velocity.r * dt)
+        #position.r += (velocity.r * dt)
       }
     end
   end
@@ -170,15 +176,60 @@ module ECS
 
     def initialize(store)
       self.store = store
-      self.selector = [TransformComponent]
+      self.selector = store.watch(TransformComponent)
     end
 
     def process(gt, dt)
-      self.store.each_having(*self.selector) { |thing, components|
-        transform,_ = *components
+      expired_things = []
 
-        #position.add(velocity.dup.mul(dt))
-        #position.rotation += (velocity.rotation * dt)
+      self.selector.each { |thing, transform|
+        transform.remaining -= dt;
+
+        if (transform.remaining <= 0)
+          #transform.transformer.end && transform.transformer.end(entity);
+          #transform.transformer = transform.transformer.next;
+
+          #if (!transform.transformer) {
+          #  entity.remove(Transform);
+          #  return;
+          #}
+
+          #transform.remaining += transform.transformer.duration;
+
+          expired_things << thing
+        end
+      }
+
+      expired_things.each { |expired_thing|
+        self.store.remove(expired_thing)
+        #log!(:store_l, self.store.things.length)
+      }
+    end
+  end
+
+  class ExhaustSystem
+    attr_accessor :store
+    attr_accessor :frame
+    attr_accessor :layer
+    attr_accessor :selector
+
+    def initialize(store, frame, layer)
+      self.store = store
+      self.selector = store.watch(PositionComponent, VelocityComponent, HunterComponent)
+    end
+
+    def process(gt, dt)
+      self.selector.each { |thing,  position, velocity, hunter|
+        direction = VectorComponent.from_angle(velocity.angleZ - 3.14 + VectorComponent.signed_random(1.0)).mul(velocity.length)
+        self.store.add(
+          TagComponent.new("exhaust"),
+          PositionComponent.from(position),
+          VelocityComponent.from(direction),
+          SpriteComponent.new,
+          TransformComponent.new(0.333),
+          #RandomColorComponent.new(255.0, 1.0, 1.0, 255.0)
+          RandomColorComponent.new
+        )
       }
     end
   end
@@ -254,6 +305,14 @@ module ECS
 
     def self.from(vec)
       self.new(vec.x, vec.y, vec.z)
+    end
+
+    def self.from_angle(angle)
+      self.new(Math.cos(angle), Math.sin(angle), 0)
+    end
+
+    def self.signed_random(scale = 1.0)
+      (rand - 0.5) * scale
     end
 
     def add(vec)
@@ -386,8 +445,8 @@ module ECS
   class RandomColorComponent < ColorComponent
     attr_accessor :color
 
-    def initialize
-      super(rand * 255.0, rand * 255.0, rand * 255.0, 255.0)
+    def initialize(r=nil, g=nil, b=nil, a=nil)
+      super(r || (rand * 255.0), g || (rand * 255.0), b || (rand * 255.0), a || 255.0)
     end
   end
 
@@ -437,12 +496,14 @@ module ECS
   end
 
   class TransformComponent
-    attr_accessor :transformer
+    #attr_accessor :transformer
     attr_accessor :remaining
 
-    def initialize(transformer)
-      self.transformer = transformer
-      self.remaining = transformer.duration
+    #def initialize(transformer)
+    def initialize(remaining)
+      #self.transformer = transformer
+      #self.remaining = transformer.duration
+      self.remaining = remaining
     end
   end
 
