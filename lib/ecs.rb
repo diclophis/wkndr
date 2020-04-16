@@ -212,17 +212,26 @@ module ECS
     attr_accessor :frame
     attr_accessor :layer
     attr_accessor :selector
+    attr_accessor :cooldown
+    attr_accessor :timer
 
-    def initialize(store, frame, layer)
+    def initialize(store, cooldown, frame, layer)
       self.store = store
-      self.selector = store.watch(PositionComponent, VelocityComponent, HunterComponent)
+      self.selector = store.watch(HunterComponent, PositionComponent, VelocityComponent)
+      self.cooldown = cooldown
+      self.timer = 0
     end
 
     def process(gt, dt)
-      self.selector.each { |thing,  position, velocity, hunter|
+      self.timer += dt
+      return unless self.timer > self.cooldown
+      self.timer = 0
+
+      self.selector.each { |thing,  _hunter, position, velocity|
         direction = VectorComponent.from_angle(velocity.angleZ - 3.14 + VectorComponent.signed_random(1.0)).mul(velocity.length)
         self.store.add(
-          TagComponent.new("exhaust"),
+          #TagComponent.new("exhaust"),
+          ExhaustComponent.new,
           PositionComponent.from(position),
           VelocityComponent.from(direction),
           SpriteComponent.new,
@@ -466,6 +475,9 @@ module ECS
     def initialize(the_label)
       self.label = the_label
     end
+  end
+
+  class ExhaustComponent
   end
 
   class CircleComponent

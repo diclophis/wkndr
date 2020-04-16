@@ -955,11 +955,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   SetExitKey(0);
 
-//#ifdef TARGET_DESKTOP
+#ifdef TARGET_DESKTOP
   //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
   //SetWindowMonitor(0);
-  //SetTargetFPS(screenFps);
-//#endif
+  SetTargetFPS(screenFps);
+#endif
 
   return self;
 }

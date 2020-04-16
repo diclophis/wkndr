@@ -6,9 +6,10 @@ Wkndr.nonce {
   Wkndr.client_side { |gl|
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
-    @exhaust = ExhaustSystem.new(@store, @particleBitmap, @particleLayer)
+    @exhaust = ExhaustSystem.new(@store, 0.05, @particleBitmap, @particleLayer)
     @movement = MovementSystem.new(@store)
-    @watch = @store.watch(PositionComponent, RandomColorComponent)
+    @exhaust_layer = @store.watch(ExhaustComponent, PositionComponent, RandomColorComponent)
+    @hunter_layer = @store.watch(HunterComponent, PositionComponent, RandomColorComponent)
     @last_l = 0
 
     gl.open_default_view!
@@ -29,12 +30,9 @@ Wkndr.client_side { |gl|
           if (l == 1 && @last_l == 0)
             1.times {
               @store.add(
-                TagComponent.new("thing"),
-                PositionComponent.new(x, y, 0),
-                VelocityComponent.new((300.0 * rand) - 150.0, (300.0 * rand) - 150.0, 0),
-                #VelocityComponent.new(100, 0, 0),
-                #VelocityComponent.from_angle(2.0 * 3.14 * rand).mul(50.0),
                 HunterComponent.new,
+                PositionComponent.new(x, y, 0),
+                VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(200.0),
                 SpriteComponent.new,
                 TransformComponent.new(0.75),
                 RandomColorComponent.new
@@ -45,8 +43,12 @@ Wkndr.client_side { |gl|
           @last_l = l
         }
 
-        @watch.each { |e, p, c|
+        @exhaust_layer.each { |e, _x, p, c|
           gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+        }
+
+        @hunter_layer.each { |e, _h, p, c|
+          gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
         }
 
         gl.button(15.0, 15.0, 50.0, 20.0, "  #{@store.things.length} #{"%0.2f" % (1.0 / delta_time)} fps  ") {
