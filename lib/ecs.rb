@@ -5,33 +5,36 @@ module ECS
   end
 
   class StorageManager
-    attr_accessor :things
-    attr_accessor :things_to_components
-    attr_accessor :components_to_things
-    attr_accessor :multi_components_to_things
-    attr_accessor :watches
+    #attr_accessor :things
+    #attr_accessor :things_to_components
+    #attr_accessor :components_to_things
+    #attr_accessor :multi_components_to_things
+    #attr_accessor :watches
 
     def initialize
-      self.reset!
+      reset!
     end
 
     def reset!
-      self.things = []
-      self.things_to_components = {}
-      self.components_to_things = {}
-      self.multi_components_to_things = {}
-      self.watches ||= {}
-      self.watches.each { |k,v|
+      @things = []
+      @things_to_components = {}
+      @components_to_things = {}
+      @multi_components_to_things = {}
+      @watches ||= {}
+      @watches.each { |k,v|
         v.clear
       }
+    end
+
+    def count
+      @things.length
     end
 
     def add(*compos)
       thing = Entity.new
 
-      self.things << thing
-
-      self.attach_components(thing, *compos)
+      @things << thing
+      attach_components(thing, *compos)
 
       thing
     end
@@ -56,7 +59,7 @@ module ECS
 
       #self.multi_klass_cache(*klasses) << thing
 
-      self.watches.each { |klasses, watched_things|
+      @watches.each { |klasses, watched_things|
         if (compos.collect { |compo| compo.class } & klasses) == klasses
           watched_things << [thing, *compos.select { |a| klasses.include?(a.class) }]
         end
@@ -66,7 +69,7 @@ module ECS
     end
 
     def remove(thing)
-      self.things.delete(thing)
+      @things.delete(thing)
 
       #if attached_compos = self.things_to_components.delete(thing)
       #  klasses = []
@@ -78,7 +81,7 @@ module ECS
       #end
 
 
-      self.watches.each { |klasses, watched_things|
+      @watches.each { |klasses, watched_things|
         watched_things.reject! { |watched_thing, *compos|
           thing == watched_thing
         }
@@ -138,8 +141,8 @@ module ECS
     #end
 
     def watch(*klasses)
-      self.watches[klasses] ||= []
-      self.watches[klasses]
+      @watches[klasses] ||= []
+      @watches[klasses]
     end
   end
 
@@ -155,37 +158,34 @@ module ECS
   end
 
   class MovementSystem
-    attr_accessor :store
-    attr_accessor :selector
+    #attr_accessor :store
+    #attr_accessor :selector
 
     def initialize(store)
-      self.selector = store.watch(PositionComponent, VelocityComponent)
+      @selector = store.watch(PositionComponent, VelocityComponent)
     end
 
     def process(gt, dt)
-      self.selector.each { |thing, position, velocity|
-        position.add(velocity.dup.mul(dt))
-        #position.r += (velocity.r * dt)
+      @selector.each { |thing, position, velocity|
+        position.add(velocity.mul(dt))
       }
     end
   end
 
   class TransformerSystem
-    attr_accessor :store
-    attr_accessor :selector
+    #attr_accessor :store
+    #attr_accessor :selector
 
     def initialize(store)
-      self.store = store
-      self.selector = store.watch(TransformComponent)
+      @store = store
+      @selector = store.watch(TransformComponent)
     end
 
     def process(gt, dt)
       expired_things = []
 
-      self.selector.each { |thing, transform|
-        transform.remaining -= dt;
-
-        if (transform.remaining <= 0)
+      @selector.each { |thing, transform|
+        if transform.expired(dt)
           #transform.transformer.end && transform.transformer.end(entity);
           #transform.transformer = transform.transformer.next;
 
@@ -196,88 +196,107 @@ module ECS
 
           #transform.remaining += transform.transformer.duration;
 
-          expired_things << thing
+          #expired_things << thing
+        
+          @store.remove(thing)
         end
       }
 
-      expired_things.each { |expired_thing|
-        self.store.remove(expired_thing)
-        #log!(:store_l, self.store.things.length)
-      }
+      #expired_things.each { |expired_thing|
+      #  #log!(:store_l, self.store.things.length)
+      #}
     end
   end
 
   class ExhaustSystem
-    attr_accessor :store
-    attr_accessor :frame
-    attr_accessor :layer
-    attr_accessor :selector
-    attr_accessor :cooldown
-    attr_accessor :timer
+    #attr_accessor :store
+    #attr_accessor :frame
+    #attr_accessor :layer
+    #attr_accessor :selector
+    #attr_accessor :cooldown
+    #attr_accessor :timer
 
     def initialize(store, cooldown, frame, layer)
-      self.store = store
-      self.selector = store.watch(HunterComponent, PositionComponent, VelocityComponent)
-      self.cooldown = cooldown
-      self.timer = 0
+      @store = store
+      @selector = store.watch(HunterComponent, PositionComponent, VelocityComponent)
+      @cooldown = cooldown
+      @timer = 0
+      @index = 0
     end
 
     def process(gt, dt)
-      self.timer += dt
-      return unless self.timer > self.cooldown
-      self.timer = 0
+      @timer += dt
+      should_emit =  @timer > @cooldown
+      allowed_emit = 16
 
-      self.selector.each { |thing,  _hunter, position, velocity|
-        direction = VectorComponent.from_angle(velocity.angleZ - 3.14 + VectorComponent.signed_random(1.0)).mul(velocity.length)
-        self.store.add(
-          #TagComponent.new("exhaust"),
-          ExhaustComponent.new,
-          PositionComponent.from(position),
-          VelocityComponent.from(direction),
-          SpriteComponent.new,
-          TransformComponent.new(0.333),
-          #RandomColorComponent.new(255.0, 1.0, 1.0, 255.0)
-          RandomColorComponent.new
-        )
+      current_index = 0
+
+      @selector.each { |thing,  _hunter, position, velocity|
+        #velocity.add(VectorComponent.from_angle(0.5 - VectorComponent.signed_random(1.0)).mul(5.0))
+
+        velocity.rotateZ(dt * 10.0 * Math.sin(gt * 2.0))
+
+        #if (current_index == (@index % @selector.length)) && should_emit && allowed_emit > 0
+        if allowed_emit > 0 && should_emit
+          @index += 1
+          allowed_emit -= 1
+
+          direction = VectorComponent.from_angle(velocity.angleZ - 3.14 + VectorComponent.signed_random(3.0)).mul(velocity.length * 0.25)
+          @store.add(
+            ExhaustComponent.new,
+            PositionComponent.from(position),
+            VelocityComponent.from(direction),
+            SpriteComponent.new,
+            TransformComponent.new(0.33),
+            RandomColorComponent.new
+          )
+        end
+
+        current_index += 1
       }
+
+
+      if should_emit
+        @timer = 0
+      end
     end
   end
 
   class OrderingSystem
-    attr_accessor :compare_proc
-    attr_accessor :items
-    attr_accessor :item_components
+    #attr_accessor :compare_proc
+    #attr_accessor :items
+    #attr_accessor :item_components
 
     def initialize(&the_compare_proc)
-      self.compare_proc = the_compare_proc
+      @compare_proc = the_compare_proc
       reset!
     end
 
     def reset!
-      self.items = []
-      self.item_components = {}
+      @items = []
+      @item_components = {}
       @i = 0
     end
 
     def order_by(key, component)
-      self.item_components[key] = component
+      @item_components[key] = component
 
       ## Iterate through the length of the array, push into method
       if @i == 0
-        self.items[@i] = key
+        @items[@i] = key
       else
         ## beginning with the second element items[i]
         j = @i - 1
 
         # If element to left of key is larger then
         # move it one position over at a time
-        while j >= 0 and self.compare_proc.call(self.item_components[self.items[j]], component)
-          self.items[j + 1] = self.items[j]
+        while j >= 0 and @compare_proc.call(@item_components[@items[j]], component)
+          @items[j + 1] = @items[j]
           j = j - 1
         end
 
         # Update key position
-        self.items[j+1] = key
+        @items[j+1] = key
       end
 
       @i += 1
@@ -285,10 +304,10 @@ module ECS
   end
 
   class ByIndexSystem
-    attr_accessor :process_proc
+    #attr_accessor :process_proc
 
     def initialize(&the_process_proc)
-      self.process_proc = the_process_proc
+      @process_proc = the_process_proc
       reset!
     end
 
@@ -297,27 +316,39 @@ module ECS
     end
 
     def process(item)
-      self.process_proc.call(item, @i)
+      @process_proc.call(item, @i)
 
       @i += 1
     end
   end
 
   class VectorComponent
-    attr_accessor :x, :y, :z
+    #attr_accessor :x, :y, :z
 
     def initialize(x, y, z)
-      self.x = x
-      self.y = y
-      self.z = z
+      @x = x
+      @y = y
+      @z = z
+    end
+
+    def x
+      @x
+    end
+
+    def y
+      @y
+    end
+
+    def z
+      @z
     end
 
     def self.from(vec)
-      self.new(vec.x, vec.y, vec.z)
+      new(vec.x, vec.y, vec.z)
     end
 
     def self.from_angle(angle)
-      self.new(Math.cos(angle), Math.sin(angle), 0)
+      new(Math.cos(angle), Math.sin(angle), 0)
     end
 
     def self.signed_random(scale = 1.0)
@@ -325,96 +356,97 @@ module ECS
     end
 
     def add(vec)
-      self.x += vec.x
-      self.y += vec.y
-      self.z += vec.z
+      @x += vec.x
+      @y += vec.y
+      @z += vec.z
       self
     end
 
     def sub(vec)
-      self.x -= vec.x
-      self.y -= vec.y
-      self.z -= vec.z
+      @x -= vec.x
+      @y -= vec.y
+      @z -= vec.z
       self
     end
 
     def invert
-      self.x *= -1
-      self.y *= -1
-      self.z *= -1
+      @x *= -1
+      @y *= -1
+      @z *= -1
       self
     end
 
     def mul(scalar)
-      self.x *= scalar
-      self.y *= scalar
-      self.z *= scalar
-      self
+      #@x *= scalar
+      #@y *= scalar
+      #@z *= scalar
+      #self
+      self.class.new(@x * scalar, @y * scalar, @z * scalar)
     end
 
     def div(scalar)
       if (scalar === 0) then
-        self.x = 0
-        self.y = 0
-        self.z = 0
+        @x = 0
+        @y = 0
+        @z = 0
       else
-        self.x /= scalar
-        self.y /= scalar
-        self.z /= scalar
+        @x /= scalar
+        @y /= scalar
+        @z /= scalar
       end
 
       self
     end
 
     def norm
-      length = self.length
+      length = @length
 
       if (length === 0) then
-        self.x = 1
-        self.y = 0
-        self.z = 0
+        @x = 1
+        @y = 0
+        @z = 0
       else
-        self.div(length)
+        div(length)
       end
 
       self
     end
 
     def rotateZ(angle)
-      nx = self.x * Math.cos(angle) - self.y * Math.sin(angle)
-      ny = self.x * Math.sin(angle) + self.y * Math.cos(angle)
+      nx = @x * Math.cos(angle) - @y * Math.sin(angle)
+      ny = @x * Math.sin(angle) + @y * Math.cos(angle)
 
-      self.x = nx
-      self.y = ny
+      @x = nx
+      @y = ny
     
       self
     end
 
     def lengthSq
-      self.x * self.x + self.y * self.y + self.z * self.z
+      @x * @x + @y * @y + @z * @z
     end
 
     def length
-      Math.sqrt(self.lengthSq)
+      Math.sqrt(lengthSq)
     end
 
     def distanceSq(vec)
-      dx = self.x - vec.x
-      dy = self.y - vec.y
-      dz = self.z - vec.z
+      dx = @x - vec.x
+      dy = @y - vec.y
+      dz = @z - vec.z
       dx * dx + dy * dy + dz * dz
     end
 
     def distance(vec)
-      Math.sqrt(self.distanceSq(vec))
+      Math.sqrt(distanceSq(vec))
     end
 
     def angleZ
-      Math.atan2(self.y, self.x)
+      Math.atan2(@y, @x)
     end
 
     def crossZ(vec)
-      self.x * vec.y - self.y * vec.x
+      @x * vec.y - @y * vec.x
 
       #self.class.new 
       #  y * vec.z - z * vec.y, 
@@ -423,17 +455,18 @@ module ECS
     end
 
     def dotZ(vec)
-      self.x * vec.x + self.y * vec.y + self.z * vec.z
+      @x * vec.x + @y * vec.y + @z * vec.z
       #x * vec.x + y * vec.y + z * vec.z
       #+ w * vec.w
     end
   end
 
   class VectorWithRotationComponent < VectorComponent
-    attr_accessor :r
+    #attr_accessor :r
+
     def initialize(x = 0, y = 0, z = 0, r = 0)
       super(x, y, z)
-      self.r = r 
+      @r = r 
     end
   end
 
@@ -444,15 +477,19 @@ module ECS
   end
 
   class ColorComponent
-    attr_accessor :color
+    #attr_accessor :color
 
     def initialize(r, g, b, a)
-      self.color = [r, g, b, a]
+      @color = [r, g, b, a]
+    end
+
+    def color
+      @color
     end
   end
 
   class RandomColorComponent < ColorComponent
-    attr_accessor :color
+    #attr_accessor :color
 
     def initialize(r=nil, g=nil, b=nil, a=nil)
       super(r || (rand * 255.0), g || (rand * 255.0), b || (rand * 255.0), a || 255.0)
@@ -460,20 +497,20 @@ module ECS
   end
 
   class RandomSpinComponent
-    attr_accessor :axis
-    attr_accessor :angle
+    #attr_accessor :axis
+    #attr_accessor :angle
 
     def initialize
-      self.axis = [0, 1, 0]
-      self.angle = 45
+      @axis = [0, 1, 0]
+      @angle = 45
     end
   end
 
   class TagComponent
-    attr_accessor :label
+    #attr_accessor :label
 
     def initialize(the_label)
-      self.label = the_label
+      @label = the_label
     end
   end
 
@@ -481,20 +518,21 @@ module ECS
   end
 
   class CircleComponent
-    attr_accessor :radius
+    #attr_accessor :radius
 
     def initialize(the_radius)
-      self.radius = the_radius
+      @radius = the_radius
     end
   end
 
   class SpriteComponent
-    attr_accessor :frame
-    attr_accessor :props
+    #attr_accessor :frame
+    #attr_accessor :props
 
     def initialize(frame = nil, props = nil)
-      self.frame = frame
-      self.props = props
+      @frame = frame
+      @props = props
+
       #{
       #  :visible => true,
       #  :position => nil,
@@ -509,13 +547,19 @@ module ECS
 
   class TransformComponent
     #attr_accessor :transformer
-    attr_accessor :remaining
+    #attr_accessor :remaining
 
     #def initialize(transformer)
     def initialize(remaining)
       #self.transformer = transformer
       #self.remaining = transformer.duration
-      self.remaining = remaining
+
+      @remaining = remaining
+    end
+
+    def expired(dt)
+      @remaining -= dt
+      @remaining <= 0
     end
   end
 
@@ -523,16 +567,16 @@ module ECS
   end
 
   class HunterComponent
-    attr_accessor :target
-    attr_accessor :distance
-    attr_accessor :speed
-    attr_accessor :agi
-    attr_accessor :color
+    #attr_accessor :target
+    #attr_accessor :distance
+    #attr_accessor :speed
+    #attr_accessor :agi
+    #attr_accessor :color
 
     def initialize
-      self.speed = 250.0 * (1.0 + rand / 4.0)
-      self.agi = (3.1457 / 48.0) * (1.0 + rand / 4.0)
-      self.color = 255 * (rand / 1.0)
+      @speed = 250.0 * (1.0 + rand / 4.0)
+      @agi = (3.1457 / 48.0) * (1.0 + rand / 4.0)
+      @color = 255 * (rand / 1.0)
     end
   end
 end

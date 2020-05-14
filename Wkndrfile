@@ -6,7 +6,7 @@ Wkndr.nonce {
   Wkndr.client_side { |gl|
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
-    @exhaust = ExhaustSystem.new(@store, 0.1, @particleBitmap, @particleLayer)
+    @exhaust = ExhaustSystem.new(@store, 0.025, @particleBitmap, @particleLayer)
     @movement = MovementSystem.new(@store)
     @exhaust_layer = @store.watch(ExhaustComponent, PositionComponent, RandomColorComponent)
     @hunter_layer = @store.watch(HunterComponent, PositionComponent, RandomColorComponent)
@@ -20,22 +20,18 @@ Wkndr.client_side { |gl|
   gl.update { |global_time, delta_time|
     gl.drawmode {
       gl.twod {
-        #@transformer.process(global_time, delta_time)
-        #@exhaust.process(global_time, delta_time)
-        #@movement.process(global_time, delta_time)
-
         gl.mousep { |xyl|
           x, y, l = *xyl
 
-          if (l == 1 && @last_l == 0)
+          if (l == 1 && @last_l == 0) && (@store.count < 200)
           #if (l == 1)
-            20.times {
+            (1 + (rand * 3.0)).times {
               @store.add(
                 HunterComponent.new,
                 PositionComponent.new(x, y, 0),
-                VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(300.0),
+                VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
                 SpriteComponent.new,
-                TransformComponent.new(2.75),
+                TransformComponent.new(1.0),
                 RandomColorComponent.new
               )
             }
@@ -52,11 +48,15 @@ Wkndr.client_side { |gl|
           gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
         }
 
-        gl.button(15.0, 15.0, 50.0, 20.0, "  #{@store.things.length} #{"%0.2f" % (1.0 / delta_time)} fps  ") {
-          gl.emit({"c" => "tty"})
+        gl.button(15.0, 15.0, 50.0, 20.0, "  #{@store.count} #{"%0.2f" % (1.0 / delta_time)} fps  ") {
+          #gl.emit({"c" => "tty"})
         }
       }
     }
+
+    @transformer.process(global_time, delta_time)
+    @exhaust.process(global_time, delta_time)
+    @movement.process(global_time, delta_time)
   }
 }
 
