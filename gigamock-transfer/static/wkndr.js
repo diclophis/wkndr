@@ -84,6 +84,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         bufView[i] = ic;
       }
 
+      var stringBits = ab2str(bufView);
+
+      //console.log("GOT CHANNEL", channel, stringBits);
+
       if (channel == 0) {
         if (document.body.className != splitScreen) {
           document.body.className = splitScreen;
@@ -191,6 +195,8 @@ window.startLiveConnection = function() {
 
     window.conn.onmessage = function (event) {
       var origData = event.data;
+
+      console.log(origData);
 
       morphdom(liveContainer.childNodes[0], origData, {
         onBeforeElUpdated: function(fromEl, toEl) {
