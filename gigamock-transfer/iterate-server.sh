@@ -5,7 +5,11 @@ set -x
 
 cd /var/lib/wkndr
 
-make -j4 ${1}
+make ${1}
 
-rm -Rf release/*.o release/*.h
+#rm -Rf release/*.o release/*.h
+find release -name "*.o" -delete
+find release -name "*.h" -delete
 ls -l release
+
+#cp -R mruby/{build,build-copy}

@@ -8,7 +8,8 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   # load specific toolchain settings
   toolchain :clang
 
-  enable_debug
+  #enable_debug
+  conf.bins = []
 
   conf.gem :core => "mruby-bin-mirb"
   conf.gem :core => "mruby-math"
@@ -40,4 +41,8 @@ MRuby::CrossBuild.new('emscripten') do |conf|
 
   #conf.enable_cxx_exception
   conf.disable_cxx_exception
+
+  conf.cc do |cc|
+    cc.flags = ["-s USE_ZLIB=1"]
+  end
 end

@@ -157,7 +157,9 @@
 
 
 // other stuff
-//#define FLT_MAX 3.40282347E+38F
+#ifndef FLT_MAX
+  #define FLT_MAX 3.40282347E+38F
+#endif
 
 
 #if defined(__MACH__) || defined(__APPLE__)

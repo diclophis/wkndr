@@ -73,12 +73,13 @@ endif
 RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 ifeq ($(TARGET),desktop)
   #CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
-  CFLAGS=-Os -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Imruby/include -Iraylib-src/external/glfw/include -Iraylib-src -I$(build) -Imruby/build/repos/host/mruby-b64/include
+  CFLAGS=-Os -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Imruby/include -Iraylib-src/external/glfw/include -Iraylib-src -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
 else
-  EMSCRIPTEN_FLAGS=-s NO_EXIT_RUNTIME=0 -Os -s USE_GLFW=3 -s USE_WEBGL2=1 -s RESERVED_FUNCTION_POINTERS=1 #-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+  #LDFLAGS=-lm -lz
+  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -Os -s USE_GLFW=3 -s USE_WEBGL2=1 -s RESERVED_FUNCTION_POINTERS=1 #-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=1 -s NO_EXIT_RUNTIME=0 -g4 -s WASM=1 -s RESERVED_FUNCTION_POINTERS=1 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=1 -s NO_EXIT_RUNTIME=1 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=32 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   #EMSCRIPTEN_FLAGS=-s RESERVED_FUNCTION_POINTERS=32
@@ -128,16 +129,16 @@ $(build)/%.o: %.c $(static_ruby_headers) $(sources)
 
 $(mruby_static_lib): config/mruby.rb #$(mruby_static_lib_deps)
 ifeq ($(TARGET),desktop)
-	cd mruby && MRUBY_CONFIG=../config/mruby.rb $(MAKE) -j4
+	cd mruby && MRUBY_CONFIG=../config/mruby.rb $(MAKE)
 else
-	cd mruby && MRUBY_CONFIG=../config/emscripten.rb $(MAKE) -j4
+	cd mruby && MRUBY_CONFIG=../config/emscripten.rb $(MAKE)
 endif
 
 $(raylib_static_lib): $(raylib_static_lib_deps)
 ifeq ($(TARGET),desktop)
-	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) $(MAKE) -B -e -j4
+	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) $(MAKE) -B -e
 else
-	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -B -e -j4
+	cd raylib-src && RAYLIB_RELEASE_PATH=../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -B -e
 endif
 
 build-mruby: $(mruby_static_lib)

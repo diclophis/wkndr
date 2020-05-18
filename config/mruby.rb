@@ -4,9 +4,9 @@ MRuby::Build.new do |conf|
   # load specific toolchain settings
   toolchain :gcc
 
-  enable_debug
+  #enable_debug
 
-  conf.bins = ["mrbc", "mirb"]
+  conf.bins = ["mrbc"]
 
   conf.gem :core => "mruby-bin-mirb"
   conf.gem :core => "mruby-math"

@@ -14,7 +14,9 @@ cd emsdk
 
 ./emsdk update || git pull
 
+
 ./emsdk list
+
 
 ./emsdk install latest-fastcomp
 
