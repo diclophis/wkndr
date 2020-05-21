@@ -23,13 +23,14 @@ Wkndr.client_side { |gl|
         gl.mousep { |xyl|
           x, y, l = *xyl
 
-          if (l == 1 && @last_l == 0) && (@store.count < 200)
+          if (l == 1 && @last_l == 0) #&& (@store.count < 200)
           #if (l == 1)
-            (1 + (rand * 3.0)).times {
+            (3).times { |i|
               @store.add(
                 HunterComponent.new,
                 PositionComponent.new(x, y, 0),
-                VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
+                #VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
+                VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
                 SpriteComponent.new,
                 TransformComponent.new(1.0),
                 RandomColorComponent.new

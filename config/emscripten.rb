@@ -43,6 +43,6 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.disable_cxx_exception
 
   conf.cc do |cc|
-    cc.flags = ["-s USE_ZLIB=1"]
+    cc.flags = ["-s USE_ZLIB=1", "-O3"]
   end
 end

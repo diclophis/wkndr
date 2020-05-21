@@ -49,7 +49,7 @@ MRuby::Build.new do |conf|
   conf.gem :github => "fastly/mruby-optparse"
 
   conf.cc do |cc|
-    cc.flags = ["-lm"]
+    cc.flags = ["-lm", "-O3"]
   end
 
   #conf.enable_cxx_exception
