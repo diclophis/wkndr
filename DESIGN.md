@@ -1,3 +1,14 @@
+# new design
+
+unit test everything
+replace `log!` with better interface... logger instance, something mockable
+re-impl libuv bindings
+re-impl raylib bindings
+non-vim/non-tty based editor
+beam assets over connection for parsing on client side
+  factory dispatch controller action handler
+  resource placeholder???
+
 # thought bubbles on design on lib
 
 ```
