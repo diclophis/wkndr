@@ -40,15 +40,6 @@
 #include <string.h>
 
 
-//server stuff
-#ifdef TARGET_DESKTOP
-
-#include <openssl/sha.h>
-#include <b64/cencode.h>
-
-#endif
-
-
 // emscripten/wasm stuff
 #ifdef PLATFORM_WEB
   #include <emscripten/emscripten.h>
@@ -60,6 +51,51 @@
 #ifndef FLT_MAX
   #define FLT_MAX 3.40282347E+38F
 #endif
+
+
+// internal wkndr stuff
+#include "include/mrb_web_socket.h"
+#include "include/mrb_stack_blocker.h"
+
+
+// ruby lib stuff
+#include "globals.h"
+#include "stack_blocker.h"
+
+
+static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
+  // check for exception, only one can exist at any point in time
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in %s", context);
+    mrb_print_error(mrb);
+    exit(2);
+  }
+}
+
+
+static mrb_value eval_static_libs(mrb_state* mrb, ...) {
+  va_list argp;
+  va_start(argp, mrb);
+
+  int end_of_static_libs = 0;
+  uint8_t const *p;
+
+  mrb_value ret;
+
+  while(!end_of_static_libs) {
+    p = va_arg(argp, uint8_t const*);
+    if (NULL == p) {
+      end_of_static_libs = 1;
+    } else {
+      ret = mrb_load_irep(mrb, p);
+      if_exception_error_and_exit(mrb, "bundled ruby static lib\n");
+    }
+  }
+
+  va_end(argp);
+
+  return ret;
+}
 
 
 int main(int argc, char** argv) {
@@ -96,8 +132,10 @@ int main(int argc, char** argv) {
   mrb_define_global_const(mrb, "ARGV", args_server);
   mrb_define_global_const(mrb_client, "ARGV", args);
 
-  //eval_static_libs(mrb, globals, NULL);
-  //eval_static_libs(mrb_client, globals, NULL);
+  eval_static_libs(mrb, globals, NULL);
+  eval_static_libs(mrb_client, globals, NULL);
+
+  fprintf(stderr, "loaded globals ... \n");
 
   //struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
   //mrb_define_class_method(mrb, fast_utmp, "utmps", fast_utmp_utmps, MRB_ARGS_NONE());
@@ -107,16 +145,17 @@ int main(int argc, char** argv) {
   //mrb_define_class_method(mrb, fast_tty, "close", fast_tty_close, MRB_ARGS_REQ(2));
   //mrb_define_class_method(mrb, fast_tty, "resize", fast_tty_resize, MRB_ARGS_REQ(3));
 
-  //struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
-  //mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
-  //mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
+  struct RClass *websocket_mod = mrb_define_module(mrb, "WebSocket");
+  mrb_define_class_under(mrb, websocket_mod, "Error", E_RUNTIME_ERROR);
+  mrb_define_module_function(mrb, websocket_mod, "create_accept", mrb_websocket_create_accept, MRB_ARGS_REQ(1));
 
-  ////TODO /////// class PlatformBits
-  //struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
-  //mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
+  //////TODO /////// class PlatformBits
+  struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
+  mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
 
-  //struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  //mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
+  struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
+  mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
+
 
   //// class GameLoop
   //struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);

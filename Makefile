@@ -17,9 +17,9 @@ $(shell mkdir -p $(build))
 #mruby_static_lib_deps=$(wildcard mruby/**/*.c) #$(shell find mruby -type f | grep -v 'mruby/build\|mruby/bin')
 
 ifeq ($(TARGET),desktop)
-  mruby_static_lib="mruby/build/host/lib/libmruby.a"
+  mruby_static_lib = mruby/build/host/lib/libmruby.a
 else
-  mruby_static_lib="mruby/build/emscripten/lib/libmruby.a"
+  mruby_static_lib = mruby/build/emscripten/lib/libmruby.a
 endif
 
 #raylib_static_lib_deps=$(shell find raylib-src -type f 2> /dev/null)
@@ -37,25 +37,25 @@ else
 endif
 
 sources = $(wildcard *.c)
+sources += $(wildcard src/*.c)
 
 #ifeq ($(TARGET),desktop)
 objects = $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
+#objects += $(patsubst %,$(build)/%, $(patsubst src/%.c,%.o, $(sources)))
 #else
 #objects = $(patsubst %,$(build)/emsc/%, $(patsubst %.c,%.o, $(sources)))
 #endif
 
-static_ruby_headers =
-#static_ruby_headers = $(patsubst %,$(build)/%, $(patsubst lib/%.rb,%.h, $(wildcard lib/*.rb)))
-#ifeq ($(TARGET),desktop)
-#static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h, $(wildcard lib/desktop/*.rb)))
-#static_ruby_headers += $(build)/embed_static.h
-#endif
+static_ruby_headers = $(patsubst %,$(build)/%, $(patsubst lib/%.rb,%.h, $(wildcard lib/*.rb)))
+ifeq ($(TARGET),desktop)
+static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h, $(wildcard lib/desktop/*.rb)))
+static_ruby_headers += $(build)/embed_static.h
+endif
 
-#giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/xterm-dist/xterm.js gigamock-transfer/static/xterm-dist/fit/fit.js gigamock-transfer/static/wkndr.js 
-#giga_static_txt = gigamock-transfer/static/robots.txt
-#giga_static_ico = gigamock-transfer/static/favicon.ico
-#giga_static_css = gigamock-transfer/static/xterm-dist/xterm.css gigamock-transfer/static/wkndr.css 
-##gigamock-transfer/static/wkndr.png
+giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/wkndr.js 
+giga_static_txt = gigamock-transfer/static/robots.txt
+giga_static_ico = gigamock-transfer/static/favicon.ico
+giga_static_css = gigamock-transfer/static/wkndr.css 
 
 .SECONDARY: $(static_ruby_headers) $(objects)
 objects += $(mruby_static_lib)
@@ -106,24 +106,26 @@ endif
 #$(build)/test.yml: $(target) config.ru
 #	$(target) > $@
 
-#$(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
-#	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_js)  > $(build)/embed_static_js.rb
-#	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
-#	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
-#	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_css) > $(build)/embed_static_css.rb
-#	mruby/bin/mrbc $(DEBUG) -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
-#	mruby/bin/mrbc $(DEBUG) -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
-#	mruby/bin/mrbc $(DEBUG) -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
-#	mruby/bin/mrbc $(DEBUG) -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
-#	cat $(build)/embed_static_*h > $(build)/embed_static.h
+$(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
+	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_js)  > $(build)/embed_static_js.rb
+	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
+	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
+	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_css) > $(build)/embed_static_css.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
+	mruby/bin/mrbc $(DEBUG) -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
+	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
 	cd mruby && make clean && rm -Rf build
 	#cd raylib-src && make RAYLIB_RELEASE_PATH=../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) clean
 	rm -R $(build)
-
-$(build):
 	mkdir -p $(build)
+	mkdir -p $(build)/src
+
+#$(build):
+#$(build)/src:
 
 $(build)/%.o: %.c $(static_ruby_headers) $(sources)
 	$(CC) $(CFLAGS) -c $< -o $@
