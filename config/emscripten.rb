@@ -11,10 +11,9 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   #enable_debug
   conf.bins = []
 
-  conf.gem :core => "mruby-bin-mirb"
+  #conf.gem :core => "mruby-bin-mirb"
   conf.gem :core => "mruby-math"
   conf.gem :core => "mruby-random"
-  conf.gem :core => "mruby-io"
   conf.gem :core => "mruby-enum-ext"
   conf.gem :core => "mruby-struct"
   conf.gem :core => "mruby-metaprog"
@@ -22,25 +21,27 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.gem :core => "mruby-string-ext"
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
+  
+  #conf.gem :core => "mruby-io"
 
-  #conf.gem :github => "h2so5/mruby-pure-regexp"
-  conf.gem :github => "yui-knk/mruby-set"
-  conf.gem :github => "Asmod4n/mruby-simplemsgpack"
+  ##conf.gem :github => "h2so5/mruby-pure-regexp"
+  #conf.gem :github => "yui-knk/mruby-set"
+  #conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
   #conf.cc.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
   #conf.linker.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
   #conf.archiver.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emar"
 
-  conf.cc.command = "/root/emsdk/fastcomp/emscripten/emcc"
-  conf.linker.command = "/root/emsdk/fastcomp/emscripten/emcc"
-  conf.archiver.command = "/root/emsdk/fastcomp/emscripten/emar"
+  #conf.cc.command = "/root/emsdk/fastcomp/emscripten/emcc"
+  #conf.linker.command = "/root/emsdk/fastcomp/emscripten/emcc"
+  #conf.archiver.command = "/root/emsdk/fastcomp/emscripten/emar"
 
-  #conf.cc.command = "/root/emsdk/upstream/emscripten/emcc"
-  #conf.linker.command = "/root/emsdk/upstream/emscripten/emcc"
-  #conf.archiver.command = "/root/emsdk/upstream/emscripten/emar"
+  conf.cc.command = "/root/emsdk/upstream/emscripten/emcc"
+  conf.linker.command = "/root/emsdk/upstream/emscripten/emcc"
+  conf.archiver.command = "/root/emsdk/upstream/emscripten/emar"
 
   #conf.enable_cxx_exception
-  conf.disable_cxx_exception
+  #conf.disable_cxx_exception
 
   conf.cc do |cc|
     cc.flags = ["-s USE_ZLIB=1", "-O3"]

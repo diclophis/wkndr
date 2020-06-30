@@ -2,3 +2,10 @@
 mruby_version:
   version: 2.1.1
   release_no: 20101
+builds:
+  host:
+    https://github.com/Asmod4n/mruby-b64.git:
+      url: https://github.com/Asmod4n/mruby-b64.git
+      branch: HEAD
+      commit: 6d8f36b1bd310aa1b0dccd6fe7b0e9d7551d7718
+      version: 0.0.0
