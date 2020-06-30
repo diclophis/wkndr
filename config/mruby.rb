@@ -23,7 +23,12 @@ MRuby::Build.new do |conf|
   #conf.gem :core => "mruby-io"
 
   ##conf.gem :github => "h2so5/mruby-pure-regexp"
-  #conf.gem :github => "yui-knk/mruby-set"
+
+  conf.gem :github => "Asmod4n/mruby-b64"
+  conf.gem :github => "yui-knk/mruby-set"
+  conf.gem :github => "iij/mruby-zlib"
+  conf.gem :github => "katzer/mruby-r3"
+
   #conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
   ##Desktop specific
@@ -35,14 +40,11 @@ MRuby::Build.new do |conf|
 
   #conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0"
 
-  conf.gem :github => "Asmod4n/mruby-b64"
 
   #conf.gem :github => "Asmod4n/mruby-phr"
 
   ##http faas routing
-  #conf.gem :github => "katzer/mruby-r3"
 
-  #conf.gem :github => "iij/mruby-zlib"
 
   ##centralization of thor into shell3
   #conf.gem :github => 'hfm/mruby-fileutils'

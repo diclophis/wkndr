@@ -2,7 +2,7 @@
 
 class ClientSide < Wkndr
   def self.startup_clientside(args)
-    log!(:start_clientside)
+    #log!(:start_clientside)
 
     if args.include?("--no-client")
       return
