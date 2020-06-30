@@ -5,6 +5,8 @@ set -x
 
 cd /var/lib/wkndr
 
+mkdir -p release/src
+
 make ${1}
 
 #rm -Rf release/*.o release/*.h
