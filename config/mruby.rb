@@ -3,11 +3,12 @@
 MRuby::Build.new do |conf|
   # load specific toolchain settings
   toolchain :gcc
-
   #enable_debug
 
+  # desired cli tooling
   conf.bins = ["mrbc", "mirb"]
 
+  # core gems
   conf.gem :core => "mruby-bin-mrbc"
   conf.gem :core => "mruby-bin-mirb"
   conf.gem :core => "mruby-math"
@@ -19,32 +20,28 @@ MRuby::Build.new do |conf|
   conf.gem :core => "mruby-string-ext"
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
-
   #conf.gem :core => "mruby-io"
 
-  ##conf.gem :github => "h2so5/mruby-pure-regexp"
 
+  # community provided gems
   conf.gem :github => "Asmod4n/mruby-b64"
   conf.gem :github => "yui-knk/mruby-set"
   conf.gem :github => "iij/mruby-zlib"
   conf.gem :github => "katzer/mruby-r3"
+  conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0" #TODO: get this merged with upstream https://github.com/tatsuhiro-t/wslay
+  conf.gem :github => "Asmod4n/mruby-phr"
 
   #conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
   ##Desktop specific
+  ##conf.gem :github => "h2so5/mruby-pure-regexp"
   #conf.gem :github => "iij/mruby-tempfile"
   #conf.gem :github => "iij/mruby-process"
   #conf.gem :github => "ksss/mruby-signal"
   ##conf.gem :github => "diclophis/mruby-uv", :branch => "wkndr-patch-1b"
   #conf.gem :github => "mattn/mruby-uv"
 
-  #conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0"
-
-
-  #conf.gem :github => "Asmod4n/mruby-phr"
-
   ##http faas routing
-
 
   ##centralization of thor into shell3
   #conf.gem :github => 'hfm/mruby-fileutils'

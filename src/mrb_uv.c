@@ -1087,7 +1087,7 @@ mrb_uv_req_t*
 mrb_uv_req_current(mrb_state *mrb, mrb_value blk, mrb_value *result)
 {
   mrb_value cur_loop = mrb_uv_current_loop_obj(mrb);
-  mrb_value cur_yarn = mrb_funcall(mrb, cur_loop, "current_yarn", 0);
+  //mrb_value cur_yarn = mrb_funcall(mrb, cur_loop, "current_yarn", 0);
   mrb_sym const sym = mrb_intern_lit(mrb, "_req");
   mrb_uv_req_t *ret;
 
@@ -1098,7 +1098,8 @@ mrb_uv_req_current(mrb_state *mrb, mrb_value blk, mrb_value *result)
     *result = ret->instance;
   } else {
     mrb_value req, target;
-    target = mrb_nil_p(cur_yarn)? cur_loop : cur_yarn;
+    //target = mrb_nil_p(cur_yarn)? cur_loop : cur_yarn;
+    target = cur_loop;
     req = mrb_iv_get(mrb, target, sym);
 
     if (mrb_nil_p(req)) {
@@ -1109,12 +1110,12 @@ mrb_uv_req_current(mrb_state *mrb, mrb_value blk, mrb_value *result)
     }
     req = ret->instance;
 
-    if (mrb_nil_p(cur_yarn)) {
+    //if (mrb_nil_p(cur_yarn)) {
       *result = ret->instance;
-    } else {
-      *result = mrb_fiber_yield(mrb, 1, &req);
-      blk = mrb_funcall(mrb, cur_yarn, "to_proc", 0);
-    }
+    //} else {
+    //  *result = mrb_fiber_yield(mrb, 1, &req);
+    //  blk = mrb_funcall(mrb, cur_yarn, "to_proc", 0);
+    //}
   }
 
   mrb_assert(!ret->is_used);
@@ -2316,6 +2317,9 @@ mrb_uv_uptime(mrb_state *mrb, mrb_value self)
 uv_os_sock_t
 mrb_uv_to_socket(mrb_state *mrb, mrb_value v)
 {
+  //return mrb_fixnum(mrb_Integer(mrb, v));
+  //if (mrb_Integer(mrb, v)) { /* treat raw integer as socket */
+
   if (mrb_fixnum_p(v)) { /* treat raw integer as socket */
     return mrb_fixnum(v);
   }
@@ -2532,7 +2536,7 @@ mrb_mruby_uv_gem_init(mrb_state* mrb) {
   mrb_define_class(mrb, "UVError", E_NAME_ERROR);
 
   _class_uv = mrb_define_module(mrb, "UV");
-  mrb_define_module_function(mrb, _class_uv, "run", mrb_uv_run, MRB_ARGS_NONE());
+  mrb_define_module_function(mrb, _class_uv, "run", mrb_uv_run, MRB_ARGS_REQ(1));
   mrb_define_module_function(mrb, _class_uv, "default_loop", mrb_uv_default_loop, MRB_ARGS_NONE());
   mrb_define_module_function(mrb, _class_uv, "current_loop", mrb_uv_current_loop_meth, MRB_ARGS_NONE());
   mrb_define_module_function(mrb, _class_uv, "ip4_addr", mrb_uv_ip4_addr, MRB_ARGS_REQ(2));

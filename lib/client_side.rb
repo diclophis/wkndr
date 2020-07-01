@@ -21,7 +21,9 @@ class ClientSide < Wkndr
     stack = StackBlocker.new(false)
 
     gl = GameLoop.new
+
     socket_stream = gl.connect_window!(w, h)
+    raise "unknown socket stream: TODO: fix this abstraction" unless socket_stream
 
     stack.up(gl)
     stack.up(socket_stream)

@@ -38,6 +38,7 @@ endif
 
 sources = $(wildcard *.c)
 sources += $(wildcard src/*.c)
+headers += $(wildcard include/*.h)
 
 #ifeq ($(TARGET),desktop)
 objects = $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
@@ -127,7 +128,7 @@ clean:
 #$(build):
 #$(build)/src:
 
-$(build)/%.o: %.c $(static_ruby_headers) $(sources)
+$(build)/%.o: %.c $(static_ruby_headers) $(sources) $(headers)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(mruby_static_lib): config/mruby.rb

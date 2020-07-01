@@ -67,6 +67,7 @@
 #include "ecs.h"
 #include "client_side.h"
 #include "game_loop.h"
+#include "socket_stream.h"
 
 
 //server stuff
@@ -79,6 +80,7 @@
 #include "wslay_socket_stream.h"
 #include "embed_static.h"
 #include "protocol.h"
+#include "mrb_uv.h"
 
 #endif
 
@@ -101,7 +103,37 @@ static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
 }
 
 
+//TODO
 static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
+}
+
+
+//TODO
+mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
+  loop_data_s *loop_data = NULL;
+
+  mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
+
+  Data_Get_Struct(mrb, data_value, &crisscross_data_type, loop_data);
+  if (!loop_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @flip_pointer");
+  }
+
+  //TODO
+  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "common_cheese_process!", 0, 0);
+
+  if (loop_data->mrb_pointer->exc) {
+    fprintf(stderr, "Exception in CHEESE_CROSS");
+    mrb_print_error(loop_data->mrb_pointer);
+    mrb_print_backtrace(loop_data->mrb_pointer);
+    return mrb_false_value();
+  }
+
+  if (mrb_test(wiz_return_halt)) {
+    return mrb_true_value();
+  } else {
+    return mrb_false_value();
+  }
 }
 
 
@@ -204,10 +236,9 @@ int main(int argc, char** argv) {
   //struct RClass *sphere_class = mrb_define_class(mrb_client, "Sphere", model_class);
   //mrb_define_method(mrb_client, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
-
   eval_static_libs(mrb, markaby, NULL);
   eval_static_libs(mrb, stack_blocker, NULL);
-  //eval_static_libs(mrb, game_loop, NULL);
+  eval_static_libs(mrb, game_loop, NULL);
 
   eval_static_libs(mrb_client, stack_blocker, NULL);
   eval_static_libs(mrb_client, game_loop, NULL);
@@ -234,11 +265,15 @@ int main(int argc, char** argv) {
   //mrb_define_method(mrb_client, socket_stream_class_client, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
   //mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
-  //eval_static_libs(mrb_client, socket_stream, NULL);
+  eval_static_libs(mrb_client, socket_stream, NULL);
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
 #ifdef TARGET_DESKTOP
+
+  // libuv stuff
+  mrb_mruby_uv_gem_init(mrb);
+  mrb_mruby_uv_gem_init(mrb_client);
 
   eval_static_libs(mrb, embed_static_js, embed_static_txt, embed_static_css, embed_static_ico, NULL);
 
@@ -260,7 +295,7 @@ int main(int argc, char** argv) {
       mrb_obj_value(
           Data_Wrap_Struct(mrb, mrb->object_class, &crisscross_data_type, loop_data)));
 
-  //mrb_define_class_method(mrb, thor_class, "cheese_cross!", cheese_cross, MRB_ARGS_REQ(0));
+  mrb_define_class_method(mrb, thor_class, "cheese_cross!", cheese_cross, MRB_ARGS_REQ(0));
 
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 

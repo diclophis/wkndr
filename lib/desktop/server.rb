@@ -100,7 +100,7 @@ class ProtocolServer
 
   def create_connection(connection_error)
     if connection_error
-      log!(:server_on_connection_connection_error, connection_error)
+      #log!(:server_on_connection_connection_error, connection_error)
 
       return nil
     end
@@ -114,8 +114,9 @@ class ProtocolServer
 
       http
     rescue => e
-      log!(:create_connection_err, e)
-      log!(e.backtrace)
+      #TODO: ???? is this halting ????
+      #log!(:create_connection_err, e)
+      #log!(e.backtrace)
       nil
     end
   end
@@ -282,9 +283,10 @@ class ProtocolServer
 
     UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
       if actual_wkndrfile.is_a?(UVError)
-        log!(:error_subscribe_to_wkndrfile_no_exists, actual_wkndrfile)
+        #TODO: is this halting ??? !!!
+        #log!(:error_subscribe_to_wkndrfile_no_exists, actual_wkndrfile)
       else
-        log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
+        #TODO: !!! log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
 
         @actual_wkndrfile = actual_wkndrfile
         @symbolic_wkndrfile = reqd_wkfile
@@ -297,7 +299,7 @@ class ProtocolServer
   def watch_wkndrfile
     @fsev = UV::FS::Event.new
     fsev_cb = Proc.new { |path, event|
-      log!(:wtf)
+      #log!(:wtf)
 
       #if event == :change
         @clear_wkndrfile_change = Time.now.to_f
@@ -311,7 +313,7 @@ class ProtocolServer
   end
 
   def read_wkndrfile
-  log!(:wtf2, @actual_wkndrfile)
+  #log!(:wtf2, @actual_wkndrfile)
 
     ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
     wkread = ffff.read(102400)
@@ -325,7 +327,7 @@ class ProtocolServer
   end
 
   def handle_wkndrfile_change
-  log!(:wtf_handle)
+  #log!(:wtf_handle)
 
     wkread = read_wkndrfile 
 
@@ -336,11 +338,12 @@ class ProtocolServer
     }
 
     did_parse = nil
-    begin
+    #TODO: !!!! 
+    #begin
       did_parse = Wkndr.wkndr_server_eval(wkread)
-    rescue => e
-     log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
-     log!(e.backtrace)
-    end
+    #rescue => e
+     #log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
+     #log!(e.backtrace)
+    #end
   end
 end

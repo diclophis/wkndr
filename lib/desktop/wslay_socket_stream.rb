@@ -55,16 +55,16 @@ class WslaySocketStream < SocketStream
     wslay_callbacks.send_callback do |buf|
       # when there is data to send, you have to return the bytes send here
       # the I/O object must be in non blocking mode and raise EAGAIN/EWOULDBLOCK when sending would block
-      begin
+      #begin
         if @socket
           @socket.try_write(buf)
         else
           0
         end
-      rescue UVError => e
-        log!(:wslay_send_callback_err, e)
-        0
-      end
+      #rescue UVError => e
+      #  log!(:wslay_send_callback_err, e)
+      #  0
+      #end
     end
     
     @client = Wslay::Event::Context::Client.new wslay_callbacks
@@ -73,7 +73,7 @@ class WslaySocketStream < SocketStream
     @host = '127.0.0.1'
     @port = 8000
 
-    log!(:connecting_to, @host, @port)
+    #log!(:connecting_to, @host, @port)
 
     on_read_start = Proc.new { |b|
       if b && b.is_a?(UVError)
@@ -95,13 +95,13 @@ class WslaySocketStream < SocketStream
         restart_connection!
       else
         write_ws_request! {
-          begin
+          #begin
             reset_handshake!
             @socket.read_start(&on_read_start)
             did_connect("Wkndrfile") #NOTE: this is where client reqs new Wkndrfile
-          rescue => e
-            log!(:wslay_socket_stream_write_ws_request_error, e, e.backtrace)
-          end
+          #rescue => e
+          #  log!(:wslay_socket_stream_write_ws_request_error, e, e.backtrace)
+          #end
         }
       end
     }
@@ -136,20 +136,20 @@ class WslaySocketStream < SocketStream
         @last_buf += @ss[offset..-1]
         proto_ok = (@client.recv != :proto)
         unless proto_ok
-          @gl.log!(:wslay_handshake_proto_error)
+          #@gl.log!(:wslay_handshake_proto_error)
           shutdown
         end
       when :incomplete
-        log!("incomplete")
+        #log!("incomplete")
       when :parser_error
-        log!(:parser_error, offset)
+        #TODO: !!! log!(:parser_error, offset)
         shutdown
       end
     else
       @last_buf += b
       proto_ok = (@client.recv != :proto)
       unless proto_ok
-        log!(:wslay_handshake_proto_error)
+        #TODO: !!! log!(:wslay_handshake_proto_error)
         shutdown
       end
     end

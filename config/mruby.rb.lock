@@ -24,3 +24,28 @@ builds:
       branch: HEAD
       commit: 9cb18cbf6862a749559130b5d34e5e89e7fc0bcc
       version: 0.0.0
+    https://github.com/diclophis/mruby-wslay.git:
+      url: https://github.com/diclophis/mruby-wslay.git
+      branch: HEAD
+      commit: 4ceba1eaf45eb3ee77ff6e1eca74ae7e03571aa0
+      version: 0.0.0
+    https://github.com/Asmod4n/mruby-sysrandom.git:
+      url: https://github.com/Asmod4n/mruby-sysrandom.git
+      branch: HEAD
+      commit: 75347e898686c8c044b0fa8a76f42ad25daee45c
+      version: 0.0.0
+    https://github.com/iij/mruby-errno.git:
+      url: https://github.com/iij/mruby-errno.git
+      branch: HEAD
+      commit: b4415207ff6ea62360619c89a1cff83259dc4db0
+      version: 0.0.0
+    https://github.com/Asmod4n/mruby-string-is-utf8.git:
+      url: https://github.com/Asmod4n/mruby-string-is-utf8.git
+      branch: HEAD
+      commit: 1c639fe845008d437420a61852329a158ddd74b1
+      version: 0.0.0
+    https://github.com/Asmod4n/mruby-phr.git:
+      url: https://github.com/Asmod4n/mruby-phr.git
+      branch: master
+      commit: 1bab77000280141802d56a20a5413ba0900b69df
+      version: 0.0.0

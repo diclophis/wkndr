@@ -33,6 +33,7 @@ class GameLoop
     end
   end
 
+  #TODO: de-nest these bits / refactor
   def running
     !@halting
   end
@@ -50,15 +51,15 @@ class GameLoop
 
     #log!(:INIT_WINDOW)
 
-    #socket_stream = SocketStream.create_websocket_connection { |typed_msg|
-    #  self.event(typed_msg)
-    #}
+    socket_stream = SocketStream.create_websocket_connection { |typed_msg|
+      self.event(typed_msg)
+    }
 
-    #self.emit { |msg|
-    #  socket_stream.write(msg)
-    #}
+    self.emit { |msg|
+      socket_stream.write(msg)
+    }
 
-    #socket_stream
+    socket_stream
   end
 
   def open_default_view!(fps = 0)
