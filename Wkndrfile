@@ -18,49 +18,48 @@ Wkndr.nonce {
 
 Wkndr.client_side { |gl|
   gl.update { |global_time, delta_time|
-    gl.drawmode {
-      gl.twod {
-        gl.mousep { |xyl|
-          x, y, l = *xyl
-
-          if (l == 1 && @last_l == 0) #&& (@store.count < 200)
-          #if (l == 1)
-            (3).times { |i|
-              @store.add(
-                HunterComponent.new,
-                PositionComponent.new(x, y, 0),
-                #VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
-                VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
-                SpriteComponent.new,
-                TransformComponent.new(1.0),
-                RandomColorComponent.new
-              )
-            }
-          end
-
-          @last_l = l
-        }
-
-        @exhaust_layer.each { |e, _x, p, c|
-          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
-        }
-
-        @hunter_layer.each { |e, _h, p, c|
-          gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
-        }
-
-        gl.button(15.0, 15.0, 50.0, 20.0, "  #{@store.count} #{"%0.2f" % (1.0 / delta_time)} fps  ") {
-          #gl.emit({"c" => "tty"})
-        }
-      }
-    }
-
-    @transformer.process(global_time, delta_time)
-    @exhaust.process(global_time, delta_time)
-    @movement.process(global_time, delta_time)
+#    gl.drawmode {
+#      gl.twod {
+#        gl.mousep { |xyl|
+#          x, y, l = *xyl
+#
+#          if (l == 1 && @last_l == 0) #&& (@store.count < 200)
+#          #if (l == 1)
+#            (3).times { |i|
+#              @store.add(
+#                HunterComponent.new,
+#                PositionComponent.new(x, y, 0),
+#                #VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
+#                VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
+#                SpriteComponent.new,
+#                TransformComponent.new(1.0),
+#                RandomColorComponent.new
+#              )
+#            }
+#          end
+#
+#          @last_l = l
+#        }
+#
+#        @exhaust_layer.each { |e, _x, p, c|
+#          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+#        }
+#
+#        @hunter_layer.each { |e, _h, p, c|
+#          gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
+#        }
+#
+#        gl.button(15.0, 15.0, 50.0, 20.0, "  #{@store.count} #{"%0.2f" % (1.0 / delta_time)} fps  ") {
+#          #gl.emit({"c" => "tty"})
+#        }
+#      }
+#    }
+#
+#    @transformer.process(global_time, delta_time)
+#    @exhaust.process(global_time, delta_time)
+#    @movement.process(global_time, delta_time)
   }
 }
-
 
 Wkndr.server_side { |server|
   server.wsb("/") do |cn, phr|
@@ -68,5 +67,17 @@ Wkndr.server_side { |server|
 
   server.raw("/status") do |cn, phr|
     "OK\n"
+  end
+
+  server.live("/sevengui", "wkndr sevengui") do |cn, phr, mab|
+    mab.a(:href => "/sevengui") do
+      mab.h1 "sevengui example"
+    end
+
+    mab.ul do
+      mab.li do
+        "cheese foo #{Time.now}"
+      end
+    end
   end
 }

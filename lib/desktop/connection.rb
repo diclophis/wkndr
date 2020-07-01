@@ -93,11 +93,12 @@ class Connection
               sent += wkread.length
 
               if (sent < file_size)
-                begin
+                #begin
                   send_proc.call
-                rescue => e
-                  log!(:eee, e)
-                end
+                #rescue => e
+                  #TODO: !!!!
+                #  log!(:eee, e)
+                #end
               else
                 fd.close
                 fd = nil
@@ -135,10 +136,11 @@ class Connection
           self.enqueue_request(phr)
 
         when :incomplete
-          log!("desktop_connection_incomplete")
+          #TODO: ??? log!("desktop_connection_incomplete")
 
         when :parser_error
-          log!(:desktop_connection_parser_error, @offset)
+          #log!(:desktop_connection_parser_error, @offset)
+          #TODO: better halting ???
 
       end
     else
@@ -225,7 +227,7 @@ class Connection
       # or else return a mruby String or a object which can be converted into a String via to_str
       # and be up to len bytes long
       # the I/O object must be in non blocking mode and raise EAGAIN/EWOULDBLOCK when there is nothing to read
-      #log!("SDSD", self.last_buf, buf, len, buf.to_s)
+      # log!("SDSD", self.last_buf, buf, len, buf.to_s)
 
       if self.last_buf
         self.last_buf.slice!(0, len)
@@ -274,17 +276,17 @@ class Connection
 
               when "party"
                 wkndrfile_req = typed_msg[channel]
-                log!(:client_wants, wkndrfile_req)
+                #log!(:client_wants, wkndrfile_req)
 
                 @pending_parties << wkndrfile_req
 
               when "c"
                 dispatch_req = typed_msg[channel]
-                if dispatch_req == "tty"
+                if dispatch_req == "tty" #TODO: remove tty integration!!!
                   unless @ps
                     @ftty = FastTTY.fd
 
-                    log!(:FTTY, @ftty)
+                    #log!(:FTTY, @ftty)
 
                     @stdin_tty = UV::Pipe.new(false)
                     @stdin_tty.open(@ftty[0])
@@ -323,11 +325,11 @@ class Connection
                       'args' => []
                     }
 
-                    log!(:args, process_args)
+                    #log!(:args, process_args)
 
                     @ps = UV::Process.new(process_args)
 
-                    log!(:PROCESS_NEW)
+                    #log!(:PROCESS_NEW)
 
                     #@ps.stdin_pipe = UV::Pipe.new(false)
                     #@ps.stdout_pipe = UV::Pipe.new(false)
@@ -337,19 +339,19 @@ class Connection
                     #@ps.stdout_pipe = @stdout_tty
                     #@ps.stderr_pipe = @stdout_tty
 
-                    log!(:ASSIGN)
+                    #log!(:ASSIGN)
 
                     #@ps.stdin_pipe.open(@ftty[0])
                     #@ps.stdout_pipe.open(@ftty[1])
 
                     @ps.spawn do |sig|
-                      log!(:ps_spawn_exit, "exitsig #{sig}")
+                      #log!(:ps_spawn_exit, "exitsig #{sig}")
 
                       @pid = nil
                       @ps = nil
                     end
 
-                    log!(:SPAWN)
+                    #log!(:SPAWN)
 
                     #outbits = {1 => "FART FART FART"}
                     #self.write_typed(outbits)
@@ -359,10 +361,10 @@ class Connection
                     #@ps.stdout_pipe.read_start do |bout|
                     @stdin_tty.read_start do |bout|
                     #@stdin_tty.read_start do |bout|
-                      log!(:stdin_tty, bout)
+                      #log!(:stdin_tty, bout)
 
                       if bout.is_a?(UVError)
-                        log!(:badout, bout)
+                        #log!(:badout, bout)
                       elsif bout
                         outbits = {1 => bout}
 
@@ -371,10 +373,10 @@ class Connection
                       end
                     end
 
-                    log!(:READ_A)
+                    #log!(:READ_A)
 
                     @stdout_tty.read_start do |bout|
-                      log!(:stderr_pipe, bout)
+                      #log!(:stderr_pipe, bout)
                     end
 
                     log!(:READ_B)
@@ -433,7 +435,8 @@ class Connection
     self.last_buf = self.ss[@offset..-1] #TODO: rescope offset
     proto_ok = (self.ws.recv != :proto)
     unless proto_ok
-      log!(:wss_handshake_error)
+      #log!(:wss_handshake_error)
+      #TODO: better halting
       self.halt!
     end
 
@@ -450,7 +453,7 @@ class Connection
         outg
       end
     rescue Wslay::Err => e
-      log!(:connection_out_err, e)
+      #log!(:connection_out_err, e)
 
       self.halt!
       self.shutdown
@@ -465,7 +468,7 @@ class Connection
         outg
       end
     rescue Wslay::Err => e
-      log!(:connection_out_err, e)
+      #log!(:connection_out_err, e)
 
       self.halt!
       self.shutdown

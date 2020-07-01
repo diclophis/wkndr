@@ -1,7 +1,9 @@
 //
 
+
 // system stuff
 #include <stdlib.h>
+#include <time.h>
 
 
 // mruby stuff
@@ -14,6 +16,13 @@ mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 
   //time = GetTime();
   //dt = GetFrameTime();
+
+#ifdef PLATFORM_DESKTOP
+  struct timespec spend;
+  struct timespec rem;
+  spend.tv_nsec = 10000000;
+  nanosleep(&spend, &rem);
+#endif
 
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
 

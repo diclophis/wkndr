@@ -20,6 +20,7 @@ MRuby::Build.new do |conf|
   conf.gem :core => "mruby-string-ext"
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
+  conf.gem :core => "mruby-time"
   #conf.gem :core => "mruby-io"
 
 
@@ -30,8 +31,7 @@ MRuby::Build.new do |conf|
   conf.gem :github => "katzer/mruby-r3"
   conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0" #TODO: get this merged with upstream https://github.com/tatsuhiro-t/wslay
   conf.gem :github => "Asmod4n/mruby-phr"
-
-  #conf.gem :github => "Asmod4n/mruby-simplemsgpack"
+  conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
   ##Desktop specific
   ##conf.gem :github => "h2so5/mruby-pure-regexp"

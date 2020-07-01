@@ -23,11 +23,11 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.gem :core => "mruby-pack"
 
   conf.gem :github => "yui-knk/mruby-set"
+  conf.gem :github => "Asmod4n/mruby-simplemsgpack"
   
   #conf.gem :core => "mruby-io"
 
   ##conf.gem :github => "h2so5/mruby-pure-regexp"
-  #conf.gem :github => "Asmod4n/mruby-simplemsgpack"
 
   #conf.cc.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
   #conf.linker.command = "/root/emsdk/emscripten/#{EMSDK_VERSION}/emcc"
