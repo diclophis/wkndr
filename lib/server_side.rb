@@ -15,10 +15,13 @@ class ServerSide < Wkndr
     end
 
     stack = StackBlocker.new(true)
+
+    gl = GameLoop.new
+    stack.up(gl)
  
     if protocol_server = ProtocolServer.new(safety_dir_arg)
       stack.up(protocol_server)
-      Wkndr.set_server(protocol_server)
+      Wkndr.set_server([gl, protocol_server])
     end
 
     runblock!(stack)

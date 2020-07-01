@@ -20,7 +20,8 @@ mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
 #ifdef PLATFORM_DESKTOP
   struct timespec spend;
   struct timespec rem;
-  spend.tv_nsec = 10000000;
+  //spend.tv_nsec = 10000000; // ???
+  spend.tv_nsec = 100000; // ???
   nanosleep(&spend, &rem);
 #endif
 

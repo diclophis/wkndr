@@ -36,7 +36,6 @@ class ProtocolServer
   end
 
   def update(gt = nil, dt = nil)
-
     connections_to_drop = []
 
     if @actual_wkndrfile && !@fsev

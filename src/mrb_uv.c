@@ -4,18 +4,6 @@
 
 #include <fcntl.h>
 
-
-
-
-
-
-
-
-
-
-
-
-
 static void mrb_uv_stat_free(mrb_state *mrb, void *p) {
   mrb_free(mrb, p);
 }

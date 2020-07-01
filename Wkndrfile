@@ -61,12 +61,33 @@ Wkndr.client_side { |gl|
   }
 }
 
-Wkndr.server_side { |server|
+$ticks = 1
+
+Wkndr.server_side { |gl, server|
+  gl.update { |gt, dt|
+    $ticks += 1
+  }
+
   server.wsb("/") do |cn, phr|
   end
 
   server.raw("/status") do |cn, phr|
-    "OK\n"
+    Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
+  end
+
+  server.raw("/about") do |cn, phr|
+    mab = Markaby::Builder.new
+    mab.html5 "lang" => "en" do
+      mab.head do
+        mab.title "about"
+      end
+
+      mab.body do
+        mab.h1 "what is wkndr"
+        mab.p "it is a new hypertext application platform"
+      end
+    end
+    Protocol.ok(mab.to_s)
   end
 
   server.live("/sevengui", "wkndr sevengui") do |cn, phr, mab|
@@ -76,7 +97,7 @@ Wkndr.server_side { |server|
 
     mab.ul do
       mab.li do
-        "cheese foo #{Time.now}"
+        "cheese foo #{Time.now} #{$ticks}"
       end
     end
   end
