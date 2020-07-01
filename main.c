@@ -54,9 +54,9 @@
 
 
 // internal wkndr stuff
-#include "include/mrb_web_socket.h"
-#include "include/mrb_stack_blocker.h"
-#include "include/mrb_game_loop.h"
+#include "mrb_web_socket.h"
+#include "mrb_stack_blocker.h"
+#include "mrb_game_loop.h"
 
 
 // ruby lib stuff

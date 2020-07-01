@@ -64,7 +64,7 @@ objects += $(mruby_static_lib)
 ##TODO: platform switch
 ifeq ($(TARGET),desktop)
   #LDFLAGS=-lm -lpthread -ldl -lX11 -lpthread -lssl -lcrypto -lutil -lz
-  LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz
+  LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv)
   #ifeq ($(TARGET),desktop)
   ifeq ($(TARGET_OS),Darwin)
     LDFLAGS=-lm -lpthread -ldl -lssl -lcrypto -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
@@ -75,7 +75,7 @@ RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 ifeq ($(TARGET),desktop)
   #CFLAGS=-DTARGET_DESKTOP -D$(RAYLIB_TARGET_DEFINED) -Os -ggdb -std=c99 -Imruby/include -Iraylib-src -I$(build) -Imruby/build/mrbgems/mruby-b64/include
   #CFLAGS=-O3 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Imruby/include -Iraylib-src/external/glfw/include -Iraylib-src -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include
-  CFLAGS=-O3 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include
+  CFLAGS=-O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
@@ -86,7 +86,7 @@ else
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=1 -s NO_EXIT_RUNTIME=1 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=32 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   #EMSCRIPTEN_FLAGS=-s RESERVED_FUNCTION_POINTERS=32
   #CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -Imruby/include -Iraylib-src -I$(build)
-  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Imruby/include -I$(build)
+  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build)
 #-    CFLAGS += -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s WASM=1
 #+    CFLAGS += -s USE_GLFW=3
 endif
