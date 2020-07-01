@@ -1,6 +1,7 @@
+#
+
 class ProtocolServer
   def initialize(safety_dir, host = '0.0.0.0', port = 8000)
-
     @required_prefix = safety_dir
 
     @all_connections = []
@@ -28,8 +29,8 @@ class ProtocolServer
       create_connection(connection_error)
     }
 
-    @async_place_holder = Proc.new { |requested_filename|
-    }
+    #@async_place_holder = Proc.new { |requested_filename|
+    #}
 
     subscribe_to_wkndrfile
   end

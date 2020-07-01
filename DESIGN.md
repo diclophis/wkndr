@@ -3,6 +3,32 @@
 unit test everything
 replace `log!` with better interface... logger instance, something mockable
 re-impl libuv bindings
+
+
+        if foo.is_a?(UVError)
+        if foo.is_a?(UV::Req)
+
+        address = UV.ip4_addr(host, port)
+        @server = UV::TCP.new
+
+        ev = UV::FS::Event.new
+
+        realpath = UV::FS.realpath(requested_path, &handle_static_file(cn))
+        UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
+        }
+
+        fd = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+        fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0)
+
+        t = UV::Timer.new
+
+        trap = UV::Signal.new
+        trap.start(UV::Signal::SIGINT) do
+
+        UV.run(UV::UV_RUN_NOWAIT)
+        UV.default_loop.stop
+
+
 re-impl raylib bindings
 non-vim/non-tty based editor
 beam assets over connection for parsing on client side

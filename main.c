@@ -56,6 +56,7 @@
 // internal wkndr stuff
 #include "include/mrb_web_socket.h"
 #include "include/mrb_stack_blocker.h"
+#include "include/mrb_game_loop.h"
 
 
 // ruby lib stuff
@@ -65,6 +66,7 @@
 #include "wkndr.h"
 #include "ecs.h"
 #include "client_side.h"
+#include "game_loop.h"
 
 
 //server stuff
@@ -181,28 +183,8 @@ int main(int argc, char** argv) {
   struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
   mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
 
-
   //// class GameLoop
-  //mousexyz = mrb_ary_new(mrb_client);
-  //pressedkeys = mrb_ary_new(mrb_client);
-  //struct RClass *game_class = mrb_define_class(mrb_client, "GameLoop", mrb->object_class);
-  //mrb_define_method(mrb_client, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
-  //mrb_define_method(mrb_client, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
-  //mrb_define_method(mrb_client, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
-  //mrb_define_method(mrb_client, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb_client, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
-  //mrb_define_method(mrb_client, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb_client, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb_client, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
-  //mrb_define_method(mrb_client, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb_client, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb_client, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb_client, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb_client, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
-  //mrb_define_method(mrb_client, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
-  //mrb_define_method(mrb_client, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
-  //mrb_define_method(mrb_client, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
-
+  mrb_define_game_loop(mrb_client);
 
   //// class Model
   //struct RClass *model_class = mrb_define_class(mrb_client, "Model", mrb->object_class);
@@ -228,7 +210,7 @@ int main(int argc, char** argv) {
   //eval_static_libs(mrb, game_loop, NULL);
 
   eval_static_libs(mrb_client, stack_blocker, NULL);
-  //eval_static_libs(mrb_client, game_loop, NULL);
+  eval_static_libs(mrb_client, game_loop, NULL);
   //eval_static_libs(mrb_client, window, NULL);
   //eval_static_libs(mrb_client, box, NULL);
   //eval_static_libs(mrb_client, theseus, NULL);
