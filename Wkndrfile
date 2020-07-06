@@ -28,14 +28,25 @@ Wkndr.nonce {
   }
 }
 
+
 Wkndr.client_side { |gl|
+  gl.event { |channel, msg|
+    #raise "#{channel} #{msg.inspect}"
+
+    #if channel != @store.object_id
+      @spawn_proc.call(msg[0], msg[1])
+    #end
+
+    #@spawn_proc.call(33, 33)
+  }
+
   gl.update { |global_time, delta_time, sw, sh|
     gl.mousep { |xyl|
       x, y, l = *xyl
 
       if (l == 1 && @last_l == 0)
         @spawn_proc.call(x, y)
-
+        gl.emit({@store.object_id => [x, y]})
       end
 
       @last_l = l

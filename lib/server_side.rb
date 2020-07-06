@@ -6,6 +6,10 @@ class ServerSide < Wkndr
       return
     end
 
+    if args.include?("--no-client")
+      @use_slow_loop = true
+    end
+
     server_args = args.find { |arg| arg[0,9] == "--server=" }
 
     safety_dir_arg = "public"
@@ -42,13 +46,15 @@ class ServerSide < Wkndr
 
     ##TODO: trap exit condition from UI
     foo = true
+    run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
     while @keep_running
       foo = self.cheese_cross!
       common_cheese_process!
 
-      UV.run(UV::UV_RUN_NOWAIT)
+      #UV.run(UV::UV_RUN_NOWAIT)
       #UV.run(UV::UV_RUN_ONCE)
       #UV.run
+      UV.run(run_mode)
     end
 
     UV.default_loop.stop

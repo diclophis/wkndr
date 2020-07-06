@@ -733,3 +733,117 @@ beam assets over connection for parsing on client side
 # #   CONNECT
 # #   STATE
 ```
+              when "c"
+                dispatch_req = typed_msg[channel]
+                if dispatch_req == "tty" #TODO: remove tty integration!!!
+                  unless @ps
+                    @ftty = FastTTY.fd
+
+                    #log!(:FTTY, @ftty)
+
+                    @stdin_tty = UV::Pipe.new(false)
+                    @stdin_tty.open(@ftty[0])
+
+                    #= UV::Pipe.new(false)
+
+                    @stdout_tty = UV::Pipe.new(false)
+                    @stdout_tty.open(@ftty[1])
+
+                    #@pid = @ftty[2].gsub("/dev/", "")
+                    
+                    #Process_args = {
+                    #  #'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
+                    #  #'file' => '/usr/bin/ruby',
+                    #  #'args' => ['/var/lib/wkndr/Thorfile', 'getty', @pid],
+                    #  'file' => '/sbin/agetty',
+                    #  'args' => [
+                    #    "--timeout", "30",
+                    #    "--login-program", 
+                    #    "/usr/bin/ruby", 
+                    #    "--login-options", 
+                    #    "/var/lib/wkndr/exgetty.rb login -- \\u", 
+                    #    "115200", "-", "xterm-256color"],
+                    #  'detached' => true,
+                    #  'env' => []
+                    #}
+
+                    process_args = {
+                      'stdio' => [@ftty[1], @ftty[1], @ftty[1]],
+                      #'file' => '/usr/bin/top',
+                      'file' => '/usr/bin/htop',
+                      #'file' => '/bin/dash',
+                      #'file' => '/bin/ls',
+                      'detached' => true,
+                      #'args' => ["-i"]
+                      'args' => []
+                    }
+
+                    #log!(:args, process_args)
+
+                    @ps = UV::Process.new(process_args)
+
+                    #log!(:PROCESS_NEW)
+
+                    #@ps.stdin_pipe = UV::Pipe.new(false)
+                    #@ps.stdout_pipe = UV::Pipe.new(false)
+                    #@ps.stderr_pipe = UV::Pipe.new(false)
+
+                    #@ps.stdin_pipe = @stdin_tty 
+                    #@ps.stdout_pipe = @stdout_tty
+                    #@ps.stderr_pipe = @stdout_tty
+
+                    #log!(:ASSIGN)
+
+                    #@ps.stdin_pipe.open(@ftty[0])
+                    #@ps.stdout_pipe.open(@ftty[1])
+
+                    @ps.spawn do |sig|
+                      #log!(:ps_spawn_exit, "exitsig #{sig}")
+
+                      @pid = nil
+                      @ps = nil
+                    end
+
+                    #log!(:SPAWN)
+
+                    #outbits = {1 => "FART FART FART"}
+                    #self.write_typed(outbits)
+
+                    #@stdin_tty.read_start do |bout|
+                    #@ps.stdout_pipe.read_start do |bout|
+                    #@ps.stdout_pipe.read_start do |bout|
+                    @stdin_tty.read_start do |bout|
+                    #@stdin_tty.read_start do |bout|
+                      #log!(:stdin_tty, bout)
+
+                      if bout.is_a?(UVError)
+                        #log!(:badout, bout)
+                      elsif bout
+                        outbits = {1 => bout}
+
+
+                        self.write_typed(outbits)
+                      end
+                    end
+
+                    #log!(:READ_A)
+
+                    @stdout_tty.read_start do |bout|
+                      #log!(:stderr_pipe, bout)
+                    end
+
+                    log!(:READ_B)
+
+                    if @pending_resize
+                      log!(:DORESIZE, @ps)
+                      FastTTY.resize(@ftty[0], @pending_resize[0], @pending_resize[1])
+                      #FastTTY.resize(@ps.stdin_pipe.fileno, @pending_resize[0], @pending_resize[1])
+                      #@pending_resize = nil
+                    end
+
+                    @ps.kill(0)
+                  else
+                    log!(:ps_exists, @ps)
+                    @ps.kill(0)
+                  end
+                end

@@ -21,6 +21,12 @@ class SocketStream
   end
 
   def dispatch_next_events(bytes = nil)
+    #@clients_to_notify.each { |wkndrfile, clients|
+    #  clients.each { |cn|
+    #    cn.write_typed({"party" => wkread})
+    #  }
+    #}
+
     process_as_msgpack_stream(bytes).each { |typed_msg|
       channels = typed_msg.keys
       channels.each do |channel|
@@ -35,15 +41,18 @@ class SocketStream
           when 1,2
             self.write_tty(cmsg)
           when "party"
-            begin
+            #begin
               did_parse = Wkndr.wkndr_client_eval(cmsg)
-            rescue => e
-              log!(:cmsg_bad, e)
-              log!(e.backtrace)
-            end
+            #rescue => e
+            #  #log!(:cmsg_bad, e)
+            #  #log!(e.backtrace)
+            #  raise
+            #end
 
         else
-          @got_bytes_block.call(cmsg)
+
+          @got_bytes_block.call(channel, cmsg)
+
         end
       end
     }

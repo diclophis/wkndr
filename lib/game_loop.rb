@@ -13,12 +13,12 @@ class GameLoop
     end
   end
 
-  def event(msg = nil, &block)
+  def event(channel = nil, msg = nil, &block)
     if block
       @event_proc = block
     else
       if @event_proc
-        @event_proc.call(msg)
+        @event_proc.call(channel, msg)
       end
     end
   end
@@ -51,8 +51,8 @@ class GameLoop
 
     #log!(:INIT_WINDOW)
 
-    socket_stream = SocketStream.create_websocket_connection { |typed_msg|
-      self.event(typed_msg)
+    socket_stream = SocketStream.create_websocket_connection { |channel, typed_msg|
+      self.event(channel, typed_msg)
     }
 
     self.emit { |msg|

@@ -14,7 +14,11 @@ class ProtocolServer
     @handlers = {}
 
     upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
-      cn.upgrade_to_websocket!
+      cn.upgrade_to_websocket! { |cn, channel, msg|
+        @all_connections.each { |client|
+          client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
+        }
+      }
     }
 
     @handlers["/wsb"] = upgrade_to_binary_websocket_handler
