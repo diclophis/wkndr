@@ -72,7 +72,6 @@ class GameLoop
     #  self.drawmode {
     #    self.threed {
     #    }
-
     #    self.twod {
     #      self.draw_fps(0, 0)
     #      self.button(50.0, 50.0, 250.0, 20.0, "zzz #{'%0.7f' % delta_time}") {

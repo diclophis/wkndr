@@ -13,6 +13,13 @@
 #include <mruby/data.h>
 #include <mruby/string.h>
 #include <mruby/variable.h>
+#include <mruby/array.h>
+#include <mruby/numeric.h>
+
+// raylib stuff
+#include <raylib.h>
+#include <raymath.h>
+//#include <raygui.h>
 
 // local stuff
 #include "mrb_game_loop.h"
@@ -20,6 +27,8 @@
 
 static void play_data_destructor(mrb_state *mrb, void *p_);
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
+
+static mrb_value mousexyz;
 
 
 // Garbage collector handler, for play_data struct
@@ -45,10 +54,10 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
 
-//  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 //  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
 //
-//  InitWindow(screenWidth, screenHeight, c_game_name);
+  InitWindow(screenWidth, screenHeight, c_game_name);
 //
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
@@ -134,14 +143,13 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
   //// Define the camera to look into our 3d world
   //p_data->camera.position = (Vector3){ px, py, pz };    // Camera position
   //p_data->camera.target = (Vector3){ tx, ty, tz };      // Camera looking at point
-  //
   //p_data->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };    // Camera up vector (rotation towards target)
   //p_data->camera.fovy = fovy;                           // Camera field-of-view Y
-  //
-  //p_data->cameraTwo.target = (Vector2){ 0, 0 };
-  //p_data->cameraTwo.offset = (Vector2){ 0, 0 };
-  //p_data->cameraTwo.rotation = 0.0f;
-  //p_data->cameraTwo.zoom = 1.0f;
+
+  p_data->cameraTwo.target = (Vector2){ 0, 0 };
+  p_data->cameraTwo.offset = (Vector2){ 0, 0 };
+  p_data->cameraTwo.rotation = 0.0f;
+  p_data->cameraTwo.zoom = 1.0f;
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
@@ -152,9 +160,120 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
+static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
+{
+  mrb_value block;
+  mrb_get_args(mrb, "&", &block);
+
+  //TODO....
+  //play_data_s *p_data = NULL;
+  //mrb_value data_value;     // this IV holds the data
+  //data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  //Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  //if (!p_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
+
+  {
+    BeginDrawing();
+    ClearBackground(BLANK);
+    {
+      mrb_yield_argv(mrb, block, 0, NULL);
+    }
+    EndDrawing();
+  }
+
+  return mrb_nil_value();
+}
+
+
+static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
+{
+  mrb_value block;
+  mrb_get_args(mrb, "&", &block);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value;     // this IV holds the data
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  if (!p_data) {
+    fprintf(stderr, "WTFWTF\n");
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  BeginMode2D(p_data->cameraTwo);
+
+  mrb_yield_argv(mrb, block, 0, NULL);
+
+  float textSize = 20.0;
+
+  ////Vector3 cubePosition = p_data->position;
+  ////Vector2 cubeScreenPosition;
+  ////cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
+  //DrawText("dsdsd", 50, 50, textSize, RED);
+  //Vector2 ballPosition = { (float)512/2, (float)512/2 };
+  //DrawCircleV(ballPosition, 50, MAROON);
+  ////fprintf(stderr, "wtf\n");
+  
+  EndMode2D();
+
+  return mrb_nil_value();
+}
+
+
+static mrb_value game_loop_draw_circle(mrb_state* mrb, mrb_value self)
+{
+  mrb_float radius,x,y,z,r,g,b,a;
+
+  mrb_get_args(mrb, "ffffffff", &radius, &x, &y, &z, &r, &g, &b, &a);
+
+  //DrawCircle(x, y, radius, (Color){ r, g, b, a });
+  DrawCircleV((Vector2){ x, y }, radius, (Color){ r, g, b, a });
+
+  return mrb_nil_value();
+}
+
+
+static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
+{
+  mrb_value block;
+  mrb_get_args(mrb, "&", &block);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  RayHitInfo nearestHit;
+  char *hitObjectName = "None";
+  nearestHit.distance = FLT_MAX;
+  nearestHit.hit = false;
+  Color cursorColor = WHITE;
+
+  Vector2 mousePosition = { -0.0f, -0.0f };
+
+  mousePosition = GetMousePosition();
+
+  mrb_ary_set(mrb, mousexyz, 0, mrb_float_value(mrb, mousePosition.x));
+  mrb_ary_set(mrb, mousexyz, 1, mrb_float_value(mrb, mousePosition.y));
+  mrb_ary_set(mrb, mousexyz, 2, mrb_int_value(mrb, IsMouseButtonDown(MOUSE_LEFT_BUTTON)));
+
+  return mrb_yield_argv(mrb, block, 3, &mousexyz);
+}
+
+
 struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   //// class GameLoop
-  //mousexyz = mrb_ary_new(mrb);
+
+  mousexyz = mrb_ary_new(mrb);
+
   //pressedkeys = mrb_ary_new(mrb);
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
   mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
@@ -164,15 +283,15 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   //mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
   //mrb_define_method(mrb, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
   //mrb_define_method(mrb, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   //mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
   //mrb_define_method(mrb, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
   //mrb_define_method(mrb, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
   //mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
   //mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
-  //mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
+  mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
+  mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
 
   return game_class;
 }

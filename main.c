@@ -40,6 +40,12 @@
 #include <string.h>
 
 
+// raylib stuff
+#include <raylib.h>
+#include <raymath.h>
+//#include <raygui.h>
+
+
 // emscripten/wasm stuff
 #ifdef PLATFORM_WEB
   #include <emscripten/emscripten.h>

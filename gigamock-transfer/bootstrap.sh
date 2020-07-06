@@ -23,6 +23,8 @@ set -x
        #htop \
        #ruby-bundler rake ruby2.5-dev build-essential make \
        #libcap2-bin \
+       #sudo apt install libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+       #libx11-dev libxrandr-dev libxi-dev xorg-dev
 
 apt-get update \
   && apt-get upgrade --no-install-recommends -y \

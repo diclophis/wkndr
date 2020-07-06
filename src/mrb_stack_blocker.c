@@ -10,20 +10,15 @@
 #include <mruby.h>
 
 
+// raylib stuff
+#include <raylib.h>
+
 mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   double time;
   float dt;
 
-  //time = GetTime();
-  //dt = GetFrameTime();
-
-#ifdef PLATFORM_DESKTOP
-  struct timespec spend;
-  struct timespec rem;
-  //spend.tv_nsec = 10000000; // ???
-  spend.tv_nsec = 100000; // ???
-  nanosleep(&spend, &rem);
-#endif
+  time = GetTime();
+  dt = GetFrameTime();
 
   mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
 
