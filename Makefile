@@ -57,7 +57,7 @@ static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h,
 static_ruby_headers += $(build)/embed_static.h
 endif
 
-giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/wkndr.js 
+giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/bridge.js 
 giga_static_txt = gigamock-transfer/static/robots.txt
 giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/wkndr.css 
@@ -91,7 +91,7 @@ else
   #EMSCRIPTEN_FLAGS=-s ASSERTIONS=1 -s NO_EXIT_RUNTIME=1 -Os -s WASM=1 -s RESERVED_FUNCTION_POINTERS=32 -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   #EMSCRIPTEN_FLAGS=-s RESERVED_FUNCTION_POINTERS=32
   #CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -Imruby/include -Iraylib-src -I$(build)
-  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src
+  CFLAGS=$(EMSCRIPTEN_FLAGS) -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src -s RESERVED_FUNCTION_POINTERS=32
 #-    CFLAGS += -s USE_GLFW=3 -s USE_WEBGL2=1 -s FULL_ES3=1 -s WASM=1
 #+    CFLAGS += -s USE_GLFW=3
 endif
@@ -105,7 +105,7 @@ ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
 	#$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://localhost:8000/ --preload-file resources
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base http://localhost:8000/
+	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base http://localhost:8000/
 endif
 
 #$(build)/test.yml: $(target) config.ru

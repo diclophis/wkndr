@@ -27,6 +27,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
+      console.log(event);
+
       //var terminalContainer = document.getElementById("wkndr-terminal");
 
       //Terminal.applyAddon(fit);
@@ -78,7 +80,11 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       Module._free(heapBuffer);
     };
 
+console.log("BEFORE");
+
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
+      console.log("GOT CHANNEL", channel, bytes, length);
+
       var buf = new ArrayBuffer(length); // 2 bytes for each char
       var bufView = new Uint8Array(buf);
       for (var i=0; i < length; i++) {
@@ -88,7 +94,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       var stringBits = ab2str(bufView);
 
-      console.log("GOT CHANNEL", channel, stringBits);
 
       if (channel == 0) {
         if (document.body.className != splitScreen) {
@@ -107,7 +112,9 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //TODO: memory cleanup??????
       buf = null;
       bufView = null;
-    }, 'vvi');
+      return;
+    }, 'viii');
+console.log("AFTER");
 
     return window.writePackedPointer;
   } else {

@@ -13,24 +13,29 @@ Wkndr.nonce {
     @last_l = 0
 
     gl.open_default_view!
+
+    @spawn_proc = Proc.new { |x, y|
+      @store.add(
+        HunterComponent.new,
+        PositionComponent.new(x, y, 0),
+        VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
+        #VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
+        SpriteComponent.new,
+        TransformComponent.new(1.0),
+        RandomColorComponent.new
+      )
+    }
   }
 }
 
 Wkndr.client_side { |gl|
-  gl.update { |global_time, delta_time|
+  gl.update { |global_time, delta_time, sw, sh|
     gl.mousep { |xyl|
       x, y, l = *xyl
 
       if (l == 1 && @last_l == 0)
-          @store.add(
-            HunterComponent.new,
-            PositionComponent.new(x, y, 0),
-            VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
-            #VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
-            SpriteComponent.new,
-            TransformComponent.new(1.0),
-            RandomColorComponent.new
-          )
+        @spawn_proc.call(x, y)
+
       end
 
       @last_l = l
@@ -55,6 +60,10 @@ Wkndr.client_side { |gl|
     @transformer.process(global_time, delta_time)
     @exhaust.process(global_time, delta_time)
     @movement.process(global_time, delta_time)
+
+    if @store.count == 0
+      @spawn_proc.call(sw * 0.5, sh * 0.5)
+    end
 
   }
 }

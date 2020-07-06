@@ -16,3 +16,4 @@ release
 project.xcworkspace
 xcuserdata
 *.pbxuser
+public/wkndr*

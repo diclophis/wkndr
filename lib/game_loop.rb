@@ -3,12 +3,12 @@
 class GameLoop
   attr_accessor :width, :height
 
-  def update(gt = 0, dt = 0, &block)
+  def update(gt = 0, dt = 0, sw = 0, sh = 0, &block)
     if block
       @play_proc = block
     else
       if @play_proc
-        @play_proc.call(gt, dt)
+        @play_proc.call(gt, dt, sw, sh)
       end
     end
   end

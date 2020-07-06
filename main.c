@@ -238,11 +238,15 @@ void Alert(const char *msg) {
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
   long int write_packed_pointer = 0;
 
+fprintf(stderr, "BEFEB\n");
+
 #ifdef PLATFORM_WEB
   write_packed_pointer = EM_ASM_INT({
     return window.startConnection($0, $1);
   }, mrb, mrb_obj_ptr(self));
 #endif
+
+fprintf(stderr, "GOTHERE\n");
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
@@ -268,6 +272,50 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
   int len = mrb_string_value_len(mrb, packed_bytes);
 
   write_packed_pointer(1, foo, len);
+
+  return self;
+}
+
+
+//TODO
+void platform_bits_update_void(void* arg) {
+  loop_data_s* loop_data = arg;
+
+  mrb_state* mrb = loop_data->mrb_pointer;
+  struct RObject* self = loop_data->self_pointer;
+  mrb_value selfV = mrb_obj_value(self);
+
+  platform_bits_update(mrb, selfV);
+}
+
+
+//TODO
+mrb_value global_show(mrb_state* mrb, mrb_value self) {
+  fprintf(stderr, "preShowShoSshow!\n");
+
+  mrb_value stack_self;
+
+  mrb_get_args(mrb, "o", &stack_self);
+
+  loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
+
+
+  loop_data->mrb_pointer = mrb;
+  loop_data->self_pointer = mrb_obj_ptr(stack_self);
+
+#ifdef PLATFORM_WEB
+  //emscripten_sample_gamepad_data();
+
+  emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
+  emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
+
+#endif
+
+#ifdef PLATFORM_DESKTOP
+  
+#endif
+
+  //fprintf(stderr, "wtf show!\n");
 
   return self;
 }
@@ -367,7 +415,7 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb_client, ecs, NULL);
 
   ////TODO: this is related to Window
-  //mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
 
   struct RClass *socket_stream_class = mrb_define_class(mrb, "SocketStream", mrb->object_class);
   struct RClass *socket_stream_class_client = mrb_define_class(mrb_client, "SocketStream", mrb_client->object_class);

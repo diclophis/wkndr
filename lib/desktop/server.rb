@@ -35,7 +35,7 @@ class ProtocolServer
     subscribe_to_wkndrfile
   end
 
-  def update(gt = nil, dt = nil)
+  def update(gt = nil, dt = nil, sw = 0, sh = 0)
     connections_to_drop = []
 
     if @actual_wkndrfile && !@fsev
@@ -171,7 +171,7 @@ class ProtocolServer
           end
 
           mab.script do
-            GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
+            GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
           end
         end
       end
@@ -212,7 +212,7 @@ class ProtocolServer
             end
           end
           mab.script do
-            GIGAMOCK_TRANSFER_STATIC_WKNDR_JS
+            GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
           end
           mab.script "async" => "async", "src" => "wkndr.js" do
           end

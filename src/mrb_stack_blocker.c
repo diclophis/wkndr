@@ -8,6 +8,7 @@
 
 // mruby stuff
 #include <mruby.h>
+#include <mruby/numeric.h>
 
 
 // raylib stuff
@@ -17,10 +18,15 @@ mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
   double time;
   float dt;
 
+  int sw,sh;
+
   time = GetTime();
   dt = GetFrameTime();
 
-  mrb_funcall(mrb, self, "update", 2, mrb_float_value(mrb, time), mrb_float_value(mrb, dt));
+  sw = GetScreenWidth();
+  sh = GetScreenHeight();
+
+  mrb_funcall(mrb, self, "update", 4, mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
 
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
