@@ -47,12 +47,12 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //  Module._free(ptr);
       //});
 
-      //window.addEventListener('resize', function(resizeEvent) {
+      window.addEventListener('resize', function(resizeEvent) {
       //  window.terminal.fit();
-      //});
+          window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
+      });
 
       ////window.terminal.on('resize', function(newSize) {
-      ////  window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
       ////});
 
       //window.terminal.fit();
@@ -94,7 +94,6 @@ console.log("BEFORE");
 
       var stringBits = ab2str(bufView);
 
-
       if (channel == 0) {
         if (document.body.className != splitScreen) {
           document.body.className = splitScreen;
@@ -114,6 +113,7 @@ console.log("BEFORE");
       bufView = null;
       return;
     }, 'viii');
+
 console.log("AFTER");
 
     return window.writePackedPointer;
@@ -145,9 +145,9 @@ if (graphicsContainer) {
         'socket_connected', 'number', ['number', 'number', 'number', 'number']
       );
 
-      //window.resize_tty = Module.cwrap(
-      //  'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
-      //);
+      window.resize_tty = Module.cwrap(
+        'resize_tty', 'number', ['number', 'number', 'number', 'number']
+      );
 
       GLFW.exitFullscreen = function() {
         //TODO: replace hack later
