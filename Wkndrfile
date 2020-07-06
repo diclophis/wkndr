@@ -14,11 +14,11 @@ Wkndr.nonce {
 
     gl.open_default_view!
 
-    @spawn_proc = Proc.new { |x, y|
+    @spawn_proc = Proc.new { |r, x, y|
       @store.add(
-        HunterComponent.new,
+        HunterComponent.new(r),
         PositionComponent.new(x, y, 0),
-        VelocityComponent.from_angle(rand * 2.0 * 3.14).mul(500.0),
+        VelocityComponent.from_angle(r * 2.0 * 3.14).mul(500.0),
         #VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
         SpriteComponent.new,
         TransformComponent.new(1.0),
@@ -31,13 +31,10 @@ Wkndr.nonce {
 
 Wkndr.client_side { |gl|
   gl.event { |channel, msg|
-    #raise "#{channel} #{msg.inspect}"
-
-    #if channel != @store.object_id
-      @spawn_proc.call(msg[0], msg[1])
-    #end
-
-    #@spawn_proc.call(33, 33)
+    case channel
+      when "spawn"
+        @spawn_proc.call(*msg)
+    end
   }
 
   gl.update { |global_time, delta_time, sw, sh|
@@ -45,8 +42,14 @@ Wkndr.client_side { |gl|
       x, y, l = *xyl
 
       if (l == 1 && @last_l == 0)
-        @spawn_proc.call(x, y)
-        gl.emit({@store.object_id => [x, y]})
+        spawn_proc_args = [
+          rand,
+          x,
+          y
+        ]
+
+        @spawn_proc.call(*spawn_proc_args)
+        gl.emit({"spawn" => spawn_proc_args})
       end
 
       @last_l = l
@@ -73,7 +76,7 @@ Wkndr.client_side { |gl|
     @movement.process(global_time, delta_time)
 
     if @store.count == 0
-      @spawn_proc.call(sw * 0.5, sh * 0.5)
+      @spawn_proc.call(rand, sw * 0.5, sh * 0.5)
     end
 
   }

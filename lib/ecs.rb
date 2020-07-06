@@ -234,7 +234,7 @@ module ECS
       @selector.each { |thing,  _hunter, position, velocity|
         #velocity.add(VectorComponent.from_angle(0.5 - VectorComponent.signed_random(1.0)).mul(5.0))
 
-        velocity.rotateZ(dt * 10.0 * Math.sin(gt * 2.0))
+        #velocity.rotateZ(dt * 10.0 * Math.sin(gt * 2.0))
 
         #if (current_index == (@index % @selector.length)) && should_emit && allowed_emit > 0
         if allowed_emit > 0 && should_emit
@@ -496,15 +496,15 @@ module ECS
     end
   end
 
-  class RandomSpinComponent
-    #attr_accessor :axis
-    #attr_accessor :angle
+  #class RandomSpinComponent
+  #  #attr_accessor :axis
+  #  #attr_accessor :angle
 
-    def initialize
-      @axis = [0, 1, 0]
-      @angle = 45
-    end
-  end
+  #  def initialize
+  #    @axis = [0, 1, 0]
+  #    @angle = 45
+  #  end
+  #end
 
   class TagComponent
     #attr_accessor :label
@@ -573,10 +573,10 @@ module ECS
     #attr_accessor :agi
     #attr_accessor :color
 
-    def initialize
-      @speed = 250.0 * (1.0 + rand / 4.0)
-      @agi = (3.1457 / 48.0) * (1.0 + rand / 4.0)
-      @color = 255 * (rand / 1.0)
+    def initialize(r)
+      @speed = 250.0 * (1.0 + r / 4.0)
+      @agi = (3.1457 / 48.0) * (1.0 + r / 4.0)
+      @color = 255 * (r / 1.0)
     end
   end
 end
