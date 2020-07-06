@@ -47,6 +47,8 @@ RUN cd /var/lib/wkndr && ls -l && \
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb
 
+RUN /var/lib/wkndr/iterate-server.sh clean
+
 RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 
 RUN /var/lib/wkndr/iterate-web.sh build-mruby
@@ -66,7 +68,7 @@ RUN /var/lib/wkndr/iterate-server.sh
 #COPY resources /var/lib/wkndr/resources
 RUN /var/lib/wkndr/iterate-web.sh
 
-#COPY Wkndrfile /var/lib/wkndr/
+COPY Wkndrfile /var/lib/wkndr/
 
 #COPY public/index.html /var/lib/wkndr/public/index.html
 ##COPY public/index.js /var/lib/wkndr/public/index.js
@@ -93,6 +95,6 @@ RUN /var/lib/wkndr/iterate-web.sh
 #
 #COPY gigamock-transfer/exgetty.rb /var/lib/wkndr/exgetty.rb
 #
-#WORKDIR /var/lib/wkndr
-#
-#CMD ["/var/lib/wkndr/release/wkndr.mruby", "--server=/var/lib/wkndr/public", "--no-client"]
+WORKDIR /var/lib/wkndr
+
+CMD ["/var/lib/wkndr/release/wkndr.mruby", "--server=/var/lib/wkndr/public", "--no-client"]

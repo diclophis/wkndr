@@ -20,38 +20,40 @@ function str2ab(str) {
 }
 
 window.startConnection = function(mrbPointer, callbackPointer) {
+  console.log("FOO", mrbPointer, callbackPointer);
+
   if (window["WebSocket"]) {
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      var terminalContainer = document.getElementById("wkndr-terminal");
+      //var terminalContainer = document.getElementById("wkndr-terminal");
 
-      Terminal.applyAddon(fit);
+      //Terminal.applyAddon(fit);
 
-      window.terminal = new Terminal({
-        cursorBlink: true,
-        scrollback: 100,
-        tabStopWidth: 2,
-        allowTransparency: false
-      });
-      window.terminal.open(terminalContainer);
+      //window.terminal = new Terminal({
+      //  cursorBlink: true,
+      //  scrollback: 100,
+      //  tabStopWidth: 2,
+      //  allowTransparency: false
+      //});
+      //window.terminal.open(terminalContainer);
 
-      window.terminal.on('data', function(termInputData) {
-        var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
-        window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-        Module._free(ptr);
-      });
+      //window.terminal.on('data', function(termInputData) {
+      //  var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
+      //  window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+      //  Module._free(ptr);
+      //});
 
-      window.addEventListener('resize', function(resizeEvent) {
-        window.terminal.fit();
-      });
+      //window.addEventListener('resize', function(resizeEvent) {
+      //  window.terminal.fit();
+      //});
 
-      window.terminal.on('resize', function(newSize) {
-        window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
-      });
+      ////window.terminal.on('resize', function(newSize) {
+      ////  window.resize_tty(mrbPointer, callbackPointer, newSize.cols, newSize.rows, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
+      ////});
 
-      window.terminal.fit();
+      //window.terminal.fit();
 
       window.onbeforeunload = function() {
         window.conn.onclose = function () {};
@@ -86,7 +88,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       var stringBits = ab2str(bufView);
 
-      //console.log("GOT CHANNEL", channel, stringBits);
+      console.log("GOT CHANNEL", channel, stringBits);
 
       if (channel == 0) {
         if (document.body.className != splitScreen) {
@@ -136,9 +138,9 @@ if (graphicsContainer) {
         'socket_connected', 'number', ['number', 'number', 'number', 'number']
       );
 
-      window.resize_tty = Module.cwrap(
-        'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
-      );
+      //window.resize_tty = Module.cwrap(
+      //  'resize_tty', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
+      //);
 
       GLFW.exitFullscreen = function() {
         //TODO: replace hack later
