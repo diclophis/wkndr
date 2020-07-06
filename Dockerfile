@@ -35,6 +35,15 @@ RUN cd /var/lib/wkndr && ls -l && \
     git fetch && \
     git checkout 612e5d6aad7f224008735d57b19e5a81556cfd31
 
+RUN cd /var/lib/wkndr && ls -l && \
+    git init && \
+    git submodule add https://github.com/raysan5/raylib raylib \
+    git submodule init && \
+    git submodule update && \
+    cd raylib && \
+    git fetch && \
+    git checkout 00fda3be650ade80f1492105c2107a4ace6bc575
+
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb
 

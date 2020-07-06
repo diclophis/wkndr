@@ -38,6 +38,10 @@ endif
 
 sources = $(wildcard *.c)
 sources += $(wildcard src/*.c)
+ifeq ($(TARGET),desktop)
+sources += $(wildcard src/desktop/*.c)
+endif
+
 headers += $(wildcard include/*.h)
 
 #ifeq ($(TARGET),desktop)
@@ -124,6 +128,7 @@ clean:
 	rm -R $(build)
 	mkdir -p $(build)
 	mkdir -p $(build)/src
+	mkdir -p $(build)/src/desktop
 
 #$(build):
 #$(build)/src:
