@@ -3,7 +3,7 @@
 include ECS
 
 Wkndr.nonce {
-  srand(Time.now.to_f * 1000.0)
+  #srand(Time.now.to_f * 1000.0)
 
   Wkndr.client_side { |gl|
     @store = StorageManager.new

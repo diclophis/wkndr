@@ -103,9 +103,11 @@ class Connection
                 fd.close
                 fd = nil
 
-                self.socket.read_stop
-                self.socket.close
-                self.socket = nil
+                if self.socket
+                  self.socket.read_stop
+                  self.socket.close
+                  self.socket = nil
+                end
               end
             end
           }
