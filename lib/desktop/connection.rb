@@ -276,8 +276,9 @@ class Connection
               #    @pending_resize = typed_msg[channel]
               #  end
 
-              when "party"
-                wkndrfile_req = typed_msg[channel]
+              #TODO: what is this loop for???
+              when "party" #TODO: rename this something not stupid
+                secure_random, wkndrfile_req = *typed_msg[channel]
                 #log!(:client_wants, wkndrfile_req)
 
                 @pending_parties << wkndrfile_req

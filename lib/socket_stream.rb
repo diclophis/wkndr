@@ -38,11 +38,14 @@ class SocketStream
         #  party is the Wkndrfile code stream
         #  * everything else gets sent to user-defined handler
         case channel
-          when 1,2
+          when 1,2 #TODO: deprecate this loopback mechanism
             self.write_tty(cmsg)
-          when "party"
+          when "party" #TODO: rename this something not stupid
             #begin
-              did_parse = Wkndr.wkndr_client_eval(cmsg)
+              secure_random, wkndrfile_cstr = *cmsg
+              srand(secure_random)
+
+              did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
             #rescue => e
             #  #log!(:cmsg_bad, e)
             #  #log!(e.backtrace)
@@ -100,6 +103,7 @@ class SocketStream
 
   def did_connect(wkndrfile_path)
     #TODO: merge this with other bits
+    #TODO: this is client side asking for file
     write_typed({"party" => wkndrfile_path})
   end
 

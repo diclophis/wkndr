@@ -75,7 +75,7 @@ class ProtocolServer
           notify_client_of_new_wkndrfile(party, cn)
 
           wkread = read_wkndrfile 
-          cn.write_typed({"party" => wkread})
+          cn.write_typed({"party" => [Sysrandom.random, wkread]})
         end
       end
     }
@@ -336,7 +336,7 @@ class ProtocolServer
 
     @clients_to_notify.each { |wkndrfile, clients|
       clients.each { |cn|
-        cn.write_typed({"party" => wkread})
+        cn.write_typed({"party" => [Sysrandom.random, wkread]})
       }
     }
 
