@@ -80,10 +80,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       Module._free(heapBuffer);
     };
 
-console.log("BEFORE");
+    //console.log("BEFORE");
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-      console.log("GOT CHANNEL", channel, bytes, length);
+      //console.log("GOT CHANNEL", channel, bytes, length);
 
       var buf = new ArrayBuffer(length); // 2 bytes for each char
       var bufView = new Uint8Array(buf);
@@ -114,7 +114,7 @@ console.log("BEFORE");
       return;
     }, 'viii');
 
-console.log("AFTER");
+    //console.log("AFTER");
 
     return window.writePackedPointer;
   } else {
