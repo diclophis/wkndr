@@ -3,6 +3,8 @@
 include ECS
 
 Wkndr.nonce {
+  srand(Time.now.to_f * 1000.0)
+
   Wkndr.client_side { |gl|
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
@@ -11,18 +13,18 @@ Wkndr.nonce {
     @exhaust_layer = @store.watch(ExhaustComponent, PositionComponent, RandomColorComponent)
     @hunter_layer = @store.watch(HunterComponent, PositionComponent, RandomColorComponent)
     @last_l = 0
+    @color = RandomColorComponent.new
 
     gl.open_default_view!
 
-    @spawn_proc = Proc.new { |r, x, y|
+    @spawn_proc = Proc.new { |r, x, y, c|
       @store.add(
         HunterComponent.new(r),
         PositionComponent.new(x, y, 0),
         VelocityComponent.from_angle(r * 2.0 * 3.14).mul(500.0),
-        #VelocityComponent.from_angle(((2.0 * 3.14) / 3.0) * i).mul(500.0),
         SpriteComponent.new,
         TransformComponent.new(1.0),
-        RandomColorComponent.new
+        RandomColorComponent.from_color(c)
       )
     }
   }
@@ -45,7 +47,8 @@ Wkndr.client_side { |gl|
         spawn_proc_args = [
           rand,
           x,
-          y
+          y,
+          @color.color
         ]
 
         @spawn_proc.call(*spawn_proc_args)
@@ -75,8 +78,16 @@ Wkndr.client_side { |gl|
     @exhaust.process(global_time, delta_time)
     @movement.process(global_time, delta_time)
 
-    if @store.count == 0
-      @spawn_proc.call(rand, sw * 0.5, sh * 0.5)
+    #if @store.count == 0 # && 
+    if rand < 0.001
+      spawn_proc_args = [
+        rand,
+        sw * 0.5,
+        sh * 0.5,
+        @color.color
+      ]
+      @spawn_proc.call(*spawn_proc_args)
+      gl.emit({"spawn" => spawn_proc_args})
     end
 
   }

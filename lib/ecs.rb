@@ -218,7 +218,7 @@ module ECS
 
     def initialize(store, cooldown, frame, layer)
       @store = store
-      @selector = store.watch(HunterComponent, PositionComponent, VelocityComponent)
+      @selector = store.watch(HunterComponent, PositionComponent, VelocityComponent, RandomColorComponent)
       @cooldown = cooldown
       @timer = 0
       @index = 0
@@ -231,7 +231,7 @@ module ECS
 
       current_index = 0
 
-      @selector.each { |thing,  _hunter, position, velocity|
+      @selector.each { |thing,  _hunter, position, velocity, color|
         #velocity.add(VectorComponent.from_angle(0.5 - VectorComponent.signed_random(1.0)).mul(5.0))
 
         #velocity.rotateZ(dt * 10.0 * Math.sin(gt * 2.0))
@@ -248,7 +248,7 @@ module ECS
             VelocityComponent.from(direction),
             SpriteComponent.new,
             TransformComponent.new(0.33),
-            RandomColorComponent.new
+            color
           )
         end
 
@@ -481,6 +481,11 @@ module ECS
 
     def initialize(r, g, b, a)
       @color = [r, g, b, a]
+    end
+
+    def self.from_color(color)
+      r, g, b, a = *color
+      self.new(r, g, b, a)
     end
 
     def color
