@@ -43,7 +43,7 @@ class SocketStream
           when "party" #TODO: rename this something not stupid
             #begin
               secure_random, wkndrfile_cstr = *cmsg
-              srand((secure_random % 32))
+	      srand((secure_random) * Time.now.to_i)
 
               did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
             #rescue => e
