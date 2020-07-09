@@ -28,7 +28,6 @@ Wkndr.nonce {
   }
 }
 
-
 Wkndr.client_side { |gl|
   gl.event { |channel, msg|
     case channel
@@ -59,11 +58,11 @@ Wkndr.client_side { |gl|
     gl.drawmode {
       gl.twod {
         @exhaust_layer.each { |e, _x, p, c|
-          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+          gl.draw_circle(100.0, p.x, p.y, p.z, *c.color)
         }
 
         @hunter_layer.each { |e, _h, p, c|
-          gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
+          gl.draw_circle(200.0, p.x, p.y, p.z, *c.color)
         }
       }
     }
@@ -83,15 +82,33 @@ Wkndr.client_side { |gl|
     #  @spawn_proc.call(*spawn_proc_args)
     #  gl.emit({"spawn" => spawn_proc_args})
     #end
-
   }
 }
 
 $ticks = 1
 
+#@server_sided ||= 0
+#@server_sided += 1
+
 Wkndr.server_side { |gl, server|
+
+#raise "wtf" if @server_sided > 1
+
+  sven_gui = Proc.new { |cn, phr, mab|
+    mab.a(:href => "/sevengui") do
+      mab.h1 "sevengui example"
+    end
+
+    mab.ul do
+      mab.li do
+        "cheese bar #{$ticks}"
+      end
+    end
+  }
+
   gl.update { |gt, dt|
     $ticks += 1
+    server.live("/sevengui", "wkndr sevengui", &sven_gui)
   }
 
   server.wsb("/") do |cn, phr|
@@ -116,15 +133,5 @@ Wkndr.server_side { |gl, server|
     Protocol.ok(mab.to_s)
   end
 
-  server.live("/sevengui", "wkndr sevengui") do |cn, phr, mab|
-    mab.a(:href => "/sevengui") do
-      mab.h1 "sevengui example"
-    end
-
-    mab.ul do
-      mab.li do
-        "cheese foo #{Time.now} #{$ticks}"
-      end
-    end
-  end
+  server.live("/sevengui", "wkndr sevengui", &sven_gui)
 }

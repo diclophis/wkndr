@@ -376,4 +376,8 @@ class Connection
   def add_subscription!(path, phr)
     @subscriptions[path] = phr
   end
+
+  def get_subscriptions
+    @subscriptions
+  end
 end

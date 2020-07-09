@@ -6,6 +6,7 @@ class ProtocolServer
 
     @all_connections = []
     @clients_to_notify = {}
+    @subscriptions = {}
 
     @idents = -1
 
@@ -22,6 +23,26 @@ class ProtocolServer
     }
 
     @handlers["/wsb"] = upgrade_to_binary_websocket_handler
+
+    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
+      cn.upgrade_to_websocket!
+      #{ |cn, channel, msg|
+      #  #TODO ????
+      #  #@all_connections.each { |client|
+      #  #  #client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
+      #  #}
+      #}
+    }
+
+    @handlers["/ws"] = upgrade_to_websocket_handler
+
+    raw('/robots.txt') { |cn, ids_from_path|
+      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
+    }
+
+    raw('/favicon.ico') { |cn, ids_from_path|
+      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
+    }
 
     rebuild_tree!
 
@@ -40,19 +61,23 @@ class ProtocolServer
   end
 
   def update(gt = nil, dt = nil, sw = 0, sh = 0)
+    @gt = gt
+
     connections_to_drop = []
 
     if @actual_wkndrfile && !@fsev
       watch_wkndrfile
-    elsif @clear_wkndrfile_change
-      #&& ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
-      @clear_wkndrfile_change -= dt
-      if @clear_wkndrfile_change < 0.0
-        handle_wkndrfile_change
-        #watch_wkndrfile
-        @clear_wkndrfile_change = nil
-        @fsev = nil
-      end
+    #elsif (@clear_wkndrfile_change != nil) && ((@gt - @clear_wkndrfile_change) > 1.0)
+    #  #@clear_wkndrfile_change
+    #  #&& ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
+    #  #@clear_wkndrfile_change -= dt
+    #  #if
+    #  raise "wtf"
+
+    #    handle_wkndrfile_change
+    #    #watch_wkndrfile
+    #    @clear_wkndrfile_change = nil
+    #    @fsev = nil
     end
 
     @all_connections.each { |cn|
@@ -136,69 +161,76 @@ class ProtocolServer
   end
 
   def live(path, title, &block)
-    upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      cn.add_subscription!(path, phr)
-      cn.upgrade_to_websocket!
-    }
-
-    @handlers["/ws"] = upgrade_to_websocket_handler
-
-    @all_connections.each { |cn|
-      if phr = cn.subscribed_to?(path)
-        inner_mab = Markaby::Builder.new
-        inner_mab.div "id" => "wkndr-live-throwaway" do
-          inner_mab_config = block.call(cn, phr, inner_mab)
-        end
-        next_inner_mab_bytes = inner_mab.to_s
-
-        cn.write_text(next_inner_mab_bytes)
-      end
-    }
-
-    handler = Proc.new { |cn, phr|
+    initial_inner_mab_bytes = Proc.new { |cn, phr|
       inner_mab = Markaby::Builder.new
       inner_mab.div "id" => "wkndr-live-throwaway" do
         inner_mab_config = block.call(cn, phr, inner_mab)
       end
-      initial_inner_mab_bytes = inner_mab.to_s
+      inner_mab.to_s
+    }
 
-      mab = Markaby::Builder.new
+    #@all_connections.each { |cn|
+    #  if phr = cn.subscribed_to?(path)
+    #    cn.write_text(next_inner_mab_bytes.call(cn, phr))
+    #  else
+    #    raise "#{path} #{cn.get_subscriptions} #{@all_connections}"
+    #  end
+    #}
 
-      mab.html5 "lang" => "en" do
-        mab.head do
-          mab.title title
-        end
+    if @handlers[path]
+      @all_connections.each { |cn|
+        ##if @subscriptions[path] && phr = @subscriptions[path][cn]
+        ##if phr = cn.subscribed_to?(path)
+        #  cn.write_text(initial_inner_mab_bytes.call(cn, phr))
+        #else
 
-        mab.body "id" => "wkndr-body" do
-          mab.div "id" => "wkndr-terminal-container" do
-            mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+#lib/desktop/server.rb:186:in live: --- /sevengui --- #<Connection:0x557b969e3230> --- {} --- [#<Connection:0x557b969e3230 @socket=#<UV::TCP:0x557b969e3290>, @ss="", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b969e3170>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={}>] --- {"/sevengui"=>{#<Connection:0x557b9691ef10 @socket=nil, @ss="GET /sevengui HTTP/1.1\r\nHost: localhost:8000\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nCache-Control: max-age=0\r\n\r\n", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b9691ee50>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={"/sevengui"=>{}}, @offset=375, @halting=true>=>{}}} (RuntimeError)
+
+        #  raise "#{@all_connections} --- #{@subscriptions}" if @subscriptions.keys.length > 0
+        #end
+      }
+    else
+      handler = Proc.new { |cn, phr|
+        cn.add_subscription!(path, phr)
+        @subscriptions[path] ||= {}
+        @subscriptions[path][cn] = phr
+
+        #inner_mab = Markaby::Builder.new
+        #inner_mab.div "id" => "wkndr-live-throwaway" do
+        #  inner_mab_config = block.call(cn, phr, inner_mab)
+        #end
+        #initial_inner_mab_bytes = inner_mab.to_s
+
+        mab = Markaby::Builder.new
+
+        mab.html5 "lang" => "en" do
+          mab.head do
+            mab.title title
+          end
+
+          mab.body "id" => "wkndr-body" do
+            mab.div "id" => "wkndr-terminal-container" do
+              mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+              end
+            end
+
+            mab.div "id" => "wkndr-live-container" do
+              initial_inner_mab_bytes.call(cn, phr)
+            end
+
+            mab.script do
+              GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
             end
           end
-
-          mab.div "id" => "wkndr-live-container" do
-            initial_inner_mab_bytes
-          end
-
-          mab.script do
-            GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
-          end
         end
-      end
 
-      Protocol.ok(mab.to_s)
-    }
+        Protocol.ok(mab.to_s)
+      }
 
-    @handlers[path] = handler
+      @handlers[path] = handler
 
-    raw(path + 'robots.txt') { |cn, ids_from_path|
-      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
-    }
-
-    raw(path + 'favicon.ico') { |cn, ids_from_path|
-      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
-    }
-
-    rebuild_tree!
+      rebuild_tree!
+    end
   end
 
   def wsb(path, &block)
@@ -258,7 +290,7 @@ class ProtocolServer
 
       if ids_from_path && handler
           resp_from_handler = handler.call(cn, ids_from_path)
-          return (resp_from_handler)
+        return (resp_from_handler)
       else
         requested_path = "#{@required_prefix}#{request.path}"
 
@@ -308,9 +340,12 @@ class ProtocolServer
     @fsev = UV::FS::Event.new
     fsev_cb = Proc.new { |path, event|
       #log!(:wtf)
+      #raise "Wtf #{@gt}"
 
       #if event == :change
-        @clear_wkndrfile_change = 0.33
+        #@clear_wkndrfile_change = @gt
+        handle_wkndrfile_change
+        @fsev = nil
         #@fsev.start
         #@fsev.start(@actual_wkndrfile, 0)
       #end
@@ -323,10 +358,20 @@ class ProtocolServer
   def read_wkndrfile
   #log!(:wtf2, @actual_wkndrfile)
 
+    wkread = nil
+    tries = 1024
+
+begin
     ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
-    wkread = "srand(#{next_rand % 100000000 })\n" + ffff.read(102400)
-    #wkread = ffff.read(102400)
+    wkread = ffff.read(102400)
     ffff.close
+rescue UVError => e
+  tries -= 1
+  retry unless tries < 0
+  raise "#{tries} #{@actual_wkndrfile} #{e}"
+end
+
+    #wkread = "srand(#{next_rand % 100000000 })\n" + ffff.read(102400)
     wkread
   end
 
