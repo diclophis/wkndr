@@ -131,7 +131,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in CHEESE_CROSS");
     mrb_print_error(loop_data->mrb_pointer);
-    mrb_print_backtrace(loop_data->mrb_pointer);
+    //mrb_print_backtrace(loop_data->mrb_pointer);
     return mrb_false_value();
   }
 
@@ -485,7 +485,7 @@ int main(int argc, char** argv) {
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVERBLOCKINIT\n");
     mrb_print_error(mrb);
-    mrb_print_backtrace(mrb);
+    //mrb_print_backtrace(mrb);
   }
 
 #endif
@@ -503,7 +503,7 @@ int main(int argc, char** argv) {
 
 #endif
 
-  fprintf(stderr, "closing ... \n");
+  fprintf(stderr, "no more blocking operations, closing contexts ... \n");
 
   mrb_close(mrb);
   mrb_close(mrb_client);

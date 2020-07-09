@@ -44,11 +44,15 @@ class ProtocolServer
 
     if @actual_wkndrfile && !@fsev
       watch_wkndrfile
-    elsif @clear_wkndrfile_change && ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
-      handle_wkndrfile_change
-      #watch_wkndrfile
-      @clear_wkndrfile_change = nil
-      @fsev = nil
+    elsif @clear_wkndrfile_change
+      #&& ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
+      @clear_wkndrfile_change -= dt
+      if @clear_wkndrfile_change < 0.0
+        handle_wkndrfile_change
+        #watch_wkndrfile
+        @clear_wkndrfile_change = nil
+        @fsev = nil
+      end
     end
 
     @all_connections.each { |cn|
@@ -306,7 +310,7 @@ class ProtocolServer
       #log!(:wtf)
 
       #if event == :change
-        @clear_wkndrfile_change = Time.now.to_f
+        @clear_wkndrfile_change = 0.33
         #@fsev.start
         #@fsev.start(@actual_wkndrfile, 0)
       #end
@@ -331,9 +335,10 @@ class ProtocolServer
   end
 
   def next_rand
-    @this_rand ||= 0
-    @this_rand += 1
-    @this_rand + Time.now.to_f
+    #@this_rand ||= 0
+    #@this_rand += 1
+    #@this_rand + Time.now.to_f
+    Sysrandom.random
   end
 
   def handle_wkndrfile_change

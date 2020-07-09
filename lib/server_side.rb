@@ -55,6 +55,7 @@ class ServerSide < Wkndr
       #UV.run(UV::UV_RUN_ONCE)
       #UV.run
       UV.run(run_mode)
+      break unless foo
     end
 
     UV.default_loop.stop
