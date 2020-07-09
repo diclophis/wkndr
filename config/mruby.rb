@@ -3,7 +3,8 @@
 MRuby::Build.new do |conf|
   # load specific toolchain settings
   toolchain :gcc
-  #enable_debug
+  enable_debug
+  conf.disable_cxx_exception
 
   # desired cli tooling
   conf.bins = ["mrbc", "mirb"]
@@ -56,5 +57,4 @@ MRuby::Build.new do |conf|
   #end
 
   #conf.enable_cxx_exception
-  #conf.disable_cxx_exception
 end

@@ -7,6 +7,8 @@ require_relative './mruby.rb'
 MRuby::CrossBuild.new('emscripten') do |conf|
   # load specific toolchain settings
   toolchain :clang
+  enable_debug
+  conf.disable_cxx_exception
 
   #enable_debug
   conf.bins = []

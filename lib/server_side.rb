@@ -49,13 +49,14 @@ class ServerSide < Wkndr
     run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
     while @keep_running
       foo = self.cheese_cross!
-      common_cheese_process!
+      other_foo = common_cheese_process!
 
       #UV.run(UV::UV_RUN_NOWAIT)
       #UV.run(UV::UV_RUN_ONCE)
       #UV.run
       UV.run(run_mode)
-      break unless foo
+
+      break unless (foo && other_foo)
     end
 
     UV.default_loop.stop

@@ -80,7 +80,7 @@ class ProtocolServer
 
           wkread = read_wkndrfile 
           
-	  cn.write_typed({"party" => [next_rand, wkread]})
+	        cn.write_typed({"party" => [next_rand, wkread]})
         end
       end
     }
@@ -324,6 +324,7 @@ class ProtocolServer
   #log!(:wtf2, @actual_wkndrfile)
 
     ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+    #wkread = "srand(#{next_rand % 100000000 })\n" + ffff.read(102400)
     wkread = ffff.read(102400)
     ffff.close
     wkread
@@ -348,7 +349,8 @@ class ProtocolServer
 
     @clients_to_notify.each { |wkndrfile, clients|
       clients.each { |cn|
-        cn.write_typed({"party" => [next_rand, wkread]})
+	      #Wkndr.wkndr_client_eval("srand(#{secure_random.to_i})")
+        cn.write_typed({"party" => wkread})
       }
     }
 

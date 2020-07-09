@@ -42,8 +42,7 @@ class SocketStream
             self.write_tty(cmsg)
           when "party" #TODO: rename this something not stupid
             #begin
-              secure_random, wkndrfile_cstr = *cmsg
-	            Wkndr.wkndr_client_eval("srand(#{secure_random})")
+              wkndrfile_cstr = *cmsg
               did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
             #rescue => e
             #  #log!(:cmsg_bad, e)

@@ -73,6 +73,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.onmessage = function (event) {
       var origData = event.data;
 
+      var sv = new StringView(origData)
+
+      console.log(sv.toString());
+
       var typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
@@ -204,8 +208,6 @@ window.startLiveConnection = function() {
 
     window.conn.onmessage = function (event) {
       var origData = event.data;
-
-      console.log(origData);
 
       morphdom(liveContainer.childNodes[0], origData, {
         onBeforeElUpdated: function(fromEl, toEl) {
