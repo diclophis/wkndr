@@ -72,17 +72,17 @@ Wkndr.client_side { |gl|
     @exhaust.process(global_time, delta_time)
     @movement.process(global_time, delta_time)
 
-    #if @store.count == 0 # && 
-    if rand < 0.001
-      spawn_proc_args = [
-        rand,
-        sw * 0.5,
-        sh * 0.5,
-        @color.color
-      ]
-      @spawn_proc.call(*spawn_proc_args)
-      gl.emit({"spawn" => spawn_proc_args})
-    end
+    ##if @store.count == 0 # && 
+    #if rand < 0.1
+    #  spawn_proc_args = [
+    #    rand,
+    #    sw * 0.5,
+    #    sh * 0.5,
+    #    @color.color
+    #  ]
+    #  @spawn_proc.call(*spawn_proc_args)
+    #  gl.emit({"spawn" => spawn_proc_args})
+    #end
 
   }
 }
@@ -128,4 +128,3 @@ Wkndr.server_side { |gl, server|
     end
   end
 }
-

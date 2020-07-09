@@ -324,8 +324,8 @@ class ProtocolServer
   #log!(:wtf2, @actual_wkndrfile)
 
     ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
-    #wkread = "srand(#{next_rand % 100000000 })\n" + ffff.read(102400)
-    wkread = ffff.read(102400)
+    wkread = "srand(#{next_rand % 100000000 })\n" + ffff.read(102400)
+    #wkread = ffff.read(102400)
     ffff.close
     wkread
   end
