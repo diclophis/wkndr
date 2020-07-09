@@ -42,7 +42,7 @@ class SocketStream
             self.write_tty(cmsg)
           when "party" #TODO: rename this something not stupid
             #begin
-              wkndrfile_cstr = *cmsg
+              wkndrfile_cstr = cmsg
               did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
             #rescue => e
             #  #log!(:cmsg_bad, e)

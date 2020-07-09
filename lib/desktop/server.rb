@@ -80,7 +80,7 @@ class ProtocolServer
 
           wkread = read_wkndrfile 
           
-	        cn.write_typed({"party" => [next_rand, wkread]})
+	        cn.write_typed({"party" => wkread})
         end
       end
     }

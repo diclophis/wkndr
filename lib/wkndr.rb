@@ -1,7 +1,7 @@
 #
 
-module Anon
-end
+#module Anon
+#end
 
 class Wkndr
   def self.runblock!(stack)
@@ -87,13 +87,13 @@ class Wkndr
   end
 
   def self.wkndr_server_eval(ruby_string)
-    ruby_string = "module Anon\n" + ruby_string + "\nend"
+    #ruby_string = "module Anon\n" + ruby_string + "\nend"
 
     eval(ruby_string)
   end
 
   def self.wkndr_client_eval(ruby_string)
-    ruby_string = "module Anon\n" + ruby_string + "\nend"
+    #ruby_string = "module Anon\n" + ruby_string + "\nend"
 
     eval(ruby_string)
   end
