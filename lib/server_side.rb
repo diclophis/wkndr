@@ -32,6 +32,13 @@ class ServerSide < Wkndr
   end
 
   def self.install_trap!
+    @timer = UV::Timer.new
+    @timer.start(1000/23, 1000/23) do
+      unless @keep_running
+        @timer.stop
+      end
+    end
+
     @trap = UV::Signal.new
     
     @trap.start(UV::Signal::SIGINT) do
@@ -46,7 +53,8 @@ class ServerSide < Wkndr
 
     ##TODO: trap exit condition from UI
     foo = true
-    run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
+    #run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
+    run_mode = UV::UV_RUN_ONCE
     while @keep_running
       foo = self.cheese_cross!
       other_foo = common_cheese_process!

@@ -35,5 +35,16 @@ mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
     return mrb_nil_value();
   }
 
+  //sleep(1);
+
+//#ifdef PLATFORM_DESKTOP
+//  struct timespec spend;
+//  struct timespec rem;
+//  //spend.tv_nsec = 10000000; // ???
+//  spend.tv_nsec = 0; // ???
+//  nanosleep(&spend, &rem);
+//#endif
+
+
   return mrb_true_value();
 }

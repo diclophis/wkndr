@@ -61,12 +61,14 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.twod {
+        gl.label("wtf #{delta_time} #{global_time}")
+
         @exhaust_layer.each { |e, _x, p, c|
-          gl.draw_circle(100.0, p.x, p.y, p.z, *c.color)
+          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
         }
 
         @hunter_layer.each { |e, _h, p, c|
-          gl.draw_circle(200.0, p.x, p.y, p.z, *c.color)
+          gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
         }
       }
     }
@@ -105,7 +107,7 @@ Wkndr.server_side { |gl, server|
 
     mab.ul do
       mab.li do
-        "cheese bar #{phr.inspect}"
+        "cheese bar: " + cn.session["gt"].inspect
       end
     end
   }
@@ -118,12 +120,11 @@ Wkndr.server_side { |gl, server|
     #@dt = dt
     #@ticks += 1
 
-    server.all_connections { |cn|
-      
-    }
+    #server.all_connections.each { |cn|
+    #  cn.session["gt"] = gt
+    #}
 
-      server.live("/sevengui", "wkndr sevengui", &sven_gui)
-    #end
+    #server.live("/sevengui", "wkndr sevengui", &sven_gui)
   }
 
   server.wsb("/") do |cn, phr|

@@ -192,7 +192,6 @@ if (graphicsContainer) {
   Module.setStatus('Downloading...');
 }
 
-var liveContainer = document.getElementById('wkndr-live-container');
 
 window.startLiveConnection = function() {
   if (window["WebSocket"]) {
@@ -210,6 +209,9 @@ window.startLiveConnection = function() {
       var origData = event.data;
 
       console.log(origData);
+
+      //var liveContainer = document.getElementById('wkndr-live-container');
+
 /*
       morphdom(liveContainer.childNodes[0], origData, {
         onBeforeElUpdated: function(fromEl, toEl) {
@@ -242,6 +244,4 @@ window.startLiveConnection = function() {
   }
 };
 
-if (liveContainer) {
-  startLiveConnection();
-}
+startLiveConnection();

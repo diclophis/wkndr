@@ -163,7 +163,7 @@ class ProtocolServer
   def live(path, title, &block)
     initial_inner_mab_bytes = Proc.new { |cn, phr|
       inner_mab = Markaby::Builder.new
-      inner_mab.div "id" => "wkndr-live-throwaway" do
+      inner_mab.div "class" => "wkndr-live-throwaway" do
         inner_mab_config = block.call(cn, phr, inner_mab)
       end
       inner_mab.to_s
@@ -215,7 +215,7 @@ class ProtocolServer
               end
             end
 
-            mab.div "id" => "wkndr-live-container" do
+            mab.div "id" => "wkndr-live-#{title}", "class" => "wkndr-live-container" do
               initial_inner_mab_bytes.call(cn, phr)
             end
 
@@ -408,5 +408,9 @@ end
      #log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
      #log!(e.backtrace)
     #end
+  end
+
+  def all_connections
+    @all_connections
   end
 end

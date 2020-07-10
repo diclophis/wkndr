@@ -20,6 +20,7 @@
 #include <raylib.h>
 #include <raymath.h>
 //#include <raygui.h>
+//extern void InitTimer(void);                            // Initialize timer
 
 // local stuff
 #include "mrb_game_loop.h"
@@ -191,6 +192,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 {
   mrb_value block;
+  //mrb_value dtag;
   mrb_get_args(mrb, "&", &block);
 
   play_data_s *p_data = NULL;
@@ -207,8 +209,7 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 
   mrb_yield_argv(mrb, block, 0, NULL);
 
-  float textSize = 20.0;
-
+  //float textSize = 20.0;
   ////Vector3 cubePosition = p_data->position;
   ////Vector2 cubeScreenPosition;
   ////cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
@@ -269,6 +270,65 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
 }
 
 
+static mrb_value model_label(mrb_state* mrb, mrb_value self)
+{
+  mrb_value label_txt = mrb_nil_value();
+  mrb_value pointer_value;
+  mrb_get_args(mrb, "o", &label_txt);
+
+  const char *c_label_txt = mrb_string_value_cstr(mrb, &label_txt);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  //play_data_s *gl_p_data = NULL;
+
+  ////play_data_s *p_data = NULL;
+  ////mrb_value data_value;     // this IV holds the data
+  ////data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+  ////Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  ////if (!p_data) {
+  ////  fprintf(stderr, "WTFWTF\n");
+  ////  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  ////}
+  ////BeginMode2D(p_data->cameraTwo);
+
+  //Data_Get_Struct(mrb, pointer_value, &play_data_type, gl_p_data);
+  //if (!gl_p_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
+
+  float textSize = 5.0;
+
+  //Vector3 cubePosition = p_data->position;
+
+  Vector2 cubeScreenPosition;
+  //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
+  //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
+  cubeScreenPosition = GetWorldToScreen2D((Vector2){250, 250}, p_data->cameraTwo);
+
+  DrawText(c_label_txt, cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, textSize, BLUE);
+
+  return mrb_nil_value();
+}
+
+
+//static mrb_value init_timer(mrb_state* mrb, mrb_value self)
+//{
+//
+//  InitTimer();
+//
+//  return mrb_nil_value();
+//}
+
+
 struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   //// class GameLoop
 
@@ -292,6 +352,8 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(1));
+  //mrb_define_method(mrb, game_class, "init_timer", init_timer, MRB_ARGS_REQ(0));
 
   return game_class;
 }
