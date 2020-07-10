@@ -7,7 +7,8 @@ class Connection
                 :phr,
                 :processing_handshake,
                 :ss,
-                :socket
+                :socket,
+                :session
 
   def initialize(socket)
     self.socket = socket
@@ -17,6 +18,7 @@ class Connection
     self.processing_handshake = true
 
     self.phr = Phr.new
+    self.session = {}
 
     @closing = false
     @closed = false

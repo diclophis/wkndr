@@ -26,6 +26,10 @@ Wkndr.nonce {
       )
     }
   }
+
+  Wkndr.server_side { |gl|
+    @ticks = 0
+  }
 }
 
 Wkndr.client_side { |gl|
@@ -85,7 +89,7 @@ Wkndr.client_side { |gl|
   }
 }
 
-$ticks = 1
+#$ticks = 1
 
 #@server_sided ||= 0
 #@server_sided += 1
@@ -101,14 +105,25 @@ Wkndr.server_side { |gl, server|
 
     mab.ul do
       mab.li do
-        "cheese bar #{$ticks}"
+        "cheese bar #{phr.inspect}"
       end
     end
   }
 
   gl.update { |gt, dt|
-    $ticks += 1
-    server.live("/sevengui", "wkndr sevengui", &sven_gui)
+    #$ticks += 1
+    #if $ticks > 2
+    #  $ticks = 0
+    #@gt = gt
+    #@dt = dt
+    #@ticks += 1
+
+    server.all_connections { |cn|
+      
+    }
+
+      server.live("/sevengui", "wkndr sevengui", &sven_gui)
+    #end
   }
 
   server.wsb("/") do |cn, phr|

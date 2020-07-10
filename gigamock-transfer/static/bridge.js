@@ -209,6 +209,8 @@ window.startLiveConnection = function() {
     window.conn.onmessage = function (event) {
       var origData = event.data;
 
+      console.log(origData);
+/*
       morphdom(liveContainer.childNodes[0], origData, {
         onBeforeElUpdated: function(fromEl, toEl) {
           if (toEl.tagName === 'INPUT') {
@@ -232,6 +234,8 @@ window.startLiveConnection = function() {
           return true;
         }
       });
+*/
+
     };
   } else {
     console.log("Your browser does not support WebSockets.");

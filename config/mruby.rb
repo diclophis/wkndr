@@ -33,6 +33,7 @@ MRuby::Build.new do |conf|
   conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0" #TODO: get this merged with upstream https://github.com/tatsuhiro-t/wslay
   conf.gem :github => "Asmod4n/mruby-phr"
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
+  conf.gem :github => "mattn/mruby-json"
 
   ##Desktop specific
   ##conf.gem :github => "h2so5/mruby-pure-regexp"
