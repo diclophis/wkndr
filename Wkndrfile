@@ -61,7 +61,7 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.twod {
-        gl.label("wtf #{delta_time} #{global_time}")
+        gl.label("wtf #{'%.2f' % ((delta_time * 1000.0) / (1000.0 / 60.0))} #{'%.2f' % global_time}")
 
         @exhaust_layer.each { |e, _x, p, c|
           gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)

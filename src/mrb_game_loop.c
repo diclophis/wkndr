@@ -305,7 +305,7 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   //}
 
-  float textSize = 5.0;
+  float textSize = 15.0;
 
   //Vector3 cubePosition = p_data->position;
 
