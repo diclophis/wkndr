@@ -206,38 +206,37 @@ window.startLiveConnection = function() {
     };
 
     window.conn.onmessage = function (event) {
-      var origData = event.data;
+      var origDataJson = event.data;
 
-      console.log(origData);
+      console.log(origDataJson);
 
-      //var liveContainer = document.getElementById('wkndr-live-container');
-
-/*
-      morphdom(liveContainer.childNodes[0], origData, {
-        onBeforeElUpdated: function(fromEl, toEl) {
-          if (toEl.tagName === 'INPUT') {
-            if (fromEl.checked) {
-              toEl.checked = fromEl.checked;
-            } else {
-              toEl.value = fromEl.value;
+      Array.from(document.getElementsByClassName("wkndr-live-container")).forEach(function(liveContainer, index) {
+        var origData = JSON.parse(origDataJson);
+        
+        morphdom(liveContainer.childNodes[0], origData["foo"], {
+          onBeforeElUpdated: function(fromEl, toEl) {
+            if (toEl.tagName === 'INPUT') {
+              if (fromEl.checked) {
+                toEl.checked = fromEl.checked;
+              } else {
+                toEl.value = fromEl.value;
+              }
             }
+          },
+
+          onNodeAdded: function(node) {
+            console.log(node, node.src);
+
+            if (node.nodeName === 'SCRIPT' && node.src) {
+              var script = document.createElement('script');
+              script.src = node.src;
+              node.replaceWith(script)
+            }
+
+            return true;
           }
-        },
-
-        onNodeAdded: function(node) {
-          console.log(node, node.src);
-
-          if (node.nodeName === 'SCRIPT' && node.src) {
-            var script = document.createElement('script');
-            script.src = node.src;
-            node.replaceWith(script)
-          }
-
-          return true;
-        }
+        });
       });
-*/
-
     };
   } else {
     console.log("Your browser does not support WebSockets.");

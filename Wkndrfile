@@ -61,7 +61,7 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.twod {
-        gl.label("wtf #{'%.2f' % ((delta_time * 1000.0) / (1000.0 / 60.0))} #{'%.2f' % global_time}")
+        gl.label("ddd #{'%.2f' % ((delta_time * 1000.0) / (1000.0 / 60.0))} #{'%.2f' % global_time}")
 
         @exhaust_layer.each { |e, _x, p, c|
           gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
@@ -107,7 +107,7 @@ Wkndr.server_side { |gl, server|
 
     mab.ul do
       mab.li do
-        "cheese bar: " + cn.session["gt"].inspect
+        "bap bar: " + cn.session["gt"].inspect
       end
     end
   }
@@ -133,6 +133,7 @@ Wkndr.server_side { |gl, server|
   server.raw("/status") do |cn, phr|
     Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
   end
+
 
   server.raw("/about") do |cn, phr|
     mab = Markaby::Builder.new
