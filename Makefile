@@ -69,7 +69,7 @@ objects += $(raylib_static_lib)
 ##TODO: platform switch
 ifeq ($(TARGET),desktop)
   #LDFLAGS=-lm -lpthread -ldl -lX11 -lpthread -lssl -lcrypto -lutil -lz
-  LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lX11
+  LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lX11 -lxcb -lXau -lXdmcp
   #ifeq ($(TARGET),desktop)
   ifeq ($(TARGET_OS),Darwin)
     LDFLAGS=-lm -lpthread -ldl -lssl -lcrypto -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo

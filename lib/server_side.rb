@@ -33,7 +33,7 @@ class ServerSide < Wkndr
 
   def self.install_trap!
     @timer = UV::Timer.new
-    @timer.start(1000/23, 1000/23) do
+    @timer.start(1000/60, 1000/60) do
       unless @keep_running
         @timer.stop
       end

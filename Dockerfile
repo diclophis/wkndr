@@ -2,7 +2,7 @@
 #FROM static-vim-dockerfile:latest
 
 # layer 1 is linux-box stuff
-FROM ubuntu:focal-20200606
+FROM ubuntu:focal-20200606 as wkndr
 
 ENV LC_ALL C.UTF-8
 ENV LANG en_US.UTF-8
@@ -94,7 +94,15 @@ COPY Wkndrfile /var/lib/wkndr/
 #COPY gigamock-transfer/issue /etc/issue
 #
 #COPY gigamock-transfer/exgetty.rb /var/lib/wkndr/exgetty.rb
-#
+
+# layer 2 is minimal
+FROM scratch
+
+COPY --from=wkndr /var/lib/wkndr/release/wkndr.mruby /var/lib/wkndr/release/wkndr.mruby
+COPY --from=wkndr /var/lib/wkndr/public /var/lib/wkndr/public
+COPY --from=wkndr /var/lib/wkndr/Wkndrfile /var/lib/wkndr/Wkndrfile
+COPY --from=wkndr /bin/busybox /bin/busybox
+
 WORKDIR /var/lib/wkndr
 
 CMD ["/var/lib/wkndr/release/wkndr.mruby", "--server=/var/lib/wkndr/public", "--no-client"]

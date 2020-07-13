@@ -33,8 +33,19 @@ class ProtocolServer
       #  #}
       #}
     }
-
     @handlers["/ws"] = upgrade_to_websocket_handler
+
+    #receive_http_post = Proc.new { |cn, phr, mab|
+    #  raise "#{cn.phr.msg} #{cn.phr.headers} #{cn.phr.status}"
+    #  #{ |cn, channel, msg|
+    #  #  #TODO ????
+    #  #  #@all_connections.each { |client|
+    #  #  #  #client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
+    #  #  #}
+    #  #}
+    #}
+    #@handlers["/inbox"] = receive_http_post
+    #@handlers["/ws"] = upgrade_to_websocket_handler
 
     raw('/robots.txt') { |cn, ids_from_path|
       Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
