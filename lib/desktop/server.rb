@@ -383,8 +383,7 @@ rescue UVError => e
   raise "#{tries} #{@actual_wkndrfile} #{e}"
 end
 
-    #wkread = "srand(#{next_rand % 100000000 })\n" + ffff.read(102400)
-    wkread
+    "srand(#{next_rand % 100000000 })\n" + wkread
   end
 
   def notify_client_of_new_wkndrfile(wkndrfile, cn)
