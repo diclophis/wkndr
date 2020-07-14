@@ -168,9 +168,14 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   p_data->scale.y = scalef;
   p_data->scale.z = scalef;
 
+  //p_data->color.r = 255;
+  //p_data->color.g = 0;
+  //p_data->color.b = 128;
+  //p_data->color.a = 255;
+
   p_data->color.r = 255;
-  p_data->color.g = 0;
-  p_data->color.b = 128;
+  p_data->color.g = 255;
+  p_data->color.b = 255;
   p_data->color.a = 255;
 
   p_data->label_color.r = 255;
@@ -338,9 +343,14 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   //  counter *= -1;
   //}
 
+  //p_data->color.r = 255;
+  //p_data->color.g = g;
+  //p_data->color.b = b;
+  //p_data->color.a = 255;
+
   p_data->color.r = 255;
-  p_data->color.g = g;
-  p_data->color.b = b;
+  p_data->color.g = 255;
+  p_data->color.b = 255;
   p_data->color.a = 255;
 
   r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
