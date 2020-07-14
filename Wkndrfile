@@ -14,6 +14,7 @@ Wkndr.nonce {
     @color = RandomColorComponent.new
 
     gl.open_default_view!
+    gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
 
     @spawn_proc = Proc.new { |r, x, y, c|
       @store.add(
@@ -25,6 +26,11 @@ Wkndr.nonce {
         RandomColorComponent.from_color(c)
       )
     }
+
+    @cubes = []
+    @cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
+    @cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
+    @cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
   }
 
   Wkndr.server_side { |gl|
@@ -60,6 +66,14 @@ Wkndr.client_side { |gl|
     }
 
     gl.drawmode {
+      gl.threed {
+        @cubes.each_with_index { |cube,i|
+          speed = 100.0 # + (global_time * 10.0)
+          cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+          cube.draw(false)
+        }
+      }
+
       gl.twod {
         gl.label("ddd #{'%.2f' % ((delta_time * 1000.0) / (1000.0 / 60.0))} #{'%.2f' % global_time}")
 

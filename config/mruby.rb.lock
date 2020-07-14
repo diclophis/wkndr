@@ -56,6 +56,6 @@ builds:
       version: 0.0.0
     https://github.com/mattn/mruby-json.git:
       url: https://github.com/mattn/mruby-json.git
-      branch: master
+      branch: HEAD
       commit: '054699892b0d681110e7348440cddb70a3fd671e'
       version: 0.0.0

@@ -63,6 +63,7 @@
 #include "mrb_web_socket.h"
 #include "mrb_stack_blocker.h"
 #include "mrb_game_loop.h"
+#include "mrb_model.h"
 
 
 // ruby lib stuff
@@ -428,6 +429,8 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb_client, socket_stream, NULL);
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
+
+  mrb_mruby_model_gem_init(mrb_client);
 
 #ifdef TARGET_DESKTOP
 

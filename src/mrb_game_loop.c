@@ -26,7 +26,10 @@
 #include "mrb_game_loop.h"
 
 
-static void play_data_destructor(mrb_state *mrb, void *p_);
+//static void play_data_destructor(mrb_state *mrb, void *p_);
+//const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
+
+void play_data_destructor(mrb_state *mrb, void *p_);
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
 
 static mrb_value mousexyz;
@@ -35,7 +38,7 @@ static mrb_value mousexyz;
 // Garbage collector handler, for play_data struct
 // if play_data contains other dynamic data, free it too!
 // Check it with GC.start
-static void play_data_destructor(mrb_state *mrb, void *p_) {
+void play_data_destructor(mrb_state *mrb, void *p_) {
   play_data_s *pd = (play_data_s *)p_;
 
   //TODO: memory leak!!!!
@@ -329,6 +332,129 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
 //}
 
 
+static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
+{
+  mrb_int type;
+  mrb_float px,py,pz,tx,ty,tz,fovy;
+
+  mrb_get_args(mrb, "ifffffff", &type, &px, &py, &pz, &tx, &ty, &tz, &fovy);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value;     // this IV holds the data
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  // Camera mode type
+  switch(type) {
+    case 0:
+      p_data->camera.type = CAMERA_ORTHOGRAPHIC;
+      //SetCameraMode(p_data->camera, CAMERA_ORBITAL);
+      //SetCameraMode(p_data->camera, CAMERA_THIRD_PERSON);
+      break;
+    case 1:
+      p_data->camera.type = CAMERA_PERSPECTIVE;
+      //SetCameraMode(p_data->camera, CAMERA_ORBITAL);
+      break;
+  }
+
+  // Define the camera to look into our 3d world
+  p_data->camera.position = (Vector3){ px, py, pz };    // Camera position
+  p_data->camera.target = (Vector3){ tx, ty, tz };      // Camera looking at point
+
+  p_data->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };    // Camera up vector (rotation towards target)
+  p_data->camera.fovy = fovy;                           // Camera field-of-view Y
+
+  p_data->cameraTwo.target = (Vector2){ 0, 0 };
+  p_data->cameraTwo.offset = (Vector2){ 0, 0 };
+  p_data->cameraTwo.rotation = 0.0f;
+  p_data->cameraTwo.zoom = 1.0f;
+
+  //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  //SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
+  //////updateLighting
+  //////white closeup point
+  ////lights[0].position.x = tx + 0;
+  ////lights[0].position.y = ty + 0.5;
+  ////lights[0].position.z = tz + 0;
+  ////lights[0].target.x = tx + 0;
+  ////lights[0].target.y = ty + 0;
+  ////lights[0].target.z = tz + 0;
+  ////lights[0].intensity = 0.075;
+  ////lights[0].radius = 0.333;
+  ////lights[0].enabled = false;
+
+  //////white directional
+  ////lights[1].intensity = 0.25;
+  ////lights[1].enabled = true;
+
+  //////blue spotlight
+
+  ////lights[2].position.x = tx;
+  ////lights[2].position.y = ty + 3;
+  ////lights[2].position.z = tz;
+  ////lights[2].target.x = tx;
+  ////lights[2].target.y = ty;
+  ////lights[2].target.z = tz;
+
+  ////lights[2].intensity = 0.000001;
+  ////lights[2].coneAngle = 20.00;
+  ////lights[2].enabled = true;
+
+  ////lights[3].intensity = 0.15;
+  ////lights[3].radius = 3.0;
+  ////lights[3].enabled = false;
+
+  //UpdateLightValues(standardShader, lights[0]);
+  //UpdateLightValues(standardShader, lights[1]);
+  //UpdateLightValues(standardShader, lights[2]);
+  //UpdateLightValues(standardShader, lights[3]);
+
+  return mrb_nil_value();
+}
+
+
+static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
+{
+  mrb_value block;
+  mrb_get_args(mrb, "&", &block);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value;     // this IV holds the data
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  UpdateCamera(&p_data->camera);
+
+  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  //SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
+  BeginMode3D(p_data->camera);
+
+  mrb_yield_argv(mrb, block, 0, NULL);
+
+  ////drawLighting
+  //for (int i=0; i<MAX_LIGHTS; i++) {
+  //  DrawLight(lights[i]);
+  //}
+
+  EndMode3D();
+
+  //fprintf(stderr, "endmode3\n");
+
+  return mrb_nil_value();
+}
+
+
 struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   //// class GameLoop
 
@@ -338,18 +464,18 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
   mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
-  //mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
+  mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
   //mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
   //mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
   //mrb_define_method(mrb, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
   //mrb_define_method(mrb, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
   //mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
-  //mrb_define_method(mrb, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
   //mrb_define_method(mrb, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
   //mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
   //mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
   mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(1));
