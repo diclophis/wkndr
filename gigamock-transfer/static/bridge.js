@@ -20,19 +20,13 @@ function str2ab(str) {
 }
 
 window.startConnection = function(mrbPointer, callbackPointer) {
-  console.log("FOO", mrbPointer, callbackPointer);
-
   if (window["WebSocket"]) {
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
     window.conn.onopen = function (event) {
-      console.log(event);
-
       //var terminalContainer = document.getElementById("wkndr-terminal");
-
       //Terminal.applyAddon(fit);
-
       //window.terminal = new Terminal({
       //  cursorBlink: true,
       //  scrollback: 100,
@@ -40,21 +34,17 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //  allowTransparency: false
       //});
       //window.terminal.open(terminalContainer);
-
       //window.terminal.on('data', function(termInputData) {
       //  var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
       //  window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
       //  Module._free(ptr);
       //});
-
-      window.addEventListener('resize', function(resizeEvent) {
-      //  window.terminal.fit();
-          window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
-      });
-
+      //window.addEventListener('resize', function(resizeEvent) {
+      ////  window.terminal.fit();
+      //    window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
+      //});
       ////window.terminal.on('resize', function(newSize) {
       ////});
-
       //window.terminal.fit();
 
       window.onbeforeunload = function() {
@@ -73,9 +63,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn.onmessage = function (event) {
       var origData = event.data;
 
-      var sv = new StringView(origData)
-
-      console.log(sv.toString());
+      //var sv = new StringView(origData)
+      //TODO: debug stringView of raw msg bits
 
       var typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
@@ -84,11 +73,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       Module._free(heapBuffer);
     };
 
-    //console.log("BEFORE");
-
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-      //console.log("GOT CHANNEL", channel, bytes, length);
-
       var buf = new ArrayBuffer(length); // 2 bytes for each char
       var bufView = new Uint8Array(buf);
       for (var i=0; i < length; i++) {
@@ -117,8 +102,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       bufView = null;
       return;
     }, 'viii');
-
-    //console.log("AFTER");
 
     return window.writePackedPointer;
   } else {
@@ -208,8 +191,6 @@ window.startLiveConnection = function() {
     window.conn.onmessage = function (event) {
       var origDataJson = event.data;
 
-      console.log(origDataJson);
-
       Array.from(document.getElementsByClassName("wkndr-live-container")).forEach(function(liveContainer, index) {
         var origData = JSON.parse(origDataJson);
         
@@ -225,8 +206,6 @@ window.startLiveConnection = function() {
           },
 
           onNodeAdded: function(node) {
-            console.log(node, node.src);
-
             if (node.nodeName === 'SCRIPT' && node.src) {
               var script = document.createElement('script');
               script.src = node.src;
