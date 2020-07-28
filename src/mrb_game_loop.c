@@ -33,6 +33,7 @@ void play_data_destructor(mrb_state *mrb, void *p_);
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
 
 static mrb_value mousexyz;
+static mrb_value pressedkeys;
 
 
 // Garbage collector handler, for play_data struct
@@ -455,30 +456,67 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 }
 
 
+static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
+{
+  mrb_int argc;
+  mrb_value *checkkeys;
+  mrb_get_args(mrb, "*", &checkkeys, &argc);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  int rc = 0;
+
+  mrb_ary_clear(mrb, pressedkeys);
+
+  for (int i=0; i<argc; i++) {
+    mrb_value key_to_check = checkkeys[i];
+
+    if (IsKeyDown(mrb_int(mrb, key_to_check))) {
+      mrb_ary_set(mrb, pressedkeys, rc, key_to_check);
+      rc++;
+    }
+  }
+
+  return pressedkeys;
+}
+
+
 struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   //// class GameLoop
 
   mousexyz = mrb_ary_new(mrb);
+  pressedkeys = mrb_ary_new(mrb);
 
   //pressedkeys = mrb_ary_new(mrb);
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
   mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
   mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
-  //mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
-  //mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
-  //mrb_define_method(mrb, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
-  //mrb_define_method(mrb, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
-  //mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
   mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
+
+
+
+  //mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
+  //mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
+  //mrb_define_method(mrb, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
+  //mrb_define_method(mrb, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
+  //mrb_define_method(mrb, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
+  //mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
+  //mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
   //mrb_define_method(mrb, game_class, "init_timer", init_timer, MRB_ARGS_REQ(0));
 
   return game_class;

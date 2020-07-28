@@ -32,8 +32,7 @@ Wkndr.nonce {
     @cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
     @cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
 
-    chicken_file = "resources/ayam4.obj"
-    @chicken = Model.new(chicken_file, "", 2.5)
+    @chicken = Cube.new(1.0, 1.0, 1.0, 1.0)
   }
 
   Wkndr.server_side { |gl|
@@ -97,6 +96,14 @@ Wkndr.client_side { |gl|
     @transformer.process(global_time, delta_time)
     @exhaust.process(global_time, delta_time)
     @movement.process(global_time, delta_time)
+
+    if global_time > 0.5 && !@farts
+      #chicken_file = "resources/ayam4.obj"
+      chicken_file = "resources/buggy.glb"
+      @chicken = Model.new(chicken_file, "", 0.025)
+      @farts = true
+    end
+
 
     ##if @store.count == 0 # && 
     #if rand < 0.1

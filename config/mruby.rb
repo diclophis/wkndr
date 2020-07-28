@@ -22,7 +22,7 @@ MRuby::Build.new do |conf|
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
   #conf.gem :core => "mruby-time"
-  #conf.gem :core => "mruby-io"
+  conf.gem :core => "mruby-io"
 
 
   # community provided gems
