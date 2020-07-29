@@ -65,7 +65,7 @@ COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
 
 RUN /var/lib/wkndr/iterate-server.sh
 
-#COPY resources /var/lib/wkndr/resources
+COPY resources /var/lib/wkndr/resources
 RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/
@@ -95,13 +95,13 @@ COPY Wkndrfile /var/lib/wkndr/
 #
 #COPY gigamock-transfer/exgetty.rb /var/lib/wkndr/exgetty.rb
 
-# layer 2 is minimal
-FROM scratch
-
-COPY --from=wkndr /var/lib/wkndr/release/wkndr.mruby /var/lib/wkndr/release/wkndr.mruby
-COPY --from=wkndr /var/lib/wkndr/public /var/lib/wkndr/public
-COPY --from=wkndr /var/lib/wkndr/Wkndrfile /var/lib/wkndr/Wkndrfile
-COPY --from=wkndr /bin/busybox /bin/busybox
+## layer 2 is minimal
+#FROM scratch
+#
+#COPY --from=wkndr /var/lib/wkndr/release/wkndr.mruby /var/lib/wkndr/release/wkndr.mruby
+#COPY --from=wkndr /var/lib/wkndr/public /var/lib/wkndr/public
+#COPY --from=wkndr /var/lib/wkndr/Wkndrfile /var/lib/wkndr/Wkndrfile
+#COPY --from=wkndr /bin/busybox /bin/busybox
 
 WORKDIR /var/lib/wkndr
 
