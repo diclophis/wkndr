@@ -14,9 +14,9 @@ class SocketStream
   end
 
   # single-binary client side native connection creator
-  def self.create_websocket_connection(&block)
+  def self.create_websocket_connection(wp, &block)
     ss = socket_klass.new(block)
-    ss.connect!
+    ss.connect!(wp)
     ss
   end
 

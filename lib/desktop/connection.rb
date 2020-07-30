@@ -8,7 +8,8 @@ class Connection
                 :processing_handshake,
                 :ss,
                 :socket,
-                :session
+                :session,
+                :hex
 
   def initialize(socket)
     self.socket = socket
@@ -19,6 +20,7 @@ class Connection
 
     self.phr = Phr.new
     self.session = {}
+    self.hex = Sysrandom.hex
 
     @closing = false
     @closed = false

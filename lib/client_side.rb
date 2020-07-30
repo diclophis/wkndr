@@ -10,19 +10,29 @@ class ClientSide < Wkndr
 
     client_args = args.find { |arg| arg[0,9] == "--client=" }
 
+    party_args = args.find { |arg| arg[0,8] == "--party=" }
+
     w = 512
     h = 512
+    wp = "Wkndrfile"
 
     if client_args
       a,b = client_args.split("=")
       w, h = (b.split("x"))
     end
 
+    if party_args
+      a,b = party_args.split("=")
+      wp = b
+    end
+
     stack = StackBlocker.new(false)
 
     gl = GameLoop.new
 
-    socket_stream = gl.connect_window!(w, h)
+#raise wp.inspect
+
+    socket_stream = gl.connect_window!(w, h, wp)
     raise "unknown socket stream: TODO: fix this abstraction" unless socket_stream
 
     stack.up(gl)

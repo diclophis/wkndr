@@ -45,13 +45,13 @@ class GameLoop
   def shutdown
   end
 
-  def connect_window!(w, h)
+  def connect_window!(w, h, wp)
     self.width = w
     self.height = h
 
     #log!(:INIT_WINDOW)
 
-    socket_stream = SocketStream.create_websocket_connection { |channel, typed_msg|
+    socket_stream = SocketStream.create_websocket_connection(wp) { |channel, typed_msg|
       self.event(channel, typed_msg)
     }
 

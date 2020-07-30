@@ -18,7 +18,7 @@ class WslaySocketStream < SocketStream
     @halting = super
   end
 
-  def connect!
+  def connect!(wp)
     wslay_callbacks = Wslay::Event::Callbacks.new
 
     @last_buf = ""
@@ -98,7 +98,7 @@ class WslaySocketStream < SocketStream
           #begin
             reset_handshake!
             @socket.read_start(&on_read_start)
-            did_connect("Wkndrfile") #NOTE: this is where client reqs new Wkndrfile
+            did_connect(wp) #NOTE: this is where client reqs new Wkndrfile
           #rescue => e
           #  log!(:wslay_socket_stream_write_ws_request_error, e, e.backtrace)
           #end

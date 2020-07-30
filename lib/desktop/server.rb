@@ -16,9 +16,11 @@ class ProtocolServer
 
     upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
       cn.upgrade_to_websocket! { |cn, channel, msg|
-        @all_connections.each { |client|
-          client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
-        }
+        unless channel == "party"
+          @all_connections.each { |client|
+            client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
+          }
+        end
       }
     }
 
@@ -68,7 +70,7 @@ class ProtocolServer
     #@async_place_holder = Proc.new { |requested_filename|
     #}
 
-    subscribe_to_wkndrfile
+    #TODO: ?????? subscribe_to_wkndrfile
   end
 
   def update(gt = nil, dt = nil, sw = 0, sh = 0)
@@ -76,20 +78,21 @@ class ProtocolServer
 
     connections_to_drop = []
 
-    if @actual_wkndrfile && !@fsev
-      watch_wkndrfile
-    #elsif (@clear_wkndrfile_change != nil) && ((@gt - @clear_wkndrfile_change) > 1.0)
-    #  #@clear_wkndrfile_change
-    #  #&& ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
-    #  #@clear_wkndrfile_change -= dt
-    #  #if
-    #  raise "wtf"
+    watch_wkndrfiles
 
-    #    handle_wkndrfile_change
-    #    #watch_wkndrfile
-    #    @clear_wkndrfile_change = nil
-    #    @fsev = nil
-    end
+    #if @actual_wkndrfile && !@fsev
+    ##elsif (@clear_wkndrfile_change != nil) && ((@gt - @clear_wkndrfile_change) > 1.0)
+    ##  #@clear_wkndrfile_change
+    ##  #&& ((Time.now.to_f - @clear_wkndrfile_change) > 0.1)
+    ##  #@clear_wkndrfile_change -= dt
+    ##  #if
+    ##  raise "wtf"
+
+    ##    handle_wkndrfile_change
+    ##    #watch_wkndrfile
+    ##    @clear_wkndrfile_change = nil
+    ##    @fsev = nil
+    #end
 
     @all_connections.each { |cn|
       if !cn.running?
@@ -111,12 +114,10 @@ class ProtocolServer
 
         if cn.has_pending_parties?
           party = cn.pop_party!
-
           notify_client_of_new_wkndrfile(party, cn)
 
-          wkread = read_wkndrfile 
-          
-	        cn.write_typed({"party" => wkread})
+          #wkread = read_wkndrfile 
+	        #cn.write_typed({"party" => "$HEX='#{cn.hex}'\n" + wkread})
         end
       end
     }
@@ -325,62 +326,82 @@ class ProtocolServer
     }
   end
 
-  def subscribe_to_wkndrfile(wkndrfile_path = nil)
-    wkparts = nil
-    if wkndrfile_path
-      wkparts = wkndrfile_path.split("~", 2)  
-    end
+  #def subscribe_to_wkndrfile(wkndrfile_path)
+  #  #wkparts = nil
+  #  #if wkndrfile_path
+  #  #  wkparts = wkndrfile_path.split("~", 2)  
+  #  #end
 
-    reqd_wkfile = "Wkndrfile"
+  #  #reqd_wkfile = "Wkndrfile"
+  #  reqd_wkfile = wkndrfile_path
 
-    UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
-      if actual_wkndrfile.is_a?(UVError)
-        #TODO: is this halting ??? !!!
-        #log!(:error_subscribe_to_wkndrfile_no_exists, actual_wkndrfile)
-      else
-        #TODO: !!! log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
+  #  raise reqd_wkfile.inspect
 
-        @actual_wkndrfile = actual_wkndrfile
-        @symbolic_wkndrfile = reqd_wkfile
+  #  UV::FS.realpath(reqd_wkfile) { |actual_wkndrfile|
+  #    if actual_wkndrfile.is_a?(UVError)
+  #      #TODO: is this halting ??? !!!
+  #      #log!(:error_subscribe_to_wkndrfile_no_exists, actual_wkndrfile)
+  #    else
+  #      #TODO: !!! log!(:actual_subscribe_to_wkndrfile_full_real_path, self, reqd_wkfile, actual_wkndrfile)
+
+  #      raise actual_wkndrfile.inspect
+
+  #      @actual_wkndrfile = actual_wkndrfile
+  #      @symbolic_wkndrfile = reqd_wkfile
+  #  
+  #      handle_wkndrfile_change
+  #    end
+  #  }
+  #end
+
+  def watch_wkndrfiles
+    #@fsev = UV::FS::Event.new
+    #fsev_cb = Proc.new { |path, event|
+    #  #log!(:wtf)
+    #  #raise "Wtf #{@gt}"
+
+    #  #if event == :change
+    #    #@clear_wkndrfile_change = @gt
+    #    handle_wkndrfile_change
+    #    @fsev = nil
+    #    #@fsev.start
+    #    #@fsev.start(@actual_wkndrfile, 0)
+    #  #end
+
+    #}
+    #
+    #@fsev.start(@actual_wkndrfile, 0, &fsev_cb)
     
-        handle_wkndrfile_change
+    #[wkndrfile] << cn
+    @fsev ||= {}
+    
+    #wkndrfiles_to_watch = @clients_to_notify.keys
+    @clients_to_notify.each { |wp, clients|
+      unless @fsev[wp]
+        fsev = UV::FS::Event.new
+        fsev_cb = Proc.new { |path, event|
+          handle_wkndrfile_change(wp, clients)
+          @fsev.delete(wp)
+        }
+        fsev.start(wp, 0, &fsev_cb)
+        @fsev[wp] = fsev
       end
     }
   end
 
-  def watch_wkndrfile
-    @fsev = UV::FS::Event.new
-    fsev_cb = Proc.new { |path, event|
-      #log!(:wtf)
-      #raise "Wtf #{@gt}"
-
-      #if event == :change
-        #@clear_wkndrfile_change = @gt
-        handle_wkndrfile_change
-        @fsev = nil
-        #@fsev.start
-        #@fsev.start(@actual_wkndrfile, 0)
-      #end
-
-    }
-    
-    @fsev.start(@actual_wkndrfile, 0, &fsev_cb)
-  end
-
-  def read_wkndrfile
+  def read_wkndrfile(wp)
   #log!(:wtf2, @actual_wkndrfile)
-
     wkread = nil
     tries = 1024
 
 begin
-    ffff = UV::FS::open(@actual_wkndrfile, UV::FS::O_RDONLY, UV::FS::S_IREAD)
-    wkread = ffff.read(102400)
+    ffff = UV::FS::open(wp, UV::FS::O_RDONLY, UV::FS::S_IREAD)
+    wkread = ffff.read(1024000)
     ffff.close
 rescue UVError => e
   tries -= 1
   retry unless tries < 0
-  raise "#{tries} #{@actual_wkndrfile} #{e}"
+  raise "#{tries} #{wp} #{e}"
 end
 
     "srand(#{next_rand % 100000000 })\n" + wkread
@@ -389,6 +410,7 @@ end
   def notify_client_of_new_wkndrfile(wkndrfile, cn)
     @clients_to_notify[wkndrfile] ||= []
     @clients_to_notify[wkndrfile] << cn
+    handle_wkndrfile_change(wkndrfile, [cn])
   end
 
   def next_rand
@@ -398,16 +420,13 @@ end
     Sysrandom.random
   end
 
-  def handle_wkndrfile_change
+  def handle_wkndrfile_change(wp, clients)
   #log!(:wtf_handle)
 
-    wkread = read_wkndrfile 
+    wkread = read_wkndrfile(wp)
 
-    @clients_to_notify.each { |wkndrfile, clients|
-      clients.each { |cn|
-	      #Wkndr.wkndr_client_eval("srand(#{secure_random.to_i})")
-        cn.write_typed({"party" => wkread})
-      }
+    clients.each { |cn|
+      cn.write_typed({"party" => "$HEX='#{cn.hex}'\n" + wkread})
     }
 
     did_parse = nil

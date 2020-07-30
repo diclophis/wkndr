@@ -74,7 +74,7 @@ Wkndr.client_side { |gl|
         @cubes.each_with_index { |cube,i|
           cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
           @chicken.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
-          #cube.draw(false)
+          cube.draw(false)
         }
 
         @chicken.draw(false)
