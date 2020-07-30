@@ -59,11 +59,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
 
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-//  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-//
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+
   InitWindow(screenWidth, screenHeight, c_game_name);
-//
+
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
 //

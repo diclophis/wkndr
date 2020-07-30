@@ -103,6 +103,7 @@ endif
 
 $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
+	#$(CC) $(CFLAGS) -static -o $@ $(objects) $(LDFLAGS)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
 	#$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=32768000 -s ABORTING_MALLOC=0 --source-map-base https://localhost:8000/ --preload-file resources

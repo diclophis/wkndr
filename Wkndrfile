@@ -13,6 +13,9 @@ Wkndr.nonce {
     @last_l = 0
     @color = RandomColorComponent.new
 
+    @lowest_fps = 99
+    @highest_fps = 0
+
     gl.open_default_view!
     gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
 
@@ -31,8 +34,6 @@ Wkndr.nonce {
     @cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
     @cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
     @cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
-
-    @chicken = Cube.new(1.0, 1.0, 1.0, 1.0)
   }
 
   Wkndr.server_side { |gl|
@@ -49,19 +50,23 @@ Wkndr.client_side { |gl|
   }
 
   gl.update { |global_time, delta_time, sw, sh|
+    fps = ((delta_time * 1000.0) / (1000.0 / 60.0))
+
     gl.mousep { |xyl|
       x, y, l = *xyl
 
       if (l == 1 && @last_l == 0)
-        spawn_proc_args = [
-          rand,
-          x,
-          y,
-          @color.color
-        ]
+        3.times {
+          spawn_proc_args = [
+            rand,
+            x,
+            y,
+            @color.color
+          ]
 
-        @spawn_proc.call(*spawn_proc_args)
-        gl.emit({"spawn" => spawn_proc_args})
+          @spawn_proc.call(*spawn_proc_args)
+          gl.emit({"spawn" => spawn_proc_args})
+        }
       end
 
       @last_l = l
@@ -73,15 +78,21 @@ Wkndr.client_side { |gl|
       gl.threed {
         @cubes.each_with_index { |cube,i|
           cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
-          @chicken.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+          #@chicken.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
           cube.draw(false)
         }
-
-        @chicken.draw(false)
       }
 
       gl.twod {
-        gl.label("#{speed} #{'%2.2f' % (((delta_time * 1000.0) / (1000.0 / 60.0)) * 100.0)} #{'%.2f' % global_time}")
+        #gl.label("#{speed} #{'%2.2f' % (((delta_time * 1000.0) / (1000.0 / 60.0)) * 100.0)} #{'%.2f' % global_time}")
+        #if fps > 0.5 && fps < @lowest_fps
+        #  @lowest_fps = fps
+        #end
+        #if fps > @highest_fps
+        #  @highest_fps = fps
+        #end
+        #display_fps = "%.2f"
+        #gl.label("ddd #{display_fps % @lowest_fps} #{display_fps % @highest_fps} #{display_fps % global_time}")
 
         @exhaust_layer.each { |e, _x, p, c|
           gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
@@ -97,13 +108,12 @@ Wkndr.client_side { |gl|
     @exhaust.process(global_time, delta_time)
     @movement.process(global_time, delta_time)
 
-    if global_time > 0.5 && !@farts
-      #chicken_file = "resources/ayam4.obj"
-      chicken_file = "resources/buggy.glb"
-      @chicken = Model.new(chicken_file, "", 0.025)
-      @farts = true
-    end
-
+    #if global_time > 0.5 && !@farts
+    #  #chicken_file = "resources/ayam4.obj"
+    #  chicken_file = "resources/buggy.glb"
+    #  @chicken = Model.new(chicken_file, "", 0.025)
+    #  @farts = true
+    #end
 
     ##if @store.count == 0 # && 
     #if rand < 0.1
@@ -180,3 +190,15 @@ Wkndr.server_side { |gl, server|
 
   server.live("/sevengui", "wkndr sevengui", &sven_gui)
 }
+
+      ##if @store.count == 0 # && 
+      #if rand < 0.1
+      #  spawn_proc_args = [
+      #    rand,
+      #    sw * 0.5,
+      #    sh * 0.5,
+      #    @color.color
+      #  ]
+      #  @spawn_proc.call(*spawn_proc_args)
+      #  gl.emit({"spawn" => spawn_proc_args})
+      #end
