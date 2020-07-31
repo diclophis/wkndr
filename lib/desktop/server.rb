@@ -123,9 +123,6 @@ class ProtocolServer
         if cn.has_pending_parties?
           party = cn.pop_party!
           notify_client_of_new_wkndrfile(party, cn)
-
-          #wkread = read_wkndrfile 
-	        #cn.write_typed({"party" => "$HEX='#{cn.hex}'\n" + wkread})
         end
       end
     }
