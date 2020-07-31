@@ -70,7 +70,15 @@ class ProtocolServer
     #@async_place_holder = Proc.new { |requested_filename|
     #}
 
-    #TODO: ?????? subscribe_to_wkndrfile
+    timer = UV::Timer.new
+    timer.start(1000/60, 1000/60) do
+      #unless @keep_running
+        timer.stop
+      #end
+      #TODO: ?????? subscribe_to_wkndrfile
+      wkread = read_wkndrfile("Wkndrfile") #TODO: #TODO:
+      did_parse = Wkndr.wkndr_server_eval(wkread)
+    end
   end
 
   def update(gt = nil, dt = nil, sw = 0, sh = 0)
@@ -432,10 +440,10 @@ end
     did_parse = nil
     #TODO: !!!! 
     #begin
-      did_parse = Wkndr.wkndr_server_eval(wkread)
+#      did_parse = Wkndr.wkndr_server_eval(wkread)
     #rescue => e
-     #log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
-     #log!(e.backtrace)
+    # #log!(:outbound_party_parsed_bad, @actual_wkndrfile, e)
+    # #log!(e.backtrace)
     #end
   end
 

@@ -129,42 +129,7 @@ Wkndr.client_side { |gl|
   }
 }
 
-#$ticks = 1
-
-#@server_sided ||= 0
-#@server_sided += 1
-
 Wkndr.server_side { |gl, server|
-
-#raise "wtf" if @server_sided > 1
-
-  sven_gui = Proc.new { |cn, phr, mab|
-    mab.a(:href => "/sevengui") do
-      mab.h1 "sevengui example"
-    end
-
-    mab.ul do
-      mab.li do
-        "bap bar: " + cn.session["gt"].inspect
-      end
-    end
-  }
-
-  gl.update { |gt, dt|
-    #$ticks += 1
-    #if $ticks > 2
-    #  $ticks = 0
-    #@gt = gt
-    #@dt = dt
-    #@ticks += 1
-
-    #server.all_connections.each { |cn|
-    #  cn.session["gt"] = gt
-    #}
-
-    #server.live("/sevengui", "wkndr sevengui", &sven_gui)
-  }
-
   server.wsb("/") do |cn, phr|
   end
 
@@ -187,18 +152,47 @@ Wkndr.server_side { |gl, server|
     end
     Protocol.ok(mab.to_s)
   end
-
-  server.live("/sevengui", "wkndr sevengui", &sven_gui)
 }
 
-      ##if @store.count == 0 # && 
-      #if rand < 0.1
-      #  spawn_proc_args = [
-      #    rand,
-      #    sw * 0.5,
-      #    sh * 0.5,
-      #    @color.color
-      #  ]
-      #  @spawn_proc.call(*spawn_proc_args)
-      #  gl.emit({"spawn" => spawn_proc_args})
-      #end
+#server.live("/sevengui", "wkndr sevengui", &sven_gui)
+#
+#
+#  sven_gui = Proc.new { |cn, phr, mab|
+#    mab.a(:href => "/sevengui") do
+#      mab.h1 "sevengui example"
+#    end
+#
+#    mab.ul do
+#      mab.li do
+#        "bap bar: " + cn.session["gt"].inspect
+#      end
+#    end
+#  }
+#
+#  gl.update { |gt, dt|
+#    #$ticks += 1
+#    #if $ticks > 2
+#    #  $ticks = 0
+#    #@gt = gt
+#    #@dt = dt
+#    #@ticks += 1
+#
+#    #server.all_connections.each { |cn|
+#    #  cn.session["gt"] = gt
+#    #}
+#
+#    #server.live("/sevengui", "wkndr sevengui", &sven_gui)
+#  }
+#
+#
+#      ##if @store.count == 0 # && 
+#      #if rand < 0.1
+#      #  spawn_proc_args = [
+#      #    rand,
+#      #    sw * 0.5,
+#      #    sh * 0.5,
+#      #    @color.color
+#      #  ]
+#      #  @spawn_proc.call(*spawn_proc_args)
+#      #  gl.emit({"spawn" => spawn_proc_args})
+#      #end
