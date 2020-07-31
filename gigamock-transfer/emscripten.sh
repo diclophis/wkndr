@@ -16,7 +16,7 @@ cd emsdk
 
 ./emsdk list
 
-./emsdk install latest
+./emsdk install 1.39.19
 
 #1.39.0
 #latest
