@@ -284,6 +284,9 @@ class Connection
               when "party" #TODO: rename this something not stupid
                 wkndrfile_req = typed_msg[channel]
                 #log!(:client_wants, wkndrfile_req)
+                if wkndrfile_req == "/"
+                  wkndrfile_req = "Wkndrfile" #TODO: ?????
+                end
 
                 @pending_parties << wkndrfile_req
 

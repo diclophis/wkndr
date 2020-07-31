@@ -326,6 +326,7 @@ class ProtocolServer
 
   def handle_static_file(cn)
     Proc.new { |resolved_filename|
+#raise resolved_filename
       if resolved_filename.is_a?(UVError) || !resolved_filename.start_with?(@required_prefix)
         cn.write_response(Protocol.missing)
       else
@@ -409,7 +410,7 @@ begin
 rescue UVError => e
   tries -= 1
   retry unless tries < 0
-  raise "#{tries} #{wp} #{e}"
+  raise "#{tries} -- #{wp} -- #{e} #{self.inspect}"
 end
 
     "srand(#{next_rand % 100000000 })\n" + wkread
