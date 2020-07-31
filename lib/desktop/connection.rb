@@ -20,7 +20,7 @@ class Connection
 
     self.phr = Phr.new
     self.session = {}
-    self.hex = Sysrandom.hex
+    self.hex = Sysrandom.random
 
     @closing = false
     @closed = false
