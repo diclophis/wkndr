@@ -33,7 +33,8 @@ class ServerSide < Wkndr
 
   def self.install_trap!
     @timer = UV::Timer.new
-    @timer.start(1000/60, 1000/60) do
+    fps = 1000.0/1.0
+    @timer.start(fps, fps) do
       unless @keep_running
         @timer.stop
       end

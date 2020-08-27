@@ -309,14 +309,14 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   //}
 
-  float textSize = 15.0;
+  float textSize = 30.0;
 
   //Vector3 cubePosition = p_data->position;
 
   Vector2 cubeScreenPosition;
   //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
-  cubeScreenPosition = GetWorldToScreen2D((Vector2){250, 250}, p_data->cameraTwo);
+  cubeScreenPosition = GetWorldToScreen2D((Vector2){250, 75}, p_data->cameraTwo);
 
   DrawText(c_label_txt, cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, textSize, BLUE);
 
