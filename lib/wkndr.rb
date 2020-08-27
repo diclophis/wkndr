@@ -71,7 +71,6 @@ class Wkndr
   end
 
   def self.common_cheese_process!
-    #log!(:wtf, @stacks_to_care_about)
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
       if running_stacks.length > 0

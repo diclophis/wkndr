@@ -18,7 +18,7 @@ class ServerSide < Wkndr
       _, safety_dir_arg = server_args.split("=")
     end
 
-    stack = StackBlocker.new(true)
+    stack = StackBlocker.new
 
     gl = GameLoop.new
     stack.up(gl)
@@ -34,7 +34,11 @@ class ServerSide < Wkndr
   def self.install_trap!
     @timer = UV::Timer.new
     fps = 1000.0/1.0
+    @draw_this_tick = false
+
     @timer.start(fps, fps) do
+      @draw_this_tick = true
+
       unless @keep_running
         @timer.stop
       end
@@ -54,11 +58,18 @@ class ServerSide < Wkndr
 
     ##TODO: trap exit condition from UI
     foo = true
+    #foo = self.cheese_cross!
+    #other_foo = common_cheese_process!
     #run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
     run_mode = UV::UV_RUN_ONCE
     while @keep_running
       foo = self.cheese_cross!
-      other_foo = common_cheese_process!
+
+      #if @draw_this_tick
+        other_foo = common_cheese_process!
+        #if @draw_this_tick
+        #@draw_this_tick = false
+      #end
 
       #UV.run(UV::UV_RUN_NOWAIT)
       #UV.run(UV::UV_RUN_ONCE)

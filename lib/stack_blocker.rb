@@ -1,8 +1,9 @@
 #
 
 class StackBlocker
-  def initialize(for_server)
-    @for_server = for_server
+  def initialize
+    #(for_server)
+    #@for_server = for_server
     @stack = []
   end
 
@@ -11,11 +12,13 @@ class StackBlocker
   end
 
   def fps
-    if @for_server
-      1
-    else
-      1
-    end
+    raise "wtf"
+
+    #if @for_server
+    #  1
+    #else
+    #  1
+    #end
   end
 
   def running

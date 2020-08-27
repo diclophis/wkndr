@@ -19,13 +19,13 @@ static double globalTime = 0;
 static double startTime = -1;
 static double latestTime = -1;
 
-mrb_value platform_bits_update(mrb_state* mrb, mrb_value self) {
+mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
   double time;
   double dt;
 
   int sw,sh;
 
-double currentTime;
+  double currentTime;
 
 #if defined(__EMSCRIPTEN__)
   currentTime = (double)(emscripten_get_now() * 1000.0); // +
@@ -46,7 +46,6 @@ double currentTime;
   }
 
   dt = (time - latestTime);
-  //dt = time;
 
   sw = GetScreenWidth();
   sh = GetScreenHeight();
@@ -55,6 +54,25 @@ double currentTime;
 
   latestTime = time;
 
+  if (mrb->exc) {
+    fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
+    mrb_print_error(mrb);
+    mrb_print_backtrace(mrb);
+    return mrb_nil_value();
+  }
+
+  return mrb_true_value();
+}
+
+
+mrb_value platform_bits_server(mrb_state* mrb, mrb_value self) {
+  double time;
+  double dt;
+  int sw,sh;
+
+  sw = sh = time = dt = -22;
+
+  mrb_funcall(mrb, self, "update", 4, mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
     mrb_print_error(mrb);

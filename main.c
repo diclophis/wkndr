@@ -287,7 +287,7 @@ void platform_bits_update_void(void* arg) {
   struct RObject* self = loop_data->self_pointer;
   mrb_value selfV = mrb_obj_value(self);
 
-  platform_bits_update(mrb, selfV);
+  platform_bits_signal(mrb, selfV);
 }
 
 
@@ -371,10 +371,10 @@ int main(int argc, char** argv) {
 
   //TODO: create class PlatformBits
   struct RClass *stack_blocker_class = mrb_define_class(mrb, "StackBlocker", mrb->object_class);
-  mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_update, MRB_ARGS_NONE());
+  mrb_define_method(mrb, stack_blocker_class, "signal", platform_bits_server, MRB_ARGS_NONE());
 
   struct RClass *stack_blocker_class_client = mrb_define_class(mrb_client, "StackBlocker", mrb_client->object_class);
-  mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_update, MRB_ARGS_NONE());
+  mrb_define_method(mrb_client, stack_blocker_class_client, "signal", platform_bits_signal, MRB_ARGS_NONE());
 
   //// class GameLoop
   mrb_define_game_loop(mrb_client);

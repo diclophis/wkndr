@@ -2,8 +2,6 @@
 
 class ClientSide < Wkndr
   def self.startup_clientside(args)
-    #log!(:start_clientside)
-
     if args.include?("--no-client")
       return
     end
@@ -26,11 +24,9 @@ class ClientSide < Wkndr
       wp = b
     end
 
-    stack = StackBlocker.new(false)
+    stack = StackBlocker.new
 
     gl = GameLoop.new
-
-#raise wp.inspect
 
     socket_stream = gl.connect_window!(w, h, wp)
     raise "unknown socket stream: TODO: fix this abstraction" unless socket_stream
