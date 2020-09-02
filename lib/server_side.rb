@@ -32,17 +32,17 @@ class ServerSide < Wkndr
   end
 
   def self.install_trap!
-    @timer = UV::Timer.new
-    fps = 1000.0/1.0
-    @draw_this_tick = false
+    #@timer = UV::Timer.new
+    #fps = 1000.0/1.0
+    #@draw_this_tick = false
 
-    @timer.start(fps, fps) do
-      @draw_this_tick = true
+    #@timer.start(fps, fps) do
+    #  @draw_this_tick = true
 
-      unless @keep_running
-        @timer.stop
-      end
-    end
+    #  unless @keep_running
+    #    @timer.stop
+    #  end
+    #end
 
     @trap = UV::Signal.new
     
@@ -61,7 +61,8 @@ class ServerSide < Wkndr
     #foo = self.cheese_cross!
     #other_foo = common_cheese_process!
     #run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
-    run_mode = UV::UV_RUN_ONCE
+    #run_mode = UV::UV_RUN_ONCE
+    run_mode = UV::UV_RUN_NOWAIT
     while @keep_running
       foo = self.cheese_cross!
 
