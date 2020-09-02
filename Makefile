@@ -55,8 +55,8 @@ giga_static_txt = gigamock-transfer/static/robots.txt
 giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/wkndr.css 
 
-#.SECONDARY: $(static_ruby_headers) $(objects)
-#.PHONY: $(target)
+.SECONDARY: $(static_ruby_headers) $(objects)
+.PHONY: $(target)
 
 objects += $(mruby_static_lib)
 objects += $(raylib_static_lib)

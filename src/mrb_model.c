@@ -79,6 +79,10 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   }
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
+
+  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+    MeshTangents(&p_data->model.meshes[meshi]);
+  }
   
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -270,9 +274,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
   
-  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-  //  MeshTangents(&p_data->model.meshes[meshi]);
-  //}
+  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+    MeshTangents(&p_data->model.meshes[meshi]);
+  }
 
   //Material material = { 0 };
 
