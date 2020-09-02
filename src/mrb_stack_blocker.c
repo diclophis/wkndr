@@ -15,6 +15,13 @@
 // raylib stuff
 #include <raylib.h>
 
+
+// emscripten/wasm stuff
+#ifdef PLATFORM_WEB
+  #include <emscripten/emscripten.h>
+  #include <emscripten/html5.h>
+#endif
+
 static double globalTime = 0;
 static double startTime = -1;
 static double latestTime = -1;
