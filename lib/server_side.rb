@@ -3,11 +3,12 @@
 class ServerSide < Wkndr
   def self.startup_serverside(args)
     if args.include?("--no-server")
+      @run_clientside_fps = true
       return
     end
 
     if args.include?("--no-client")
-      @use_slow_loop = true
+      @idle_runloop = true
     end
 
     server_args = args.find { |arg| arg[0,9] == "--server=" }
@@ -32,17 +33,18 @@ class ServerSide < Wkndr
   end
 
   def self.install_trap!
-    #@timer = UV::Timer.new
-    #fps = 1000.0/1.0
-    #@draw_this_tick = false
-
-    #@timer.start(fps, fps) do
-    #  @draw_this_tick = true
-
-    #  unless @keep_running
-    #    @timer.stop
-    #  end
-    #end
+    if @run_clientside_fps
+      @timer = UV::Timer.new
+      fps = 1000.0/120.0
+      @timer.start(fps, fps) do
+        #self.process_stacks!
+        #self.server_side_tick!
+        self.process_stacks! 
+        unless @keep_running
+          @timer.stop
+        end
+      end
+    end
 
     @trap = UV::Signal.new
     
@@ -56,28 +58,18 @@ class ServerSide < Wkndr
 
     install_trap!
 
-    ##TODO: trap exit condition from UI
-    foo = true
-    #foo = self.cheese_cross!
-    #other_foo = common_cheese_process!
-    #run_mode = @use_slow_loop ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
-    #run_mode = UV::UV_RUN_ONCE
-    run_mode = UV::UV_RUN_NOWAIT
     while @keep_running
-      foo = self.cheese_cross!
+      self.server_side_tick!
 
-      #if @draw_this_tick
-        other_foo = common_cheese_process!
-        #if @draw_this_tick
-        #@draw_this_tick = false
-      #end
+      unless @run_clientside_fps
+        self.process_stacks!
+      end
 
-      #UV.run(UV::UV_RUN_NOWAIT)
-      #UV.run(UV::UV_RUN_ONCE)
-      #UV.run
+      run_mode = (@run_clientside_fps || @idle_runloop) ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
+      #run_mode = UV::UV_RUN_NOWAIT
+      #run_mode = UV::UV_RUN_ONCE
+
       UV.run(run_mode)
-
-      break unless (foo)
     end
 
     UV.default_loop.stop

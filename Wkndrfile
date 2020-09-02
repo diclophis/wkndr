@@ -84,7 +84,7 @@ Wkndr.client_side { |gl|
       }
 
       gl.twod {
-        #gl.label("#{speed} #{'%2.2f' % (((delta_time * 1000.0) / (1000.0 / 60.0)) * 100.0)} #{'%.2f' % global_time}")
+        gl.label("#{speed} #{'%2.2f' % (((delta_time * 1000.0) / (1000.0 / 60.0)) * 100.0)} #{'%.2f' % global_time}")
         #if fps > 0.5 && fps < @lowest_fps
         #  @lowest_fps = fps
         #end

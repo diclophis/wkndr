@@ -127,20 +127,20 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   }
 
   //TODO
-  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "common_cheese_process!", 0, 0);
+  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
 
   if (loop_data->mrb_pointer->exc) {
-    fprintf(stderr, "Exception in CHEESE_CROSS\n");
+    fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
     mrb_print_error(loop_data->mrb_pointer);
     //mrb_print_backtrace(loop_data->mrb_pointer);
     return mrb_false_value();
   }
 
-  if (mrb_test(wiz_return_halt)) {
+  //if (mrb_test(wiz_return_halt)) {
     return mrb_true_value();
-  } else {
-    return mrb_false_value();
-  }
+  //} else {
+  //  return mrb_false_value();
+  //}
 }
 
 
@@ -458,7 +458,7 @@ int main(int argc, char** argv) {
       mrb_obj_value(
           Data_Wrap_Struct(mrb, mrb->object_class, &crisscross_data_type, loop_data)));
 
-  mrb_define_class_method(mrb, thor_class, "cheese_cross!", cheese_cross, MRB_ARGS_REQ(0));
+  mrb_define_class_method(mrb, thor_class, "server_side_tick!", cheese_cross, MRB_ARGS_REQ(0));
 
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 

@@ -70,7 +70,7 @@ class Wkndr
     @server
   end
 
-  def self.common_cheese_process!
+  def self.process_stacks!
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
       if running_stacks.length > 0
