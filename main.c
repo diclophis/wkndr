@@ -130,7 +130,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "common_cheese_process!", 0, 0);
 
   if (loop_data->mrb_pointer->exc) {
-    fprintf(stderr, "Exception in CHEESE_CROSS");
+    fprintf(stderr, "Exception in CHEESE_CROSS\n");
     mrb_print_error(loop_data->mrb_pointer);
     //mrb_print_backtrace(loop_data->mrb_pointer);
     return mrb_false_value();
