@@ -4,10 +4,9 @@ class GameCamera
   def initialize
     @camera_target = [0, 0, 0]
     @camera_position = [-0.0, 0, -3.0]
-    @camera_position[1] = 2.0
   end
 
-  def update(gl, global_time, delta_time, player_position)
+  def update(gl, global_time, delta_time, height, player_position)
     follow_speed = 0.75
     follow_look_speed = 5.0
 
@@ -15,6 +14,7 @@ class GameCamera
     @camera_target[2] += (player_position[2] - @camera_target[2]) * (1.0 * (player_position[2] - @camera_target[2]).abs) * follow_look_speed * delta_time
 
     @camera_position[0] += ((@camera_target[0] - @camera_position[0]) * follow_speed * delta_time)
+    @camera_position[1] = height
     @camera_position[2] += (((@camera_target[2] - 2.25) - @camera_position[2]) * follow_speed * delta_time)
   end
 

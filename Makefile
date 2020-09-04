@@ -2,7 +2,7 @@
 
 TARGET ?= desktop
 TARGET_OS ?= $(shell uname)
-DEBUG ?= -g
+DEBUG ?= #-g
 build=release
 
 ifeq ($(TARGET),desktop)
@@ -71,7 +71,7 @@ endif
 
 RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 ifeq ($(TARGET),desktop)
-  CFLAGS=-O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -DSUPPORT_GIF_RECORDING -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src
+  CFLAGS=-O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
@@ -106,7 +106,7 @@ clean:
 	mkdir -p $(build)/src
 	mkdir -p $(build)/src/desktop
 
-$(build)/%.o: %.c $(sources) $(headers)
+$(build)/%.o: %.c $(static_ruby_headers) $(sources) $(headers)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(mruby_static_lib): config/mruby.rb
