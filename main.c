@@ -75,6 +75,8 @@
 #include "client_side.h"
 #include "game_loop.h"
 #include "socket_stream.h"
+#include "camera.h"
+#include "aabb.h"
 
 
 //server stuff
@@ -403,6 +405,8 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb_client, stack_blocker, NULL);
   eval_static_libs(mrb_client, game_loop, NULL);
+  eval_static_libs(mrb_client, camera, NULL);
+  eval_static_libs(mrb_client, aabb, NULL);
   //eval_static_libs(mrb_client, window, NULL);
   //eval_static_libs(mrb_client, box, NULL);
   //eval_static_libs(mrb_client, theseus, NULL);
