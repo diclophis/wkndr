@@ -25,6 +25,7 @@ COPY gigamock-transfer/emscripten-warmup.sh /var/tmp/emscripten-warmup.sh
 RUN /var/tmp/emscripten-warmup.sh
 
 COPY config /var/lib/wkndr/config
+COPY rlgl.h.patch /var/lib/wkndr/
 
 RUN cd /var/lib/wkndr && ls -l && \
     git init && \
@@ -42,7 +43,8 @@ RUN cd /var/lib/wkndr && ls -l && \
     git submodule update && \
     cd raylib && \
     git fetch && \
-    git checkout 00fda3be650ade80f1492105c2107a4ace6bc575
+    git checkout 00fda3be650ade80f1492105c2107a4ace6bc575 && \
+    cat ../rlgl.h.patch | git apply
 
 COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb

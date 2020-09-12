@@ -1,0 +1,25 @@
+diff --git a/src/rlgl.h b/src/rlgl.h
+index 447227fb..7f2d615d 100644
+--- a/src/rlgl.h
++++ b/src/rlgl.h
+@@ -2804,13 +2804,13 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
+         else glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
+     }
+ 
+-    // Unbind all binded texture maps
+-    for (int i = 0; i < MAX_MATERIAL_MAPS; i++)
+-    {
+-        glActiveTexture(GL_TEXTURE0 + i);       // Set shader active texture
+-        if ((i == MAP_IRRADIANCE) || (i == MAP_PREFILTER) || (i == MAP_CUBEMAP)) glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+-        else glBindTexture(GL_TEXTURE_2D, 0);   // Unbind current active texture
+-    }
++    //// Unbind all binded texture maps
++    //for (int i = 0; i < MAX_MATERIAL_MAPS; i++)
++    //{
++    //    glActiveTexture(GL_TEXTURE0 + i);       // Set shader active texture
++    //    if ((i == MAP_IRRADIANCE) || (i == MAP_PREFILTER) || (i == MAP_CUBEMAP)) glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
++    //    else glBindTexture(GL_TEXTURE_2D, 0);   // Unbind current active texture
++    //}
+ 
+     // Unind vertex array objects (or VBOs)
+     if (RLGL.ExtSupported.vao) glBindVertexArray(0);
