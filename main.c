@@ -293,7 +293,6 @@ void platform_bits_update_void(void* arg) {
 }
 
 
-//TODO
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
   fprintf(stderr, "preShowShoSshow!\n");
 
@@ -308,18 +307,11 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   loop_data->self_pointer = mrb_obj_ptr(stack_self);
 
 #ifdef PLATFORM_WEB
-  //emscripten_sample_gamepad_data();
 
   emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
 
 #endif
-
-#ifdef PLATFORM_DESKTOP
-  
-#endif
-
-  //fprintf(stderr, "wtf show!\n");
 
   return self;
 }
@@ -380,24 +372,6 @@ int main(int argc, char** argv) {
 
   //// class GameLoop
   mrb_define_game_loop(mrb_client);
-
-  //// class Model
-  //struct RClass *model_class = mrb_define_class(mrb_client, "Model", mrb->object_class);
-  //mrb_define_method(mrb_client, model_class, "initialize", model_initialize, MRB_ARGS_REQ(3));
-  //mrb_define_method(mrb_client, model_class, "draw", model_draw, MRB_ARGS_NONE());
-  //mrb_define_method(mrb_client, model_class, "deltap", model_deltap, MRB_ARGS_REQ(3));
-  //mrb_define_method(mrb_client, model_class, "deltar", model_deltar, MRB_ARGS_REQ(4));
-  //mrb_define_method(mrb_client, model_class, "deltas", model_deltas, MRB_ARGS_REQ(3));
-  //mrb_define_method(mrb_client, model_class, "yawpitchroll", model_yawpitchroll, MRB_ARGS_REQ(6));
-  //mrb_define_method(mrb_client, model_class, "label", model_label, MRB_ARGS_REQ(1));
-
-  //// class Cube
-  //struct RClass *cube_class = mrb_define_class(mrb_client, "Cube", model_class);
-  //mrb_define_method(mrb_client, cube_class, "initialize", cube_initialize, MRB_ARGS_REQ(4));
-
-  //// class Sphere
-  //struct RClass *sphere_class = mrb_define_class(mrb_client, "Sphere", model_class);
-  //mrb_define_method(mrb_client, sphere_class, "initialize", sphere_initialize, MRB_ARGS_REQ(4));
 
   eval_static_libs(mrb, markaby, NULL);
   eval_static_libs(mrb, stack_blocker, NULL);
@@ -492,7 +466,6 @@ int main(int argc, char** argv) {
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVERBLOCKINIT\n");
     mrb_print_error(mrb);
-    //mrb_print_backtrace(mrb);
   }
 
 #endif

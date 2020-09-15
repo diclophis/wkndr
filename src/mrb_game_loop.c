@@ -19,11 +19,8 @@
 // raylib stuff
 #include <raylib.h>
 #include <raymath.h>
-
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
-//#include <raygui.h>
-//extern void InitTimer(void);                            // Initialize timer
 
 // local stuff
 #include "mrb_game_loop.h"
@@ -35,9 +32,6 @@
     #define GLSL_VERSION            100
 #endif
 
-
-//static void play_data_destructor(mrb_state *mrb, void *p_);
-//const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
 
 void play_data_destructor(mrb_state *mrb, void *p_);
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
@@ -78,7 +72,6 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   InitWindow(screenWidth, screenHeight, c_game_name);
 
-
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
   data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
@@ -99,32 +92,15 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     // ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, UNIFORM_VEC4);
-
-    // All models use the same shader
-    //modelA.materials[0].shader = shader;
-    //modelB.materials[0].shader = shader;
-    //modelC.materials[0].shader = shader;
+    SetShaderValue(shader, ambientLoc, (float[4]){ 0.01f, 0.01f, 0.01f, 1.0f }, UNIFORM_VEC4);
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
-
-    //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1, 20, 0 }, Vector3Zero(), WHITE, shader);
-    //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 2, 30, 5 }, Vector3Zero(), RED, shader);
-    //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 3, 40, 10 }, Vector3Zero(), GREEN, shader);
-    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 4, 50, 15 }, Vector3Zero(), BLUE, shader);
-
-    //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 30, 0 }, Vector3Zero(), WHITE, shader);
-    //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -33, 55, -77 }, Vector3Zero(), WHITE, shader);
-    //lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 20, 100, 33 }, Vector3Zero(), WHITE, shader);
-    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 20, 20, 20 }, Vector3Zero(), WHITE, shader);
 
     //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 2, 3 }, Vector3Zero(), BLUE, shader);
     lights[0] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, -30 }, Vector3Zero(), WHITE, shader);
     lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
     lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
     lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
-
-
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
@@ -232,16 +208,6 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   mrb_value block;
   mrb_get_args(mrb, "&", &block);
 
-  //TODO....
-  //play_data_s *p_data = NULL;
-  //mrb_value data_value;     // this IV holds the data
-  //data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
-
-  //Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
-  //if (!p_data) {
-  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
-  //}
-
   {
     BeginDrawing();
     ClearBackground(BLANK);
@@ -258,7 +224,6 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 {
   mrb_value block;
-  //mrb_value dtag;
   mrb_get_args(mrb, "&", &block);
 
   play_data_s *p_data = NULL;
@@ -273,7 +238,7 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 
   BeginMode2D(p_data->cameraTwo);
 
-  mrb_yield_argv(mrb, block, 0, NULL);
+    mrb_yield_argv(mrb, block, 0, NULL);
 
   //float textSize = 20.0;
   ////Vector3 cubePosition = p_data->position;
@@ -436,11 +401,8 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   //// Update the light shader with the camera view position
   ////float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
   //SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
-
-
   //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
   //SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
-
   //////updateLighting
   //////white closeup point
   ////lights[0].position.x = tx + 0;
@@ -452,28 +414,22 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   ////lights[0].intensity = 0.075;
   ////lights[0].radius = 0.333;
   ////lights[0].enabled = false;
-
   //////white directional
   ////lights[1].intensity = 0.25;
   ////lights[1].enabled = true;
-
   //////blue spotlight
-
   ////lights[2].position.x = tx;
   ////lights[2].position.y = ty + 3;
   ////lights[2].position.z = tz;
   ////lights[2].target.x = tx;
   ////lights[2].target.y = ty;
   ////lights[2].target.z = tz;
-
   ////lights[2].intensity = 0.000001;
   ////lights[2].coneAngle = 20.00;
   ////lights[2].enabled = true;
-
   ////lights[3].intensity = 0.15;
   ////lights[3].radius = 3.0;
   ////lights[3].enabled = false;
-
   //UpdateLightValues(standardShader, lights[0]);
   //UpdateLightValues(standardShader, lights[1]);
   //UpdateLightValues(standardShader, lights[2]);
@@ -557,41 +513,10 @@ static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
 }
 
 
-/*
-static mrb_value game_loop_gd_deep(mrb_state* mrb, mrb_value self)
-{
-
-  mrb_value gd_deep;
-
-  //mrb_iv_set(
-  //    mrb, self, mrb_intern_lit(mrb, "@gd_shader"), // set @data
-  //    mrb_obj_value(                           // with value hold in struct
-  //        Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, )));
-
-  play_data_s *p_data = NULL;
-  mrb_value data_value; // this IV holds the data
-
-  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
-
-  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
-  if (!p_data) {
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
-  }
-
-  //p_data->globalDebugShader;
-
-  return gd_deep;
-}
-*/
-
-
 struct RClass *mrb_define_game_loop(mrb_state *mrb) {
-  //// class GameLoop
-
   mousexyz = mrb_ary_new(mrb);
   pressedkeys = mrb_ary_new(mrb);
 
-  //pressedkeys = mrb_ary_new(mrb);
   struct RClass *game_class = mrb_define_class(mrb, "GameLoop", mrb->object_class);
   mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
@@ -603,20 +528,6 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
-
-  //mrb_define_method(mrb, game_class, "gd_shader", game_loop_gd_shader, MRB_ARGS_NONE());
-  //mrb_define_method(mrb, game_class, "gd_texture", game_loop_gd_texture, MRB_ARGS_NONE());
-
-
-
-  //mrb_define_method(mrb, game_class, "first_person!", game_loop_first_person, MRB_ARGS_NONE());
-  //mrb_define_method(mrb, game_class, "draw_grid", game_loop_draw_grid, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb, game_class, "draw_plane", game_loop_draw_plane, MRB_ARGS_REQ(5));
-  //mrb_define_method(mrb, game_class, "draw_fps", game_loop_draw_fps, MRB_ARGS_REQ(2));
-  //mrb_define_method(mrb, game_class, "interim", game_loop_interim, MRB_ARGS_BLOCK());
-  //mrb_define_method(mrb, game_class, "button", game_loop_button, MRB_ARGS_REQ(5));
-  //mrb_define_method(mrb, game_class, "shutdown", platform_bits_shutdown, MRB_ARGS_NONE());
-  //mrb_define_method(mrb, game_class, "init_timer", init_timer, MRB_ARGS_REQ(0));
 
   return game_class;
 }
