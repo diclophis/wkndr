@@ -100,8 +100,6 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     // ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
     SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, UNIFORM_VEC4);
-    
-    float angle = 6.282f;
 
     // All models use the same shader
     //modelA.materials[0].shader = shader;
@@ -110,11 +108,21 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
-    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1, 20, 0 }, Vector3Zero(), WHITE, shader);
-    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 2, 30, 5 }, Vector3Zero(), RED, shader);
-    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 3, 40, 10 }, Vector3Zero(), GREEN, shader);
-    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 4, 50, 15 }, Vector3Zero(), BLUE, shader);
+    //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 1, 20, 0 }, Vector3Zero(), WHITE, shader);
+    //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 2, 30, 5 }, Vector3Zero(), RED, shader);
+    //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 3, 40, 10 }, Vector3Zero(), GREEN, shader);
+    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 4, 50, 15 }, Vector3Zero(), BLUE, shader);
 
+    //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 0, 30, 0 }, Vector3Zero(), WHITE, shader);
+    //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -33, 55, -77 }, Vector3Zero(), WHITE, shader);
+    //lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 20, 100, 33 }, Vector3Zero(), WHITE, shader);
+    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 20, 20, 20 }, Vector3Zero(), WHITE, shader);
+
+    //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 2, 3 }, Vector3Zero(), BLUE, shader);
+    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, -30 }, Vector3Zero(), WHITE, shader);
+    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
+    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
+    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
 
 
 
@@ -209,8 +217,6 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
   p_data->cameraTwo.offset = (Vector2){ 0, 0 };
   p_data->cameraTwo.rotation = 0.0f;
   p_data->cameraTwo.zoom = 1.0f;
-
-
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@pointer"), // set @data
@@ -380,15 +386,6 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
 }
 
 
-//static mrb_value init_timer(mrb_state* mrb, mrb_value self)
-//{
-//
-//  InitTimer();
-//
-//  return mrb_nil_value();
-//}
-
-
 static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
 {
   mrb_int type;
@@ -431,7 +428,14 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   p_data->cameraTwo.rotation = 0.0f;
   p_data->cameraTwo.zoom = 1.0f;
 
+  UpdateCamera(&p_data->camera);
 
+  //TODO
+  //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  ////SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+  //// Update the light shader with the camera view position
+  ////float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+  //SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
 
   //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
@@ -493,31 +497,28 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  UpdateCamera(&p_data->camera);
-
-  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
-  //SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+  UpdateLightValues(p_data->globalDebugShader, lights[0]);
+  UpdateLightValues(p_data->globalDebugShader, lights[1]);
+  UpdateLightValues(p_data->globalDebugShader, lights[2]);
+  UpdateLightValues(p_data->globalDebugShader, lights[3]);
 
   BeginMode3D(p_data->camera);
 
-  mrb_yield_argv(mrb, block, 0, NULL);
+    mrb_yield_argv(mrb, block, 0, NULL);
 
-  ////drawLighting
-  //for (int i=0; i<MAX_LIGHTS; i++) {
-  //  DrawLight(lights[i]);
-  //}
+    ////drawLighting
+    //for (int i=0; i<MAX_LIGHTS; i++) {
+    //  DrawLight(lights[i]);
+    //}
 
-    // Draw markers to show where the lights are
-    if (lights[0].enabled) { DrawSphereEx(lights[0].position, 1.0f, 8, 8, WHITE); }
-    if (lights[1].enabled) { DrawSphereEx(lights[1].position, 1.0f, 8, 8, RED); }
-    if (lights[2].enabled) { DrawSphereEx(lights[2].position, 1.0f, 8, 8, GREEN); }
-    if (lights[3].enabled) { DrawSphereEx(lights[3].position, 1.0f, 8, 8, BLUE); }
-
-    DrawGrid(10, 1.0f);
+    //// Draw markers to show where the lights are
+    //if (lights[0].enabled) { DrawSphereEx(lights[0].position, 0.5f, 8, 8, BLUE); }
+    //if (lights[1].enabled) { DrawSphereEx(lights[1].position, 2.0f, 8, 8, RED); }
+    //if (lights[2].enabled) { DrawSphereEx(lights[2].position, 2.0f, 8, 8, GREEN); }
+    //if (lights[3].enabled) { DrawSphereEx(lights[3].position, 2.0f, 8, 8, BLUE); }
+    //DrawGrid(10, 1.0f);
 
   EndMode3D();
-
-  //fprintf(stderr, "endmode3\n");
 
   return mrb_nil_value();
 }

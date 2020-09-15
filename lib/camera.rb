@@ -15,10 +15,10 @@ class GameCamera
 
     @camera_position[0] += ((@camera_target[0] - @camera_position[0]) * follow_speed * delta_time)
     @camera_position[1] = height
-    @camera_position[2] += (((@camera_target[2] - 2.25) - @camera_position[2]) * follow_speed * delta_time)
+    @camera_position[2] += (((@camera_target[2] - 1.25) - @camera_position[2]) * follow_speed * delta_time)
   end
 
   def lookat(gl, player_position)
-    gl.lookat(1, *@camera_position, *@camera_target, 40.0)
+    gl.lookat(1, *@camera_position, *@camera_target, 60.0)
   end
 end
