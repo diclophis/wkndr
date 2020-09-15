@@ -31,9 +31,9 @@ Wkndr.nonce {
     }
 
     @cubes = []
-    @cubes << Cube.new(0.13, 0.70, 0.15, 1.00)
-    @cubes << Cube.new(0.17, 0.30, 0.90, 1.00)
-    @cubes << Cube.new(1.10, 0.19, 0.40, 1.00)
+    @cubes << Cube.new(gl, 0.13, 0.70, 0.15, 1.00)
+    @cubes << Cube.new(gl, 0.17, 0.30, 0.90, 1.00)
+    @cubes << Cube.new(gl, 1.10, 0.19, 0.40, 1.00)
   }
 
   Wkndr.server_side { |gl|

@@ -58,4 +58,7 @@ MRuby::Build.new do |conf|
   #end
 
   #conf.enable_cxx_exception
+  conf.cc do |cc|
+    cc.flags = ["-O3"]
+  end
 end

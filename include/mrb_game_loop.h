@@ -7,4 +7,6 @@ typedef struct {
   Camera2D cameraTwo;
   //RenderTexture2D buffer_target;
   Vector2 mousePosition;
+  Texture globalDebugTexture;
+  Shader globalDebugShader;
 } play_data_s;

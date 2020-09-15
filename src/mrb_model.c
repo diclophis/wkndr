@@ -16,6 +16,10 @@
 //#include <mruby/class.h>
 #include <mruby/variable.h>
 
+#include <mrb_game_loop.h>
+
+extern struct mrb_data_type play_data_type;
+
 static int counter = 0;
 
 typedef struct {
@@ -62,10 +66,12 @@ const struct mrb_data_type model_data_type = {"model_data", model_data_destructo
 
 static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 {
+  mrb_value model_game_loop = mrb_nil_value();
   mrb_value model_obj = mrb_nil_value();
   mrb_value model_png = mrb_nil_value();
   mrb_float scalef;
-  mrb_get_args(mrb, "oof", &model_obj, &model_png, &scalef);
+
+  mrb_get_args(mrb, "ooof", &model_game_loop, &model_obj, &model_png, &scalef);
 
   const char *c_model_obj = mrb_string_value_cstr(mrb, &model_obj);
   const char *c_model_png = mrb_string_value_cstr(mrb, &model_png);
@@ -119,9 +125,24 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //if (true || mrb_equal(mrb, foop_mtl, mrb_true_value())) {
   //  fprintf(stderr, "detected mtl\n");
 
+  //play_data_s *pp_data = NULL;
+  ////data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+  //Data_Get_Struct(mrb, model_game_loop, &play_data_type, pp_data);
+  //if (!pp_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
+
+  //Shader standardShader = pp_data->globalDebugShader;
+  //Texture standardTexture = pp_data->globalDebugTexture;
+
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  //  p_data->model.materials[mi].shader = standardShader;
+  //}
+
+
   //  //int foo = 0;
   //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
-  for (int mi=0; mi<p_data->model.materialCount; mi++) {
     //Material material = { 0 };
     //material.shader = standardShader;
     //p_data->model.materials[mi] = material;
@@ -136,8 +157,6 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
     //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
     //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
 
-    //p_data->model.materials[mi].shader = standardShader;
-  }
 
   //p_data->model.materials[1].shader = standardShader;
   //p_data->model.materials[2].shader = standardShader;
@@ -165,8 +184,37 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  //p_data->model.material.maps[MAP_DIFFUSE].texture = p_data->texture; // Set map diffuse texture
   //}
 
+  ///     !!!!! mrb_value gd_deep;
+
+  ///     !!!!! //mrb_iv_set(
+  ///     !!!!! //    mrb, self, mrb_intern_lit(mrb, "@gd_shader"), // set @data
+  ///     !!!!! //    mrb_obj_value(                           // with value hold in struct
+  ///     !!!!! //        Data_Wrap_Struct(mrb, mrb->object_class, &play_data_type, )));
+  ///     !!!!! play_data_s *p_data = NULL;
+  ///     !!!!! mrb_value data_value; // this IV holds the data
+  ///     !!!!! data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+  ///     !!!!! Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  ///     !!!!! if (!p_data) {
+  ///     !!!!!   mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  ///     !!!!! }
+  ///     !!!!! //p_data->globalDebugShader;
+  ///     !!!!! return gd_deep;
+
   ////TODO?
   ////p_data->model.material.shader = shader;
+
+  play_data_s *pp_data = NULL;
+  mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  if (!pp_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+  Shader standardShader = pp_data->globalDebugShader;
+  Texture standardTexture = pp_data->globalDebugTexture;
+  for (int mi=0; mi<p_data->model.materialCount; mi++) {
+    //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+    p_data->model.materials[mi].shader = standardShader;
+  }
 
   p_data->scale.x = scalef;
   p_data->scale.y = scalef;
@@ -221,6 +269,33 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   return mrb_nil_value();
 }
 
+/*
+static mrb_value model_set_material(mrb_state* mrb, mrb_value self)
+{
+  mrb_bool material;
+  mrb_bool texture;
+
+  mrb_get_args(mrb, "bb", &material, &texture);
+
+  model_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &model_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  Model *modelA = p_data->model;
+
+  modelA.materials[0].maps[MAP_DIFFUSE].texture = texture;
+  modelA.materials[0].shader = shader;
+
+  return mrb_nil_value();
+}
+*/
+
 
 static mrb_value model_label(mrb_state* mrb, mrb_value self)
 {
@@ -261,7 +336,8 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
 static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 {
   mrb_float w,h,l,scalef;
-  mrb_get_args(mrb, "ffff", &w, &h, &l, &scalef);
+  mrb_value model_game_loop;
+  mrb_get_args(mrb, "offff", &model_game_loop, &w, &h, &l, &scalef);
 
   model_data_s *p_data;
 
@@ -278,27 +354,80 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
     MeshTangents(&p_data->model.meshes[meshi]);
   }
 
-  //Material material = { 0 };
+  //play_data_s *pp_data = NULL;
+  //Data_Get_Struct(mrb, model_game_loop, &play_data_type, pp_data);
+  //if (!pp_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
 
-  ////material.shader = GetShaderDefault();
-  //material.shader = standardShader;
-
-  for (int mi=0; mi<p_data->model.materialCount; mi++) {
-  ////  Material material = { 0 };
-
-  ////  ////material.shader = GetShaderDefault();
-  ////  material.shader = standardShader;
-
-  ////  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
-  ////  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
-  ////  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
-
-    //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
-    //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
-    //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
-
-    //p_data->model.materials[mi].shader = standardShader;
+  play_data_s *pp_data = NULL;
+  mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  if (!pp_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
+  Shader standardShader = pp_data->globalDebugShader;
+  Texture standardTexture = pp_data->globalDebugTexture;
+  for (int mi=0; mi<p_data->model.materialCount; mi++) {
+    //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+    p_data->model.materials[mi].shader = standardShader;
+  }
+
+  ////    play_data_s *pp_data = NULL;
+  ////    mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  ////    //Data_Get_Struct(mrb, data_value, &model_data_type, p_data);
+  ////    //data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+  ////    const mrb_data_type *t2 = DATA_TYPE(model_game_loop); 
+  ////    Data_Get_Struct(mrb, data_value, &model_data_type, pp_data);
+  ////    if (!pp_data) {
+  ////      mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  ////    }
+  ////      
+  ////    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate Cube");
+  ////    Shader standardShader = pp_data->globalDebugShader;
+  ////    Texture standardTexture = pp_data->globalDebugTexture;
+  ////    //  //int foo = 0;
+  ////    //  //Material mmm = LoadMaterials(c_model_png, &foo); // Load model texture
+  ////    for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  ////      //Material material = { 0 };
+  ////      //material.shader = standardShader;
+  ////      //p_data->model.materials[mi] = material;
+  ////    //  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+  ////    //  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+  ////    //  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+  ////    //  material.maps[MAP_DIFFUSE].color = WHITE;
+  ////    //  material.maps[MAP_SPECULAR].color = WHITE;
+  ////      //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+  ////      //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
+  ////      //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
+  ////      p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  ////      p_data->model.materials[mi].shader = standardShader;
+  ////    }
+
+  ////Material material = { 0 };
+
+  //////material.shader = GetShaderDefault();
+  ////material.shader = standardShader;
+
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //////  Material material = { 0 };
+
+  //////  ////material.shader = GetShaderDefault();
+  //////  material.shader = standardShader;
+
+  //////  ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
+  //////  ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
+  //////  ////material.maps[MAP_SPECULAR].texture = LoadTexture("../models/resources/pbr/trooper_roughness.png"); // Load model specular texture
+
+  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+  //  //p_data->model.materials[mi].maps[MAP_NORMAL].color = WHITE;
+  //  //p_data->model.materials[mi].maps[MAP_SPECULAR].color = WHITE;
+
+  //  //p_data->model.materials[mi].shader = standardShader;
+
+
+
+  //}
 
   ////material.maps[MAP_DIFFUSE].texture = LoadTexture("../models/resources/pbr/trooper_albedo.png");   // Load model diffuse texture
   ////material.maps[MAP_NORMAL].texture = LoadTexture("../models/resources/pbr/trooper_normals.png");     // Load model normal texture
@@ -488,7 +617,7 @@ static mrb_value model_yawpitchroll(mrb_state* mrb, mrb_value self)
 void mrb_mruby_model_gem_init(mrb_state *mrb) {
   // class Model
   struct RClass *model_class = mrb_define_class(mrb, "Model", mrb->object_class);
-  mrb_define_method(mrb, model_class, "initialize", model_initialize, MRB_ARGS_REQ(3));
+  mrb_define_method(mrb, model_class, "initialize", model_initialize, MRB_ARGS_REQ(5));
   mrb_define_method(mrb, model_class, "draw", model_draw, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, model_class, "deltap", model_deltap, MRB_ARGS_REQ(3));
   mrb_define_method(mrb, model_class, "deltar", model_deltar, MRB_ARGS_REQ(4));
@@ -498,5 +627,5 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
 
   // class Cube
   struct RClass *cube_class = mrb_define_class(mrb, "Cube", model_class);
-  mrb_define_method(mrb, cube_class, "initialize", cube_initialize, MRB_ARGS_REQ(4));
+  mrb_define_method(mrb, cube_class, "initialize", cube_initialize, MRB_ARGS_REQ(5));
 }

@@ -2,7 +2,7 @@
 
 TARGET ?= desktop
 TARGET_OS ?= $(shell uname)
-DEBUG ?= #-g
+DEBUG ?= -g
 build=release
 
 ifeq ($(TARGET),desktop)
