@@ -116,7 +116,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
 
   char *newerVer = "#version 300 es\n#define NEWER_GL\n";
-  char *olderVer = "#version 100\n#define highp\n#define mediump\n#define lowp\n";
+  //char *olderVer = "#version 100\n#define highp\n#define mediump\n#define lowp\n";
+  char *olderVer = "#version 100\n";
   char *setVer = NULL;
 
   char *vsSource = LoadFileText("resources/shaders/standard.vs");
