@@ -44,7 +44,7 @@ index 447227fb..6f533ea2 100644
  
 +bool rlglIsNewer() {
 +  const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-+  return ((strstr((const char*)glslVersion, "ES 1.00") == NULL));
++  return ((strstr((const char*)glslVersion, "ES 1") == NULL));
 +}
 +
  // Initialize rlgl: OpenGL extensions, default buffers/shaders/textures, OpenGL states
