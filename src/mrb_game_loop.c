@@ -127,6 +127,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   } else {
       setVer = olderVer;
   }
+
   //switch(GLSL_VERSION) {
   //  case 330:
   //    setVer = newerVer;
@@ -137,7 +138,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //    break;
   //}
 
-  const char *vsSources[2] = { "", vsSource };
+  const char *vsSources[2] = { setVer, vsSource };
   const char *fsSources[2] = { setVer, fsSource };
 
     //fprintf(stderr, fsSources);
