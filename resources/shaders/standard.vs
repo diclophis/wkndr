@@ -23,7 +23,7 @@ attribute vec3 vertexNormal;
 attribute vec4 vertexColor;
 #endif
 
-// Input uniform values
+//// Input uniform values
 uniform mat4 mvp;
 uniform mat4 matModel;
 

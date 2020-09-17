@@ -52,7 +52,7 @@ struct Light {
 uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient;
 uniform vec3 viewPos;
-uniform mat4 matModel;
+//uniform mat4 matModel;
 
 const float glossiness = 0.0001;
 //const vec4 colSpecular = vec4(1.0, 1.0, 1.0, 1.0);
@@ -223,7 +223,7 @@ void main()
     vec4 texelColor = texture(texture0, fragTexCoord);
 #else
     vec4 texelColor = texture2D(texture0, fragTexCoord);
-#end
+#endif
 
     vec3 lightDot = vec3(0.0);
     vec3 normal = normalize(fragNormal);
