@@ -50,7 +50,7 @@ struct Light {
 uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient;
 uniform vec3 viewPos;
-uniform mat4 matModel;
+//uniform mat4 matModel;
 
 const float glossiness = 0.0001;
 //const vec4 colSpecular = vec4(1.0, 1.0, 1.0, 1.0);
