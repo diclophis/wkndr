@@ -218,8 +218,13 @@ void main()
 
 
 
-    // Texel color fetching from texture sampler
+// Texel color fetching from texture sampler
+#ifdef NEWER_GL
     vec4 texelColor = texture(texture0, fragTexCoord);
+#else
+    vec4 texelColor = texture2D(texture0, fragTexCoord);
+#end
+
     vec3 lightDot = vec3(0.0);
     vec3 normal = normalize(fragNormal);
     vec3 viewD = normalize(viewPos - fragPosition);
