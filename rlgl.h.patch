@@ -11,10 +11,18 @@ index 4359147a..92dd91cb 100644
  
  RLAPI Shader GetShaderDefault(void);                                      // Get default shader
 diff --git a/src/rlgl.h b/src/rlgl.h
-index 447227fb..440c33fc 100644
+index 447227fb..a519dee4 100644
 --- a/src/rlgl.h
 +++ b/src/rlgl.h
-@@ -559,6 +559,7 @@ RLAPI void rlUnloadMesh(Mesh mesh);                                       // Unl
+@@ -515,6 +515,7 @@ RLAPI unsigned int rlLoadAttribBuffer(unsigned int vaoId, int shaderLoc, void *b
+ // Functions Declaration - rlgl functionality
+ //------------------------------------------------------------------------------------
+ RLAPI void rlglInit(int width, int height);           // Initialize rlgl (buffers, shaders, textures, states)
++RLAPI bool rlglIsNewer();           // Initialize rlgl (buffers, shaders, textures, states)
+ RLAPI void rlglClose(void);                           // De-inititialize rlgl (buffers, shaders, textures)
+ RLAPI void rlglDraw(void);                            // Update and draw default internal buffers
+ 
+@@ -559,6 +560,7 @@ RLAPI void rlUnloadMesh(Mesh mesh);                                       // Unl
  // Shader loading/unloading functions
  RLAPI Shader LoadShader(const char *vsFileName, const char *fsFileName);  // Load shader from files and bind default locations
  RLAPI Shader LoadShaderCode(const char *vsCode, const char *fsCode);      // Load shader from code strings and bind default locations
@@ -22,7 +30,7 @@ index 447227fb..440c33fc 100644
  RLAPI void UnloadShader(Shader shader);                                   // Unload shader from GPU memory (VRAM)
  
  RLAPI Shader GetShaderDefault(void);                                      // Get default shader
-@@ -901,6 +902,7 @@ static PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArrays;  // Entry point poin
+@@ -901,6 +903,7 @@ static PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArrays;  // Entry point poin
  //----------------------------------------------------------------------------------
  #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
  static unsigned int CompileShader(const char *shaderStr, int type);     // Compile custom shader and return shader id
@@ -30,7 +38,19 @@ index 447227fb..440c33fc 100644
  static unsigned int LoadShaderProgram(unsigned int vShaderId, unsigned int fShaderId);  // Load custom shader program
  
  static Shader LoadShaderDefault(void);                  // Load default shader (just vertex positioning and texture coloring)
-@@ -3097,6 +3099,66 @@ Shader LoadShaderCode(const char *vsCode, const char *fsCode)
+@@ -1524,6 +1527,11 @@ void rlUpdateBuffer(int bufferId, void *data, int dataSize)
+ // Module Functions Definition - rlgl Functions
+ //----------------------------------------------------------------------------------
+ 
++bool rlglIsNewer() {
++  const char *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
++  return ((strtof(glslVersion, NULL) > 3.0) || (strstr(glslVersion, "ES 3.00") != NULL));
++}
++
+ // Initialize rlgl: OpenGL extensions, default buffers/shaders/textures, OpenGL states
+ void rlglInit(int width, int height)
+ {
+@@ -3097,6 +3105,66 @@ Shader LoadShaderCode(const char *vsCode, const char *fsCode)
      return shader;
  }
  
@@ -97,7 +117,7 @@ index 447227fb..440c33fc 100644
  // Unload shader from GPU memory (VRAM)
  void UnloadShader(Shader shader)
  {
-@@ -3835,6 +3897,41 @@ void EndVrDrawing(void)
+@@ -3835,6 +3903,41 @@ void EndVrDrawing(void)
  //----------------------------------------------------------------------------------
  
  #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)

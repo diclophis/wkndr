@@ -43,7 +43,6 @@
 // raylib stuff
 #include <raylib.h>
 #include <raymath.h>
-//#include <raygui.h>
 
 
 // emscripten/wasm stuff
@@ -134,7 +133,6 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
     mrb_print_error(loop_data->mrb_pointer);
-    //mrb_print_backtrace(loop_data->mrb_pointer);
     return mrb_false_value();
   }
 
@@ -175,7 +173,6 @@ static mrb_value eval_static_libs(mrb_state* mrb, ...) {
 
 EMSCRIPTEN_KEEPALIVE
 size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
-  //mrb_value cstrlikebuf = mrb_str_new(mrb, buf, n);
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
   mrb_funcall(mrb, mrb_obj_value(selfP), "dispatch_next_events", 1, clikestr_as_string);
@@ -242,7 +239,7 @@ void Alert(const char *msg) {
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
   long int write_packed_pointer = 0;
 
-fprintf(stderr, "BEFEB\n");
+  //fprintf(stderr, "going to create to websocket\n");
 
 #ifdef PLATFORM_WEB
   write_packed_pointer = EM_ASM_INT({
@@ -250,7 +247,7 @@ fprintf(stderr, "BEFEB\n");
   }, mrb, mrb_obj_ptr(self));
 #endif
 
-fprintf(stderr, "GOTHERE\n");
+  //fprintf(stderr, "connection started\n");
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
@@ -294,7 +291,7 @@ void platform_bits_update_void(void* arg) {
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
-  fprintf(stderr, "preShowShoSshow!\n");
+  //fprintf(stderr, "pre global Show!\n");
 
   mrb_value stack_self;
 
@@ -351,9 +348,9 @@ int main(int argc, char** argv) {
 
   fprintf(stderr, "loaded globals ... \n");
 
+  //TODO: vt100 tty support for inline IDE
   //struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
   //mrb_define_class_method(mrb, fast_utmp, "utmps", fast_utmp_utmps, MRB_ARGS_NONE());
-
   //struct RClass *fast_tty = mrb_define_class(mrb, "FastTTY", mrb->object_class);
   //mrb_define_class_method(mrb, fast_tty, "fd", fast_tty_fd, MRB_ARGS_NONE());
   //mrb_define_class_method(mrb, fast_tty, "close", fast_tty_close, MRB_ARGS_REQ(2));
@@ -381,9 +378,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb_client, game_loop, NULL);
   eval_static_libs(mrb_client, camera, NULL);
   eval_static_libs(mrb_client, aabb, NULL);
-  //eval_static_libs(mrb_client, window, NULL);
-  //eval_static_libs(mrb_client, box, NULL);
-  //eval_static_libs(mrb_client, theseus, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", mrb_client->object_class);
@@ -402,6 +396,8 @@ int main(int argc, char** argv) {
 
   mrb_define_method(mrb_client, socket_stream_class_client, "connect!", socket_stream_connect, MRB_ARGS_REQ(1));
   mrb_define_method(mrb_client, socket_stream_class_client, "write_packed", socket_stream_write_packed, MRB_ARGS_REQ(1));
+
+  //TODO: inline vt100 tty
   //mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
   eval_static_libs(mrb_client, socket_stream, NULL);
@@ -440,7 +436,6 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 
-  ////TODO: re-bootstrap centalized shell3
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "startup_serverside", 1, args_server);
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVERSTARTUP\n");
@@ -452,7 +447,6 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
-  ////TODO: re-bootstrap centalized shell3
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "startup_clientside", 1, args);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTSTARTUP\n");
@@ -488,6 +482,7 @@ int main(int argc, char** argv) {
   mrb_close(mrb);
   mrb_close(mrb_client);
 
+  //TODO: inline vt100 support
   ////NOTE: when libuv binds to fd=0 it sets modes that cause /usr/bin/read to break
   //fcntl(0, F_SETFL, fcntl(0, F_GETFL) & ~O_NONBLOCK);
 

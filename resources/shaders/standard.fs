@@ -1,15 +1,6 @@
-#version 300 es
-
-//#version 100
-//
-//#define highp
-//#define mediump
-//#define lowp
-
-#ifdef GL_ES
+//#ifdef GL_ES
 precision mediump float;
-#endif
-
+//#endif
 
 // Input vertex attributes (from vertex shader)
 in vec3 fragPosition;

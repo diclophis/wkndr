@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
@@ -17,8 +18,37 @@
 #include <mruby/numeric.h>
 
 // raylib stuff
-#include <raylib.h>
+//#include <raylib.h>
 #include <raymath.h>
+
+#include <rlgl.h>
+
+//#include <GL/gl.h>
+//#include <GL/glext.h>
+//#include "external/glad.h"
+
+//#if defined(GRAPHICS_API_OPENGL_33)
+//    #if defined(__APPLE__)
+//        #include <OpenGL/gl3.h>         // OpenGL 3 library for OSX
+//        #include <OpenGL/gl3ext.h>      // OpenGL 3 extensions library for OSX
+//    #else
+//        #define GLAD_REALLOC RL_REALLOC
+//        #define GLAD_FREE RL_FREE
+//
+//        #define GLAD_IMPLEMENTATION
+//        #if defined(RLGL_STANDALONE)
+//            #include "glad.h"           // GLAD extensions loading library, includes OpenGL headers
+//        #else
+//            #include "external/glad.h"  // GLAD extensions loading library, includes OpenGL headers
+//        #endif
+//    #endif
+//#endif
+//#if defined(GRAPHICS_API_OPENGL_ES2)
+//    #define GL_GLEXT_PROTOTYPES
+//    #include <EGL/egl.h>                // EGL library
+//    #include <GLES2/gl2.h>              // OpenGL ES 2.0 library
+//    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
+//#endif
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
@@ -26,11 +56,11 @@
 #include "mrb_game_loop.h"
 
 
-#if defined(PLATFORM_DESKTOP)
-    #define GLSL_VERSION            330
-#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
-    #define GLSL_VERSION            100
-#endif
+//#if defined(PLATFORM_DESKTOP)
+//    #define GLSL_VERSION            330
+//#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
+//    #define GLSL_VERSION            100
+//#endif
 
 
 void play_data_destructor(mrb_state *mrb, void *p_);
@@ -81,11 +111,42 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
+//LoadShaderCode
+//LoadFileText
+
+
+  char *newerVer = "#version 300 es\n";
+  char *olderVer = "#version 100\n#define highp\n#define mediump\n#define lowp\n";
+  char *setVer = NULL;
+
+  char *vsSource = LoadFileText("resources/shaders/standard.vs");
+  char *fsSource = LoadFileText("resources/shaders/standard.fs");
+
+  if (rlglIsNewer()) {
+      setVer = newerVer;
+  } else {
+      setVer = olderVer;
+  }
+  //switch(GLSL_VERSION) {
+  //  case 330:
+  //    setVer = newerVer;
+  //    break;
+
+  //  case 100:
+  //    setVer = olderVer;
+  //    break;
+  //}
+
+  const char *vsSources[2] = { "", vsSource };
+  const char *fsSources[2] = { setVer, fsSource };
+
+    //fprintf(stderr, fsSources);
     //p_data->globalDebugShader = LoadShader(FormatText("resources/shaders/glsl%i/base_lighting.vs", GLSL_VERSION), 
     //                                       FormatText("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+    //LoadShader("resources/shaders/standard.vs",
+    //                                       "resources/shaders/standard.fs");
 
-    p_data->globalDebugShader = LoadShader("resources/shaders/standard.vs", 
-                                           "resources/shaders/standard.fs");
+    p_data->globalDebugShader = LoadShaderCodeX(vsSources, fsSources);
 
     Shader shader = p_data->globalDebugShader;
     
