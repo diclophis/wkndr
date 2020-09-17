@@ -81,8 +81,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-    p_data->globalDebugShader = LoadShader(FormatText("resources/shaders/glsl%i/base_lighting.vs", GLSL_VERSION), 
-                                           FormatText("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+    //p_data->globalDebugShader = LoadShader(FormatText("resources/shaders/glsl%i/base_lighting.vs", GLSL_VERSION), 
+    //                                       FormatText("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+
+    p_data->globalDebugShader = LoadShader("resources/shaders/standard.vs", 
+                                           "resources/shaders/standard.fs");
 
     Shader shader = p_data->globalDebugShader;
     
