@@ -221,7 +221,7 @@ void main()
     vec4 texelColor = texture(texture0, fragTexCoord);
 #else
     vec4 texelColor = texture2D(texture0, fragTexCoord);
-#end
+#endif
 
     vec3 lightDot = vec3(0.0);
     vec3 normal = normalize(fragNormal);
