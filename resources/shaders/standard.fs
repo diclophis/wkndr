@@ -1,19 +1,26 @@
-//#ifdef GL_ES
 precision mediump float;
-//#endif
 
 // Input vertex attributes (from vertex shader)
+#ifdef NEWER_GL
 in vec3 fragPosition;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 in vec3 fragNormal;
+#else
+varying vec3 fragPosition;
+varying vec2 fragTexCoord;
+varying vec4 fragColor;
+varying vec3 fragNormal;
+#endif
 
 // Input uniform values
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
 // Output fragment color
+#ifdef NEWER_GL
 out vec4 finalColor;
+#endif
 
 // NOTE: Add here your custom variables
 
@@ -147,6 +154,10 @@ vec3 ComputeLightSpot(Light l, vec3 n, vec3 v, vec3 s)
 
 void main()
 {
+#ifndef NEWER_GL
+  vec4 finalColor = vec4(0.0);
+#endif
+
   //    vec3 lighting = vec3(0.0);
   //    vec3 lightDot = vec3(0.0);
   //    vec3 specular = texture(texture0, fragTexCoord).rgb;
@@ -244,5 +255,10 @@ void main()
     
     // Gamma correction
     finalColor = pow(finalColor, vec4(1.0/2.2));
+
+#ifdef NEWER_GL
+#else
+  gl_FragColor = finalColor;
+#endif
 
 }

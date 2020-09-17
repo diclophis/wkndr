@@ -115,7 +115,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 //LoadFileText
 
 
-  char *newerVer = "#version 300 es\n";
+  char *newerVer = "#version 300 es\n#define NEWER_GL\n";
   char *olderVer = "#version 100\n#define highp\n#define mediump\n#define lowp\n";
   char *setVer = NULL;
 

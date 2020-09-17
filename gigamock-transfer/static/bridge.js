@@ -39,10 +39,10 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //  window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
       //  Module._free(ptr);
       //});
-      //window.addEventListener('resize', function(resizeEvent) {
+      window.addEventListener('resize', function(resizeEvent) {
       ////  window.terminal.fit();
-      //    window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
-      //});
+          window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
+      });
       ////window.terminal.on('resize', function(newSize) {
       ////});
       //window.terminal.fit();
