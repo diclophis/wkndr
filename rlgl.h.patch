@@ -11,7 +11,7 @@ index 4359147a..92dd91cb 100644
  
  RLAPI Shader GetShaderDefault(void);                                      // Get default shader
 diff --git a/src/rlgl.h b/src/rlgl.h
-index 447227fb..a519dee4 100644
+index 447227fb..6f533ea2 100644
 --- a/src/rlgl.h
 +++ b/src/rlgl.h
 @@ -515,6 +515,7 @@ RLAPI unsigned int rlLoadAttribBuffer(unsigned int vaoId, int shaderLoc, void *b
@@ -43,8 +43,8 @@ index 447227fb..a519dee4 100644
  //----------------------------------------------------------------------------------
  
 +bool rlglIsNewer() {
-+  const char *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-+  return ((strtof(glslVersion, NULL) > 3.0) || (strstr(glslVersion, "ES 3.00") != NULL));
++  const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
++  return ((strstr((const char*)glslVersion, "ES 1.00") == NULL));
 +}
 +
  // Initialize rlgl: OpenGL extensions, default buffers/shaders/textures, OpenGL states
