@@ -110,6 +110,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var graphicsContainer = document.getElementById('canvas');
+var terminalContainer = document.getElementById("wkndr-terminal");
 
 if (graphicsContainer) {
   // As a default initial behavior, pop up an alert when webgl context is lost. To make your
@@ -145,6 +146,7 @@ if (graphicsContainer) {
       return function(text) {
         if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
         console.log(text);
+        terminalContainer.innerHTML += (text) + "<br>";
       };
     })(),
     //printErr: function(text) {
