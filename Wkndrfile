@@ -1,23 +1,65 @@
-#
+# vi:syntax=ruby
 
-include ECS
+$i = 0
+
+class SpinComponent
+  def initialize(index, speed)
+    @index = index
+    @speed = speed
+  end
+
+  def index
+    @index
+  end
+
+  def speed
+    @speed
+  end
+end
+
+#class CubeComponent
+#  def initialize(gl, x, y, z, s)
+#    @cube = Cube.new(gl, x, y, z, s)
+#  end
+#
+#  def cube
+#    @cube
+#  end
+#end
+
+class GizmoSystem
+  def initialize(store, selector) #, &pr_proc)
+    #@pr_proc = pr_proc
+    @selector = selector
+  end
+
+  def process(gt, dt)
+    @selector.each { |_e, cube, spin|
+  if $i > 501
+    raise "wtf #{gt} second"
+  end
+      cube.deltar(
+        Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
+      )
+      #@pr_proc.call(*things, gt, dt)
+    }
+  end
+end
 
 Wkndr.nonce {
   Wkndr.client_side { |gl|
+    gl.open_default_view!
+    gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
+
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
     @exhaust = ExhaustSystem.new(@store, 0.025, @particleBitmap, @particleLayer)
     @movement = MovementSystem.new(@store)
     @exhaust_layer = @store.watch(ExhaustComponent, PositionComponent, RandomColorComponent)
     @hunter_layer = @store.watch(HunterComponent, PositionComponent, RandomColorComponent)
-    @last_l = 0
     @color = RandomColorComponent.new
 
-    @lowest_fps = 99
-    @highest_fps = 0
-
-    gl.open_default_view!
-    gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
+    @last_l = 0
 
     @spawn_proc = Proc.new { |r, x, y, c|
       @store.add(
@@ -30,10 +72,34 @@ Wkndr.nonce {
       )
     }
 
-    @cubes = []
-    @cubes << Cube.new(gl, 0.13, 0.70, 0.15, 1.00)
-    @cubes << Cube.new(gl, 0.17, 0.30, 0.90, 1.00)
-    @cubes << Cube.new(gl, 1.10, 0.19, 0.40, 1.00)
+    @spinny_things = @store.watch(Cube, SpinComponent)
+    @gizmo = GizmoSystem.new(@store, @spinny_things)
+    #{ |_e, cube, spin, gt, dt|
+    #$i += 1 
+    ##raise [cube, spin, gt, dt].inspect
+    #if $i > 500
+    #  raise "wtF #{gt} #{dt}"
+    #end
+
+    #  cube.deltar(
+    #    Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
+    #  )
+    #}
+
+    @store.add(
+      Cube.new(gl, 0.13, 0.70, 0.15, 1.00),
+      SpinComponent.new(1.0, 1.0)
+    )
+
+    @store.add(
+      Cube.new(gl, 0.17, 0.30, 0.90, 1.00),
+      SpinComponent.new(2.0, 5.0)
+    )
+
+    @store.add(
+      Cube.new(gl, 1.10, 0.19, 0.40, 1.00),
+      SpinComponent.new(3.0, 10.0)
+    )
   }
 
   Wkndr.server_side { |gl|
@@ -50,8 +116,6 @@ Wkndr.client_side { |gl|
   }
 
   gl.update { |global_time, delta_time, sw, sh|
-    fps = ((delta_time * 1000.0) / (1000.0 / 60.0))
-
     gl.mousep { |xyl|
       x, y, l = *xyl
 
@@ -73,27 +137,13 @@ Wkndr.client_side { |gl|
     }
 
     gl.drawmode {
-      speed = 100.0 + (global_time * 0.1)
-
       gl.threed {
-        @cubes.each_with_index { |cube,i|
-          cube.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
-          #@chicken.deltar(Math.cos((i+1)*-global_time), Math.sin((i+1) * global_time), 1.0, global_time * speed)
+        @spinny_things.each { |_e, cube, _spin|
           cube.draw(false)
         }
       }
 
       gl.twod {
-        gl.label("#{speed} #{'%2.2f' % (((delta_time * 1000.0) / (1000.0 / 60.0)) * 100.0)} #{'%.2f' % global_time}")
-        #if fps > 0.5 && fps < @lowest_fps
-        #  @lowest_fps = fps
-        #end
-        #if fps > @highest_fps
-        #  @highest_fps = fps
-        #end
-        #display_fps = "%.2f"
-        #gl.label("ddd #{display_fps % @lowest_fps} #{display_fps % @highest_fps} #{display_fps % global_time}")
-
         @exhaust_layer.each { |e, _x, p, c|
           gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
         }
@@ -107,25 +157,7 @@ Wkndr.client_side { |gl|
     @transformer.process(global_time, delta_time)
     @exhaust.process(global_time, delta_time)
     @movement.process(global_time, delta_time)
-
-    #if global_time > 0.5 && !@farts
-    #  #chicken_file = "resources/ayam4.obj"
-    #  chicken_file = "resources/buggy.glb"
-    #  @chicken = Model.new(chicken_file, "", 0.025)
-    #  @farts = true
-    #end
-
-    ##if @store.count == 0 # && 
-    #if rand < 0.1
-    #  spawn_proc_args = [
-    #    rand,
-    #    sw * 0.5,
-    #    sh * 0.5,
-    #    @color.color
-    #  ]
-    #  @spawn_proc.call(*spawn_proc_args)
-    #  gl.emit({"spawn" => spawn_proc_args})
-    #end
+    @gizmo.process(global_time, delta_time)
   }
 }
 
@@ -152,47 +184,16 @@ Wkndr.server_side { |gl, server|
     end
     Protocol.ok(mab.to_s)
   end
-}
 
-#server.live("/sevengui", "wkndr sevengui", &sven_gui)
-#
-#
-#  sven_gui = Proc.new { |cn, phr, mab|
-#    mab.a(:href => "/sevengui") do
-#      mab.h1 "sevengui example"
-#    end
-#
-#    mab.ul do
-#      mab.li do
-#        "bap bar: " + cn.session["gt"].inspect
-#      end
-#    end
-#  }
-#
-#  gl.update { |gt, dt|
-#    #$ticks += 1
-#    #if $ticks > 2
-#    #  $ticks = 0
-#    #@gt = gt
-#    #@dt = dt
-#    #@ticks += 1
-#
-#    #server.all_connections.each { |cn|
-#    #  cn.session["gt"] = gt
-#    #}
-#
-#    #server.live("/sevengui", "wkndr sevengui", &sven_gui)
-#  }
-#
-#
-#      ##if @store.count == 0 # && 
-#      #if rand < 0.1
-#      #  spawn_proc_args = [
-#      #    rand,
-#      #    sw * 0.5,
-#      #    sh * 0.5,
-#      #    @color.color
-#      #  ]
-#      #  @spawn_proc.call(*spawn_proc_args)
-#      #  gl.emit({"spawn" => spawn_proc_args})
-#      #end
+  server.live("/sevengui", "wkndr sevengui") { |cn, phr, mab|
+    mab.a(:href => "/sevengui") do
+      mab.h1 "sevengui example"
+    end
+
+    mab.ul do
+      mab.li do
+        "bap bar: " + cn.session["gt"].inspect
+      end
+    end
+  }
+}
