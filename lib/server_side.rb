@@ -35,7 +35,7 @@ class ServerSide < Wkndr
   def self.install_trap!
     if @run_clientside_fps
       @timer = UV::Timer.new
-      fps = 1000.0/24.0
+      fps = 1000.0/144.0
       @timer.start(fps, fps) do
         self.server_side_tick!
         unless @keep_running

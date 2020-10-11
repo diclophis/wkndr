@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 // Input vertex attributes (from vertex shader)
 #ifdef NEWER_GL
