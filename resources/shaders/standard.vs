@@ -1,6 +1,5 @@
-
 #ifdef NEWER_GL
-precision mediump float;
+precision highp float;
 #endif
 
 //#version 300 es
