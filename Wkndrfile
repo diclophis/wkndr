@@ -23,7 +23,8 @@ class GizmoSystem
   end
 
   def process(gt, dt)
-    @selector.each { |_e, cube, spin|
+    @selector.each { |_e, cube, pos, spin|
+      cube.deltap(pos.x, pos.y, pos.z)
       cube.deltar(
         Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
       )
@@ -57,23 +58,34 @@ Wkndr.nonce {
       )
     }
 
-    @spinny_things = @store.watch(Cube, SpinComponent)
+    @spinny_things = @store.watch(Cube, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    @store.add(
-      Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
-      SpinComponent.new(3.0, 1.0)
-    )
+    a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
 
-    @store.add(
-      Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
-      SpinComponent.new(5.0, 5.0)
-    )
+    # each of abc by 9 grid
 
-    @store.add(
-      Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
-      SpinComponent.new(7.0, 10.0)
-    )
+    9.times { |i|
+      @store.add(
+        a,
+        PositionComponent.new(i * 0.1, 0, 0),
+        SpinComponent.new(3.0, 1.0)
+      )
+
+      @store.add(
+        b,
+        PositionComponent.new(0, i * 0.1, 0),
+        SpinComponent.new(5.0, 5.0)
+      )
+
+      @store.add(
+        c,
+        PositionComponent.new(0, 0, i * 0.1),
+        SpinComponent.new(7.0, 10.0)
+      )
+    }
   }
 
   Wkndr.server_side { |gl|
@@ -112,7 +124,7 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
-        @spinny_things.each { |_e, cube, _spin|
+        @spinny_things.each { |_e, cube, _pos, _spin|
           cube.draw(false)
         }
       }
