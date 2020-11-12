@@ -6,56 +6,56 @@ builds:
   host:
     https://github.com/Asmod4n/mruby-b64.git:
       url: https://github.com/Asmod4n/mruby-b64.git
-      branch: HEAD
+      branch: master
       commit: 6d8f36b1bd310aa1b0dccd6fe7b0e9d7551d7718
       version: 0.0.0
     https://github.com/yui-knk/mruby-set.git:
       url: https://github.com/yui-knk/mruby-set.git
-      branch: HEAD
+      branch: master
       commit: 68334311ac7386eef84f3034a256e7135a87625d
       version: 0.0.0
     https://github.com/iij/mruby-zlib.git:
       url: https://github.com/iij/mruby-zlib.git
-      branch: HEAD
+      branch: master
       commit: 23e88ee9b5ee9776516e80906ceae4fccfd5687f
       version: 0.0.0
     https://github.com/katzer/mruby-r3.git:
       url: https://github.com/katzer/mruby-r3.git
-      branch: HEAD
-      commit: 9cb18cbf6862a749559130b5d34e5e89e7fc0bcc
+      branch: master
+      commit: 185455010e82fdc491ded1c705b2c0521bb266ba
       version: 0.0.0
     https://github.com/diclophis/mruby-wslay.git:
       url: https://github.com/diclophis/mruby-wslay.git
-      branch: HEAD
+      branch: fix-intended-return-of-exceptions-1.0
       commit: 4ceba1eaf45eb3ee77ff6e1eca74ae7e03571aa0
-      version: 0.0.0
-    https://github.com/Asmod4n/mruby-sysrandom.git:
-      url: https://github.com/Asmod4n/mruby-sysrandom.git
-      branch: HEAD
-      commit: 75347e898686c8c044b0fa8a76f42ad25daee45c
-      version: 0.0.0
-    https://github.com/iij/mruby-errno.git:
-      url: https://github.com/iij/mruby-errno.git
-      branch: HEAD
-      commit: b4415207ff6ea62360619c89a1cff83259dc4db0
-      version: 0.0.0
-    https://github.com/Asmod4n/mruby-string-is-utf8.git:
-      url: https://github.com/Asmod4n/mruby-string-is-utf8.git
-      branch: HEAD
-      commit: 1c639fe845008d437420a61852329a158ddd74b1
       version: 0.0.0
     https://github.com/Asmod4n/mruby-phr.git:
       url: https://github.com/Asmod4n/mruby-phr.git
-      branch: HEAD
+      branch: master
       commit: 1bab77000280141802d56a20a5413ba0900b69df
       version: 0.0.0
     https://github.com/Asmod4n/mruby-simplemsgpack.git:
       url: https://github.com/Asmod4n/mruby-simplemsgpack.git
-      branch: HEAD
+      branch: master
       commit: 9df3c4a4d6ff1b62cbedb6c680b2af2f72015e40
       version: 0.0.0
     https://github.com/mattn/mruby-json.git:
       url: https://github.com/mattn/mruby-json.git
-      branch: HEAD
+      branch: master
       commit: '054699892b0d681110e7348440cddb70a3fd671e'
+      version: 0.0.0
+    https://github.com/Asmod4n/mruby-sysrandom.git:
+      url: https://github.com/Asmod4n/mruby-sysrandom.git
+      branch: master
+      commit: 75347e898686c8c044b0fa8a76f42ad25daee45c
+      version: 0.0.0
+    https://github.com/iij/mruby-errno.git:
+      url: https://github.com/iij/mruby-errno.git
+      branch: master
+      commit: b4415207ff6ea62360619c89a1cff83259dc4db0
+      version: 0.0.0
+    https://github.com/Asmod4n/mruby-string-is-utf8.git:
+      url: https://github.com/Asmod4n/mruby-string-is-utf8.git
+      branch: master
+      commit: 1c639fe845008d437420a61852329a158ddd74b1
       version: 0.0.0
