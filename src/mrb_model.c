@@ -1,3 +1,4 @@
+//
 
 #include <stdlib.h>
 #include <math.h>
@@ -8,12 +9,7 @@
 #include <raymath.h>
 
 #include <mruby/data.h>
-//#include <mruby/proc.h>
-//#include <mruby/data.h>
 #include <mruby/string.h>
-//#include <mruby/array.h>
-//#include <mruby/hash.h>
-//#include <mruby/class.h>
 #include <mruby/variable.h>
 
 #include <mrb_game_loop.h>
@@ -32,13 +28,20 @@ typedef struct {
   Color label_color;
   Mesh mesh;
   Model model;
-  //Light light;
+  //TODO Light light;
 } model_data_s;
+
+typedef struct {
+  Matrix *transforms;
+  model_data_s* meshless_proxies;
+} batch_data_s;
 
 //static void model_data_destructor(mrb_state *mrb, void *p_);
 
 //static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
 //}
+static void batch_data_destructor(mrb_state *mrb, void *p_) {
+}
 
 static void model_data_destructor(mrb_state *mrb, void *p_) {
   // //TODO
@@ -62,6 +65,7 @@ static void model_data_destructor(mrb_state *mrb, void *p_) {
 };
 
 const struct mrb_data_type model_data_type = {"model_data", model_data_destructor};
+const struct mrb_data_type batch_data_type = {"batch_data", batch_data_destructor};
 
 
 static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
@@ -222,7 +226,6 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
     //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
     p_data->model.materials[mi].shader = standardShader;
   }
-
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -387,6 +390,234 @@ static mrb_value model_yawpitchroll(mrb_state* mrb, mrb_value self)
 }
 
 
+//static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
+static mrb_value batcher_at(mrb_state* mrb, mrb_value self)
+{
+  //   //mrb_float w,h,l,scalef;
+  //   //mrb_value model_game_loop;
+  //   //mrb_get_args(mrb, "offff", &model_game_loop, &w, &h, &l, &scalef);
+
+  //   //GIVEN POINTER!!!???!!!!!!!!!!!!
+  //   mrb_value some_batch_reference;
+  //   mrb_get_args(mrb, "o", &some_batch_reference);
+
+  //   //batch_data_bb *bb_data;
+  //   //bb_data = malloc(sizeof(batch_data_bb));
+  //   //memset(bb_data, 0, sizeof(batch_data_bb));
+  //   //if (!bb_data) {
+  //   //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate CubicXXX");
+  //   //}
+  //   ////Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  //   ////if (!pp_data) {
+  //   ////  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //   ////}
+  //   
+  //   //this p_data shoul dreference passed pointers bits-fu
+
+  //   ////TODO: pointer to pointer p_data->mesh = GenMeshCube(w, h, l);
+  //   ////p_data->model = LoadModelFromMesh(p_data->mesh);
+
+  //   //////model_game_loop reference "o" get_args
+  //   ////play_data_s *pp_data = NULL;
+  //   ////mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  //   ////Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  //   ////if (!pp_data) {
+  //   ////  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //   ////}
+
+  //   //p_data->position.x = 0.0f;
+  //   //p_data->position.y = 0.0f;
+  //   //p_data->position.z = 0.0f;
+
+  //   //p_data->rotation.x = 0.0f;
+  //   //p_data->rotation.y = 1.0f;
+  //   //p_data->rotation.z = 0.0f; // Set model position
+  //   //p_data->angle = 0.0;
+  //   //
+  //   //p_data->scale.x = scalef;
+  //   //p_data->scale.y = scalef;
+  //   //p_data->scale.z = scalef;
+
+  //   //float colors = 32.0;
+  //   //float freq = 64.0 / colors;
+
+  //   //int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  //   //int g = (sin(freq * 1.0) * (127.0) + 128.0);
+  //   //int b = 128; //(sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+
+  //   //p_data->color.r = 255;
+  //   //p_data->color.g = 255;
+  //   //p_data->color.b = 255;
+  //   //p_data->color.a = 255;
+
+  //   //r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  //   //g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
+  //   //b = (sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+
+  //   //counter++;
+
+  //   //if (counter == colors) {
+  //   //  counter *= -1;
+  //   //}
+
+  //   //p_data->label_color.r = r;
+  //   //p_data->label_color.g = g;
+  //   //p_data->label_color.b = b;
+  //   //p_data->label_color.a = 255;
+
+  //   //mrb_iv_set(
+  //   //    mrb, self, mrb_intern_lit(mrb, "@pointer"),
+  //   //    mrb_obj_value(
+  //   //        Data_Wrap_Struct(mrb, mrb->object_class, &model_data_type, p_data)));
+
+//RETURN @POINTER
+
+  //return self;
+}
+
+//proxy_deltap
+//proxy_deltar
+//proxy_deltal
+//batch_data_type
+//b_data = batch_data_s
+//
+//for (int i = 0; i < count; i++) {
+//  b_data->rotations[i]
+//  b_data->translations[i]
+//  b_data->transforms[i] = MatrixMultiply(rotations[i], translations[i]);
+//}
+
+
+//* transforms Matrix
+//* meshless_models ModelDataP
+
+
+static mrb_value batcher_hydrate(mrb_state* mrb, mrb_value self)
+{
+  // class ........ material!!, transforms = 
+  //                                Matrix* transforms = RL_MALLOC(count * sizeof(Matrix));
+  //  Pre-multiplied transformations passed to rlgl
+  //
+
+  ///!!!!batcher_fill_in_transform_here!!!
+  //transforms[i] = MatrixMultiply(rotations[i], translations[i]);
+  //!!!!!!!!!!!
+}
+
+
+static mrb_value batcher_flush(mrb_state* mrb, mrb_value self)
+{
+  //mrb_value label_txt = mrb_nil_value();
+  //mrb_value pointer_value;
+  //mrb_get_args(mrb, "oo", &pointer_value, &label_txt);
+
+  //const char *c_label_txt = mrb_string_value_cstr(mrb, &label_txt);
+
+  model_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &model_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  rlDrawMeshInstanced(cube, material, transforms, count);
+
+  return mrb_nil_value();
+}
+
+
+static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
+{
+  model_data_s *p_data;
+
+  p_data = malloc(sizeof(model_data_s));
+  memset(p_data, 0, sizeof(model_data_s));
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate Cube");
+  }
+
+  //p_data->mesh = GenMeshCube(w, h, l);
+  //p_data->model = LoadModelFromMesh(p_data->mesh);
+  
+  //play_data_s *pp_data = NULL;
+  //mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  //Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  //if (!pp_data) {
+  //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  //}
+  //Shader standardShader = pp_data->globalDebugShader;
+  //Texture standardTexture = pp_data->globalDebugTexture;
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  //  p_data->model.materials[mi].shader = standardShader;
+  //}
+
+  ///!!!!batcher_fill_in_transform_here!!!
+  //transforms[i] = MatrixMultiply(rotations[i], translations[i]);
+  //!!!!!!!!!!!
+
+  //p_data->position.x = 0.0f;
+  //p_data->position.y = 0.0f;
+  //p_data->position.z = 0.0f;
+
+  //p_data->rotation.x = 0.0f;
+  //p_data->rotation.y = 1.0f;
+  //p_data->rotation.z = 0.0f; // Set model position
+  //p_data->angle = 0.0;
+  //
+  //p_data->scale.x = scalef;
+  //p_data->scale.y = scalef;
+  //p_data->scale.z = scalef;
+
+  //float colors = 32.0;
+  //float freq = 64.0 / colors;
+
+  //int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  //int g = (sin(freq * 1.0) * (127.0) + 128.0);
+  //int b = 128; //(sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+
+  ////counter++;
+  ////if (counter == colors) {
+  ////  counter *= -1;
+  ////}
+
+  ////p_data->color.r = 255;
+  ////p_data->color.g = g;
+  ////p_data->color.b = b;
+  ////p_data->color.a = 255;
+
+  //p_data->color.r = 255;
+  //p_data->color.g = 255;
+  //p_data->color.b = 255;
+  //p_data->color.a = 255;
+
+  //r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  //g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
+  //b = (sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+
+  //counter++;
+
+  //if (counter == colors) {
+  //  counter *= -1;
+  //}
+
+  //p_data->label_color.r = r;
+  //p_data->label_color.g = g;
+  //p_data->label_color.b = b;
+  //p_data->label_color.a = 255;
+
+  mrb_iv_set(
+      mrb, self, mrb_intern_lit(mrb, "@pointer"),
+      mrb_obj_value(
+          Data_Wrap_Struct(mrb, mrb->object_class, &model_data_type, p_data)));
+
+  return self;
+}
+
+
 void mrb_mruby_model_gem_init(mrb_state *mrb) {
   // class Model
   struct RClass *model_class = mrb_define_class(mrb, "Model", mrb->object_class);
@@ -401,4 +632,14 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
   // class Cube
   struct RClass *cube_class = mrb_define_class(mrb, "Cube", model_class);
   mrb_define_method(mrb, cube_class, "initialize", cube_initialize, MRB_ARGS_REQ(5));
+
+  //// class MeshProxy
+  //struct RClass *mesh_proxy_class = mrb_define_class(mrb, "MeshProxy", model_class);
+  //mrb_define_method(mrb, mesh_proxy_class, "initialize", mesh_proxy_initialize, MRB_ARGS_REQ(2));
+
+  // class Batcher
+  struct RClass *batcher_class = mrb_define_class(mrb, "Batcher", mrb->object_class);
+  mrb_define_method(mrb, batcher_class, "hydrate", batcher_hydrate, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, batcher_class, "at", batcher_at, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, batcher_class, "flush", batcher_flush, MRB_ARGS_REQ(0));
 }

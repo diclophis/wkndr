@@ -1,7 +1,5 @@
 # vi:syntax=ruby
 
-$i = 0
-
 class SpinComponent
   def initialize(index, speed)
     @index = index
@@ -15,6 +13,30 @@ class SpinComponent
   def speed
     @speed
   end
+end
+
+class CubicBatchingSystem
+  def initialize(store, count, meshes)
+    #@mesh_proxies = []
+    #count.times { |i|
+    #  @mesh_proxies[i] = ...
+    #}
+
+    @store = store
+    @count = count
+    @meshes = meshes
+
+    #hydrate
+  end
+
+  #def at(i)
+  #  #@mesh_proxies[i]
+  #  # this reaches into instance variable bits
+  #  #AssignmentProxy
+  #  mp = MeshProxy.new(@prebaked_transforms[]...) # feeds transform at index
+  #  #mp.deltap ####!!!! mp becomes cube replacement
+  #  #mp.deltar
+  #end
 end
 
 class GizmoSystem
@@ -59,34 +81,43 @@ Wkndr.nonce {
     }
 
     @spinny_things = @store.watch(Cube, PositionComponent, SpinComponent)
+    #@batchy_things = @store.watch(BatchableComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+
+    am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
 
     # each of abc by 9 grid
 
-    3.times { |i|
+    count = 1
+
+    @batcher = CubicBatchingSystem.new(@store, count, [am, bm, cm])
+
+    count.times { |i|
       p = PositionComponent.new(i * 0.33, i * -0.33, 0)
       #p = PositionComponent.new(0, 0, 0)
 
       @store.add(
-        a,
+        batch_thing.at(i, 0),
         #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
         p,
         SpinComponent.new(3.0, 1.0)
       )
 
       @store.add(
-        b,
+        batch_thing.at(i, 1),
         #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
         p,
         SpinComponent.new(5.0, 5.0)
       )
 
       @store.add(
-        c,
+        batch_thing.at(i, 2),
         #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
         p,
         SpinComponent.new(7.0, 10.0)
@@ -130,9 +161,7 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
-        @spinny_things.each { |_e, cube, _pos, _spin|
-          cube.draw(false)
-        }
+        @batcher.flush
       }
 
       gl.twod {
