@@ -589,16 +589,16 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
   for (int i = 0; i < count; i++) {
     model_data_s p_data = b_data->meshless_proxies[i];
 
-    //Matrix matScale = MatrixScale(p_data.scale.x, p_data.scale.y, p_data.scale.z);
+    Matrix matScale = MatrixScale(p_data.scale.x, p_data.scale.y, p_data.scale.z);
     Matrix matRotation = MatrixRotate(p_data.rotation, p_data.angle*DEG2RAD);
     Matrix matTranslation = MatrixTranslate(p_data.position.x, p_data.position.y, p_data.position.z);
-    //Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+    Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 
-    Matrix matTransform = MatrixIdentity();
+    //Matrix matTransform = MatrixIdentity();
 
-    //b_data->transforms[i] = matTransform;
+    b_data->transforms[i] = matTransform;
 
-    b_data->transforms[i] = MatrixMultiply(MatrixMultiply(matTransform, matRotation), matTranslation);
+    //b_data->transforms[i] = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 
     //  MatrixMultiply(
     //    MatrixIdentity(),
@@ -778,6 +778,10 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
     p_data.position.x = 0.0f;
     p_data.position.y = 0.0f;
     p_data.position.z = 0.0f;
+
+    p_data.scale.x = 1.0f;
+    p_data.scale.y = 1.0f;
+    p_data.scale.z = 1.0f;
 
     p_data.rotation.x = 0.0f;
     p_data.rotation.y = 1.0f;

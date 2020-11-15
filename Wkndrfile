@@ -1,10 +1,10 @@
 # vi:syntax=ruby
 
 class SpinComponent
-  def initialize(total, widget, index, speed)
+  def initialize(total, widget, component, speed)
     @total = total
     @widget = widget
-    @index = index
+    @component = component
     @speed = speed
   end
 
@@ -12,8 +12,8 @@ class SpinComponent
     @widget
   end
 
-  def index
-    @index
+  def component
+    @component
   end
 
   def speed
@@ -33,10 +33,16 @@ class GizmoSystem
   def process(gt, dt)
     @selector.each { |_e, cube, pos, spin|
       cube.deltar(
-        Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
+        #Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
+        0, Math.cos((gt * 3.0) + (spin.widget * 3.0)), Math.sin(gt * spin.component), gt * spin.speed
       )
-      cube.deltap(pos.x + Math.sin((spin.widget/spin.total) * gt * (spin.widget + 1)), pos.y + Math.cos((spin.widget/spin.total) * gt * (spin.widget + 1)), pos.z)
-      #, pos.y, pos.z + Math.sin(gt * (spin.widget + 1)))
+      cube.deltap(pos.x + Math.sin(gt), pos.y + Math.cos(gt), pos.z + Math.tan((gt * 0.05) + spin.widget))
+      ###, pos.y, pos.z + Math.sin(gt * (spin.widget + 1)))
+      cube.deltas(1.25 + Math.sin(gt + spin.widget), 1.25 + Math.sin(gt + spin.widget), 1.25 + Math.sin(gt + spin.widget))
+
+      #cube.deltar(0.0, 1.0, 0.0, 0.0)
+      #cube.deltas(1.0, 1.0, 1.0)
+      #cube.deltap(pos.x, pos.y, pos.z)
     }
   end
 end
@@ -44,7 +50,7 @@ end
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     gl.open_default_view!
-    gl.lookat(1, 0.0, 0.1, 5.0, 0.0, 0.1, 0.0, 80.0)
+    gl.lookat(1, 45.0, 33.0, 45.0, 0.0, 0.1, 0.0, 40.0)
 
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
@@ -70,49 +76,72 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    count = 9
+    xs = 13
+    ys = 13
+    zs = 13
 
-    a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+    instances = xs * ys * zs
 
-    #am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    #bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    #cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+    i = 0
+    a = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
+    @batcher_a = CubicBatchingSystem.new(@store, a, instances)
 
-    ### each of abc by 9 grid
-    @batcher_a = CubicBatchingSystem.new(@store, a, count)
-    @batcher_b = CubicBatchingSystem.new(@store, b, count)
-    @batcher_c = CubicBatchingSystem.new(@store, c, count)
+    xs.times { |xd|
+      ys.times { |yd|
+        zs.times { |zd|
+          p = PositionComponent.new((-xs * 0.5 * 2.7) + (xd * 2.7).to_f, (-ys * 0.5 * 2.7) + (yd * 2.7).to_f, (-zs * 0.5 * 2.7) + (zd * 2.7).to_f)
+          @store.add(
+            @batcher_a.at(i),
+            p,
+            SpinComponent.new(instances, i, rand, 10.0 * rand)
+          )
 
-    count.times { |i|
-      #p = PositionComponent.new((i.to_f * 0.33) - (1.0 * count * 5.0), i.to_f * 0.33, (i.to_f * 0.33) - (0.5 * count * 5.0))
-      p = PositionComponent.new(0, 0, 0)
-
-      @store.add(
-        @batcher_a.at(i),
-        #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
-        #a,
-        p,
-        SpinComponent.new(count, i, 0, 10.0 * rand)
-      )
-
-      @store.add(
-        @batcher_b.at(i),
-        #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
-        #b,
-        p,
-        SpinComponent.new(count, i, 1, 50.0 * rand)
-      )
-
-      @store.add(
-        @batcher_c.at(i),
-        #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
-        #c,
-        p,
-        SpinComponent.new(count, i, 2, 100.0 * rand)
-      )
+          i += 1
+        }
+      }
     }
+
+    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+
+    ##am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    ##bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    ##cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+
+    #### each of abc by 9 grid
+    #@batcher_a = CubicBatchingSystem.new(@store, a, count)
+    #@batcher_b = CubicBatchingSystem.new(@store, b, count)
+    #@batcher_c = CubicBatchingSystem.new(@store, c, count)
+
+    #count.times { |i|
+    #  #p = PositionComponent.new((i.to_f * 0.33) - (1.0 * count * 5.0), i.to_f * 0.33, (i.to_f * 0.33) - (0.5 * count * 5.0))
+    #  p = PositionComponent.new(0, 0, 0)
+
+    #  @store.add(
+    #    @batcher_a.at(i),
+    #    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
+    #    #a,
+    #    p,
+    #    SpinComponent.new(count, i, 0, 10.0 * rand)
+    #  )
+
+    #  @store.add(
+    #    @batcher_b.at(i),
+    #    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
+    #    #b,
+    #    p,
+    #    SpinComponent.new(count, i, 1, 50.0 * rand)
+    #  )
+
+    #  @store.add(
+    #    @batcher_c.at(i),
+    #    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
+    #    #c,
+    #    p,
+    #    SpinComponent.new(count, i, 2, 100.0 * rand)
+    #  )
+    #}
   }
 
   Wkndr.server_side { |gl|
@@ -151,12 +180,14 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
+        gl.lookat(1, 45.0, 33.0, 45.0, 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
+
         #@spinny_things.each { |e, a, _b, _c|
         #  a.draw(false)
         #}
         @batcher_a.draw
-        @batcher_b.draw
-        @batcher_c.draw
+        #@batcher_b.draw
+        #@batcher_c.draw
       }
 
       gl.twod {
