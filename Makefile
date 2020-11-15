@@ -25,7 +25,7 @@ raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
 ifeq ($(TARGET),desktop)
   raylib_static_lib=$(build)/libraylib.a
 else
-  raylib_static_lib=$(build)/libraylib.bc
+  raylib_static_lib=$(build)/libraylib.a
 endif
 
 ifeq ($(TARGET),desktop)
@@ -84,7 +84,7 @@ $(target): $(static_ruby_headers) $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) -o $@ $(objects) $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=655360000 -s ABORTING_MALLOC=0 --source-map-base http://localhost:8000/ --preload-file resources
+	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=655360000 -s ABORTING_MALLOC=0 --source-map-base http://localhost:8000/ --preload-file resources
 endif
 
 $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
@@ -99,7 +99,7 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
-	cd mruby && make clean && rm -Rf build
+	cd mruby && make clean && rm -Rf build && git checkout 612e5d6aad7f224008735d57b19e5a81556cfd31
 	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) clean
 	rm -R $(build)
 	mkdir -p $(build)

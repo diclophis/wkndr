@@ -2,7 +2,7 @@
 #FROM static-vim-dockerfile:latest
 
 # layer 1 is linux-box stuff
-FROM ubuntu:focal-20200606 as wkndr
+FROM ubuntu:focal-20201008 as wkndr
 
 ENV LC_ALL C.UTF-8
 ENV LANG en_US.UTF-8
@@ -27,7 +27,9 @@ RUN /var/tmp/emscripten-warmup.sh
 COPY config /var/lib/wkndr/config
 
 RUN cd /var/lib/wkndr && ls -l && \
-    git init && \
+    git init 
+
+RUN cd /var/lib/wkndr && ls -l && \
     git submodule add https://github.com/mruby/mruby mruby \
     git submodule init && \
     git submodule update && \
@@ -36,7 +38,6 @@ RUN cd /var/lib/wkndr && ls -l && \
     git checkout 612e5d6aad7f224008735d57b19e5a81556cfd31
 
 RUN cd /var/lib/wkndr && ls -l && \
-    git init && \
     git submodule add https://github.com/raysan5/raylib raylib \
     git submodule init && \
     git submodule update && \
