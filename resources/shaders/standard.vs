@@ -182,10 +182,9 @@ void main()
     fragNormal = normalize(normalMatrix*vertexNormal);
 
     //// Calculate final vertex position
-    gl_Position = mvp*vec4(vertexPosition, 1.0);
-
-    //mat4 mvpi = mvp * matModel;
-
     //// Calculate final vertex position
-    //gl_Position = mvpi * vec4(vertexPosition, 1.0);
+    //gl_Position = mvp*vec4(vertexPosition, 1.0);
+
+    mat4 mvpi = mvp * matModel;
+    gl_Position = mvpi * vec4(vertexPosition, 1.0);
 }

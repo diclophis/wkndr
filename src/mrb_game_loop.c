@@ -154,21 +154,21 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     
     // Get some shader loactions
     //shader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
+    shader.locs[LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
     shader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "matModel");
     shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
     // ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.5f, 0.5f, 0.5f, 1.0f }, UNIFORM_VEC4);
+    SetShaderValue(shader, ambientLoc, (float[4]){ 0.01f, 0.01f, 0.01f, 1.0f }, UNIFORM_VEC4);
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
     //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 2, 3 }, Vector3Zero(), BLUE, shader);
-    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, -30 }, Vector3Zero(), WHITE, shader);
-    
-    //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
-    //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
-    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
+    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, 30 }, Vector3Zero(), WHITE, shader);
+    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
+    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
+    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
@@ -464,11 +464,13 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   UpdateCamera(&p_data->camera);
 
   //TODO
-  //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
   ////SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
   //// Update the light shader with the camera view position
-  ////float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
-  //SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+  //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+
+  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
   //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
   //SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
   //////updateLighting

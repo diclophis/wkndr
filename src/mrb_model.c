@@ -212,9 +212,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->mesh = GenMeshCube(w, h, l);
   p_data->model = LoadModelFromMesh(p_data->mesh);
   
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
 
   play_data_s *pp_data = NULL;
   mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
@@ -224,10 +224,17 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   }
   Shader standardShader = pp_data->globalDebugShader;
   Texture standardTexture = pp_data->globalDebugTexture;
-  for (int mi=0; mi<p_data->model.materialCount; mi++) {
-    //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
-    p_data->model.materials[mi].shader = standardShader;
-  }
+  
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  //  p_data->model.materials[mi].shader = standardShader;
+  //}
+
+  Material material = LoadMaterialDefault();
+  material.shader = standardShader;
+  material.maps[MAP_DIFFUSE].color = RED;
+
+  p_data->model.materials[0] = material;
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -405,10 +412,10 @@ static mrb_value batcher_at(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  model_data_s p_data = b_data->meshless_proxies[ind];
+  model_data_s *p_data_pointer = &b_data->meshless_proxies[ind];
 
   mrb_value obj = mrb_obj_value(
-                    Data_Wrap_Struct(mrb, mrb->object_class, &model_data_type, &p_data)
+                    Data_Wrap_Struct(mrb, mrb->object_class, &model_data_type, p_data_pointer)
                   );
 
   mrb_int argc = 1;
@@ -570,7 +577,6 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
 
   mrb_int count = mrb_int(mrb, mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@count")));
 
-
   batch_data_s *b_data = NULL;
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
   Data_Get_Struct(mrb, data_value, &batch_data_type, b_data);
@@ -580,10 +586,24 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
 
   for (int i = 0; i < count; i++) {
     model_data_s p_data = b_data->meshless_proxies[0];
-    b_data->transforms[i] = MatrixMultiply(
-      MatrixRotate(p_data.rotation, p_data.angle*DEG2RAD),
-      MatrixTranslate(p_data.position.x, p_data.position.y, p_data.position.z)
-    );
+
+    //Matrix matScale = MatrixScale(p_data.scale.x, p_data.scale.y, p_data.scale.z);
+    Matrix matRotation = MatrixRotate(p_data.rotation, p_data.angle*DEG2RAD);
+    Matrix matTranslation = MatrixTranslate(p_data.position.x, p_data.position.y, p_data.position.z);
+    //Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+
+    Matrix matTransform = MatrixIdentity();
+
+    //b_data->transforms[i] = matTransform;
+
+    b_data->transforms[i] = MatrixMultiply(MatrixMultiply(matTransform, matRotation), matTranslation);
+
+    //  MatrixMultiply(
+    //    MatrixIdentity(),
+    //    MatrixRotate(p_data.rotation, p_data.angle*DEG2RAD)
+    //  ),
+    //  MatrixTranslate(p_data.position.x, p_data.position.y, p_data.position.z)
+    //);
   }
 
   model_data_s *og_data = NULL;

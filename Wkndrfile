@@ -15,38 +15,6 @@ class SpinComponent
   end
 end
 
-#class CubicBatchingSystem
-##  def initialize(store, count, mesh)
-##    @store = store
-##    @count = count
-##    @mesh = mesh
-##    @proxies = []
-##    hydrate
-##  end
-##
-#  def at(i)
-#    @model
-##    #@mesh_proxies[i]
-##    # this reaches into instance variable bits
-##    #AssignmentProxy
-##    mp = MeshProxy.new(@transforms[]...) # feeds transform at index
-##    #mp.deltap ####!!!! mp becomes cube replacement
-##    #mp.deltar
-#  end
-##
-##  def foopity
-##    #before flush
-##    #each required instance transform update is looped via 
-##    ## this can be saved via at above!!!??
-##    #  passing proxybaseinstancemod into c-sided base batchingclass
-##    #    update_instance_transform
-##    @proxies.each { |p|
-##      
-##    }
-##
-##  end
-#end
-
 class GizmoSystem
   def initialize(store, selector)
     @selector = selector
@@ -91,7 +59,7 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    count = 1
+    count = 3
 
     a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
     b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
@@ -101,18 +69,19 @@ Wkndr.nonce {
     #bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
     #cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
 
-    ## each of abc by 9 grid
+    ### each of abc by 9 grid
     @batcher_a = CubicBatchingSystem.new(@store, a, count)
     @batcher_b = CubicBatchingSystem.new(@store, b, count)
     @batcher_c = CubicBatchingSystem.new(@store, c, count)
 
     count.times { |i|
-      p = PositionComponent.new(i * 0.33, i * -0.33, 0)
+      p = PositionComponent.new(i * 1.33, i * -1.33, 0)
       #p = PositionComponent.new(0, 0, 0)
 
       @store.add(
         @batcher_a.at(i),
         #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
+        #a,
         p,
         SpinComponent.new(3.0, 1.0)
       )
@@ -120,6 +89,7 @@ Wkndr.nonce {
       @store.add(
         @batcher_b.at(i),
         #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
+        #b,
         p,
         SpinComponent.new(5.0, 5.0)
       )
@@ -127,6 +97,7 @@ Wkndr.nonce {
       @store.add(
         @batcher_c.at(i),
         #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
+        #c,
         p,
         SpinComponent.new(7.0, 10.0)
       )
