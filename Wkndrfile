@@ -15,36 +15,37 @@ class SpinComponent
   end
 end
 
-class CubicBatchingSystem
-  def initialize(store, count, mesh)
-    @store = store
-    @count = count
-    @meshes = meshes
-    @proxies = []
-    hydrate
-  end
-
-  def at(i, j)
-    #@mesh_proxies[i]
-    # this reaches into instance variable bits
-    #AssignmentProxy
-    mp = MeshProxy.new(@prebaked_transforms[]...) # feeds transform at index
-    #mp.deltap ####!!!! mp becomes cube replacement
-    #mp.deltar
-  end
-
-  def foopity
-    #before flush
-    #each required instance transform update is looped via 
-    ## this can be saved via at above!!!??
-    #  passing proxybaseinstancemod into c-sided base batchingclass
-    #    update_instance_transform
-    @proxies.each { |p|
-      
-    }
-
-  end
-end
+#class CubicBatchingSystem
+##  def initialize(store, count, mesh)
+##    @store = store
+##    @count = count
+##    @mesh = mesh
+##    @proxies = []
+##    hydrate
+##  end
+##
+#  def at(i)
+#    @model
+##    #@mesh_proxies[i]
+##    # this reaches into instance variable bits
+##    #AssignmentProxy
+##    mp = MeshProxy.new(@transforms[]...) # feeds transform at index
+##    #mp.deltap ####!!!! mp becomes cube replacement
+##    #mp.deltar
+#  end
+##
+##  def foopity
+##    #before flush
+##    #each required instance transform update is looped via 
+##    ## this can be saved via at above!!!??
+##    #  passing proxybaseinstancemod into c-sided base batchingclass
+##    #    update_instance_transform
+##    @proxies.each { |p|
+##      
+##    }
+##
+##  end
+#end
 
 class GizmoSystem
   def initialize(store, selector)
@@ -53,9 +54,9 @@ class GizmoSystem
 
   def process(gt, dt)
     @selector.each { |_e, cube, pos, spin|
-      cube.deltar(
-        Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
-      )
+      #cube.deltar(
+      #  Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
+      #)
       cube.deltap(pos.x, pos.y, pos.z)
     }
   end
@@ -87,7 +88,7 @@ Wkndr.nonce {
       )
     }
 
-    @spinny_things = @store.watch(Cube, PositionComponent, SpinComponent)
+    @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
     #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
@@ -102,9 +103,9 @@ Wkndr.nonce {
 
     count = 1
 
-    @batcher_a = CubicBatchingSystem.new(@store, count, am)
-    @batcher_b = CubicBatchingSystem.new(@store, count, bm)
-    @batcher_c = CubicBatchingSystem.new(@store, count, cm)
+    @batcher_a = CubicBatchingSystem.new(@store, am, count)
+    @batcher_b = CubicBatchingSystem.new(@store, bm, count)
+    @batcher_c = CubicBatchingSystem.new(@store, cm, count)
 
     count.times { |i|
       p = PositionComponent.new(i * 0.33, i * -0.33, 0)
@@ -169,7 +170,7 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
-        @batcher.flush
+        @batcher_a.draw
       }
 
       gl.twod {
