@@ -43,7 +43,7 @@ RUN cd /var/lib/wkndr && ls -l && \
     git submodule update && \
     cd raylib && \
     git fetch && \
-    git checkout 0c29ca8166f26ef24311fab5e2fd614f9358ea76
+    git checkout 4d5ee7953ccac5c1d59f4223899d3d6bffc329b8
 
 COPY rlgl.h.patch /var/lib/wkndr/
 RUN cd /var/lib/wkndr && ls -l && \
