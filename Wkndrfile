@@ -54,9 +54,9 @@ class GizmoSystem
 
   def process(gt, dt)
     @selector.each { |_e, cube, pos, spin|
-      #cube.deltar(
-      #  Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
-      #)
+      cube.deltar(
+        Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
+      )
       cube.deltap(pos.x, pos.y, pos.z)
     }
   end
@@ -91,21 +91,20 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
-
-    am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
-
-    # each of abc by 9 grid
-
     count = 1
 
-    @batcher_a = CubicBatchingSystem.new(@store, am, count)
-    @batcher_b = CubicBatchingSystem.new(@store, bm, count)
-    @batcher_c = CubicBatchingSystem.new(@store, cm, count)
+    a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+
+    #am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+    #bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+    #cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+
+    ## each of abc by 9 grid
+    @batcher_a = CubicBatchingSystem.new(@store, a, count)
+    @batcher_b = CubicBatchingSystem.new(@store, b, count)
+    @batcher_c = CubicBatchingSystem.new(@store, c, count)
 
     count.times { |i|
       p = PositionComponent.new(i * 0.33, i * -0.33, 0)
@@ -170,7 +169,12 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
+        #@spinny_things.each { |e, a, _b, _c|
+        #  a.draw(false)
+        #}
         @batcher_a.draw
+        @batcher_b.draw
+        @batcher_c.draw
       }
 
       gl.twod {
