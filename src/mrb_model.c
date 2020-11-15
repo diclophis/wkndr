@@ -34,6 +34,7 @@ typedef struct {
 typedef struct {
   Matrix *transforms;
   model_data_s* meshless_proxies;
+  int count;
 } batch_data_s;
 
 //static void model_data_destructor(mrb_state *mrb, void *p_);
@@ -502,6 +503,19 @@ static mrb_value batcher_hydrate(mrb_state* mrb, mrb_value self)
   ///!!!!batcher_fill_in_transform_here!!!
   //transforms[i] = MatrixMultiply(rotations[i], translations[i]);
   //!!!!!!!!!!!
+
+  //   ////play_data_s *pp_data = NULL;
+  //   ////mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  //   ////Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  //   ////if (!pp_data) {
+  //   ////  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @meshes");
+  //   ////}
+
+  
+
+  mrb_value meshes_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@meshes"));
+  mrb_value count = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@count"));
+
 }
 
 
@@ -638,8 +652,8 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
   //mrb_define_method(mrb, mesh_proxy_class, "initialize", mesh_proxy_initialize, MRB_ARGS_REQ(2));
 
   // class Batcher
-  struct RClass *batcher_class = mrb_define_class(mrb, "Batcher", mrb->object_class);
-  mrb_define_method(mrb, batcher_class, "hydrate", batcher_hydrate, MRB_ARGS_REQ(1));
+  struct RClass *batcher_class = mrb_define_class(mrb, "CubicBatchingSystem", mrb->object_class);
+  mrb_define_method(mrb, batcher_class, "hydrate", batcher_hydrate, MRB_ARGS_REQ(0));
   mrb_define_method(mrb, batcher_class, "at", batcher_at, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, batcher_class, "flush", batcher_flush, MRB_ARGS_REQ(0));
 }
