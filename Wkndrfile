@@ -1,9 +1,15 @@
 # vi:syntax=ruby
 
 class SpinComponent
-  def initialize(index, speed)
+  def initialize(total, widget, index, speed)
+    @total = total
+    @widget = widget
     @index = index
     @speed = speed
+  end
+
+  def widget
+    @widget
   end
 
   def index
@@ -12,6 +18,10 @@ class SpinComponent
 
   def speed
     @speed
+  end
+
+  def total
+    @total
   end
 end
 
@@ -25,7 +35,8 @@ class GizmoSystem
       cube.deltar(
         Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
       )
-      cube.deltap(pos.x, pos.y, pos.z)
+      cube.deltap(pos.x + Math.sin((spin.widget/spin.total) * gt * (spin.widget + 1)), pos.y + Math.cos((spin.widget/spin.total) * gt * (spin.widget + 1)), pos.z)
+      #, pos.y, pos.z + Math.sin(gt * (spin.widget + 1)))
     }
   end
 end
@@ -33,7 +44,7 @@ end
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     gl.open_default_view!
-    gl.lookat(1, 11.0, 7.0, 13.0, 0.0, 0.0, 0.01, 15.0)
+    gl.lookat(1, 0.0, 0.1, 5.0, 0.0, 0.1, 0.0, 80.0)
 
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
@@ -59,7 +70,7 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    count = 3
+    count = 9
 
     a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
     b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
@@ -75,15 +86,15 @@ Wkndr.nonce {
     @batcher_c = CubicBatchingSystem.new(@store, c, count)
 
     count.times { |i|
-      p = PositionComponent.new(i * 1.33, i * -1.33, 0)
-      #p = PositionComponent.new(0, 0, 0)
+      #p = PositionComponent.new((i.to_f * 0.33) - (1.0 * count * 5.0), i.to_f * 0.33, (i.to_f * 0.33) - (0.5 * count * 5.0))
+      p = PositionComponent.new(0, 0, 0)
 
       @store.add(
         @batcher_a.at(i),
         #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
         #a,
         p,
-        SpinComponent.new(3.0, 1.0)
+        SpinComponent.new(count, i, 0, 10.0 * rand)
       )
 
       @store.add(
@@ -91,7 +102,7 @@ Wkndr.nonce {
         #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
         #b,
         p,
-        SpinComponent.new(5.0, 5.0)
+        SpinComponent.new(count, i, 1, 50.0 * rand)
       )
 
       @store.add(
@@ -99,7 +110,7 @@ Wkndr.nonce {
         #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
         #c,
         p,
-        SpinComponent.new(7.0, 10.0)
+        SpinComponent.new(count, i, 2, 100.0 * rand)
       )
     }
   }

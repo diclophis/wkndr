@@ -232,7 +232,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   Material material = LoadMaterialDefault();
   material.shader = standardShader;
-  material.maps[MAP_DIFFUSE].color = RED;
+  //material.maps[MAP_DIFFUSE].color = RED;
 
   p_data->model.materials[0] = material;
 
@@ -584,8 +584,10 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
+  //fprintf(stderr, "Wtf %d\n", count);
+
   for (int i = 0; i < count; i++) {
-    model_data_s p_data = b_data->meshless_proxies[0];
+    model_data_s p_data = b_data->meshless_proxies[i];
 
     //Matrix matScale = MatrixScale(p_data.scale.x, p_data.scale.y, p_data.scale.z);
     Matrix matRotation = MatrixRotate(p_data.rotation, p_data.angle*DEG2RAD);
@@ -771,7 +773,7 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
   b_data->meshless_proxies = malloc(sizeof(model_data_s) * count);
 
   for (int i = 0; i < count; i++) {
-    model_data_s p_data = b_data->meshless_proxies[0];
+    model_data_s p_data = b_data->meshless_proxies[i];
 
     p_data.position.x = 0.0f;
     p_data.position.y = 0.0f;
