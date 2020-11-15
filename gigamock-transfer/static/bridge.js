@@ -41,7 +41,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //});
       window.addEventListener('resize', function(resizeEvent) {
       ////  window.terminal.fit();
-          window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
+        window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
       });
       ////window.terminal.on('resize', function(newSize) {
       ////});
@@ -87,12 +87,12 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         if (document.body.className != splitScreen) {
           document.body.className = splitScreen;
           setTimeout(function() {
-            window.terminal.fit();
+            //window.terminal.fit();
           }, 1);
         }
         var stringBits = ab2str(bufView);
-        window.terminal.write(stringBits);
-        window.terminal.writeUtf8(bufView);
+        //window.terminal.write(stringBits);
+        //window.terminal.writeUtf8(bufView);
       } else if (channel == 1) {
         var sent = window.conn.send(buf);
       }
@@ -110,7 +110,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var graphicsContainer = document.getElementById('canvas');
-var terminalContainer = document.getElementById("wkndr-terminal");
+//var terminalContainer = document.getElementById("wkndr-terminal");
 
 if (graphicsContainer) {
   // As a default initial behavior, pop up an alert when webgl context is lost. To make your
