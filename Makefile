@@ -25,7 +25,7 @@ raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
 ifeq ($(TARGET),desktop)
   raylib_static_lib=$(build)/libraylib.a
 else
-  raylib_static_lib=$(build)/libraylib.bc
+  raylib_static_lib=$(build)/libraylib.a
 endif
 
 ifeq ($(TARGET),desktop)

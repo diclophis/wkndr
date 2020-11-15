@@ -1,21 +1,3 @@
-diff --git a/src/Makefile b/src/Makefile
-index ebdc06f1..d383cf10 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -488,9 +488,10 @@ all: raylib
- raylib: $(OBJS)
- ifeq ($(PLATFORM),PLATFORM_WEB)
-     # Compile raylib libray for web
--    #$(CC) $(OBJS) -r -o $(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).bc
--	$(AR) rcs $(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).a $(OBJS)
--	@echo "raylib library generated (lib$(RAYLIB_LIB_NAME).a)!"
-+	$(CC) $(OBJS) -r -o $(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).bc
-+	@echo "raylib library generated (lib$(RAYLIB_LIB_NAME).bc)!"
-+#$(AR) rcs $(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).a $(OBJS)
-+#@echo "raylib library generated (lib$(RAYLIB_LIB_NAME).a)!"
- else
-     ifeq ($(RAYLIB_LIBTYPE),SHARED)
-         ifeq ($(PLATFORM),PLATFORM_DESKTOP)
 diff --git a/src/raylib.h b/src/raylib.h
 index 7bed20c8..c9ee48e1 100644
 --- a/src/raylib.h

@@ -180,7 +180,7 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
-        gl.lookat(1, 45.0, 33.0, 45.0, 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
+        gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
 
         #@spinny_things.each { |e, a, _b, _c|
         #  a.draw(false)

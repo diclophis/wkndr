@@ -43,21 +43,21 @@ RUN cd /var/lib/wkndr && ls -l && \
     git submodule update && \
     cd raylib && \
     git fetch && \
-    git checkout c222e231f06c9e6ca4b7d2c9ca708e450ce76d5f
+    git checkout 0c29ca8166f26ef24311fab5e2fd614f9358ea76
 
 COPY rlgl.h.patch /var/lib/wkndr/
 RUN cd /var/lib/wkndr && ls -l && \
     cd raylib && ls -l && \
     cat ../rlgl.h.patch | git apply
 
-COPY Makefile gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
+COPY Makefile gigamock-transfer/simple-cp.sh gigamock-transfer/simple-bake.sh gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb
 
 RUN /var/lib/wkndr/iterate-server.sh clean
 
-RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
+#RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 
-RUN /var/lib/wkndr/iterate-web.sh build-mruby
+#RUN /var/lib/wkndr/iterate-web.sh build-mruby
 
 COPY main.c /var/lib/wkndr/
 COPY src /var/lib/wkndr/src
@@ -65,13 +65,21 @@ COPY include /var/lib/wkndr/include
 COPY lib /var/lib/wkndr/lib
 COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
 
-RUN /var/lib/wkndr/iterate-server.sh
+#RUN /var/lib/wkndr/iterate-server.sh
 
 COPY resources /var/lib/wkndr/resources
 
-RUN /var/lib/wkndr/iterate-web.sh
+#RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/
+
+RUN /var/lib/wkndr/simple-bake.sh
+RUN /var/lib/wkndr/simple-cp.sh
+
+RUN /var/lib/wkndr/iterate-server.sh clean
+RUN /var/lib/wkndr/iterate-server.sh
+
+RUN ls -lh /var/lib/wkndr/release/wkndr.mruby /var/lib/wkndr/public
 
 WORKDIR /var/lib/wkndr
 
