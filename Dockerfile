@@ -59,10 +59,6 @@ RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
 
 RUN /var/lib/wkndr/iterate-web.sh build-mruby
 
-#COPY raylib-src /var/lib/wkndr/raylib-src
-#RUN /var/lib/wkndr/iterate-server.sh release/libraylib.a
-#RUN /var/lib/wkndr/iterate-web.sh release/libraylib.bc
-
 COPY main.c /var/lib/wkndr/
 COPY src /var/lib/wkndr/src
 COPY include /var/lib/wkndr/include
@@ -72,42 +68,10 @@ COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
 RUN /var/lib/wkndr/iterate-server.sh
 
 COPY resources /var/lib/wkndr/resources
+
 RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/
-
-#COPY public/index.html /var/lib/wkndr/public/index.html
-##COPY public/index.js /var/lib/wkndr/public/index.js
-##COPY public/xterm-dist /var/lib/wkndr/public/xterm-dist
-#
-#RUN setcap cap_sys_chroot+ep /usr/sbin/chroot 
-#
-#RUN mkdir -p /var/tmp/chroot/bin /var/tmp/chroot/usr/share /var/tmp/chroot/etc/skel /var/tmp/chroot/home /var/tmp/chroot/usr/share/vim
-#COPY gigamock-transfer/home-dir-template /var/tmp/chroot/etc/skel
-#COPY gigamock-transfer/wkndr-chroot.sh /var/tmp
-#RUN cp -R /var/lib/vim-runtime /var/tmp/chroot/usr/share/vim/runtime
-#RUN cp /var/lib/vim-static /var/tmp/chroot/bin/vim
-#RUN cp /bin/bash-static /var/tmp/chroot/bin/bash
-#RUN cd /var/tmp/chroot/bin && ln -s bash sh
-#RUN cp /bin/busybox /var/tmp/chroot/bin/busybox && \
-#    for I in ls mkdir which; do cd /var/tmp/chroot/bin && ln -s busybox ${I}; done
-##RUN mkdir -p /var/tmp/chroot/usr/bin /var/tmp/chroot/sbin /var/tmp/chroot/usr/sbin
-##RUN chroot /var/tmp/chroot /bin/busybox --install -s
-#
-##-rwxr-xr-x 1 root root 1220 Apr  9  2018 00-header
-#COPY gigamock-transfer/iterate-motd.sh /var/lib/wkndr/iterate-motd.sh
-#RUN rm /etc/legal /etc/update-motd.d/* && mv /var/lib/wkndr/iterate-motd.sh /etc/update-motd.d/00-wkndr
-#COPY gigamock-transfer/issue /etc/issue
-#
-#COPY gigamock-transfer/exgetty.rb /var/lib/wkndr/exgetty.rb
-
-## layer 2 is minimal
-#FROM scratch
-#
-#COPY --from=wkndr /var/lib/wkndr/release/wkndr.mruby /var/lib/wkndr/release/wkndr.mruby
-#COPY --from=wkndr /var/lib/wkndr/public /var/lib/wkndr/public
-#COPY --from=wkndr /var/lib/wkndr/Wkndrfile /var/lib/wkndr/Wkndrfile
-#COPY --from=wkndr /bin/busybox /bin/busybox
 
 WORKDIR /var/lib/wkndr
 
