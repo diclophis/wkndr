@@ -80,7 +80,7 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   mrb_get_args(mrb, "ooof", &model_game_loop, &model_obj, &model_png, &scalef);
 
   const char *c_model_obj = mrb_string_value_cstr(mrb, &model_obj);
-  const char *c_model_png = mrb_string_value_cstr(mrb, &model_png);
+  //const char *c_model_png = mrb_string_value_cstr(mrb, &model_png);
 
   model_data_s *p_data;
 
@@ -92,9 +92,9 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 
   p_data->model = LoadModel(c_model_obj); // Load OBJ model
 
-  for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
-    MeshTangents(&p_data->model.meshes[meshi]);
-  }
+  //for (int meshi=0; meshi<p_data->model.meshCount; meshi++) {
+  //  MeshTangents(&p_data->model.meshes[meshi]);
+  //}
   
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -118,6 +118,11 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
     //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
     p_data->model.materials[mi].shader = standardShader;
   }
+
+  //Material material = LoadMaterialDefault();
+  //material.shader = standardShader;
+  ////material.maps[MAP_DIFFUSE].color = RED;
+  //p_data->model.materials[0] = material;
 
   p_data->scale.x = scalef;
   p_data->scale.y = scalef;

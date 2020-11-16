@@ -11,7 +11,7 @@ index 7d938389..50c3ffe6 100644
  
  RLAPI Shader GetShaderDefault(void);                                      // Get default shader
 diff --git a/src/rlgl.h b/src/rlgl.h
-index a7eacede..e046a5d2 100644
+index a7eacede..20699b6f 100644
 --- a/src/rlgl.h
 +++ b/src/rlgl.h
 @@ -533,6 +533,7 @@ RLAPI void rlglInit(int width, int height);           // Initialize rlgl (buffer
@@ -99,7 +99,18 @@ index a7eacede..e046a5d2 100644
  // Initialize rlgl: OpenGL extensions, default buffers/shaders/textures, OpenGL states
  void rlglInit(int width, int height)
  {
-@@ -1632,12 +1648,12 @@ void rlglInit(int width, int height)
+@@ -1620,7 +1636,9 @@ void rlglInit(int width, int height)
+     TRACELOG(LOG_INFO, "GL: Supported extensions count: %i", numExt);
+ 
+     // Show supported extensions
+-    //for (int i = 0; i < numExt; i++)  TRACELOG(LOG_INFO, "Supported extension: %s", extList[i]);
++    for (int i = 0; i < numExt; i++)  TRACELOG(LOG_INFO, "Supported extension: %s", extList[i]);
++
++    if ((glGenVertexArrays != NULL) && (glBindVertexArray != NULL) && (glDeleteVertexArrays != NULL)) RLGL.ExtSupported.vao = true;
+ 
+     // Check required extensions
+     for (int i = 0; i < numExt; i++)
+@@ -1632,9 +1650,9 @@ void rlglInit(int width, int height)
          {
              // The extension is supported by our hardware and driver, try to get related functions pointers
              // NOTE: emscripten does not support VAOs natively, it uses emulation and it reduces overall performance...
@@ -111,12 +122,8 @@ index a7eacede..e046a5d2 100644
 +            //glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSOESPROC)eglGetProcAddress("glDeleteVertexArraysOES");
              //glIsVertexArray = (PFNGLISVERTEXARRAYOESPROC)eglGetProcAddress("glIsVertexArrayOES");     // NOTE: Fails in WebGL, omitted
  
--            if ((glGenVertexArrays != NULL) && (glBindVertexArray != NULL) && (glDeleteVertexArrays != NULL)) RLGL.ExtSupported.vao = true;
-+            //if ((glGenVertexArrays != NULL) && (glBindVertexArray != NULL) && (glDeleteVertexArrays != NULL)) RLGL.ExtSupported.vao = true;
-         }
- 
-         // Check NPOT textures support
-@@ -2869,7 +2885,7 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
+             if ((glGenVertexArrays != NULL) && (glBindVertexArray != NULL) && (glDeleteVertexArrays != NULL)) RLGL.ExtSupported.vao = true;
+@@ -2869,7 +2887,7 @@ void rlDrawMesh(Mesh mesh, Material material, Matrix transform)
  // Draw a 3d mesh with material and transform
  void rlDrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int count)
  {
@@ -125,7 +132,7 @@ index a7eacede..e046a5d2 100644
      // Bind shader program
      glUseProgram(material.shader.id);
  
-@@ -2956,9 +2972,9 @@ void rlDrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int c
+@@ -2956,9 +2974,9 @@ void rlDrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int c
      // Unbind shader program
      glUseProgram(0);
  
@@ -138,7 +145,7 @@ index a7eacede..e046a5d2 100644
  }
  
  // Unload mesh data from CPU and GPU
-@@ -3237,6 +3253,66 @@ Shader LoadShaderCode(const char *vsCode, const char *fsCode)
+@@ -3237,6 +3255,66 @@ Shader LoadShaderCode(const char *vsCode, const char *fsCode)
      return shader;
  }
  
@@ -205,7 +212,7 @@ index a7eacede..e046a5d2 100644
  // Unload shader from GPU memory (VRAM)
  void UnloadShader(Shader shader)
  {
-@@ -4002,6 +4078,41 @@ void EndVrDrawing(void)
+@@ -4002,6 +4080,41 @@ void EndVrDrawing(void)
  //----------------------------------------------------------------------------------
  
  #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
