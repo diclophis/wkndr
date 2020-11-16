@@ -73,11 +73,15 @@ COPY resources /var/lib/wkndr/resources
 
 COPY Wkndrfile /var/lib/wkndr/
 
+RUN /var/lib/wkndr/iterate-server.sh
+RUN cp /var/lib/wkndr/release/wkndr.mruby /var/tmp
+
+RUN /var/lib/wkndr/iterate-server.sh clean
+
 RUN /var/lib/wkndr/simple-bake.sh
 RUN /var/lib/wkndr/simple-cp.sh
 
-RUN /var/lib/wkndr/iterate-server.sh clean
-RUN /var/lib/wkndr/iterate-server.sh
+RUN cp /var/tmp/wkndr.mruby /var/lib/wkndr/release/
 
 RUN ls -lh /var/lib/wkndr/release/wkndr.mruby /var/lib/wkndr/public
 

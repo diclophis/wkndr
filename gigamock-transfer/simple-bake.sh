@@ -6,7 +6,7 @@ cd /root/emsdk
 . ./emsdk_env.sh
 
 cd /var/lib/wkndr
-make clean
+#make clean
 
 cd /var/lib/wkndr/raylib/src
 RAYLIB_RELEASE_PATH=../../release make PLATFORM=PLATFORM_WEB -B -e

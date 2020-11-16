@@ -166,9 +166,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 2, 3 }, Vector3Zero(), BLUE, shader);
     lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, 30 }, Vector3Zero(), WHITE, shader);
-    //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
-    //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
-    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
+    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
+    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
+    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");

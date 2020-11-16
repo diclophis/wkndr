@@ -76,15 +76,15 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    xs = 13
-    ys = 13
-    zs = 13
+    xs = 3
+    ys = 3
+    zs = 3
 
-    instances = xs * ys * zs
+    @instances = xs * ys * zs
 
     i = 0
     a = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
-    @batcher_a = CubicBatchingSystem.new(@store, a, instances)
+    @batcher_a = CubicBatchingSystem.new(@store, a, @instances)
 
     xs.times { |xd|
       ys.times { |yd|
@@ -93,7 +93,7 @@ Wkndr.nonce {
           @store.add(
             @batcher_a.at(i),
             p,
-            SpinComponent.new(instances, i, rand, 10.0 * rand)
+            SpinComponent.new(@instances, i, rand, 10.0 * rand)
           )
 
           i += 1
@@ -185,7 +185,7 @@ Wkndr.client_side { |gl|
         #@spinny_things.each { |e, a, _b, _c|
         #  a.draw(false)
         #}
-        @batcher_a.draw
+        @batcher_a.draw(@instances)
         #@batcher_b.draw
         #@batcher_c.draw
       }

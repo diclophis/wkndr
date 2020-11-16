@@ -575,7 +575,15 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
 //    
 //    
 
-  mrb_int count = mrb_int(mrb, mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@count")));
+  //mrb_int count = mrb_int(mrb, mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@count")));
+
+  mrb_int count;
+
+  mrb_get_args(mrb, "i", &count);
+
+  if (count == 0) {
+    return mrb_nil_value();
+  }
 
   batch_data_s *b_data = NULL;
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
@@ -618,7 +626,9 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  rlDrawMeshInstanced(og_data->mesh, og_data->model.materials[0], b_data->transforms, count);
+  rlDrawMeshInstanced(og_data->model.meshes[0], og_data->model.materials[0], b_data->transforms, count);
+
+  return mrb_nil_value();
 }
 
 
@@ -895,5 +905,5 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
 
   //mrb_define_method(mrb, batcher_class, "hydrate", batcher_hydrate, MRB_ARGS_REQ(0));
   mrb_define_method(mrb, batcher_class, "at", batcher_at, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, batcher_class, "draw", batcher_draw, MRB_ARGS_REQ(0));
+  mrb_define_method(mrb, batcher_class, "draw", batcher_draw, MRB_ARGS_REQ(1));
 }
