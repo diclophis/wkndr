@@ -76,9 +76,9 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    xs = 3
-    ys = 3
-    zs = 3
+    xs = 7
+    ys = 7
+    zs = 7
 
     @instances = xs * ys * zs
 

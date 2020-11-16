@@ -160,16 +160,19 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     // ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.01f, 0.01f, 0.01f, 1.0f }, UNIFORM_VEC4);
+    SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, UNIFORM_VEC4);
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
-    //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 2, 3 }, Vector3Zero(), BLUE, shader);
+    lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -10, 10, 10 }, Vector3Zero(), WHITE, shader);
+    lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 10, 10, -10 }, Vector3Zero(), GRAY, shader);
+    lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -10, 10, -10 }, Vector3Zero(), LIGHTGRAY, shader);
+    lights[3] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 10, 10, 10 }, Vector3Zero(), GREEN, shader);
 
-    lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, 300, 300 }, Vector3Zero(), WHITE, shader);
-    lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, -300, 300 }, Vector3Zero(), RED, shader);
-    lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, 300, -300 }, Vector3Zero(), BLUE, shader);
-    lights[3] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, -300, -300 }, Vector3Zero(), GREEN, shader);
+    //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 300, 300, 300 }, Vector3Zero(), WHITE, shader);
+    //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 300, -300, 300 }, Vector3Zero(), RED, shader);
+    //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 300, 300, -300 }, Vector3Zero(), BLUE, shader);
+    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 300, -300, -300 }, Vector3Zero(), GREEN, shader);
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
@@ -193,20 +196,21 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 //  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 20, 20, 20 }, Vector3Zero(), WHITE, standardShader);
 //
 
-//lights[0].intensity = 0.1;
+lights[0].intensity = 0.9;
+lights[1].intensity = 0.3;
+lights[2].intensity = 0.3;
+lights[3].intensity = 0.3;
+
 ////  lights[0].enabled = 0;
 ////  UpdateLightValues(standardShader, lights[0]);
-////
-//lights[1].intensity = 0.1;
+///
 ////  lights[1].enabled = 1;
 ////  UpdateLightValues(standardShader, lights[1]);
 ////
-//lights[2].intensity = 0.1;
 ////  lights[2].enabled = 1;
 ////  lights[2].coneAngle = 33.00;
 ////  UpdateLightValues(standardShader, lights[2]);
 ////
-//lights[3].intensity = 0.1;
 ////  lights[3].enabled = 0;
 ////  UpdateLightValues(standardShader, lights[3]);
 //
@@ -511,6 +515,42 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
 }
 
 
+void DrawLight(Light light)
+{
+    switch (light.type)
+    {
+        case LIGHT_POINT:
+        {
+            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+            
+            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 0, 0 }, 0.0f, (light.enabled ? light.color : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 1, 0, 0 }, 90.0f, (light.enabled ? light.color : GRAY));
+            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 1, 0 },90.0f, (light.enabled ? light.color : GRAY));
+        } break;
+        case LIGHT_DIRECTIONAL:
+        {
+            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
+            
+            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
+        } break;
+        //case LIGHT_SPOT:
+        //{
+        //    DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
+        //    
+        //    Vector3 dir = VectorSubtract(light.target, light.position);
+        //    VectorNormalize(&dir);
+        //    
+        //    DrawCircle3D(light.position, 0.5f, dir, 0.0f, (light.enabled ? light.color : GRAY));
+        //    
+        //    //DrawCylinderWires(light.position, 0.0f, 0.3f*light.coneAngle/50, 0.6f, 5, (light.enabled ? light.color : GRAY));
+        //    DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
+        //} break;
+        default: break;
+    }
+}
+
+
 static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 {
   mrb_value block;
@@ -534,7 +574,7 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
     mrb_yield_argv(mrb, block, 0, NULL);
 
-    ////drawLighting
+    //////drawLighting
     //for (int i=0; i<MAX_LIGHTS; i++) {
     //  DrawLight(lights[i]);
     //}

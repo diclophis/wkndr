@@ -56,6 +56,25 @@ typedef struct {
     int posLoc;
     int targetLoc;
     int colorLoc;
+
+    //int type;
+    //Vector3 position;
+    //Vector3 target;
+    //Color color;
+    //bool enabled;
+    float radius;           // Light attenuation radius light intensity reduced with distance (world distance)
+    float intensity;        // Light intensity level
+    float coneAngle;        // Light cone max angle: LIGHT_SPOT
+    
+    //// Shader locations
+    //int enabledLoc;
+    //int typeLoc;
+    //int posLoc;
+    //int targetLoc;
+    //int colorLoc;
+    int intensityLoc;
+    int coneAngleLoc;
+    int radiusLoc;
 } Light;
 
 // Light type
@@ -136,6 +155,9 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         char posName[32] = "lights[x].position\0";
         char targetName[32] = "lights[x].target\0";
         char colorName[32] = "lights[x].color\0";
+        char intensityName[32] = "lights[x].intensity\0";
+        char coneAngleName[32] = "lights[x].coneAngle\0";
+        char radiusName[32] = "lights[x].radius\0";
         
         // Set location name [x] depending on lights count
         enabledName[7] = '0' + lightsCount;
@@ -143,12 +165,19 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         posName[7] = '0' + lightsCount;
         targetName[7] = '0' + lightsCount;
         colorName[7] = '0' + lightsCount;
+        intensityName[7] = '0' + lightsCount;
+        coneAngleName[7] = '0' + lightsCount;
+        radiusName[7] = '0' + lightsCount;
 
         light.enabledLoc = GetShaderLocation(shader, enabledName);
         light.typeLoc = GetShaderLocation(shader, typeName);
         light.posLoc = GetShaderLocation(shader, posName);
         light.targetLoc = GetShaderLocation(shader, targetName);
         light.colorLoc = GetShaderLocation(shader, colorName);
+
+        light.intensityLoc = GetShaderLocation(shader, intensityName);
+        light.coneAngleLoc = GetShaderLocation(shader, coneAngleName);
+        light.radiusLoc = GetShaderLocation(shader, radiusName);
 
         UpdateLightValues(shader, light);
         
@@ -165,6 +194,9 @@ void UpdateLightValues(Shader shader, Light light)
     // Send to shader light enabled state and type
     SetShaderValue(shader, light.enabledLoc, &light.enabled, UNIFORM_INT);
     SetShaderValue(shader, light.typeLoc, &light.type, UNIFORM_INT);
+    SetShaderValue(shader, light.intensityLoc, &light.intensity, UNIFORM_FLOAT);
+    SetShaderValue(shader, light.coneAngleLoc, &light.coneAngle, UNIFORM_FLOAT);
+    SetShaderValue(shader, light.radiusLoc, &light.radius, UNIFORM_FLOAT);
 
     // Send to shader light position values
     float position[3] = { light.position.x, light.position.y, light.position.z };
