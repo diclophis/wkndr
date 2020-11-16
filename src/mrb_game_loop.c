@@ -165,10 +165,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
     //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 3, 2, 3 }, Vector3Zero(), BLUE, shader);
-    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, 30 }, Vector3Zero(), WHITE, shader);
-    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 30, 30 }, Vector3Zero(), RED, shader);
-    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 30, 30, -30 }, Vector3Zero(), BLUE, shader);
-    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 60, 60, 60 }, Vector3Zero(), GREEN, shader);
+
+    lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, 300, 300 }, Vector3Zero(), WHITE, shader);
+    lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, -300, 300 }, Vector3Zero(), RED, shader);
+    lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, 300, -300 }, Vector3Zero(), BLUE, shader);
+    lights[3] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 300, -300, -300 }, Vector3Zero(), GREEN, shader);
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
@@ -191,22 +192,23 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 //  lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0, 100, 0 }, Vector3Zero(), WHITE, standardShader);
 //  lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 20, 20, 20 }, Vector3Zero(), WHITE, standardShader);
 //
-//  lights[0].intensity = 0.1;
-//  lights[0].enabled = 0;
-//  UpdateLightValues(standardShader, lights[0]);
-//
-//  lights[1].intensity = 0.00001;
-//  lights[1].enabled = 1;
-//  UpdateLightValues(standardShader, lights[1]);
-//
-//  lights[2].intensity = 0.00001;
-//  lights[2].enabled = 1;
-//  lights[2].coneAngle = 33.00;
-//  UpdateLightValues(standardShader, lights[2]);
-//
-//  lights[3].intensity = 0.001;
-//  lights[3].enabled = 0;
-//  UpdateLightValues(standardShader, lights[3]);
+
+//lights[0].intensity = 0.1;
+////  lights[0].enabled = 0;
+////  UpdateLightValues(standardShader, lights[0]);
+////
+//lights[1].intensity = 0.1;
+////  lights[1].enabled = 1;
+////  UpdateLightValues(standardShader, lights[1]);
+////
+//lights[2].intensity = 0.1;
+////  lights[2].enabled = 1;
+////  lights[2].coneAngle = 33.00;
+////  UpdateLightValues(standardShader, lights[2]);
+////
+//lights[3].intensity = 0.1;
+////  lights[3].enabled = 0;
+////  UpdateLightValues(standardShader, lights[3]);
 //
 //  //lights[0] = CreateLight(LIGHT_SPOT, Vector3Zero(), Vector3Zero(), BLUE, standardShader);
 //  //lights[0].intensity = 10.0;

@@ -112,16 +112,19 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   if (!pp_data) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
+
   Shader standardShader = pp_data->globalDebugShader;
   Texture standardTexture = pp_data->globalDebugTexture;
+
   for (int mi=0; mi<p_data->model.materialCount; mi++) {
     //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
     p_data->model.materials[mi].shader = standardShader;
+    p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
   }
 
   //Material material = LoadMaterialDefault();
   //material.shader = standardShader;
-  ////material.maps[MAP_DIFFUSE].color = RED;
+  //material.maps[MAP_DIFFUSE].color = RED;
   //p_data->model.materials[0] = material;
 
   p_data->scale.x = scalef;
