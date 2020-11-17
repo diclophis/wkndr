@@ -37,6 +37,11 @@ RUN cd /var/lib/wkndr && ls -l && \
     git fetch && \
     git checkout 612e5d6aad7f224008735d57b19e5a81556cfd31
 
+RUN cd /root/emsdk && \
+    . ./emsdk_env.sh && \
+    cd /var/lib/wkndr/mruby && \
+    MRUBY_CONFIG=../config/emscripten.rb make
+
 RUN cd /var/lib/wkndr && ls -l && \
     git submodule add https://github.com/raysan5/raylib raylib \
     git submodule init && \
@@ -46,18 +51,20 @@ RUN cd /var/lib/wkndr && ls -l && \
     git checkout 4d5ee7953ccac5c1d59f4223899d3d6bffc329b8
 
 COPY rlgl.h.patch /var/lib/wkndr/
-RUN cd /var/lib/wkndr && ls -l && \
-    cd raylib && ls -l && \
+
+RUN cd /var/lib/wkndr/raylib && \
     cat ../rlgl.h.patch | git apply
+
+RUN cd /root/emsdk && \
+    . ./emsdk_env.sh && \
+    mkdir /var/lib/wkndr/release && \
+    cd /var/lib/wkndr/raylib/src && \
+    RAYLIB_RELEASE_PATH=../../release make PLATFORM=PLATFORM_WEB -B -e
 
 COPY Makefile gigamock-transfer/simple-cp.sh gigamock-transfer/simple-bake.sh gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb
 
 RUN /var/lib/wkndr/iterate-server.sh clean
-
-#RUN /var/lib/wkndr/iterate-server.sh mruby/bin/mrbc
-
-#RUN /var/lib/wkndr/iterate-web.sh build-mruby
 
 COPY main.c /var/lib/wkndr/
 COPY src /var/lib/wkndr/src
@@ -65,11 +72,7 @@ COPY include /var/lib/wkndr/include
 COPY lib /var/lib/wkndr/lib
 COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
 
-#RUN /var/lib/wkndr/iterate-server.sh
-
 COPY resources /var/lib/wkndr/resources
-
-#RUN /var/lib/wkndr/iterate-web.sh
 
 COPY Wkndrfile /var/lib/wkndr/
 

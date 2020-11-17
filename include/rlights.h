@@ -146,6 +146,9 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
+        light.coneAngle = 180.0;
+        light.radius = 1.0;
+        light.intensity = 1.0;
 
         // TODO: Below code doesn't look good to me, 
         // it assumes a specific shader naming and structure
