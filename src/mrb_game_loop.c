@@ -164,7 +164,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
-    lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -10, 10, 10 }, Vector3Zero(), WHITE, shader);
+    //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -10, 10, 10 }, Vector3Zero(), WHITE, shader);
     //lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 10, 10, -10 }, Vector3Zero(), GRAY, shader);
     //lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -10, 10, -10 }, Vector3Zero(), LIGHTGRAY, shader);
     //lights[3] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 10, 10, 10 }, Vector3Zero(), WHITE, shader);
@@ -174,7 +174,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     //lights[2] = CreateLight(LIGHT_POINT, (Vector3){ 300, 300, -300 }, Vector3Zero(), BLUE, shader);
     //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 300, -300, -300 }, Vector3Zero(), GREEN, shader);
 
-lights[0].intensity = 0.9;
+//lights[0].intensity = 0.9;
 //lights[1].intensity = 0.3;
 //lights[2].intensity = 0.3;
 //lights[3].intensity = 0.3;
@@ -566,10 +566,10 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  UpdateLightValues(p_data->globalDebugShader, lights[0]);
-  UpdateLightValues(p_data->globalDebugShader, lights[1]);
-  UpdateLightValues(p_data->globalDebugShader, lights[2]);
-  UpdateLightValues(p_data->globalDebugShader, lights[3]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[0]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[1]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[2]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[3]);
 
   BeginMode3D(p_data->camera);
 
