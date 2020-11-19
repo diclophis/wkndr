@@ -165,10 +165,10 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     //lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0.0, 10000.0, 0.0 }, (Vector3){ 0.0, 0.0, 0.0 }, BLUE, shader);
     //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ -70, 60, -90 }, Vector3Zero(), GREEN, shader);
 
-    lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 5, 7, 9 }, Vector3Zero(), WHITE, shader);
-    lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -11, 13, 17 }, Vector3Zero(), RED, shader);
-    lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 19, 23, -29 }, Vector3Zero(), GREEN, shader);
-    lights[3] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -31, 37, -41 }, Vector3Zero(), BLUE, shader);
+    lights[0] = CreateLight(LIGHT_SPOT, (Vector3){  10, 100, 0 }, (Vector3){ -10, 0, 1 }, WHITE, shader);
+    lights[1] = CreateLight(LIGHT_SPOT, (Vector3){ -10, 100, 0 }, (Vector3){ 10, 0, -1 }, RED, shader);
+    lights[2] = CreateLight(LIGHT_SPOT, (Vector3){  0, 100, -10 }, (Vector3){ -1, 0, 10 }, GREEN, shader);
+    lights[3] = CreateLight(LIGHT_SPOT, (Vector3){  0, 100, 10 }, (Vector3){  1, 0,  -10 }, BLUE, shader);
 
     //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 300, 300, 300 }, Vector3Zero(), WHITE, shader);
     //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 300, -300, 300 }, Vector3Zero(), RED, shader);
@@ -180,10 +180,10 @@ lights[1].enabled = true;
 lights[2].enabled = true;
 lights[3].enabled = true;
 
-lights[0].intensity = 0.25;
-lights[1].intensity = 0.25;
-lights[2].intensity = 0.25;
-lights[3].intensity = 0.25;
+lights[0].intensity = 0.5;
+lights[1].intensity = 0.5;
+lights[2].intensity = 0.5;
+lights[3].intensity = 0.5;
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
@@ -581,7 +581,7 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
     mrb_yield_argv(mrb, block, 0, NULL);
 
-    //////drawLighting
+    ////////drawLighting
     for (int i=0; i<MAX_LIGHTS; i++) {
       DrawLight(lights[i]);
     }

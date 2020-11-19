@@ -147,7 +147,7 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
-        light.coneAngle = 5.0 * (3.1457/180.0);
+        light.coneAngle = 360.0 * (3.1457/180.0);
         light.radius = 10.0;
         light.intensity = 1.0;
 
