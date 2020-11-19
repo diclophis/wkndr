@@ -74,13 +74,11 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
 {
   mrb_value model_game_loop = mrb_nil_value();
   mrb_value model_obj = mrb_nil_value();
-  mrb_value model_png = mrb_nil_value();
   mrb_float scalef;
 
-  mrb_get_args(mrb, "ooof", &model_game_loop, &model_obj, &model_png, &scalef);
+  mrb_get_args(mrb, "oof", &model_game_loop, &model_obj, &scalef);
 
   const char *c_model_obj = mrb_string_value_cstr(mrb, &model_obj);
-  //const char *c_model_png = mrb_string_value_cstr(mrb, &model_png);
 
   model_data_s *p_data;
 
@@ -754,12 +752,6 @@ static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
 
 static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
 {
-  //mrb_value model_game_loop = mrb_nil_value();
-  //mrb_value model_obj = mrb_nil_value();
-  //mrb_value model_png = mrb_nil_value();
-  //mrb_float scalef;
-  //mrb_get_args(mrb, "ooof", &model_game_loop, &model_obj, &model_png, &scalef);
-
   mrb_value storage = mrb_nil_value();
   mrb_value model = mrb_nil_value();
   mrb_int count;
@@ -791,19 +783,19 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
   b_data->meshless_proxies = malloc(sizeof(model_data_s) * count);
 
   for (int i = 0; i < count; i++) {
-    model_data_s p_data = b_data->meshless_proxies[i];
+    model_data_s *p_data = &b_data->meshless_proxies[i];
 
-    p_data.position.x = 0.0f;
-    p_data.position.y = 0.0f;
-    p_data.position.z = 0.0f;
+    p_data->position.x = 0.0f;
+    p_data->position.y = 0.0f;
+    p_data->position.z = 0.0f;
 
-    p_data.scale.x = 1.0f;
-    p_data.scale.y = 1.0f;
-    p_data.scale.z = 1.0f;
+    p_data->scale.x = 1.0f;
+    p_data->scale.y = 1.0f;
+    p_data->scale.z = 1.0f;
 
-    p_data.rotation.x = 0.0f;
-    p_data.rotation.y = 1.0f;
-    p_data.rotation.z = 0.0f; // Set model position
+    p_data->rotation.x = 0.0f;
+    p_data->rotation.y = 1.0f;
+    p_data->rotation.z = 0.0f; // Set model position
   }
 
 
@@ -891,7 +883,7 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
 void mrb_mruby_model_gem_init(mrb_state *mrb) {
   // class Model
   struct RClass *model_class = mrb_define_class(mrb, "Model", mrb->object_class);
-  mrb_define_method(mrb, model_class, "initialize", model_initialize, MRB_ARGS_REQ(5));
+  mrb_define_method(mrb, model_class, "initialize", model_initialize, MRB_ARGS_REQ(4));
   mrb_define_method(mrb, model_class, "draw", model_draw, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, model_class, "deltap", model_deltap, MRB_ARGS_REQ(3));
   mrb_define_method(mrb, model_class, "deltar", model_deltar, MRB_ARGS_REQ(4));

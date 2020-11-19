@@ -80,7 +80,8 @@ typedef struct {
 // Light type
 typedef enum {
     LIGHT_DIRECTIONAL,
-    LIGHT_POINT
+    LIGHT_POINT,
+    LIGHT_SPOT
 } LightType;
 
 #ifdef __cplusplus
@@ -146,8 +147,8 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.position = position;
         light.target = target;
         light.color = color;
-        light.coneAngle = 180.0;
-        light.radius = 1.0;
+        light.coneAngle = 5.0 * (3.1457/180.0);
+        light.radius = 10.0;
         light.intensity = 1.0;
 
         // TODO: Below code doesn't look good to me, 
@@ -213,6 +214,28 @@ void UpdateLightValues(Shader shader, Light light)
     float color[4] = { (float)light.color.r/(float)255, (float)light.color.g/(float)255, 
                        (float)light.color.b/(float)255, (float)light.color.a/(float)255 };
     SetShaderValue(shader, light.colorLoc, color, UNIFORM_VEC4);
+
+//                case LIGHT_SPOT:
+//                {
+//                    tempFloat[0] = lights[i]->position.x;
+//                    tempFloat[1] = lights[i]->position.y;
+//                    tempFloat[2] = lights[i]->position.z;
+//                    SetShaderValue(shader, lightsLocs[i][2], tempFloat, UNIFORM_VEC3);
+//                    
+//                    //glUniform3f(lightsLocs[i][2], lights[i]->position.x, lights[i]->position.y, lights[i]->position.z);
+//                    
+//                    Vector3 direction = VectorSubtract(lights[i]->target, lights[i]->position);
+//                    VectorNormalize(&direction);
+//                    
+//                    tempFloat[0] = direction.x;
+//                    tempFloat[1] = direction.y;
+//                    tempFloat[2] = direction.z;
+//                    SetShaderValue(shader, lightsLocs[i][3], tempFloat, UNIFORM_VEC3);
+//                    //glUniform3f(lightsLocs[i][3], direction.x, direction.y, direction.z);
+//                    
+//                    tempFloat[0] = lights[i]->coneAngle;
+//                    SetShaderValue(shader, lightsLocs[i][7], tempFloat, UNIFORM_FLOAT);
+//                    //glUniform1f(lightsLocs[i][7], lights[i]->coneAngle);
 }
 
 #endif // RLIGHTS_IMPLEMENTATION

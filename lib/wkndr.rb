@@ -113,4 +113,29 @@ class Wkndr
       yield
     end
   end
+
+  def self.run(klass)
+    Wkndr.server_side { |gl, server|
+      server.wsb("/")
+    }
+
+    Wkndr.client_side { |gl|
+      gl.event { |channel, msg|
+        klass.event(channel, msg)
+      }
+
+      gl.update { |global_time, delta_time|
+        gl.drawmode {
+          gl.threed {
+            klass.draw_threed(gl)
+          }
+          gl.twod {
+            klass.draw_twod(gl)
+          }
+        }
+
+        klass.process_time(gl, global_time, delta_time)
+      }
+    }
+  end
 end
