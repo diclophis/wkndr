@@ -160,10 +160,15 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
+    //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 5, 7, 9 }, Vector3Zero(), WHITE, shader);
+    //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 60, 10 }, Vector3Zero(), WHITE, shader);
+    //lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0.0, 10000.0, 0.0 }, (Vector3){ 0.0, 0.0, 0.0 }, BLUE, shader);
+    //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ -70, 60, -90 }, Vector3Zero(), GREEN, shader);
+
     lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 5, 7, 9 }, Vector3Zero(), WHITE, shader);
-    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 60, 10 }, Vector3Zero(), WHITE, shader);
-    lights[2] = CreateLight(LIGHT_SPOT, (Vector3){ 0.0, 10000.0, 0.0 }, (Vector3){ 0.0, 0.0, 0.0 }, BLUE, shader);
-    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ -70, 60, -90 }, Vector3Zero(), GREEN, shader);
+    lights[1] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -11, 13, 17 }, Vector3Zero(), RED, shader);
+    lights[2] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 19, 23, -29 }, Vector3Zero(), GREEN, shader);
+    lights[3] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -31, 37, -41 }, Vector3Zero(), BLUE, shader);
 
     //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 300, 300, 300 }, Vector3Zero(), WHITE, shader);
     //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 300, -300, 300 }, Vector3Zero(), RED, shader);
@@ -171,14 +176,14 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     //lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 300, -300, -300 }, Vector3Zero(), GREEN, shader);
 
 lights[0].enabled = true;
-lights[1].enabled = false;
-lights[2].enabled = false;
-lights[3].enabled = false;
+lights[1].enabled = true;
+lights[2].enabled = true;
+lights[3].enabled = true;
 
-lights[0].intensity = 1.0;
-lights[1].intensity = 0.0;
-lights[2].intensity = 0.0;
-lights[3].intensity = 0.0;
+lights[0].intensity = 0.25;
+lights[1].intensity = 0.25;
+lights[2].intensity = 0.25;
+lights[3].intensity = 0.25;
 
 //  //startLighting
 //  standardShader = LoadShader("resources/standard.vs",  "resources/standard.fs");
