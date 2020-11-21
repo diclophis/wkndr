@@ -17,7 +17,7 @@ builds:
     https://github.com/iij/mruby-zlib.git:
       url: https://github.com/iij/mruby-zlib.git
       branch: HEAD
-      commit: 23e88ee9b5ee9776516e80906ceae4fccfd5687f
+      commit: de2dedd57e8d53c59ddd4ec56ede7206e6bee3a3
       version: 0.0.0
     https://github.com/katzer/mruby-r3.git:
       url: https://github.com/katzer/mruby-r3.git
