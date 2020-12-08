@@ -1,5 +1,5 @@
 diff --git a/src/core.c b/src/core.c
-index 4bb2e351..29fc829a 100644
+index 4bb2e351..a6fb40c8 100644
 --- a/src/core.c
 +++ b/src/core.c
 @@ -756,25 +756,25 @@ void InitWindow(int width, int height, const char *title)
@@ -43,6 +43,33 @@ index 4bb2e351..29fc829a 100644
  #endif
  
      CORE.Input.Mouse.position.x = (float)CORE.Window.screen.width/2.0f;
+@@ -1548,17 +1548,17 @@ void EndDrawing(void)
+ 
+     CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
+ 
+-    // Wait for some milliseconds...
+-    if (CORE.Time.frame < CORE.Time.target)
+-    {
+-        Wait((float)(CORE.Time.target - CORE.Time.frame)*1000.0f);
++    //// Wait for some milliseconds...
++    //if (CORE.Time.frame < CORE.Time.target)
++    //{
++    //    Wait((float)(CORE.Time.target - CORE.Time.frame)*1000.0f);
+ 
+-        CORE.Time.current = GetTime();
+-        double waitTime = CORE.Time.current - CORE.Time.previous;
+-        CORE.Time.previous = CORE.Time.current;
++    //    CORE.Time.current = GetTime();
++    //    double waitTime = CORE.Time.current - CORE.Time.previous;
++    //    CORE.Time.previous = CORE.Time.current;
+ 
+-        CORE.Time.frame += waitTime;      // Total frame time: update + draw + wait
+-    }
++    //    CORE.Time.frame += waitTime;      // Total frame time: update + draw + wait
++    //}
+ }
+ 
+ // Initialize 2D mode with custom camera (2D)
 diff --git a/src/raylib.h b/src/raylib.h
 index 7d938389..50c3ffe6 100644
 --- a/src/raylib.h
