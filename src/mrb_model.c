@@ -42,6 +42,9 @@ typedef struct {
 
 //static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
 //}
+void texture_data_destructor(mrb_state *mrb, void *p_) {
+}
+
 static void batch_data_destructor(mrb_state *mrb, void *p_) {
 }
 
@@ -66,6 +69,8 @@ static void model_data_destructor(mrb_state *mrb, void *p_) {
   // mrb_free(mrb, p_);
 };
 
+
+const struct mrb_data_type texture_data_type = {"texture_data", texture_data_destructor};
 const struct mrb_data_type model_data_type = {"model_data", model_data_destructor};
 const struct mrb_data_type batch_data_type = {"batch_data", batch_data_destructor};
 
@@ -880,7 +885,42 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
+
+
+
+
+static mrb_value sprite_component_initialize(mrb_state* mrb, mrb_value self)
+{
+  mrb_value texture_path = mrb_nil_value();
+
+  mrb_get_args(mrb, "o", &texture_path);
+
+  const char *c_texture_path = mrb_string_value_cstr(mrb, &texture_path);
+
+  texture_data_s *t_data;
+
+  t_data = malloc(sizeof(texture_data_s));
+  memset(t_data, 0, sizeof(texture_data_s));
+  if (!t_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not allocate TextureData");
+  }
+
+  t_data->texture = LoadTexture(c_texture_path);
+
+
+  mrb_iv_set(
+      mrb, self, mrb_intern_lit(mrb, "@pointer"),
+      mrb_obj_value(
+          Data_Wrap_Struct(mrb, mrb->object_class, &texture_data_type, t_data)));
+
+  return self;
+}
+
+
 void mrb_mruby_model_gem_init(mrb_state *mrb) {
+  struct RClass *sprite_component_class = mrb_define_class(mrb, "SpriteComponent", mrb->object_class);
+  mrb_define_method(mrb, sprite_component_class, "initialize", sprite_component_initialize, MRB_ARGS_REQ(1));
+
   // class Model
   struct RClass *model_class = mrb_define_class(mrb, "Model", mrb->object_class);
   mrb_define_method(mrb, model_class, "initialize", model_initialize, MRB_ARGS_REQ(4));

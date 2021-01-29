@@ -342,6 +342,18 @@ class VectorComponent
     @z
   end
 
+  def x=(a)
+    @x = a
+  end
+
+  def y=(a)
+    @y = a
+  end
+
+  def z=(a)
+    @z = a
+  end
+
   def self.from(vec)
     new(vec.x, vec.y, vec.z)
   end
@@ -372,6 +384,16 @@ class VectorComponent
     @x *= -1
     @y *= -1
     @z *= -1
+    self
+  end
+
+  def invertX
+    @x *= -1
+    self
+  end
+
+  def invertY
+    @y *= -1
     self
   end
 
@@ -529,25 +551,25 @@ class CircleComponent
   end
 end
 
-class SpriteComponent
-  #attr_accessor :frame
-  #attr_accessor :props
-
-  def initialize(frame = nil, props = nil)
-    @frame = frame
-    @props = props
-
-    #{
-    #  :visible => true,
-    #  :position => nil,
-    #  :rotation => 0,
-    #  :scale => 1,
-    #  :tint => 255,
-    #  :alpha => 1
-    ## :l, :n ????
-    #}
-  end
-end
+#class SpriteComponent
+#  #attr_accessor :frame
+#  #attr_accessor :props
+#
+#  def initialize(frame = nil, props = nil)
+#    @frame = frame
+#    @props = props
+#
+#    #{
+#    #  :visible => true,
+#    #  :position => nil,
+#    #  :rotation => 0,
+#    #  :scale => 1,
+#    #  :tint => 255,
+#    #  :alpha => 1
+#    ## :l, :n ????
+#    #}
+#  end
+#end
 
 class TransformComponent
   #attr_accessor :transformer

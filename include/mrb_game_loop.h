@@ -10,3 +10,11 @@ typedef struct {
   Texture globalDebugTexture;
   Shader globalDebugShader;
 } play_data_s;
+
+
+typedef struct {
+  Texture2D texture;
+} texture_data_s;
+
+
+void texture_data_destructor(mrb_state *mrb, void *p_);

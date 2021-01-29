@@ -64,7 +64,13 @@
 
 
 void play_data_destructor(mrb_state *mrb, void *p_);
+//void texture_data_destructor(mrb_state *mrb, void *p_);
 const struct mrb_data_type play_data_type = {"play_data", play_data_destructor};
+
+
+//const struct mrb_data_type texture_data_type_alt = {"texture_data", texture_data_destructor};
+//const struct mrb_data_type texture_data_type = {"texture_data", texture_data_destructor};
+extern struct mrb_data_type texture_data_type;
 
 static mrb_value mousexyz;
 static mrb_value pressedkeys;
@@ -354,6 +360,30 @@ static mrb_value game_loop_draw_circle(mrb_state* mrb, mrb_value self)
 }
 
 
+static mrb_value game_loop_draw_texture(mrb_state* mrb, mrb_value self)
+{
+  mrb_value texture_data;
+  mrb_float x,y,z,r,g,b,a;
+
+  mrb_get_args(mrb, "offfffff", &texture_data, &x, &y, &z, &r, &g, &b, &a);
+
+  ////DrawCircle(x, y, radius, (Color){ r, g, b, a });
+  //DrawCircleV((Vector2){ x, y }, radius, (Color){ r, g, b, a });
+
+  texture_data_s *t_data = NULL;
+  mrb_value data_value = mrb_iv_get(mrb, texture_data, mrb_intern_lit(mrb, "@pointer"));
+  Data_Get_Struct(mrb, data_value, &texture_data_type, t_data);
+  if (!t_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  DrawTexture(t_data->texture, x, y, (Color){ r, g, b, a });
+
+  return mrb_nil_value();
+}
+
+
+
 static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
 {
   mrb_value block;
@@ -429,9 +459,10 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   Vector2 cubeScreenPosition;
   //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
-  cubeScreenPosition = GetWorldToScreen2D((Vector2){250, 75}, p_data->cameraTwo);
+  cubeScreenPosition = GetWorldToScreen2D((Vector2){600, 75}, p_data->cameraTwo);
 
-  DrawText(c_label_txt, cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, textSize, BLUE);
+  DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 1300, 75, WHITE);
+  DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, BLUE);
 
   return mrb_nil_value();
 }
@@ -652,6 +683,7 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
+  mrb_define_method(mrb, game_class, "draw_texture", game_loop_draw_texture, MRB_ARGS_REQ(8));
 
   return game_class;
 }

@@ -1,0 +1,173 @@
+# vi:syntax=ruby
+
+#Wkndr.nonce {
+#  Wkndr.client_side { |gl|
+#    #gl.open_default_view!
+#    #gl.lookat(1, 45.0, 33.0, 45.0, 0.0, 0.1, 0.0, 40.0)
+#
+#
+##    @store = StorageManager.new
+##    @transformer = TransformerSystem.new(@store)
+##    @exhaust = ExhaustSystem.new(@store, 0.025, @particleBitmap, @particleLayer)
+##    @movement = MovementSystem.new(@store)
+##    @exhaust_layer = @store.watch(ExhaustComponent, PositionComponent, RandomColorComponent)
+##    @hunter_layer = @store.watch(HunterComponent, PositionComponent, RandomColorComponent)
+##    @color = RandomColorComponent.new
+##
+##    @last_l = 0
+##
+##    @spawn_proc = Proc.new { |r, x, y, c|
+##      @store.add(
+##        HunterComponent.new(r),
+##        PositionComponent.new(x, y, 0),
+##        VelocityComponent.from_angle(r * 2.0 * 3.14).mul(500.0),
+##        SpriteComponent.new,
+##        TransformComponent.new(1.0),
+##        RandomColorComponent.from_color(c)
+##      )
+##    }
+##
+##    @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
+##    @gizmo = GizmoSystem.new(@store, @spinny_things)
+##
+##    xs = 7
+##    ys = 7
+##    zs = 7
+##
+##    @instances = xs * ys * zs
+##
+##    i = 0
+##    a = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
+##    @batcher_a = CubicBatchingSystem.new(@store, a, @instances)
+##
+##    xs.times { |xd|
+##      ys.times { |yd|
+##        zs.times { |zd|
+##          p = PositionComponent.new((-xs * 0.5 * 2.7) + (xd * 2.7).to_f, (-ys * 0.5 * 2.7) + (yd * 2.7).to_f, (-zs * 0.5 * 2.7) + (zd * 2.7).to_f)
+##          @store.add(
+##            @batcher_a.at(i),
+##            p,
+##            SpinComponent.new(@instances, i, rand, 10.0 * rand)
+##          )
+##
+##          i += 1
+##        }
+##      }
+##    }
+##
+##    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+##    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+##    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+##
+##    ##am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
+##    ##bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
+##    ##cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
+##
+##    #### each of abc by 9 grid
+##    #@batcher_a = CubicBatchingSystem.new(@store, a, count)
+##    #@batcher_b = CubicBatchingSystem.new(@store, b, count)
+##    #@batcher_c = CubicBatchingSystem.new(@store, c, count)
+##
+##    #count.times { |i|
+##    #  #p = PositionComponent.new((i.to_f * 0.33) - (1.0 * count * 5.0), i.to_f * 0.33, (i.to_f * 0.33) - (0.5 * count * 5.0))
+##    #  p = PositionComponent.new(0, 0, 0)
+##
+##    #  @store.add(
+##    #    @batcher_a.at(i),
+##    #    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
+##    #    #a,
+##    #    p,
+##    #    SpinComponent.new(count, i, 0, 10.0 * rand)
+##    #  )
+##
+##    #  @store.add(
+##    #    @batcher_b.at(i),
+##    #    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
+##    #    #b,
+##    #    p,
+##    #    SpinComponent.new(count, i, 1, 50.0 * rand)
+##    #  )
+##
+##    #  @store.add(
+##    #    @batcher_c.at(i),
+##    #    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
+##    #    #c,
+##    #    p,
+##    #    SpinComponent.new(count, i, 2, 100.0 * rand)
+##    #  )
+##    #}
+#  }
+#
+#  #Wkndr.server_side { |gl|
+#  #  @ticks = 0
+#  #}
+#}
+#
+##Wkndr.client_side { |gl|
+##  gl.event { |channel, msg|
+##    case channel
+##      when "spawn"
+##        @spawn_proc.call(*msg) if (@spawn_proc && @store)
+##    end
+##  }
+##
+##  gl.update { |global_time, delta_time, sw, sh|
+##    gl.mousep { |xyl|
+##      x, y, l = *xyl
+##
+##      if (l == 1 && @last_l == 0)
+##        3.times {
+##          spawn_proc_args = [
+##            rand,
+##            x,
+##            y,
+##            @color.color
+##          ]
+##
+##          @spawn_proc.call(*spawn_proc_args)
+##          gl.emit({"spawn" => spawn_proc_args})
+##        }
+##      end
+##
+##      @last_l = l
+##    }
+##
+##    gl.drawmode {
+##      gl.threed {
+##        gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
+##
+##        #@spinny_things.each { |e, a, _b, _c|
+##        #  a.draw(false)
+##        #}
+##        @batcher_a.draw(@instances)
+##        #@batcher_b.draw
+##        #@batcher_c.draw
+##      }
+##
+##      gl.twod {
+##        @exhaust_layer.each { |e, _x, p, c|
+##          gl.draw_circle(10.0, p.x, p.y, p.z, *c.color)
+##        }
+##
+##        @hunter_layer.each { |e, _h, p, c|
+##          gl.draw_circle(20.0, p.x, p.y, p.z, *c.color)
+##        }
+##      }
+##    }
+##
+##    @transformer.process(global_time, delta_time)
+##    @exhaust.process(global_time, delta_time)
+##    @movement.process(global_time, delta_time)
+##    @gizmo.process(global_time, delta_time)
+##  }
+##}
+
+Wkndr.server_side { |gl, server|
+  server.wsb("/bar") do |cn, phr|
+  end
+
+  server.raw("/foo") do |cn, phr|
+    #@ticks += 1
+    Protocol.ok("#{@ticks}\n") #TODO: present SHA1 of existing code somehow?????
+  end
+}
