@@ -159,36 +159,36 @@ Wkndr.client_side { |gl|
 
   gl.update { |global_time, delta_time, sw, sh|
     gl.mousep { |xyl|
-      x, y, l = *xyl
+      #x, y, l = *xyl
 
-      if (l == 1 && @last_l == 0)
-        3.times {
-          spawn_proc_args = [
-            rand,
-            x,
-            y,
-            @color.color
-          ]
+      #if (l == 1 && @last_l == 0)
+      #  3.times {
+      #    spawn_proc_args = [
+      #      rand,
+      #      x,
+      #      y,
+      #      @color.color
+      #    ]
 
-          @spawn_proc.call(*spawn_proc_args)
-          gl.emit({"spawn" => spawn_proc_args})
-        }
-      end
+      #    @spawn_proc.call(*spawn_proc_args)
+      #    gl.emit({"spawn" => spawn_proc_args})
+      #  }
+      #end
 
-      @last_l = l
+      #@last_l = l
     }
 
     gl.drawmode {
-      #gl.threed {
-      #  gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
+      gl.threed {
+        gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
 
-      #  #@spinny_things.each { |e, a, _b, _c|
-      #  #  a.draw(false)
-      #  #}
-      #  @batcher_a.draw(@instances)
-      #  #@batcher_b.draw
-      #  #@batcher_c.draw
-      #}
+        #@spinny_things.each { |e, a, _b, _c|
+        #  a.draw(false)
+        #}
+        @batcher_a.draw(@instances)
+        #@batcher_b.draw
+        #@batcher_c.draw
+      }
 
       gl.twod {
         @exhaust_layer.each { |e, _x, p, c|
