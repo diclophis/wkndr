@@ -191,11 +191,11 @@ void main()
         }
     }
 
-    finalColor = (texelColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
-    finalColor += texelColor*(ambient/10.0);
+    finalColor = (texelColor*((colDiffuse + vec4(specular, 0.5))*vec4(lightDot, 0.5)));
+    finalColor += texelColor*(ambient);
     
     // Gamma correction
-    finalColor = pow(finalColor, vec4(1.0/4.0));
+    //finalColor = pow(finalColor, vec4(1.0/4.0));
 
 #ifdef NEWER_GL
 #else

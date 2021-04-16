@@ -162,7 +162,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
     // ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, UNIFORM_VEC4);
+    SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 0.5f }, UNIFORM_VEC4);
 
     p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 

@@ -33,16 +33,11 @@ class GizmoSystem
   def process(gt, dt)
     @selector.each { |_e, cube, pos, spin|
       cube.deltar(
-        #Math.cos((spin.index)*-gt), Math.sin((spin.index) * gt), 1.0, gt * spin.speed
         0, Math.cos((gt * 3.0) + (spin.widget * 3.0)), Math.sin(gt * spin.component), gt * spin.speed
       )
       cube.deltap(pos.x + Math.sin(gt), pos.y + Math.cos(gt), pos.z + Math.tan((gt * 0.05) + spin.widget))
       ###, pos.y, pos.z + Math.sin(gt * (spin.widget + 1)))
       cube.deltas(1.25 + Math.sin(gt + spin.widget), 1.25 + Math.sin(gt + spin.widget), 1.25 + Math.sin(gt + spin.widget))
-
-      #cube.deltar(0.0, 1.0, 0.0, 0.0)
-      #cube.deltas(1.0, 1.0, 1.0)
-      #cube.deltap(pos.x, pos.y, pos.z)
     }
   end
 end
@@ -50,7 +45,6 @@ end
 Wkndr.nonce {
   Wkndr.client_side { |gl|
     gl.open_default_view!
-    #gl.lookat(1, 45.0, 33.0, 45.0, 0.0, 0.1, 0.0, 40.0)
 
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
@@ -76,9 +70,9 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    xs = 7
-    ys = 7
-    zs = 7
+    xs = 16
+    ys = 16
+    zs = 2
 
     @instances = xs * ys * zs
 
@@ -93,55 +87,13 @@ Wkndr.nonce {
           @store.add(
             @batcher_a.at(i),
             p,
-            SpinComponent.new(@instances, i, rand, 10.0 * rand)
+            SpinComponent.new(@instances, i, rand, 100.0 * rand)
           )
 
           i += 1
         }
       }
     }
-
-    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
-
-    ##am = Cube.new(gl, 0.13, 0.67, 0.15, 1.00)
-    ##bm = Cube.new(gl, 0.23, 0.37, 0.97, 1.00)
-    ##cm = Cube.new(gl, 1.13, 0.19, 0.41, 1.00)
-
-    #### each of abc by 9 grid
-    #@batcher_a = CubicBatchingSystem.new(@store, a, count)
-    #@batcher_b = CubicBatchingSystem.new(@store, b, count)
-    #@batcher_c = CubicBatchingSystem.new(@store, c, count)
-
-    #count.times { |i|
-    #  #p = PositionComponent.new((i.to_f * 0.33) - (1.0 * count * 5.0), i.to_f * 0.33, (i.to_f * 0.33) - (0.5 * count * 5.0))
-    #  p = PositionComponent.new(0, 0, 0)
-
-    #  @store.add(
-    #    @batcher_a.at(i),
-    #    #a = Cube.new(gl, 0.13, 0.67, 0.15, 1.00),
-    #    #a,
-    #    p,
-    #    SpinComponent.new(count, i, 0, 10.0 * rand)
-    #  )
-
-    #  @store.add(
-    #    @batcher_b.at(i),
-    #    #b = Cube.new(gl, 0.23, 0.37, 0.97, 1.00),
-    #    #b,
-    #    p,
-    #    SpinComponent.new(count, i, 1, 50.0 * rand)
-    #  )
-
-    #  @store.add(
-    #    @batcher_c.at(i),
-    #    #c = Cube.new(gl, 1.13, 0.19, 0.41, 1.00),
-    #    #c,
-    #    p,
-    #    SpinComponent.new(count, i, 2, 100.0 * rand)
-    #  )
-    #}
   }
 
   Wkndr.server_side { |gl|
@@ -180,7 +132,8 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
-        gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
+        #gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
+        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
 
         #@spinny_things.each { |e, a, _b, _c|
         #  a.draw(false)
