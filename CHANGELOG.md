@@ -1,3 +1,9 @@
+# [2.16.0] - 2021-07-15 - Jon Bardin
+
+Bits and boops
+
+#######
+
 # [1.15.0] - 2018-07-23 - Jon Bardin
 
 Implemented better util for check that autohandles dispatching git-clone locks
