@@ -320,6 +320,8 @@ class Connection
       k == "sec-websocket-key"
     }[1]
 
+    #TODO: !!! lib/desktop/connection.rb:321:in upgrade_to_websocket!: undefined method '[]' (NoMethodError)
+
     #NOTE: this is the server to client side
     abc = self.write_ws_response!(sec_websocket_key) {
       #TODO: ???
