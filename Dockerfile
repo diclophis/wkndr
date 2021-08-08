@@ -28,7 +28,7 @@ RUN cd /var/lib/wkndr && \
     git clone https://github.com/mruby/mruby && \
     cd mruby && \
     git fetch && \
-    git checkout 612e5d6aad7f224008735d57b19e5a81556cfd31
+    git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
 
 RUN cd /var/lib/wkndr && \
     git clone https://github.com/raysan5/raylib && \
@@ -48,6 +48,8 @@ RUN cd /var/lib/wkndr && \
 
 RUN cd /var/lib/wkndr && \
     make build-mruby
+
+RUN cp /root/emsdk/upstream/emscripten/cmake/Modules/TestBigEndian.cmake /usr/share/cmake-3.16/Modules/TestBigEndian.cmake
 
 RUN cd /var/lib/wkndr && \
     TARGET=emcc make build-mruby

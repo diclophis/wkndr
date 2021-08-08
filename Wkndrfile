@@ -132,6 +132,8 @@ Wkndr.client_side { |gl|
 
     gl.drawmode {
       gl.threed {
+        raise "First Error"
+
         #gl.lookat(1, 45.0 + Math.sin(global_time), 33.0, 45.0 + Math.cos(global_time), 0.0, 0.1, 0.0, 50.0 + (1.0 + Math.sin(global_time * 0.25) * 5.0))
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
 
@@ -171,6 +173,8 @@ Wkndr.server_side { |gl, server|
 
 
   server.raw("/about") do |cn, phr|
+    raise "Server First Error"
+
     mab = Markaby::Builder.new
     mab.html5 "lang" => "en" do
       mab.head do
