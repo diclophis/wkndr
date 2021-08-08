@@ -133,6 +133,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
     mrb_print_error(loop_data->mrb_pointer);
+    //TODO: exit runtime, unhandled exception
     return mrb_false_value();
   }
 
@@ -456,6 +457,7 @@ int main(int argc, char** argv) {
 
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
   if (mrb->exc) {
+    //THIS IS EXCEPTION ON SERVER SIDE!!!
     fprintf(stderr, "Exception in SERVERBLOCKINIT\n");
     mrb_print_error(mrb);
   }

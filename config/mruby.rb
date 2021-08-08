@@ -1,5 +1,11 @@
 #
 
+#class MRuby::Gem::LinkerConfig
+#  def command
+#    "g++"
+#  end
+#end
+
 MRuby::Build.new do |conf|
   # load specific toolchain settings
   toolchain :gcc
@@ -7,7 +13,7 @@ MRuby::Build.new do |conf|
   conf.disable_cxx_exception
 
   # desired cli tooling
-  conf.bins = ["mrbc", "mirb"]
+  conf.bins = ["mrbc"]
 
   # core gems
   conf.gem :core => "mruby-bin-mrbc"

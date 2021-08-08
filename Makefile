@@ -28,6 +28,14 @@ else
   raylib_static_lib=$(build)/libraylib.a
 endif
 
+#./mruby/build/host/mrbgems/mruby-simplemsgpack/build/libmsgpackc.a
+#./mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
+ifeq ($(TARGET),desktop)
+  msgpack_static_lib=mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
+else
+  msgpack_static_lib=mruby/build/emscripten/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
+endif
+
 ifeq ($(TARGET),desktop)
   mrbc=mruby/bin/mrbc
 else
@@ -60,6 +68,7 @@ giga_static_css = gigamock-transfer/static/wkndr.css
 
 objects += $(mruby_static_lib)
 objects += $(raylib_static_lib)
+objects += $(msgpack_static_lib)
 
 ##TODO: platform switch
 ifeq ($(TARGET),desktop)
@@ -99,7 +108,7 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
-	cd mruby && make clean && rm -Rf build && git checkout 612e5d6aad7f224008735d57b19e5a81556cfd31
+	cd mruby && make clean && rm -Rf build && git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
 	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) clean
 	rm -R $(build)
 	mkdir -p $(build)

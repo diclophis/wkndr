@@ -4,11 +4,13 @@
 
 require_relative './mruby.rb'
 
+
 MRuby::CrossBuild.new('emscripten') do |conf|
   # load specific toolchain settings
-  toolchain :clang
-  enable_debug
-  conf.disable_cxx_exception
+  #toolchain :clang
+
+  #enable_debug
+  #conf.disable_cxx_exception
 
   #enable_debug
   conf.bins = []
@@ -27,6 +29,9 @@ MRuby::CrossBuild.new('emscripten') do |conf|
 
   conf.gem :github => "yui-knk/mruby-set"
   conf.gem :github => "Asmod4n/mruby-simplemsgpack"
+  #do |ff|
+  #  ff.cc.defines = %w{MSGPACK_ENDIAN_LITTLE_BYTE=1 TEST_BIG_ENDIAN=0}
+  #end
   
   #conf.gem :core => "mruby-io"
 
@@ -40,6 +45,8 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   #conf.linker.command = "/root/emsdk/fastcomp/emscripten/emcc"
   #conf.archiver.command = "/root/emsdk/fastcomp/emscripten/emar"
 
+  #conf.cc.defines = %w{MSGPACK_ENDIAN_LITTLE_BYTE=1 TEST_BIG_ENDIAN=0}
+
   conf.cc.command = "/root/emsdk/upstream/emscripten/emcc"
   conf.linker.command = "/root/emsdk/upstream/emscripten/emcc"
   conf.archiver.command = "/root/emsdk/upstream/emscripten/emar"
@@ -48,6 +55,7 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   #conf.disable_cxx_exception
 
   conf.cc do |cc|
-    cc.flags = ["-s USE_ZLIB=1", "-O3"]
+    #cc.defines << "MRB_USE_CXX_EXCEPTION=1"
+    cc.flags = ["-s DISABLE_EXCEPTION_CATCHING=0", "-s USE_ZLIB=1", "-O3"] #, "-DMSGPACK_ENDIAN_LITTLE_BYTE=1", "-DTEST_BIG_ENDIAN=0"]
   end
 end

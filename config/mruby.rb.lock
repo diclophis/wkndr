@@ -1,7 +1,7 @@
 ---
-mruby_version:
-  version: 2.1.1
-  release_no: 20101
+mruby:
+  version: 3.0.0
+  release_no: 30000
 builds:
   host:
     https://github.com/Asmod4n/mruby-b64.git:
@@ -22,7 +22,7 @@ builds:
     https://github.com/katzer/mruby-r3.git:
       url: https://github.com/katzer/mruby-r3.git
       branch: HEAD
-      commit: 185455010e82fdc491ded1c705b2c0521bb266ba
+      commit: c5b5ae647a8f04a86b4cd519273ba243bd459aec
       version: 0.0.0
     https://github.com/diclophis/mruby-wslay.git:
       url: https://github.com/diclophis/mruby-wslay.git
@@ -32,13 +32,13 @@ builds:
     https://github.com/Asmod4n/mruby-phr.git:
       url: https://github.com/Asmod4n/mruby-phr.git
       branch: HEAD
-      commit: 1bab77000280141802d56a20a5413ba0900b69df
+      commit: a9b5776c5c6926ce30b09aadd5743c34e16ca522
       version: 0.0.0
     https://github.com/Asmod4n/mruby-simplemsgpack.git:
       url: https://github.com/Asmod4n/mruby-simplemsgpack.git
       branch: HEAD
-      commit: 9df3c4a4d6ff1b62cbedb6c680b2af2f72015e40
-      version: 0.0.0
+      commit: 6abf4f0a370c5bb6b96182a50e2c537beec9f282
+      version: '2.0'
     https://github.com/mattn/mruby-json.git:
       url: https://github.com/mattn/mruby-json.git
       branch: HEAD
