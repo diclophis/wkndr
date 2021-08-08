@@ -8,7 +8,11 @@ class GameLoop
       @play_proc = block
     else
       if @play_proc
-        @play_proc.call(gt, dt, sw, sh)
+        rez = @play_proc.call(gt, dt, sw, sh)
+        #log!([:wtf, rez].inspect)
+
+        #  halt!
+        #end
       end
     end
   end

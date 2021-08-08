@@ -1,6 +1,21 @@
 #
 
 class ClientSide < Wkndr
+  def self.process_stacks!
+    if @stacks_to_care_about
+      running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
+      if running_stacks.length > 0
+        bb_ret = true
+        running_stacks.each { |rlb| bb_ret = (bb_ret && rlb.signal) }
+        bb_ret
+      else
+        return true
+      end
+    else
+      return true
+    end
+  end
+
   def self.startup_clientside(args)
     if args.include?("--no-client")
       return

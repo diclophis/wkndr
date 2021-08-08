@@ -36,10 +36,10 @@ KEY_X = 88
 KEY_Y = 89
 KEY_Z = 90
 
-#def log!(*args, &block)
-#  $stdout.write(args.inspect)
-#  $stdout.write("\n")
-#  yield if block
-#end
+def log!(*args, &block)
+  $stdout.write(args.inspect)
+  $stdout.write("\n")
+  yield if block
+end
 
 WKNDR_GLOBAL = true
