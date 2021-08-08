@@ -31,6 +31,7 @@ apt-get update \
        locales git ca-certificates automake build-essential cmake make python3 rake ruby2.7 libssl-dev zlib1g-dev libuv1 libuv1-dev libx11-dev libxrandr-dev libxi-dev xorg-dev \
        bash-static \
        busybox-static \
+       clang clang-10 clang-tools-10 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 locale-gen --purge en_US.UTF-8 && /bin/echo -e  "LANG=$LANG\nLANGUAGE=$LANGUAGE\n" | tee /etc/default/locale \
