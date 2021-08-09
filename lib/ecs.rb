@@ -215,7 +215,8 @@ class ExhaustSystem
   #attr_accessor :cooldown
   #attr_accessor :timer
 
-  def initialize(store, cooldown, frame, layer)
+  def initialize(sprite, store, cooldown, frame, layer)
+    @sprite = sprite
     @store = store
     @selector = store.watch(HunterComponent, PositionComponent, VelocityComponent, RandomColorComponent)
     @cooldown = cooldown
@@ -245,7 +246,7 @@ class ExhaustSystem
           ExhaustComponent.new,
           PositionComponent.from(position),
           VelocityComponent.from(direction),
-          SpriteComponent.new,
+          @sprite,
           TransformComponent.new(0.33),
           color
         )

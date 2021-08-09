@@ -46,9 +46,11 @@ Wkndr.nonce {
   Wkndr.client_side { |gl|
     gl.open_default_view!
 
+    @sprite_bit = SpriteComponent.new("resources/texel_checker.png")
+
     @store = StorageManager.new
     @transformer = TransformerSystem.new(@store)
-    @exhaust = ExhaustSystem.new(@store, 0.025, @particleBitmap, @particleLayer)
+    @exhaust = ExhaustSystem.new(@sprite_bit, @store, 0.025, @particleBitmap, @particleLayer)
     @movement = MovementSystem.new(@store)
     @exhaust_layer = @store.watch(ExhaustComponent, PositionComponent, RandomColorComponent)
     @hunter_layer = @store.watch(HunterComponent, PositionComponent, RandomColorComponent)
@@ -61,7 +63,7 @@ Wkndr.nonce {
         HunterComponent.new(r),
         PositionComponent.new(x, y, 0),
         VelocityComponent.from_angle(r * 2.0 * 3.14).mul(500.0),
-        SpriteComponent.new,
+        @sprite_bit,
         TransformComponent.new(1.0),
         RandomColorComponent.from_color(c)
       )
@@ -70,8 +72,8 @@ Wkndr.nonce {
     @spinny_things = @store.watch(MeshProxy, PositionComponent, SpinComponent)
     @gizmo = GizmoSystem.new(@store, @spinny_things)
 
-    xs = 16
-    ys = 16
+    xs = 8
+    ys = 8
     zs = 2
 
     @instances = xs * ys * zs
@@ -111,21 +113,21 @@ Wkndr.client_side { |gl|
 
   gl.update { |global_time, delta_time, sw, sh|
     gl.mousep { |xyl|
-      #x, y, l = *xyl
+      x, y, l = *xyl
 
-      #if (l == 1 && @last_l == 0)
-      #  3.times {
-      #    spawn_proc_args = [
-      #      rand,
-      #      x,
-      #      y,
-      #      @color.color
-      #    ]
+      if (l == 1)
+        #3.times {
+          spawn_proc_args = [
+            rand,
+            x,
+            y,
+            @color.color
+          ]
 
-      #    @spawn_proc.call(*spawn_proc_args)
-      #    gl.emit({"spawn" => spawn_proc_args})
-      #  }
-      #end
+          @spawn_proc.call(*spawn_proc_args)
+          gl.emit({"spawn" => spawn_proc_args})
+        #}
+      end
 
       #@last_l = l
     }
@@ -171,7 +173,6 @@ Wkndr.server_side { |gl, server|
     Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
   end
 
-
   server.raw("/about") do |cn, phr|
     #raise "Server First Error"
 
@@ -184,6 +185,9 @@ Wkndr.server_side { |gl, server|
       mab.body do
         mab.h1 "what is wkndr"
         mab.p "it is a new hypertext application platform"
+        mab.a "href" => "/" do
+          "//////"
+        end
       end
     end
     Protocol.ok(mab.to_s)
