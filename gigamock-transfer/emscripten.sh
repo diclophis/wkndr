@@ -19,7 +19,8 @@ cd emsdk
 #TODO: fix this upgrade
 #./emsdk install 1.40.0
 
-./emsdk install 1.39.19
+#./emsdk install 1.39.19
+./emsdk install latest
 
 #1.39.0
 #latest
