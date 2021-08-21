@@ -37,8 +37,10 @@ KEY_Y = 89
 KEY_Z = 90
 
 def log!(*args, &block)
-  $stdout.write(args.inspect)
-  $stdout.write("\n")
+  if $stdout
+    $stdout.write(args.inspect)
+    $stdout.write("\n")
+  end
   yield if block
 end
 

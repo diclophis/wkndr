@@ -318,6 +318,8 @@ int main(int argc, char** argv) {
   mrb_state *mrb_client;
   int i;
 
+  SetTraceLogLevel(LOG_FATAL);
+
   // initialize mruby serverside
   if (!(mrb = mrb_open())) {
     fprintf(stderr,"%s: could not initialize mruby\n",argv[0]);

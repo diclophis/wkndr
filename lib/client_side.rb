@@ -1,6 +1,7 @@
 #
 
 class ClientSide < Wkndr
+  #NOTE: some duplication, base-abstract class...
   def self.process_stacks!
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
@@ -17,6 +18,8 @@ class ClientSide < Wkndr
   end
 
   def self.startup_clientside(args)
+    log!(:client_side, self, Object.object_id, args)
+
     if args.include?("--no-client")
       return
     end
@@ -38,6 +41,8 @@ class ClientSide < Wkndr
       a,b = party_args.split("=")
       wp = b
     end
+
+    log!(:WP, wp)
 
     stack = StackBlocker.new
 

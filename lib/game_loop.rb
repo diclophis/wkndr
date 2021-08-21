@@ -53,7 +53,7 @@ class GameLoop
     self.width = w
     self.height = h
 
-    #log!(:INIT_WINDOW)
+    log!(:INIT_WINDOW, w, h, wp)
 
     socket_stream = SocketStream.create_websocket_connection(wp) { |channel, typed_msg|
       self.event(channel, typed_msg)

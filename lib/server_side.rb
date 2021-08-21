@@ -1,6 +1,7 @@
 #
 
 class ServerSide < Wkndr
+  #NOTE: abstract-base-bits, class method wierdness
   def self.process_stacks!
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
@@ -17,6 +18,8 @@ class ServerSide < Wkndr
   end
 
   def self.startup_serverside(args)
+    log!(:server_side, self, Object.object_id, args)
+
     if args.include?("--no-server")
       @run_clientside_fps = true
       return
@@ -24,6 +27,11 @@ class ServerSide < Wkndr
 
     if args.include?("--no-client")
       @idle_runloop = true
+    end
+
+    if args.include?("--and-client")
+      #raise "wtf"
+      @run_clientside_fps = true
     end
 
     server_args = args.find { |arg| arg[0,9] == "--server=" }
@@ -50,10 +58,10 @@ class ServerSide < Wkndr
   def self.install_trap!
     if @run_clientside_fps
       @timer = UV::Timer.new
-      fps = 1000.0/60.0
+      fps = 1000.0/24.0
       @timer.start(fps, fps) do
+        #log!(:wtf2, fps)
         rez = self.server_side_tick!
-        #log!(:wtf2, rez)
 
         unless rez
           @keep_running = false
@@ -77,9 +85,9 @@ class ServerSide < Wkndr
     while @keep_running
       #self.server_side_tick!
 
-      unless @run_clientside_fps
+      #unless @run_clientside_fps
         self.process_stacks!
-      end
+      #end
 
       run_mode = (@run_clientside_fps || @idle_runloop) ? UV::UV_RUN_ONCE : UV::UV_RUN_NOWAIT
       #run_mode = UV::UV_RUN_NOWAIT

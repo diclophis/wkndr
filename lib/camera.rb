@@ -1,4 +1,37 @@
 #
+#    super.touchDragged(unused, x, y, pointerIndex);
+#    float deltaX  = (initialX - x);
+#    float deltaY  = (initialY - y);
+#    float rotationAngle = 360.0f * (float)(Math.sqrt(deltaX * deltaX + deltaY * deltaY)/screenDst);
+#    while (rotationAngle < 0) {
+#        rotationAngle += 360;
+#    }
+#    while (rotationAngle > 360) {
+#        rotationAngle -= 360;
+#    }
+#
+#    float alpha = (float)Math.atan2(deltaY,deltaX) * MathUtils.radiansToDegrees;
+#
+#    Quaternion q = new Quaternion(origCameraDirection, alpha);
+#    Vector3 rotatedUp = origCameraUp.cpy();
+#    q.transform(rotatedUp);
+#
+#    // rotatedUp is our actual rotation vector
+#    Quaternion actualQ = new Quaternion(rotatedUp, rotationAngle);
+#
+#    Vector3 newCameraPosition = origCameraPosition.cpy(); 
+#    actualQ.transform(newCameraPosition);
+#    camera.position.set(newCameraPosition);
+#
+#    Vector3 newCameraDirection = origCameraDirection.cpy(); 
+#    actualQ.transform(newCameraDirection);
+#    camera.direction.set(newCameraDirection);
+#
+#    Vector3 newCameraUp = origCameraUp.cpy(); 
+#    actualQ.transform(newCameraUp);
+#    camera.up.set(newCameraUp);
+#    return true;
+
 
 class GameCamera
   def initialize(follow_speed, look_speed)

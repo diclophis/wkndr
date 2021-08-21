@@ -79,6 +79,8 @@ class Wkndr
   def self.wkndr_client_eval(ruby_string)
     #ruby_string = "module Anon\n" + ruby_string + "\nend"
 
+    #log!(:wtf, ruby_string)
+
     eval(ruby_string)
   end
 
