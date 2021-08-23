@@ -26,26 +26,29 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
     window.conn.onopen = function (event) {
       //var terminalContainer = document.getElementById("wkndr-terminal");
-      //Terminal.applyAddon(fit);
-      //window.terminal = new Terminal({
-      //  cursorBlink: true,
-      //  scrollback: 100,
-      //  tabStopWidth: 2,
-      //  allowTransparency: false
-      //});
-      //window.terminal.open(terminalContainer);
-      //window.terminal.on('data', function(termInputData) {
+      Terminal.applyAddon(fit);
+      window.terminal = new Terminal({
+        cursorBlink: true,
+        scrollback: 100,
+        tabStopWidth: 2,
+        allowTransparency: false
+      });
+      window.terminal.open(terminalContainer);
+      window.terminal.on('data', function(termInputData) {
+        console.log("send this to kilo input", termInputData);
       //  var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
       //  window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
       //  Module._free(ptr);
-      //});
+      });
       window.addEventListener('resize', function(resizeEvent) {
-      ////  window.terminal.fit();
+        ////  window.terminal.fit();
+        console.log("kilo resize");
         window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight);
       });
+
       ////window.terminal.on('resize', function(newSize) {
       ////});
-      //window.terminal.fit();
+      window.terminal.fit();
 
       window.onbeforeunload = function() {
         window.conn.onclose = function () {};
@@ -61,6 +64,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
+      console.log("got message from server", event);
+
       var origData = event.data;
 
       //var sv = new StringView(origData)
@@ -110,7 +115,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var graphicsContainer = document.getElementById('canvas');
-//var terminalContainer = document.getElementById("wkndr-terminal");
+var terminalContainer = document.getElementById("wkndr-terminal");
 
 if (graphicsContainer) {
   // As a default initial behavior, pop up an alert when webgl context is lost. To make your

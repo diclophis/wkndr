@@ -232,13 +232,17 @@ class ProtocolServer
             #  end
             #end
 
-            mab.div "id" => "wkndr-live-#{title}", "class" => "wkndr-live-container" do
-              initial_inner_mab_bytes.call(cn, phr)
+            #mab.div "id" => "wkndr-live-#{title}", "class" => "wkndr-live-container" do
+            #  initial_inner_mab_bytes.call(cn, phr)
+            #end
+
+            mab.h2 do
+              "404"
             end
 
-            mab.script do
-              GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
-            end
+            #mab.script do
+            #  GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
+            #end
           end
         end
 
@@ -261,7 +265,7 @@ class ProtocolServer
             GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
           end
         end
-        mab.body "id" => "wkndr-body" do
+        mab.body "id" => "wkndr-body", "class" => "split-screen" do
           mab.div "id" => "wkndr-terminal-container" do
             mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
             end

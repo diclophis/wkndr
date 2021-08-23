@@ -261,6 +261,8 @@ class Connection
         process_as_msgpack_stream(msg.msg) { |typed_msg|
           channels = typed_msg.keys
 
+#TODO: is this server side only??????????
+
           channels.each do |channel|
             #NOTE: channels are as follows
             #
@@ -272,7 +274,11 @@ class Connection
               #  @stdin_tty && @stdin_tty.write(typed_msg[channel]) {
               #    false
               #  }
+              #TODO: this calles into kiloOnInputReceived
+  
+              #when 1 #mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
 
+              #TODO: js calls into TTY interface for resize
               #when 3
               #  if @ftty
               #    FastTTY.resize(@ftty[0], typed_msg[channel][0], typed_msg[channel][1])

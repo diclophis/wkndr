@@ -11,4 +11,5 @@ def mkstatic(input_static_files, name_of_export)
   return "#{name_of_export.upcase} = Zlib.inflate(B64.decode(<<EOBLOB))\n" + Base64.encode64(Zlib::Deflate.deflate(input_data)) + "\nEOBLOB\n"
 end
 
+##?#?#?#?#?#
 puts mkstatic(ARGV, ARGV.last.gsub(/[^a-z]/, "_"))
