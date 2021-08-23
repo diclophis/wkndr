@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 
 // mruby stuff
@@ -63,6 +64,7 @@
 #include "mrb_stack_blocker.h"
 #include "mrb_game_loop.h"
 #include "mrb_model.h"
+#include "mrb_editor.h"
 
 
 // ruby lib stuff
@@ -186,11 +188,29 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
 
-  mrb_value outbound_tty_msg = mrb_hash_new(mrb);
-  mrb_hash_set(mrb, outbound_tty_msg, mrb_fixnum_value(0), clikestr_as_string);
+  //TODO: shell support bypass
+  //////mrb_value outbound_tty_msg = mrb_hash_new(mrb);
+  //////mrb_hash_set(mrb, outbound_tty_msg, mrb_fixnum_value(0), clikestr_as_string);
+  ////////TODO: this calles into editorProcessKeypress
+  //////mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
 
-  //TODO: this calles into editorProcessKeypress
-  mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
+
+  for (int i=0; i<n; i++) {
+    editorProcessKeypress(buf[n]);
+  }
+
+  //int len = 32;
+  //char foo[len];
+
+
+  ////struct abuf foo = editorRefreshScreen();
+  ////mrb_value data_value;
+  ////data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
+  ////mrb_int fp = mrb_int(mrb, data_value);
+  ////void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+  //////const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
+  //////int len = mrb_string_value_len(mrb, packed_bytes);
+  ////write_packed_pointer(0, foo.b, foo.len);
 
   return 0;
 }
@@ -255,6 +275,15 @@ mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
       mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
       mrb_fixnum_value(write_packed_pointer));
 
+
+
+  editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+  struct abuf ab = {"foo", 3};
+  
+  //editorRefreshScreen(ab);
+  void (*write_packed_pointer2)(int, const void*, int) = (void (*)(int, const void*, int))write_packed_pointer;
+  write_packed_pointer2(0, ab.b, ab.len);
+
   return self;
 }
 
@@ -317,6 +346,10 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 
 
 int main(int argc, char** argv) {
+  //fprintf(stderr,"%ld  %ld", sizeof(int), sizeof(char));
+  //const char fff = 'g';
+  //int bop = fff;
+
   mrb_state *mrb;
   mrb_state *mrb_client;
   int i;
@@ -325,13 +358,13 @@ int main(int argc, char** argv) {
 
   // initialize mruby serverside
   if (!(mrb = mrb_open())) {
-    fprintf(stderr,"%s: could not initialize mruby\n",argv[0]);
+    fprintf(stderr, "%s: could not initialize mruby\n",argv[0]);
     return -1;
   }
 
   // initialize mruby clientside
   if (!(mrb_client = mrb_open())) {
-    fprintf(stderr,"%s: could not initialize mruby client\n",argv[0]);
+    fprintf(stderr, "%s: could not initialize mruby client\n",argv[0]);
     return -1;
   }
 
@@ -470,6 +503,11 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef PLATFORM_WEB
+
+  fprintf(stderr, "going for editor ... \n");
+
+  initEditor();
+
 
   fprintf(stderr, "going for wizbang ... \n");
 

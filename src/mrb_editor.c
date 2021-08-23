@@ -54,6 +54,8 @@
 //#include <fcntl.h>
 //#include <signal.h>
 
+#include "mrb_editor.h"
+
 /* Syntax highlight types */
 #define HL_NORMAL 0
 #define HL_NONPRINT 1
@@ -68,77 +70,6 @@
 #define HL_HIGHLIGHT_STRINGS (1<<0)
 #define HL_HIGHLIGHT_NUMBERS (1<<1)
 
-struct editorSyntax {
-    char **filematch;
-    char **keywords;
-    char singleline_comment_start[2];
-    char multiline_comment_start[3];
-    char multiline_comment_end[3];
-    int flags;
-};
-
-/* This structure represents a single line of the file we are editing. */
-typedef struct erow {
-    int idx;            /* Row index in the file, zero-based. */
-    int size;           /* Size of the row, excluding the null term. */
-    int rsize;          /* Size of the rendered row. */
-    char *chars;        /* Row content. */
-    char *render;       /* Row content "rendered" for screen (for TABs). */
-    unsigned char *hl;  /* Syntax highlight type for each character in render.*/
-    int hl_oc;          /* Row had open comment at end in last syntax highlight
-                           check. */
-} erow;
-
-typedef struct hlcolor {
-    int r,g,b;
-} hlcolor;
-
-struct editorConfig {
-    int cx,cy;  /* Cursor x and y position in characters */
-    int rowoff;     /* Offset of row displayed. */
-    int coloff;     /* Offset of column displayed. */
-    int screenrows; /* Number of rows that we can show */
-    int screencols; /* Number of cols that we can show */
-    int numrows;    /* Number of rows */
-    int rawmode;    /* Is terminal raw mode enabled? */
-    erow *row;      /* Rows */
-    int dirty;      /* File modified but not saved. */
-    char *filename; /* Currently open filename */
-    char statusmsg[80];
-    time_t statusmsg_time;
-    struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
-};
-
-static struct editorConfig E;
-
-enum KEY_ACTION{
-        KEY_NULL = 0,       /* NULL */
-        CTRL_C = 3,         /* Ctrl-c */
-        CTRL_D = 4,         /* Ctrl-d */
-        CTRL_F = 6,         /* Ctrl-f */
-        CTRL_H = 8,         /* Ctrl-h */
-        TAB = 9,            /* Tab */
-        CTRL_L = 12,        /* Ctrl+l */
-        ENTER = 13,         /* Enter */
-        CTRL_Q = 17,        /* Ctrl-q */
-        CTRL_S = 19,        /* Ctrl-s */
-        CTRL_U = 21,        /* Ctrl-u */
-        ESC = 27,           /* Escape */
-        BACKSPACE =  127,   /* Backspace */
-        /* The following are just soft codes, not really reported by the
-         * terminal directly. */
-        ARROW_LEFT = 1000,
-        ARROW_RIGHT,
-        ARROW_UP,
-        ARROW_DOWN,
-        DEL_KEY,
-        HOME_KEY,
-        END_KEY,
-        PAGE_UP,
-        PAGE_DOWN
-};
-
-void editorSetStatusMessage(const char *fmt, ...);
 
 /* =========================== Syntax highlights DB =========================
  *
@@ -253,57 +184,58 @@ fatal:
 
 /* Read a key from the terminal put in raw mode, trying to handle
  * escape sequences. */
-int editorReadKey(int fd) {
-    int nread;
-    char c, seq[3];
-
-    //while ((nread = read(fd,&c,1)) == 0);
-    //if (nread == -1) exit(1);
-
-    //while(1) {
-        switch(c) {
-        case ESC:    /* escape sequence */
-            /* If this is just an ESC, we'll timeout here. */
-            //if (read(fd,seq,1) == 0) return ESC;
-            //if (read(fd,seq+1,1) == 0) return ESC;
-
-            /* ESC [ sequences. */
-            if (seq[0] == '[') {
-                if (seq[1] >= '0' && seq[1] <= '9') {
-                    /* Extended escape, read additional byte. */
-                    //if (read(fd,seq+2,1) == 0) return ESC;
-                    if (seq[2] == '~') {
-                        switch(seq[1]) {
-                        case '3': return DEL_KEY;
-                        case '5': return PAGE_UP;
-                        case '6': return PAGE_DOWN;
-                        }
-                    }
-                } else {
-                    switch(seq[1]) {
-                    case 'A': return ARROW_UP;
-                    case 'B': return ARROW_DOWN;
-                    case 'C': return ARROW_RIGHT;
-                    case 'D': return ARROW_LEFT;
-                    case 'H': return HOME_KEY;
-                    case 'F': return END_KEY;
-                    }
-                }
-            }
-
-            /* ESC O sequences. */
-            else if (seq[0] == 'O') {
-                switch(seq[1]) {
-                case 'H': return HOME_KEY;
-                case 'F': return END_KEY;
-                }
-            }
-            break;
-        default:
-            return c;
-        }
-    //}
-}
+//TODO: what are these ESC codes for?????
+//int editorReadKey(int fd) {
+//    int nread;
+//    char c, seq[3];
+//
+//    //while ((nread = read(fd,&c,1)) == 0);
+//    //if (nread == -1) exit(1);
+//
+//    //while(1) {
+//        switch(c) {
+//        case ESC:    /* escape sequence */
+//            /* If this is just an ESC, we'll timeout here. */
+//            //if (read(fd,seq,1) == 0) return ESC;
+//            //if (read(fd,seq+1,1) == 0) return ESC;
+//
+//            /* ESC [ sequences. */
+//            if (seq[0] == '[') {
+//                if (seq[1] >= '0' && seq[1] <= '9') {
+//                    /* Extended escape, read additional byte. */
+//                    //if (read(fd,seq+2,1) == 0) return ESC;
+//                    if (seq[2] == '~') {
+//                        switch(seq[1]) {
+//                        case '3': return DEL_KEY;
+//                        case '5': return PAGE_UP;
+//                        case '6': return PAGE_DOWN;
+//                        }
+//                    }
+//                } else {
+//                    switch(seq[1]) {
+//                    case 'A': return ARROW_UP;
+//                    case 'B': return ARROW_DOWN;
+//                    case 'C': return ARROW_RIGHT;
+//                    case 'D': return ARROW_LEFT;
+//                    case 'H': return HOME_KEY;
+//                    case 'F': return END_KEY;
+//                    }
+//                }
+//            }
+//
+//            /* ESC O sequences. */
+//            else if (seq[0] == 'O') {
+//                switch(seq[1]) {
+//                case 'H': return HOME_KEY;
+//                case 'F': return END_KEY;
+//                }
+//            }
+//            break;
+//        default:
+//            return c;
+//        }
+//    //}
+//}
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
@@ -857,15 +789,6 @@ int editorSave(void) {
 
 /* ============================= Terminal update ============================ */
 
-/* We define a very simple "append buffer" structure, that is an heap
- * allocated string where we can append to. This is useful in order to
- * write all the escape sequences in a buffer and flush them to the standard
- * output in a single call, to avoid flickering effects. */
-struct abuf {
-    char *b;
-    int len;
-};
-
 #define ABUF_INIT {NULL,0}
 
 void abAppend(struct abuf *ab, const char *s, int len) {
@@ -885,11 +808,10 @@ void abFree(struct abuf *ab) {
 
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
-void editorRefreshScreen(void) {
+void editorRefreshScreen(struct abuf ab) {
     int y;
     erow *r;
     char buf[32];
-    struct abuf ab = ABUF_INIT;
 
     abAppend(&ab,"\x1b[?25l",6); /* Hide cursor. */
     abAppend(&ab,"\x1b[H",3); /* Go home. */
@@ -1002,7 +924,8 @@ void editorRefreshScreen(void) {
     
     //write(STDOUT_FILENO,ab.b,ab.len);
 
-    abFree(&ab);
+    //abFree(&ab);
+    //return &ab;
 }
 
 /* Set an editor status message for the second line of the status, at the
@@ -1019,100 +942,100 @@ void editorSetStatusMessage(const char *fmt, ...) {
 
 #define KILO_QUERY_LEN 256
 
-void editorFind(int fd) {
-    char query[KILO_QUERY_LEN+1] = {0};
-    int qlen = 0;
-    int last_match = -1; /* Last line where a match was found. -1 for none. */
-    int find_next = 0; /* if 1 search next, if -1 search prev. */
-    int saved_hl_line = -1;  /* No saved HL */
-    char *saved_hl = NULL;
-
-#define FIND_RESTORE_HL do { \
-    if (saved_hl) { \
-        memcpy(E.row[saved_hl_line].hl,saved_hl, E.row[saved_hl_line].rsize); \
-        free(saved_hl); \
-        saved_hl = NULL; \
-    } \
-} while (0)
-
-    /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.cx, saved_cy = E.cy;
-    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
-
-    while(1) {
-        editorSetStatusMessage(
-            "Search: %s (Use ESC/Arrows/Enter)", query);
-        editorRefreshScreen();
-
-        int c = editorReadKey(fd);
-        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
-            if (qlen != 0) query[--qlen] = '\0';
-            last_match = -1;
-        } else if (c == ESC || c == ENTER) {
-            if (c == ESC) {
-                E.cx = saved_cx; E.cy = saved_cy;
-                E.coloff = saved_coloff; E.rowoff = saved_rowoff;
-            }
-            FIND_RESTORE_HL;
-            editorSetStatusMessage("");
-            return;
-        } else if (c == ARROW_RIGHT || c == ARROW_DOWN) {
-            find_next = 1;
-        } else if (c == ARROW_LEFT || c == ARROW_UP) {
-            find_next = -1;
-        } else if (isprint(c)) {
-            if (qlen < KILO_QUERY_LEN) {
-                query[qlen++] = c;
-                query[qlen] = '\0';
-                last_match = -1;
-            }
-        }
-
-        /* Search occurrence. */
-        if (last_match == -1) find_next = 1;
-        if (find_next) {
-            char *match = NULL;
-            int match_offset = 0;
-            int i, current = last_match;
-
-            for (i = 0; i < E.numrows; i++) {
-                current += find_next;
-                if (current == -1) current = E.numrows-1;
-                else if (current == E.numrows) current = 0;
-                match = strstr(E.row[current].render,query);
-                if (match) {
-                    match_offset = match-E.row[current].render;
-                    break;
-                }
-            }
-            find_next = 0;
-
-            /* Highlight */
-            FIND_RESTORE_HL;
-
-            if (match) {
-                erow *row = &E.row[current];
-                last_match = current;
-                if (row->hl) {
-                    saved_hl_line = current;
-                    saved_hl = malloc(row->rsize);
-                    memcpy(saved_hl,row->hl,row->rsize);
-                    memset(row->hl+match_offset,HL_MATCH,qlen);
-                }
-                E.cy = 0;
-                E.cx = match_offset;
-                E.rowoff = current;
-                E.coloff = 0;
-                /* Scroll horizontally as needed. */
-                if (E.cx > E.screencols) {
-                    int diff = E.cx - E.screencols;
-                    E.cx -= diff;
-                    E.coloff += diff;
-                }
-            }
-        }
-    }
-}
+//void editorFind(int fd) {
+//    char query[KILO_QUERY_LEN+1] = {0};
+//    int qlen = 0;
+//    int last_match = -1; /* Last line where a match was found. -1 for none. */
+//    int find_next = 0; /* if 1 search next, if -1 search prev. */
+//    int saved_hl_line = -1;  /* No saved HL */
+//    char *saved_hl = NULL;
+//
+//#define FIND_RESTORE_HL do { \
+//    if (saved_hl) { \
+//        memcpy(E.row[saved_hl_line].hl,saved_hl, E.row[saved_hl_line].rsize); \
+//        free(saved_hl); \
+//        saved_hl = NULL; \
+//    } \
+//} while (0)
+//
+//    /* Save the cursor position in order to restore it later. */
+//    int saved_cx = E.cx, saved_cy = E.cy;
+//    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+//
+//    while(1) {
+//        editorSetStatusMessage(
+//            "Search: %s (Use ESC/Arrows/Enter)", query);
+//        editorRefreshScreen();
+//
+//        int c = editorReadKey(fd);
+//        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
+//            if (qlen != 0) query[--qlen] = '\0';
+//            last_match = -1;
+//        } else if (c == ESC || c == ENTER) {
+//            if (c == ESC) {
+//                E.cx = saved_cx; E.cy = saved_cy;
+//                E.coloff = saved_coloff; E.rowoff = saved_rowoff;
+//            }
+//            FIND_RESTORE_HL;
+//            editorSetStatusMessage("");
+//            return;
+//        } else if (c == ARROW_RIGHT || c == ARROW_DOWN) {
+//            find_next = 1;
+//        } else if (c == ARROW_LEFT || c == ARROW_UP) {
+//            find_next = -1;
+//        } else if (isprint(c)) {
+//            if (qlen < KILO_QUERY_LEN) {
+//                query[qlen++] = c;
+//                query[qlen] = '\0';
+//                last_match = -1;
+//            }
+//        }
+//
+//        /* Search occurrence. */
+//        if (last_match == -1) find_next = 1;
+//        if (find_next) {
+//            char *match = NULL;
+//            int match_offset = 0;
+//            int i, current = last_match;
+//
+//            for (i = 0; i < E.numrows; i++) {
+//                current += find_next;
+//                if (current == -1) current = E.numrows-1;
+//                else if (current == E.numrows) current = 0;
+//                match = strstr(E.row[current].render,query);
+//                if (match) {
+//                    match_offset = match-E.row[current].render;
+//                    break;
+//                }
+//            }
+//            find_next = 0;
+//
+//            /* Highlight */
+//            FIND_RESTORE_HL;
+//
+//            if (match) {
+//                erow *row = &E.row[current];
+//                last_match = current;
+//                if (row->hl) {
+//                    saved_hl_line = current;
+//                    saved_hl = malloc(row->rsize);
+//                    memcpy(saved_hl,row->hl,row->rsize);
+//                    memset(row->hl+match_offset,HL_MATCH,qlen);
+//                }
+//                E.cy = 0;
+//                E.cx = match_offset;
+//                E.rowoff = current;
+//                E.coloff = 0;
+//                /* Scroll horizontally as needed. */
+//                if (E.cx > E.screencols) {
+//                    int diff = E.cx - E.screencols;
+//                    E.cx -= diff;
+//                    E.coloff += diff;
+//                }
+//            }
+//        }
+//    }
+//}
 
 /* ========================= Editor events handling  ======================== */
 
@@ -1193,12 +1116,13 @@ void editorMoveCursor(int key) {
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
 #define KILO_QUIT_TIMES 3
-void editorProcessKeypress(int fd) {
+void editorProcessKeypress(int c) {
     /* When the file is modified, requires Ctrl-q to be pressed N times
      * before actually quitting. */
     static int quit_times = KILO_QUIT_TIMES;
 
-    int c = editorReadKey(fd);
+    //int c = editorReadKey(fd);
+    
     switch(c) {
     case ENTER:         /* Enter */
         editorInsertNewline();
@@ -1221,7 +1145,7 @@ void editorProcessKeypress(int fd) {
         editorSave();
         break;
     case CTRL_F:
-        editorFind(fd);
+        //editorFind(fd);
         break;
     case BACKSPACE:     /* Backspace */
     case CTRL_H:        /* Ctrl-h */
@@ -1267,11 +1191,15 @@ int editorFileWasModified(void) {
 }
 
 void updateWindowSize(void) {
-    if (getWindowSize(STDIN_FILENO,STDOUT_FILENO,
-                      &E.screenrows,&E.screencols) == -1) {
-        perror("Unable to query the screen for size (columns / rows)");
-        exit(1);
-    }
+    //if (getWindowSize(STDIN_FILENO,STDOUT_FILENO,
+    //                  &E.screenrows,&E.screencols) == -1) {
+    //    perror("Unable to query the screen for size (columns / rows)");
+    //    exit(1);
+    //}
+    //TODO
+    E.screenrows = 20;
+    E.screencols = 60;
+
     E.screenrows -= 2; /* Get room for status bar. */
 }
 
@@ -1279,7 +1207,7 @@ void handleSigWinCh(int unused __attribute__((unused))) {
     updateWindowSize();
     if (E.cy > E.screenrows) E.cy = E.screenrows - 1;
     if (E.cx > E.screencols) E.cx = E.screencols - 1;
-    editorRefreshScreen();
+    //editorRefreshScreen();
 }
 
 void initEditor(void) {
@@ -1294,6 +1222,12 @@ void initEditor(void) {
     E.syntax = NULL;
     updateWindowSize();
     //signal(SIGWINCH, handleSigWinCh);
+
+    E.dirty = 0;
+    E.filename = "foo.c";
+
+    editorInsertRow(E.numrows, "fpp", 3);
+    E.dirty = 0;
 }
 
 int mainXXX(int argc, char **argv) {
@@ -1305,13 +1239,13 @@ int mainXXX(int argc, char **argv) {
     initEditor();
     editorSelectSyntaxHighlight(argv[1]);
     editorOpen(argv[1]);
-    enableRawMode(STDIN_FILENO);
+    //enableRawMode(STDIN_FILENO);
     editorSetStatusMessage(
         "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
-    while(1) {
-        editorRefreshScreen();
-        editorProcessKeypress(STDIN_FILENO);
-    }
+    //while(1) {
+    //    editorRefreshScreen();
+    //    editorProcessKeypress(STDIN_FILENO);
+    //}
     return 0;
 }
 

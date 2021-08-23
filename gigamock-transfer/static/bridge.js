@@ -5,7 +5,9 @@ var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + win
 var wsbUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/wsb");
 
 function ab2str(buf) {
-  return String.fromCharCode.apply(null, buf); //new Uint8Array(buf));
+  //return String.fromCharCode.apply(null, new Uint16Array(buf)); //new Uint8Array(buf));
+  return buf.reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), '');
+
 }
 
 function str2ab(str) {
@@ -36,9 +38,9 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       window.terminal.open(terminalContainer);
       window.terminal.on('data', function(termInputData) {
         console.log("send this to kilo input", termInputData);
-      //  var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
-      //  window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-      //  Module._free(ptr);
+        var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
+        window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+        Module._free(ptr);
       });
       window.addEventListener('resize', function(resizeEvent) {
         ////  window.terminal.fit();
@@ -79,33 +81,48 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-      var buf = new ArrayBuffer(length); // 2 bytes for each char
-      var bufView = new Uint8Array(buf);
-      for (var i=0; i < length; i++) {
-        var ic = getValue(bytes + (i), 'i8');
-        bufView[i] = ic;
-      }
+      console.log("wtf", channel, bytes, length)
 
-      var stringBits = ab2str(bufView);
+      //var buf = new ArrayBuffer(length); // 2 bytes for each char
+      //var bufView = new Uint8Array(buf);
+      //for (var i=0; i < length; i++) {
+      //  var ic = getValue(bytes + (i), 'i8');
+      //  bufView[i] = ic;
+      //}
 
+      //var stringBits = ab2str(bufView);
+
+      //console.log(bufView, buf);
       if (channel == 0) {
-        if (document.body.className != splitScreen) {
-          document.body.className = splitScreen;
-          setTimeout(function() {
-            //window.terminal.fit();
-          }, 1);
-        }
-        var stringBits = ab2str(bufView);
-        //window.terminal.write(stringBits);
-        //window.terminal.writeUtf8(bufView);
-      } else if (channel == 1) {
-        var sent = window.conn.send(buf);
       }
 
-      //TODO: memory cleanup??????
-      buf = null;
-      bufView = null;
-      return;
+//
+//      if (channel == 0) {
+//        //if (document.body.className != splitScreen) {
+//        //  document.body.className = splitScreen;
+//        //  setTimeout(function() {
+//        //    //window.terminal.fit();
+//        //  }, 1);
+//        //}
+//        //var stringBits = ab2str(bufView);
+//
+//console.log(stringBits);
+//
+//        //window.terminal.write(stringBits);
+//
+//        //window.terminal.writeUtf8(bufView);
+//      } else if (channel == 1) {
+//
+//
+//        var sent = window.conn.send(buf);
+//
+//
+//      }
+//
+//      //TODO: memory cleanup??????
+//      buf = null;
+//      bufView = null;
+//      return;
     }, 'viii');
 
     return window.writePackedPointer;
