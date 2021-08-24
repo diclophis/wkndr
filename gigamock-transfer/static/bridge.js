@@ -48,9 +48,18 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.terminal.onData(function(termInputData) {
       //console.log("send this to kilo input", termInputData.length, "adasd");
 
-      var ptr = allocate(intArrayFromString(termInputData), 'i8*', ALLOC_NORMAL);
+      //var ptr = //allocate(intArrayFromString(termInputData), 'i8*', ALLOC_NORMAL);
+
+
+      //var ptr = stackAlloc(size);
+      //var x = new Uint8Array(Module['HEAPU8'].buffer, ptr, termInputData.length);
+      //x.set(intArrayFromString(termInputData));
+      //window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+
+      var ptr = allocate(intArrayFromString(termInputData), ALLOC_NORMAL);
       window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-      Module._free(ptr);
+
+      //Module._free(ptr);
 
     });
 
@@ -75,8 +84,23 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         window.conn.close();
       };
 
-      var ptr = allocate(intArrayFromString(window.location.pathname), 'i8', ALLOC_NORMAL);
+      
+      //var ptr = allocate(window.location.pathname.length, ALLOC_STACK);
+      //var ptr = stackAlloc(window.location.pathname.length);
+      //var x = new Uint8Array(Module['HEAPU8'].buffer, ptr, window.location.pathname.length);
+      //x.set(intArrayFromString(window.location.pathname));
+      //window.socket_connected(mrbPointer, callbackPointer, ptr, window.location.pathname.length);
+
+      //var typedData = new Uint8Array(window.location.pathname);
+      //var heapBuffer = Module._malloc(window.location.pathname.byteLength * typedData.BYTES_PER_ELEMENT);
+      //Module.HEAPU8.set(typedData, heapBuffer);
+      //window.socket_connected(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
+      //Module._free(heapBuffer);
+
+      var ptr = allocate(intArrayFromString(window.location.pathname), ALLOC_NORMAL);
       window.socket_connected(mrbPointer, callbackPointer, ptr, window.location.pathname.length);
+
+
     };
 
     window.conn.onclose = function (event) {
@@ -90,11 +114,15 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //var sv = new StringView(origData)
       //TODO: debug stringView of raw msg bits
 
-      var typedData = new Uint8Array(origData);
-      var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
-      Module.HEAPU8.set(typedData, heapBuffer);
-      window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
-      Module._free(heapBuffer);
+      
+      //var typedData = new Uint8Array(origData);
+      //var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
+      //Module.HEAPU8.set(typedData, heapBuffer);
+      //window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
+      //Module._free(heapBuffer);
+
+      var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
+      window.handle_js_websocket_event(mrbPointer, callbackPointer, ptr, origData.byteLength);
     };
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {

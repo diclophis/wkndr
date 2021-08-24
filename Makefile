@@ -80,13 +80,13 @@ endif
 
 RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 ifeq ($(TARGET),desktop)
-  CFLAGS=-O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src
+  CFLAGS=-Wcast-align -O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
 else
-  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -O3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s RESERVED_FUNCTION_POINTERS=64 #-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
-  CFLAGS=-DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src #-s RESERVED_FUNCTION_POINTERS=32
+  EMSCRIPTEN_FLAGS=-s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s USE_ZLIB=1 -s SAFE_HEAP=0 -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=0 -s NO_EXIT_RUNTIME=0 -O3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s RESERVED_FUNCTION_POINTERS=64 #-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+  CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src #-s RESERVED_FUNCTION_POINTERS=32
 endif
 
 $(target): $(static_ruby_headers) $(objects) $(sources)
