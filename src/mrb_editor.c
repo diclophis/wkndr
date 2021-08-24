@@ -175,11 +175,6 @@ int enableRawMode(int fd) {
 
     E.rawmode = 1;
     return 0;
-
-
-fatal:
-    errno = ENOTTY;
-    return -1;
 }
 
 /* Read a key from the terminal put in raw mode, trying to handle
@@ -1226,12 +1221,15 @@ void initEditor(void) {
     //updateWindowSize();
     //signal(SIGWINCH, handleSigWinCh);
 
+    E.rawmode = 1;
+
     E.dirty = 0;
     E.filename = "foo.c";
+    editorSelectSyntaxHighlight("foo.c");
 
     //editorInsertRow(E.numrows, "int main(int a, int b);", 23);
 
-    E.dirty = 0;
+    E.dirty = 1;
 }
 
 int mainXXX(int argc, char **argv) {
@@ -1243,9 +1241,9 @@ int mainXXX(int argc, char **argv) {
     initEditor();
     editorSelectSyntaxHighlight(argv[1]);
     editorOpen(argv[1]);
-    //enableRawMode(STDIN_FILENO);
-    editorSetStatusMessage(
-        "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+    //enableRawMode();
+    //editorSetStatusMessage(
+    //    "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
     //while(1) {
     //    editorRefreshScreen();
     //    editorProcessKeypress(STDIN_FILENO);

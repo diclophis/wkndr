@@ -260,7 +260,7 @@ class Connection
       elsif msg[:opcode] == :binary_frame
         process_as_msgpack_stream(msg.msg) { |typed_msg|
 
-          log!(:wtf, typed_msg)
+          #log!(:wtf, typed_msg)
 
           channels = typed_msg.keys
 

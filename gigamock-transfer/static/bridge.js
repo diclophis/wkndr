@@ -36,45 +36,39 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
-      //Terminal.applyAddon(fit);
-      window.fit = new FitAddon.FitAddon();
-      window.terminal = new Terminal();
-      //{
-      //  cursorBlink: true,
-      //  scrollback: 100,
-      //  tabStopWidth: 2,
-      //  allowTransparency: false
-      //});
-      terminal.loadAddon(window.fit);
-
-      window.terminal.open(terminalContainer);
-
-    window.conn.onopen = function (event) {
-
-      window.terminal.onData(function(termInputData) {
-        console.log("send this to kilo input", termInputData);
-        var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
-        window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
-        Module._free(ptr);
-      });
-
-      //window.terminal.on('binary', function(termInputData) {
-      //  console.log(termInputData);
-      //});
+    window.fit = new FitAddon.FitAddon();
 
       window.addEventListener('resize', function(resizeEvent) {
-        //window.fit.fit();
+        window.fit.fit();
       });
+
+    window.terminal = new Terminal();
+    window.terminal.loadAddon(window.fit);
+
+    window.terminal.onData(function(termInputData) {
+      //console.log("send this to kilo input", termInputData.length, "adasd");
+
+      var ptr = allocate(intArrayFromString(termInputData), 'i8*', ALLOC_NORMAL);
+      window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+      Module._free(ptr);
+
+    });
 
       window.terminal.onResize(function(newSize) {
         console.log("kilo resize", newSize);
 
-        //setTimeout(function() {
-        //}, 1);
         window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight, newSize.rows, newSize.cols);
       });
 
+    window.terminal.open(terminalContainer);
+
+    window.conn.onopen = function (event) {
+
       window.fit.fit();
+
+      //window.terminal.on('binary', function(termInputData) {
+      //  console.log(termInputData);
+      //});
 
       window.onbeforeunload = function() {
         window.conn.onclose = function () {};
@@ -91,7 +85,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
     window.conn.onmessage = function (event) {
       console.log("got message from server", event);
-
       var origData = event.data;
 
       //var sv = new StringView(origData)
@@ -105,18 +98,19 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
-      console.log("wtf", channel, bytes, length)
+      //console.log("wtf", channel, bytes, length)
 
       //var stringBits = ab2str(bufView);
       //console.log(bufView, buf);
 
       if (channel == 0) {
-        //var buf = new ArrayBuffer(length);
-        //var bufView = new Uint8Array(buf);
-        //for (var i=0; i < length; i++) {
-        //  var ic = Module.getValue(bytes + (i), 'i8');
-        //  bufView[i] = ic;
-        //}
+        var buf = new ArrayBuffer(length);
+        var bufView = new Uint8Array(buf);
+        for (var i=0; i < length; i++) {
+          var ic = Module.getValue(bytes + (i), 'i8');
+          bufView[i] = ic;
+        }
+        window.terminal.write(bufView);
 
         ////var str = bytesToString(bufView);
         ////console.log(`foo-${str.length}-bar`);
@@ -127,13 +121,13 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         // no need to Module._free(_pointer);
         //var text = Module.Pointer_stringify(_pointer);
 
-        var ttt = intArrayToString(HEAPU8.subarray(bytes, bytes+length));
+        //var ttt = intArrayToString(HEAPU8.subarray(bytes, bytes+length));
+        //window.terminal.write(ttt);
 
         //var ttt = Pointer_stringify(bytes);
         //var ttt = UTF8ToString(bytes, length);
         //var ttt = UTF8ToString(bytes);
 
-        window.terminal.write(ttt);
 
       } else if (channel == 1) {
         var buf = new ArrayBuffer(length);

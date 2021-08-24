@@ -194,7 +194,9 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   ////////TODO: this calles into editorProcessKeypress
   //////mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
 
-  fprintf(stderr, "START BIT %d %d %d\n", n, DEL_KEY, buf[0]);
+  int i = 0;
+
+  //fprintf(stderr, "START BIT %d %d %d\n", n, i, buf[0]);
 
   mrb_value data_value;
   data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
@@ -202,16 +204,59 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
 
   void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
 
-  //for (int i=0; i<n; i++) {
-  //  fprintf(stderr, "one key code\n");
-  //  editorProcessKeypress(buf[n]);
+  //struct abuf *ab = malloc(sizeof(struct abuf) * 1);
+  //ab->b = NULL;
+  //ab->len = 0;
+  //editorRefreshScreen(ab);
+  //write_packed_pointer(0, ab->b, ab->len);
+  //free(ab);
+  //for (i=0; i<(int)n; i+=1) {
 
-  //}
+  if (n == 1) {
+    editorProcessKeypress(buf[0]);
+  } else {
+    int bbb = 0;
+    buf = (buf + 1); // ... YEAaahahAHAa + sunglasses + explosion
 
-  struct abuf *ab = malloc(sizeof(struct abuf) * 1);
-  editorRefreshScreen(ab);
-  write_packed_pointer(0, ab->b, ab->len);
-  free(ab);
+    //DEL OVERIDE 1008 [ 3 ~
+    if (buf[0] == '[') { /* ESC [ sequences. */
+      if (buf[1] >= '0' && buf[1] <= '9') {
+        if (buf[2] == '~') { /* Extended escape, read additional byte. */
+          switch(buf[1]) {
+            case '3': bbb = DEL_KEY; break;
+            case '5': bbb = PAGE_UP; break;
+            case '6': bbb = PAGE_DOWN; break;
+          }
+        }
+      } else {
+        switch(buf[1]) {
+          case 'A': bbb = ARROW_UP; break;
+          case 'B': bbb = ARROW_DOWN; break;
+          case 'C': bbb = ARROW_RIGHT; break;
+          case 'D': bbb = ARROW_LEFT; break;
+          case 'H': bbb = HOME_KEY; break;
+          case 'F': bbb = END_KEY; break;
+        }
+      }
+    } else if (buf[0] == 'O') { /* ESC O sequences. */
+      switch(buf[1]) {
+        case 'H': bbb = HOME_KEY; break;
+        case 'F': bbb = END_KEY; break;
+      }
+    }
+
+    //OVERIDE 1008 1004 [ 3 ~
+    //fprintf(stderr, "OVERIDE %d %d %c %c %c\n", bbb, DEL_KEY, buf[0], buf[1], buf[2]);
+
+    editorProcessKeypress(bbb);
+  }
+
+  struct abuf *ab2 = malloc(sizeof(struct abuf) * 1);
+  ab2->b = NULL;
+  ab2->len = 0;
+  editorRefreshScreen(ab2);
+  write_packed_pointer(0, ab2->b, ab2->len);
+  free(ab2);
 
   return 0;
 }
@@ -245,6 +290,8 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h, int r, in
     void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
 
     struct abuf *ab = malloc(sizeof(struct abuf) * 1);
+    ab->b = NULL; //malloc(sizeof(char *) * 0);
+    ab->len = 0;
     editorRefreshScreen(ab);
     write_packed_pointer(0, ab->b, ab->len);
     free(ab);
