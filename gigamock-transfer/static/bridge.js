@@ -80,21 +80,23 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       //var stringBits = ab2str(bufView);
       //console.log(bufView, buf);
+
       if (channel == 0) {
 
-  var buf = new ArrayBuffer(length);
-  //var str = buf.reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), '');
+        var buf = new ArrayBuffer(length);
+        //var str = buf.reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), '');
+
         var bufView = new Uint8Array(buf);
         for (var i=0; i < length; i++) {
           var ic = getValue(bytes + (i), 'i8');
           bufView[i] = ic;
         }
 
-  var str = String.fromCharCode.apply(null, bufView);
-  console.log(`foo-${str.length}-bar`);
-  //window.terminal.write(str);
-  window.terminal.writeUtf8(bufView);
-  //new Uint8Array(buf));
+        var str = String.fromCharCode.apply(null, bufView);
+        console.log(`foo-${str.length}-bar`);
+        //window.terminal.write(str);
+        window.terminal.writeUtf8(bufView);
+        //new Uint8Array(buf));
 
 
       } else if (channel == 1) {
