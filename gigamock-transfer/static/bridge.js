@@ -4,12 +4,6 @@ var splitScreen = "split-screen";
 var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
 var wsbUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/wsb");
 
-function ab2str(buf) {
-  //return String.fromCharCode.apply(null, new Uint16Array(buf)); //new Uint8Array(buf));
-  return buf.reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), '');
-
-}
-
 function str2ab(str) {
   var buf = new ArrayBuffer(str.length); // 2 bytes for each char
   var bufView = new Uint8Array(buf);
@@ -26,7 +20,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
-    window.conn.onopen = function (event) {
       //var terminalContainer = document.getElementById("wkndr-terminal");
       Terminal.applyAddon(fit);
       window.terminal = new Terminal({
@@ -36,6 +29,8 @@ window.startConnection = function(mrbPointer, callbackPointer) {
         allowTransparency: false
       });
       window.terminal.open(terminalContainer);
+
+    window.conn.onopen = function (event) {
       window.terminal.on('data', function(termInputData) {
         console.log("send this to kilo input", termInputData);
         var ptr = allocate(intArrayFromString(termInputData), 'i8', ALLOC_NORMAL);
@@ -83,17 +78,34 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.writePackedPointer = addFunction(function(channel, bytes, length) {
       console.log("wtf", channel, bytes, length)
 
-      //var buf = new ArrayBuffer(length); // 2 bytes for each char
-      //var bufView = new Uint8Array(buf);
-      //for (var i=0; i < length; i++) {
-      //  var ic = getValue(bytes + (i), 'i8');
-      //  bufView[i] = ic;
-      //}
-
       //var stringBits = ab2str(bufView);
-
       //console.log(bufView, buf);
       if (channel == 0) {
+
+  var buf = new ArrayBuffer(length);
+  //var str = buf.reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), '');
+        var bufView = new Uint8Array(buf);
+        for (var i=0; i < length; i++) {
+          var ic = getValue(bytes + (i), 'i8');
+          bufView[i] = ic;
+        }
+
+  var str = String.fromCharCode.apply(null, bufView);
+  console.log(`foo-${str.length}-bar`);
+  //window.terminal.write(str);
+  window.terminal.writeUtf8(bufView);
+  //new Uint8Array(buf));
+
+
+      } else if (channel == 1) {
+        var buf = new ArrayBuffer(length);
+        var bufView = new Uint8Array(buf);
+        for (var i=0; i < length; i++) {
+          var ic = getValue(bytes + (i), 'i8');
+          bufView[i] = ic;
+        }
+
+        var sent = window.conn.send(buf);
       }
 
 //

@@ -23,4 +23,4 @@ echo 'int main() {' >> /var/tmp/emscripten.c
 echo 'printf("hello, world %d!\n", PATH_MAX);' >> /var/tmp/emscripten.c
 echo 'return 0; }' >> /var/tmp/emscripten.c
 
-emcc -lm -o /var/tmp/emscripten.html /var/tmp/emscripten.c
+emcc -lm -s USE_ZLIB=1 -o /var/tmp/emscripten.html /var/tmp/emscripten.c

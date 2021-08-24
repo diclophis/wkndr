@@ -203,14 +203,17 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   //char foo[len];
 
 
-  ////struct abuf foo = editorRefreshScreen();
-  ////mrb_value data_value;
-  ////data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
-  ////mrb_int fp = mrb_int(mrb, data_value);
-  ////void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+  mrb_value data_value;
+  data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
+  mrb_int fp = mrb_int(mrb, data_value);
+  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+
   //////const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
   //////int len = mrb_string_value_len(mrb, packed_bytes);
-  ////write_packed_pointer(0, foo.b, foo.len);
+
+  struct abuf *ab = malloc(sizeof(struct abuf) * 1);
+  editorRefreshScreen(ab);
+  write_packed_pointer(0, ab->b, ab->len);
 
   return 0;
 }
@@ -278,11 +281,12 @@ mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
 
 
   editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
-  struct abuf ab = {"foo", 3};
-  
-  //editorRefreshScreen(ab);
+
+  struct abuf *ab = malloc(sizeof(struct abuf) * 1);
+  editorRefreshScreen(ab);
+
   void (*write_packed_pointer2)(int, const void*, int) = (void (*)(int, const void*, int))write_packed_pointer;
-  write_packed_pointer2(0, ab.b, ab.len);
+  write_packed_pointer2(0, ab->b, ab->len);
 
   return self;
 }
