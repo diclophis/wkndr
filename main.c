@@ -185,8 +185,8 @@ size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, const ch
 
 EMSCRIPTEN_KEEPALIVE
 size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
-  mrb_value empty_string = mrb_str_new_lit(mrb, "");
-  mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+  //mrb_value empty_string = mrb_str_new_lit(mrb, "");
+  //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
 
   //TODO: shell support bypass
   //////mrb_value outbound_tty_msg = mrb_hash_new(mrb);
@@ -194,33 +194,31 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   ////////TODO: this calles into editorProcessKeypress
   //////mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
 
-
-  for (int i=0; i<n; i++) {
-    editorProcessKeypress(buf[n]);
-  }
-
-  //int len = 32;
-  //char foo[len];
-
+  fprintf(stderr, "START BIT %d %d %d\n", n, DEL_KEY, buf[0]);
 
   mrb_value data_value;
   data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
   mrb_int fp = mrb_int(mrb, data_value);
+
   void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
 
-  //////const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
-  //////int len = mrb_string_value_len(mrb, packed_bytes);
+  //for (int i=0; i<n; i++) {
+  //  fprintf(stderr, "one key code\n");
+  //  editorProcessKeypress(buf[n]);
+
+  //}
 
   struct abuf *ab = malloc(sizeof(struct abuf) * 1);
   editorRefreshScreen(ab);
   write_packed_pointer(0, ab->b, ab->len);
+  free(ab);
 
   return 0;
 }
 
 
 EMSCRIPTEN_KEEPALIVE
-size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h) {
+size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h, int r, int c) {
   //TODO support remove vt100 tty
   //  mrb_value outbound_resize_msg = mrb_ary_new(mrb);
   //  //mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(cols));
@@ -234,6 +232,22 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h) {
 
   if (IsWindowReady()) {
     SetWindowSize(w, h);
+  }
+
+  updateWindowSize(r, c);
+
+  mrb_value data_value;
+  data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
+
+  if (mrb_nil_p(data_value)) {
+  } else {
+    mrb_int fp = mrb_int(mrb, data_value);
+    void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+
+    struct abuf *ab = malloc(sizeof(struct abuf) * 1);
+    editorRefreshScreen(ab);
+    write_packed_pointer(0, ab->b, ab->len);
+    free(ab);
   }
 
   return 0;
@@ -278,15 +292,11 @@ mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
       mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
       mrb_fixnum_value(write_packed_pointer));
 
-
-
-  editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
-
-  struct abuf *ab = malloc(sizeof(struct abuf) * 1);
-  editorRefreshScreen(ab);
-
-  void (*write_packed_pointer2)(int, const void*, int) = (void (*)(int, const void*, int))write_packed_pointer;
-  write_packed_pointer2(0, ab->b, ab->len);
+  //editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+  //struct abuf *ab = malloc(sizeof(struct abuf) * 1);
+  //editorRefreshScreen(ab);
+  //void (*write_packed_pointer2)(int, const void*, int) = (void (*)(int, const void*, int))write_packed_pointer;
+  //write_packed_pointer2(0, ab->b, ab->len);
 
   return self;
 }
@@ -511,7 +521,6 @@ int main(int argc, char** argv) {
   fprintf(stderr, "going for editor ... \n");
 
   initEditor();
-
 
   fprintf(stderr, "going for wizbang ... \n");
 

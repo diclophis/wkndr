@@ -764,8 +764,9 @@ int editorOpen(char *filename) {
 
 /* Save the current file on disk. Return 0 on success, 1 on error. */
 int editorSave(void) {
-    //int len;
-    //char *buf = editorRowsToString(&len);
+    int len;
+    char *buf = editorRowsToString(&len);
+
     //int fd = open(E.filename,O_RDWR|O_CREAT,0644);
     //if (fd == -1) goto writeerr;
 
@@ -776,8 +777,9 @@ int editorSave(void) {
 
     //close(fd);
     //free(buf);
-    //E.dirty = 0;
-    //editorSetStatusMessage("%d bytes written on disk", len);
+
+    E.dirty = 0;
+    editorSetStatusMessage("%d bytes written on disk", len);
     return 0;
 
 //writeerr:
@@ -789,7 +791,7 @@ int editorSave(void) {
 
 /* ============================= Terminal update ============================ */
 
-#define ABUF_INIT {NULL,0}
+//#define ABUF_INIT {NULL,0}
 
 void abAppend(struct abuf *ab, const char *s, int len) {
     char *new = realloc(ab->b,ab->len+len);
@@ -1190,21 +1192,21 @@ int editorFileWasModified(void) {
     return E.dirty;
 }
 
-void updateWindowSize(void) {
+void updateWindowSize(int r, int c) {
     //if (getWindowSize(STDIN_FILENO,STDOUT_FILENO,
     //                  &E.screenrows,&E.screencols) == -1) {
     //    perror("Unable to query the screen for size (columns / rows)");
     //    exit(1);
     //}
     //TODO
-    E.screenrows = 20;
-    E.screencols = 60;
+    E.screenrows = r;
+    E.screencols = c;
 
     E.screenrows -= 2; /* Get room for status bar. */
 }
 
 void handleSigWinCh(int unused __attribute__((unused))) {
-    updateWindowSize();
+    //updateWindowSize();
     if (E.cy > E.screenrows) E.cy = E.screenrows - 1;
     if (E.cx > E.screencols) E.cx = E.screencols - 1;
     //editorRefreshScreen();
@@ -1220,13 +1222,15 @@ void initEditor(void) {
     E.dirty = 0;
     E.filename = NULL;
     E.syntax = NULL;
-    updateWindowSize();
+
+    //updateWindowSize();
     //signal(SIGWINCH, handleSigWinCh);
 
     E.dirty = 0;
     E.filename = "foo.c";
 
-    editorInsertRow(E.numrows, "fpp", 3);
+    //editorInsertRow(E.numrows, "int main(int a, int b);", 23);
+
     E.dirty = 0;
 }
 

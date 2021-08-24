@@ -58,7 +58,7 @@ static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h,
 static_ruby_headers += $(build)/embed_static.h
 endif
 
-giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/stringview.js gigamock-transfer/static/xterm-dist/fit/fit.js gigamock-transfer/static/xterm-dist/xterm.js gigamock-transfer/static/bridge.js 
+giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/stringview.js gigamock-transfer/static/xterm-dist/xterm.js gigamock-transfer/static/xterm-dist/fit/xterm-addon-fit.js gigamock-transfer/static/bridge.js
 giga_static_txt = gigamock-transfer/static/robots.txt
 giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/xterm-dist/xterm.css gigamock-transfer/static/wkndr.css 
@@ -85,7 +85,7 @@ ifeq ($(TARGET),desktop)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif
 else
-  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -O3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s RESERVED_FUNCTION_POINTERS=32 #-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -O3 -s USE_GLFW=3 -s USE_WEBGL2=1 -s RESERVED_FUNCTION_POINTERS=64 #-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
   CFLAGS=-DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src #-s RESERVED_FUNCTION_POINTERS=32
 endif
 
@@ -93,7 +93,7 @@ $(target): $(static_ruby_headers) $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=655360000 -s ABORTING_MALLOC=0 --source-map-base http://localhost:8000/ --preload-file resources
+	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue", "Pointer_stringify"]' -s TOTAL_MEMORY=655360000 -s ABORTING_MALLOC=0 --source-map-base http://localhost:8000/ --preload-file resources
 endif
 
 $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)

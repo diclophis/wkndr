@@ -86,6 +86,6 @@ int editorOpen(char *filename);
 int editorSave(void);
 void editorRefreshScreen(struct abuf *);
 void editorProcessKeypress(int c);
-void updateWindowSize(void);
+void updateWindowSize(int, int);
 void handleSigWinCh(int unused __attribute__((unused)));
 void initEditor(void);
