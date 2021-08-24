@@ -819,7 +819,7 @@ void editorRefreshScreen(struct abuf *ab) {
             if (E.numrows == 0 && y == E.screenrows/3) {
                 char welcome[80];
                 int welcomelen = snprintf(welcome,sizeof(welcome),
-                    "Kilo editor -- verison %s\x1b[0K\r\n", KILO_VERSION);
+                    "wkndr editor -- verison %s\x1b[0K\r\n", KILO_VERSION);
                 int padding = (E.screencols-welcomelen)/2;
                 if (padding) {
                     abAppend(ab,"~",1);
@@ -1224,7 +1224,7 @@ void initEditor(void) {
     E.rawmode = 1;
 
     E.dirty = 0;
-    E.filename = "foo.c";
+    E.filename = "Wkndrfile";
     editorSelectSyntaxHighlight("foo.c");
 
     //editorInsertRow(E.numrows, "int main(int a, int b);", 23);
