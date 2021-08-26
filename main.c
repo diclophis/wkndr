@@ -212,9 +212,7 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   //free(ab);
   //for (i=0; i<(int)n; i+=1) {
 
-  if (n == 1) {
-    editorProcessKeypress(buf[0]);
-  } else {
+  if ((n > 2) && (buf[1] == 'O' || buf[1] == '[')) {
     int bbb = 0;
     buf = (buf + 1); // ... YEAaahahAHAa + sunglasses + explosion
 
@@ -249,6 +247,10 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
     //fprintf(stderr, "OVERIDE %d %d %c %c %c\n", bbb, DEL_KEY, buf[0], buf[1], buf[2]);
 
     editorProcessKeypress(bbb);
+  } else {
+    for (int i=0; i<n; i++) {
+      editorProcessKeypress(buf[i]);
+    }
   }
 
   struct abuf *ab2 = malloc(sizeof(struct abuf) * 1);

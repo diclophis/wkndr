@@ -20,9 +20,25 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.terminal = new Terminal();
     window.terminal.loadAddon(window.fit);
 
+    window.terminal.onKey(function(event) {
+      // put the keycode you copied from the console
+      if (window.terminal.hasSelection() && event.key === "\u0003") {
+        return document.execCommand('copy');
+      } else if (event.key === "\u0016") {
+        throw "paste-event-bug, snafu";
+      }
+    });
+
     window.terminal.onData(function(termInputData) {
       var ptr = allocate(intArrayFromString(termInputData), ALLOC_NORMAL);
       window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+    });
+
+    document.body.addEventListener('paste', (event) => {
+      console.log("wtf paste event");
+      let paste = (event.clipboardData || window.clipboardData).getData('text');
+      var ptr = allocate(intArrayFromString(paste), ALLOC_NORMAL);
+      window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, paste.length);
     });
 
     window.terminal.onResize(function(newSize) {
@@ -83,7 +99,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
             bufView[i] = ic;
           }
 
-          var sent = window.conn.send(buf);
+          var sent = window.conn.send(bufView);
           break;
       }
     }, 'viii');
