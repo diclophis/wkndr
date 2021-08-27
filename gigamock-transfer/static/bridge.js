@@ -5,6 +5,20 @@ var splitScreen = "split-screen";
 var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
 var wsbUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/wsb");
 
+
+function download(filename, text) {
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(UTF8ToString(text)));
+  element.setAttribute('download', UTF8ToString(filename));
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+}
+
 function byteLength(str) {
   // returns the byte length of an utf8 string
   var s = str.length;
@@ -45,7 +59,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       //console.log(termInputData, byteLength(termInputData), termInputData.length, encIn.length);
       //var ptr = allocate(intArrayFromString(encIn), ALLOC_NORMAL);
       //window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, encIn.length);
-
           //var buf = new ArrayBuffer(termInputData.length);
           //var bufView = new Uint8Array(buf);
           //for (var i=0; i < length; i++) {
@@ -53,9 +66,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
           //  bufView[i] = ic;
           //}
           //window.terminal.write(bufView);
-
       //var s = "😀";
-
       //window.terminal.write(s);
       //var ptr = allocate(new Uint8Array(s), ALLOC_NORMAL);
       //console.log(byteLength(s), s.length);
@@ -97,20 +108,13 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
     window.conn.onmessage = function (event) {
       console.log("got message from server", event);
+
       var origData = event.data;
-
-      //TODO: figure out which one is safer...!!!
-      //var typedData = new Uint8Array(origData);
-      //var heapBuffer = Module._malloc(origData.length * typedData.BYTES_PER_ELEMENT);
-      //Module.HEAPU8.set(typedData, heapBuffer);
-      //window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, typedData.length);
-      //Module._free(heapBuffer);
-
       var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
       window.handle_js_websocket_event(mrbPointer, callbackPointer, ptr, origData.byteLength);
     };
 
-    window.writePackedPointer = addFunction(function(channel, bytes, length) {
+    return addFunction(function(channel, bytes, length) { //write_packed_pointer
       switch(channel) {
         case 0:
           var buf = new ArrayBuffer(length);
@@ -135,8 +139,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
           break;
       }
     }, 'viii');
-
-    return window.writePackedPointer;
   } else {
     console.log("Your browser does not support WebSockets.");
   }

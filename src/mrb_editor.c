@@ -32,6 +32,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef PLATFORM_WEB
+  #include <emscripten/emscripten.h>
+  #include <emscripten/html5.h>
+#endif
+
 #define KILO_VERSION "0.0.1"
 
 //#ifdef __linux__
@@ -678,6 +683,7 @@ void editorInsertNewline(void) {
         row->size = filecol;
         editorUpdateRow(row);
     }
+
 fixcursor:
     if (E.cy == E.screenrows-1) {
         E.rowoff++;
@@ -772,6 +778,13 @@ int editorSave(void) {
 
     //close(fd);
     //free(buf);
+
+
+#ifdef PLATFORM_WEB
+  EM_ASM_INT({
+    download($0, $1);
+  }, "Wkdrfile", buf);
+#endif
 
     E.dirty = 0;
     editorSetStatusMessage("%d bytes written on disk", len);
@@ -1197,14 +1210,13 @@ void updateWindowSize(int r, int c) {
     E.screenrows = r;
     E.screencols = c;
 
+    if (E.cy > E.screenrows) E.cy = E.screenrows - 1;
+    if (E.cx > E.screencols) E.cx = E.screencols - 1;
+
     E.screenrows -= 2; /* Get room for status bar. */
 }
 
 void handleSigWinCh(int unused __attribute__((unused))) {
-    //updateWindowSize();
-    if (E.cy > E.screenrows) E.cy = E.screenrows - 1;
-    if (E.cx > E.screencols) E.cx = E.screencols - 1;
-    //editorRefreshScreen();
 }
 
 void initEditor(void) {

@@ -180,11 +180,6 @@ size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, const ch
   return 0;
 }
 
-
-char last_typed = 0;
-
-EMSCRIPTEN_KEEPALIVE
-size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
   //mrb_value empty_string = mrb_str_new_lit(mrb, "");
   //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
   //TODO: shell support bypass
@@ -205,8 +200,19 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
 
 
 
+
+
+char last_typed = 0;
+
+EMSCRIPTEN_KEEPALIVE
+size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
+
   int i = 0;
   int n = strlen(buf);
+
+  if (n == 0) {
+    return 0;
+  }
 
   mrb_value data_value;
   data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
@@ -216,6 +222,12 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
 
   //fprintf(stderr, "FOOOO %ld %ld\n", n, buf[0]);
   //write_packed_pointer(0, buf, strlen(buf));
+
+  struct abuf *ab2 = malloc(sizeof(struct abuf) * 1);
+  ab2->b = NULL;
+  ab2->len = 0;
+
+  editorRefreshScreen(ab2);
 
   if ((n > 2) && (buf[1] == 'O' || buf[1] == '[')) {
     int bbb = 0;
@@ -255,16 +267,69 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
       fprintf(stderr, "WTF %d\n", buf[0]);
     }
   } else {
-    for (int i=0; i<n; i++) {
-      editorProcessKeypress(buf[i]);
+
+
+//1
+//10
+//100 
+//101 
+//101 
+//101 
+//105 
+//105 
+//107 
+//109 
+//11
+//110 
+//111 
+//114 
+//114 
+//116 
+//116 
+//119 
+//12
+//13
+//15
+//16
+//18
+//2
+//21
+//24
+//25
+//26
+//26
+//27
+//27
+//28
+//28
+//29
+//29
+//4
+//4
+//44
+//5
+//7
+//8
+//80
+//80
+//9
+//97
+//99
+		fprintf(stderr, "%ld\n", buf[0]);
+    if (
+      buf[0] == 13 ||
+      buf[0] == 19 ||
+      buf[0] > 31) {
+			for (int i=0; i<n; i++) {
+
+				editorProcessKeypress(buf[i]);
+			}
     }
   }
 
-  struct abuf *ab2 = malloc(sizeof(struct abuf) * 1);
-  ab2->b = NULL;
-  ab2->len = 0;
   editorRefreshScreen(ab2);
   write_packed_pointer(0, ab2->b, ab2->len);
+
   free(ab2);
 
   return 0;
