@@ -139,11 +139,9 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     return mrb_false_value();
   }
 
-  //if (mrb_test(wiz_return_halt)) {
-    return mrb_true_value();
-  //} else {
-  //  return mrb_false_value();
-  //}
+  return mrb_true_value();
+
+  //if (mrb_test(wiz_return_halt)) MRB_TEST WIZ
 }
 
 
@@ -183,27 +181,18 @@ size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, const ch
 }
 
 
+char last_typed = 0;
+
 EMSCRIPTEN_KEEPALIVE
-size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
+size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
   //mrb_value empty_string = mrb_str_new_lit(mrb, "");
   //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
-
   //TODO: shell support bypass
   //////mrb_value outbound_tty_msg = mrb_hash_new(mrb);
   //////mrb_hash_set(mrb, outbound_tty_msg, mrb_fixnum_value(0), clikestr_as_string);
   ////////TODO: this calles into editorProcessKeypress
   //////mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
-
-  int i = 0;
-
   //fprintf(stderr, "START BIT %d %d %d\n", n, i, buf[0]);
-
-  mrb_value data_value;
-  data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
-  mrb_int fp = mrb_int(mrb, data_value);
-
-  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
-
   //struct abuf *ab = malloc(sizeof(struct abuf) * 1);
   //ab->b = NULL;
   //ab->len = 0;
@@ -211,6 +200,22 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
   //write_packed_pointer(0, ab->b, ab->len);
   //free(ab);
   //for (i=0; i<(int)n; i+=1) {
+
+
+
+
+
+  int i = 0;
+  int n = strlen(buf);
+
+  mrb_value data_value;
+  data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
+  mrb_int fp = mrb_int(mrb, data_value);
+
+  void (*write_packed_pointer)(int, const void*, int) = (void (*)(int, const void*, int))fp;
+
+  //fprintf(stderr, "FOOOO %ld %ld\n", n, buf[0]);
+  //write_packed_pointer(0, buf, strlen(buf));
 
   if ((n > 2) && (buf[1] == 'O' || buf[1] == '[')) {
     int bbb = 0;
@@ -243,10 +248,12 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, const char* buf,
       }
     }
 
-    //OVERIDE 1008 1004 [ 3 ~
-    //fprintf(stderr, "OVERIDE %d %d %c %c %c\n", bbb, DEL_KEY, buf[0], buf[1], buf[2]);
 
-    editorProcessKeypress(bbb);
+    if (bbb) {
+      editorProcessKeypress(bbb);
+    } else {
+      fprintf(stderr, "WTF %d\n", buf[0]);
+    }
   } else {
     for (int i=0; i<n; i++) {
       editorProcessKeypress(buf[i]);
@@ -325,12 +332,13 @@ void Alert(const char *msg) {
 
 
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
-  long int write_packed_pointer = 0;
+  long int start_connection_js_c = 0;
 
   //fprintf(stderr, "going to create to websocket\n");
 
+  //write_packed_pointer is created in js, as addFunction
 #ifdef PLATFORM_WEB
-  write_packed_pointer = EM_ASM_INT({
+  start_connection_js_c = EM_ASM_INT({
     return window.startConnection($0, $1);
   }, mrb, mrb_obj_ptr(self));
 #endif
@@ -339,13 +347,7 @@ mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
-      mrb_fixnum_value(write_packed_pointer));
-
-  //editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
-  //struct abuf *ab = malloc(sizeof(struct abuf) * 1);
-  //editorRefreshScreen(ab);
-  //void (*write_packed_pointer2)(int, const void*, int) = (void (*)(int, const void*, int))write_packed_pointer;
-  //write_packed_pointer2(0, ab->b, ab->len);
+      mrb_fixnum_value(start_connection_js_c));
 
   return self;
 }
@@ -385,8 +387,6 @@ void platform_bits_update_void(void* arg) {
 
 
 mrb_value global_show(mrb_state* mrb, mrb_value self) {
-  //fprintf(stderr, "pre global Show!\n");
-
   mrb_value stack_self;
 
   mrb_get_args(mrb, "o", &stack_self);
@@ -399,8 +399,8 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 
 #ifdef PLATFORM_WEB
 
-  emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
   emscripten_set_main_loop_arg(platform_bits_update_void, loop_data, 0, 1);
+  emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
 
 #endif
 

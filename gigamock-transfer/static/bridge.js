@@ -1,10 +1,21 @@
 /* */
 
-
+var textEncoder = new TextEncoder();
 var splitScreen = "split-screen";
 var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
 var wsbUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/wsb");
 
+function byteLength(str) {
+  // returns the byte length of an utf8 string
+  var s = str.length;
+  for (var i=str.length-1; i>=0; i--) {
+    var code = str.charCodeAt(i);
+    if (code > 0x7f && code <= 0x7ff) s++;
+    else if (code > 0x7ff && code <= 0xffff) s+=2;
+    if (code >= 0xDC00 && code <= 0xDFFF) i--; //trail surrogate
+  }
+  return s;
+}
 
 window.startConnection = function(mrbPointer, callbackPointer) {
   if (window["WebSocket"]) {
@@ -30,15 +41,36 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     });
 
     window.terminal.onData(function(termInputData) {
-      var ptr = allocate(intArrayFromString(termInputData), ALLOC_NORMAL);
-      window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, termInputData.length);
+      //let encIn = textEncoder.encode(termInputData);
+      //console.log(termInputData, byteLength(termInputData), termInputData.length, encIn.length);
+      //var ptr = allocate(intArrayFromString(encIn), ALLOC_NORMAL);
+      //window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, encIn.length);
+
+          //var buf = new ArrayBuffer(termInputData.length);
+          //var bufView = new Uint8Array(buf);
+          //for (var i=0; i < length; i++) {
+          //  var ic = Module.getValue(bytes + (i), 'i8');
+          //  bufView[i] = ic;
+          //}
+          //window.terminal.write(bufView);
+
+      //var s = "😀";
+
+      //window.terminal.write(s);
+      //var ptr = allocate(new Uint8Array(s), ALLOC_NORMAL);
+      //console.log(byteLength(s), s.length);
+
+      window.pack_outbound_tty(mrbPointer, callbackPointer, termInputData);
     });
 
     document.body.addEventListener('paste', (event) => {
-      console.log("wtf paste event");
       let paste = (event.clipboardData || window.clipboardData).getData('text');
-      var ptr = allocate(intArrayFromString(paste), ALLOC_NORMAL);
-      window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, paste.length);
+      let encPaste = textEncoder.encode(paste);
+
+      var ptr = allocate(intArrayFromString(encPaste), ALLOC_NORMAL);
+
+      console.log("wtf paste event", event, byteLength(paste), encPaste.length, paste.length);
+      window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, byteLength(paste));
     });
 
     window.terminal.onResize(function(newSize) {
@@ -69,9 +101,9 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       //TODO: figure out which one is safer...!!!
       //var typedData = new Uint8Array(origData);
-      //var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
+      //var heapBuffer = Module._malloc(origData.length * typedData.BYTES_PER_ELEMENT);
       //Module.HEAPU8.set(typedData, heapBuffer);
-      //window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, typedData.byteLength);
+      //window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, typedData.length);
       //Module._free(heapBuffer);
 
       var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
@@ -99,7 +131,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
             bufView[i] = ic;
           }
 
-          var sent = window.conn.send(bufView);
+          window.conn.send(bufView);
           break;
       }
     }, 'viii');
@@ -127,7 +159,7 @@ if (graphicsContainer) {
       );
 
       window.pack_outbound_tty = Module.cwrap(
-        'pack_outbound_tty', 'number', ['number', 'number', 'number', 'number']
+        'pack_outbound_tty', 'number', ['number', 'number', 'string']
       );
 
       window.socket_connected = Module.cwrap(
