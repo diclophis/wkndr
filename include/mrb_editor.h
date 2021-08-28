@@ -10,6 +10,7 @@ struct editorSyntax {
     int flags;
 };
 
+
 /* This structure represents a single line of the file we are editing. */
 typedef struct erow {
     int idx;            /* Row index in the file, zero-based. */
@@ -22,9 +23,11 @@ typedef struct erow {
                            check. */
 } erow;
 
+
 typedef struct hlcolor {
     int r,g,b;
 } hlcolor;
+
 
 struct editorConfig {
     int cx,cy;  /* Cursor x and y position in characters */
@@ -42,7 +45,9 @@ struct editorConfig {
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
 };
 
+
 static struct editorConfig E;
+
 
 enum KEY_ACTION{
         KEY_NULL = 0,       /* NULL */
@@ -81,11 +86,12 @@ struct abuf {
     int len;
 };
 
+
 void editorSetStatusMessage(const char *fmt, ...);
 int editorOpen(char *filename);
 int editorSave(void);
 void editorRefreshScreen(struct abuf *);
-void editorProcessKeypress(int c);
+int editorProcessKeypress(int c);
 void updateWindowSize(int, int);
 void handleSigWinCh(int unused __attribute__((unused)));
 void initEditor(void);

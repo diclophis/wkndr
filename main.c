@@ -223,11 +223,9 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
   //fprintf(stderr, "FOOOO %ld %ld\n", n, buf[0]);
   //write_packed_pointer(0, buf, strlen(buf));
 
-  struct abuf *ab2 = malloc(sizeof(struct abuf) * 1);
+  struct abuf *ab2 = malloc(sizeof(struct abuf));
   ab2->b = NULL;
   ab2->len = 0;
-
-  editorRefreshScreen(ab2);
 
   if ((n > 2) && (buf[1] == 'O' || buf[1] == '[')) {
     int bbb = 0;
@@ -321,7 +319,6 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
       buf[0] == 19 ||
       buf[0] > 31) {
 			for (int i=0; i<n; i++) {
-
 				editorProcessKeypress(buf[i]);
 			}
     }
