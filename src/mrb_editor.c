@@ -794,15 +794,36 @@ fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows
         /* not backspace */
         if (filerow == E.numrows-1 && filecol >= row->size) {
           fprintf(stderr, "CC\n");
+
+            if (filecol == 0 && E.numrows == 1 && row->size == 0) {
+              //NO-OP????
+              fprintf(stdout, "WTF123123\n");
+              //editorRowDelChar(&E.row[filerow-1],1);
+              editorDelRow(0);
+            }
+
+
           return;
         }
 
         if (filecol == row->size) {
             fprintf(stderr, "CC-00\n");
+
             /* Handle the case of last column, we need to delete the newline on the end of line */
+            if ((filerow + 1 < E.numrows)) {
+
             erow *nextrow = (filerow + 1 >= E.numrows) ? NULL : &E.row[filerow + 1];
-            editorRowAppendString(&E.row[filerow],nextrow->chars,nextrow->size);
+
+            fprintf(stderr, "CC-01\n");
+
+            editorRowAppendString(&E.row[filerow], nextrow->chars, nextrow->size);
+
+            fprintf(stderr, "CC-02\n");
+
+            fprintf(stderr, "CC-03\n");
             editorDelRow(filerow + 1);
+            }
+
             row = NULL;
         } else {
             fprintf(stderr, "CC-11\n");
