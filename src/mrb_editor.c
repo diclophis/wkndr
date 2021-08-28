@@ -700,14 +700,15 @@ void editorDelChar() {
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
-    if (!row || (filecol == 0 && filerow == 0)) return;
-    if (filecol == 0) {
+    //if (!row || (filecol == 0 && filerow == 0)) return;
+    if ((filecol == 0 && filerow == 0)) return;
+    if (!row || filecol == 0) {
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
         filecol = E.row[filerow-1].size;
         editorRowAppendString(&E.row[filerow-1],row->chars,row->size);
         editorDelRow(filerow);
-        row = NULL;
+        //row = NULL;
         if (E.cy == 0)
             E.rowoff--;
         else
@@ -725,8 +726,25 @@ void editorDelChar() {
         else
             E.cx--;
     }
+
+    /* Fix cx if the current line has not enough chars. */
+    filerow = E.rowoff+E.cy;
+    filecol = E.coloff+E.cx;
+    //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    int rowlen = row ? row->size : 0;
+    if (filecol > rowlen) {
+        E.cx -= filecol-rowlen;
+        if (E.cx < 0) {
+            E.coloff += E.cx;
+            E.cx = 0;
+        }
+    }
+
+
     if (row) editorUpdateRow(row);
     E.dirty++;
+
+
 }
 
 /* Load the specified program in the editor memory and returns 0 on success
@@ -821,7 +839,7 @@ void abFree(struct abuf *ab) {
 void editorRefreshScreen(struct abuf *ab) {
     int y;
     erow *r;
-    char buf[32];
+    char buf[1024];
 
     abAppend(ab,"\x1b[?25l",6); /* Hide cursor. */
     abAppend(ab,"\x1b[H",3); /* Go home. */
@@ -830,7 +848,7 @@ void editorRefreshScreen(struct abuf *ab) {
 
         if (filerow >= E.numrows) {
             if (E.numrows == 0 && y == E.screenrows/3) {
-                char welcome[80];
+                char welcome[1024];
                 int welcomelen = snprintf(welcome,sizeof(welcome),
                     "wkndr editor -- verison %s\x1b[0K\r\n", KILO_VERSION);
                 int padding = (E.screencols-welcomelen)/2;
@@ -933,7 +951,6 @@ void editorRefreshScreen(struct abuf *ab) {
     abAppend(ab,"\x1b[?25h",6); /* Show cursor. */
     
     //write(STDOUT_FILENO,ab.b,ab.len);
-
     //abFree(&ab);
     //return &ab;
 }
@@ -950,8 +967,7 @@ void editorSetStatusMessage(const char *fmt, ...) {
 
 /* =============================== Find mode ================================ */
 
-#define KILO_QUERY_LEN 256
-
+//#define KILO_QUERY_LEN 256
 //void editorFind(int fd) {
 //    char query[KILO_QUERY_LEN+1] = {0};
 //    int qlen = 0;
