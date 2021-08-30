@@ -16,12 +16,11 @@ cd emsdk
 
 ./emsdk list
 
-#TODO: fix this upgrade
-#./emsdk install 1.40.0
-
-#./emsdk install 1.39.19
 ./emsdk install latest
 
+#TODO: fix this upgrade
+#./emsdk install 1.40.0
+#./emsdk install 1.39.19
 #1.39.0
 #latest
 #emscripten-1.38.36

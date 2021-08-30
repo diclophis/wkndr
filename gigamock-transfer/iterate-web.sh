@@ -17,6 +17,5 @@ ls -lh release
 
 if [ "${1}" = "" ];
 then
-  mkdir -p public
   cp release/wkndr.{js,wasm,data} public/
 fi
