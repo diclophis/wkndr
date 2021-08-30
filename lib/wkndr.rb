@@ -81,7 +81,11 @@ class Wkndr
 
     #log!(:wtf, ruby_string)
 
-    eval(ruby_string)
+    begin
+      eval(ruby_string)
+    rescue => e
+      e.inspect
+    end
   end
 
   def self.first_stack

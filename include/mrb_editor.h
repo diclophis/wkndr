@@ -95,3 +95,6 @@ int editorProcessKeypress(int c);
 void updateWindowSize(int, int);
 void handleSigWinCh(int unused __attribute__((unused)));
 void initEditor(void);
+char *editorRowsToString(int *buflen);
+
+//void editorSetStatusMessage(const char *fmt, ...) {

@@ -258,15 +258,12 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
       }
     }
 
-
     if (bbb) {
       editorProcessKeypress(bbb);
     } else {
       fprintf(stderr, "WTF %d\n", buf[0]);
     }
   } else {
-
-
 //1
 //10
 //100 
@@ -327,7 +324,29 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
     ) {
 
       ////////////
+      //run Wkndrfile
+      mrb_value empty_string = mrb_str_new_lit(mrb, "");
 
+    int codelen;
+    char *codebuf = editorRowsToString(&codelen);
+
+      mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, codebuf, codelen);
+      mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
+
+      if (mrb->exc) {
+        //mrb_print_error(mrb_client);
+        //mrb_print_backtrace(mrb_client);
+        //mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
+        //mrb_value mesg = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
+        //editorSetStatusMessage(RSTRING_PTR(mesg));
+        //"XXX %.*s\n", (int)RSTRING_LEN(mesg), RSTRING_PTR(mesg));
+      } else {
+        mrb_value rezstr = mrb_funcall(mrb, editr_eval, "to_s", 0);
+
+        const char *foo = mrb_string_value_ptr(mrb, rezstr);
+        int len = mrb_string_value_len(mrb, rezstr);
+        editorSetStatusMessage(foo, len);
+      }
     }
   }
 

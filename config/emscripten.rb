@@ -30,6 +30,8 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   #  #cc.defines << "MRB_USE_CXX_EXCEPTION=1"
   #, "-DMSGPACK_ENDIAN_LITTLE_BYTE=1", "-DTEST_BIG_ENDIAN=0"]
 
+  #conf.enable_cxx_exception
+  #conf.enable_debug
 
   conf.bins = []
 
