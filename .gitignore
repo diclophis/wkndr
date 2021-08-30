@@ -17,3 +17,4 @@ project.xcworkspace
 xcuserdata
 *.pbxuser
 public/wkndr*
+public/example*

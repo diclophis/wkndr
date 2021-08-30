@@ -315,12 +315,19 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
 //99
 		fprintf(stderr, "%ld\n", buf[0]);
     if (
+      buf[0] == 12 ||
       buf[0] == 13 ||
       buf[0] == 19 ||
       buf[0] > 31) {
 			for (int i=0; i<n; i++) {
 				editorProcessKeypress(buf[i]);
 			}
+    } else if (
+      buf[0] == 24
+    ) {
+
+      ////////////
+
     }
   }
 

@@ -104,21 +104,21 @@
 /* C / C++ */
 char *C_HL_extensions[] = {".c",".h",".cpp",".hpp",".cc",NULL};
 char *C_HL_keywords[] = {
-	/* C Keywords */
-	"auto","break","case","continue","default","do","else","enum",
-	"extern","for","goto","if","register","return","sizeof","static",
-	"struct","switch","typedef","union","volatile","while","NULL",
+  /* C Keywords */
+  "auto","break","case","continue","default","do","else","enum",
+  "extern","for","goto","if","register","return","sizeof","static",
+  "struct","switch","typedef","union","volatile","while","NULL",
 
-	/* C++ Keywords */
-	"alignas","alignof","and","and_eq","asm","bitand","bitor","class",
-	"compl","constexpr","const_cast","deltype","delete","dynamic_cast",
-	"explicit","export","false","friend","inline","mutable","namespace",
-	"new","noexcept","not","not_eq","nullptr","operator","or","or_eq",
-	"private","protected","public","reinterpret_cast","static_assert",
-	"static_cast","template","this","thread_local","throw","true","try",
-	"typeid","typename","virtual","xor","xor_eq",
+  /* C++ Keywords */
+  "alignas","alignof","and","and_eq","asm","bitand","bitor","class",
+  "compl","constexpr","const_cast","deltype","delete","dynamic_cast",
+  "explicit","export","false","friend","inline","mutable","namespace",
+  "new","noexcept","not","not_eq","nullptr","operator","or","or_eq",
+  "private","protected","public","reinterpret_cast","static_assert",
+  "static_cast","template","this","thread_local","throw","true","try",
+  "typeid","typename","virtual","xor","xor_eq",
 
-	/* C types */
+  /* C types */
         "int|","long|","double|","float|","char|","unsigned|","signed|",
         "void|","short|","auto|","const|","bool|",NULL
 };
@@ -429,7 +429,7 @@ void editorUpdateSyntax(erow *row) {
         /* Handle keywords and lib calls */
         if (prev_sep) {
             int j;
-	    int ileft = row->rsize - i;
+            int ileft = row->rsize - i;
             for (j = 0; keywords[j]; j++) {
                 int klen = strlen(keywords[j]);
                 int kw2 = keywords[j][klen-1] == '|';
@@ -538,6 +538,22 @@ void editorUpdateRow(erow *row) {
     editorUpdateSyntax(row);
 }
 
+int getRenderCol( erow *row, int coloff ) {
+    int cx = 0;
+    int cxx = 0;
+    if (!row) return coloff; /* safety */
+    for (int j = 0; j < coloff; j++) {
+        if (j < row->size && row->chars[j] == TAB) {
+            cx += 8-(cx % 8); /* #define KILO_TAB_WIDTH 8 ! */
+            cxx = 1;
+        } else {
+            cx++;
+        }
+    }
+    return cx-cxx;
+}
+
+
 /* Insert a row at the specified position, shifting the other rows on the bottom
  * if required. */
 void editorInsertRow(int at, char *s, size_t len) {
@@ -572,7 +588,7 @@ void editorFreeRow(erow *row) {
 void editorDelRow(int at) {
     erow *row;
 
-fprintf("CHUZ %ld %ld\n", at, E.numrows);
+    //fprintf("CHUZ %ld %ld\n", at, E.numrows);
 
     if (at >= E.numrows) return;
     row = E.row+at;
@@ -592,9 +608,9 @@ char *editorRowsToString(int *buflen) {
     int totlen = 0;
     int j;
 
-if (E.numrows > 0) {
-  fprintf(stdout, "CHEESEIT %ld %ld\n", E.numrows, E.row[0].size);
-}
+//if (E.numrows > 0) {
+//  fprintf(stdout, "CHEESEIT %ld %ld\n", E.numrows, E.row[0].size);
+//}
 
     /* Compute count of bytes */
     for (j = 0; j < E.numrows; j++) {
@@ -604,11 +620,13 @@ if (E.numrows > 0) {
     *buflen = totlen;
     totlen++; /* Also make space for nulterm */
 
-  fprintf(stdout, "2222 %ld\n", totlen);
+    //fprintf(stdout, "2222 %ld\n", totlen);
 
     p = buf = malloc(totlen);
     for (j = 0; j < E.numrows; j++) {
-  fprintf(stdout, "333 %ld\n", totlen);
+
+        //fprintf(stdout, "333 %ld\n", totlen);
+
         memcpy(p,E.row[j].chars,E.row[j].size);
         p += E.row[j].size;
         *p = '\n';
@@ -665,20 +683,29 @@ void editorRowDelChar(erow *row, int at) {
 void editorInsertChar(int c) {
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
+    int rcx = E.cx;
+
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     /* If the row where the cursor is currently located does not exist in our
      * logical representaion of the file, add enough empty rows as needed. */
-    if (!row) {
+
+    if (row) {
+      /* Use row to calculate display width for insertion column */
+      rcx = getRenderCol(row, filecol) - getRenderCol(row, E.coloff);
+    } else {
+    //if (!row) {
         while(E.numrows <= filerow)
             editorInsertRow(E.numrows,"",0);
     }
     row = &E.row[filerow];
     editorRowInsertChar(row,filecol,c);
-    if (E.cx == E.screencols-1)
+    if (rcx == E.screencols-1) {
+    //if (E.cx == E.screencols-1)
         E.coloff++;
-    else
+    } else {
         E.cx++;
+    }
     E.dirty++;
 }
 
@@ -690,8 +717,7 @@ void editorInsertNewline(void) {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     /////////erow *row = &E.row[filerow];
-
-    fprintf(stdout, "WTF %ld %ld %ld\n", filerow, filecol, row);
+    //fprintf(stdout, "WTF %ld %ld %ld\n", filerow, filecol, row);
 
     if (!row) {
         if (filerow == E.numrows) {
@@ -732,20 +758,22 @@ void editorDelChar(int back) {
     //if (filerow >= E.numrows) {
 
     if (filerow == 0 && E.numrows == 0) {
-      fprintf(stderr, "AA %d %d\n", filerow, E.numrows);
+      //fprintf(stderr, "AA %d %d\n", filerow, E.numrows);
       return;
     }
 
-    fprintf(stderr, "FOO %ld\n", filerow);
+    //fprintf(stderr, "FOO %ld\n", filerow);
     erow *row = NULL;
 
     if (filerow < E.numrows) {
       row = &E.row[filerow];
     }
 
+    int rowlen;
+
     if (back) {
         if (filecol == 0 && filerow == 0) {
-          fprintf(stderr, "BB\n");
+          //fprintf(stderr, "BB\n");
           return;
         }
         //if (!row || (back && filecol == 0)) {
@@ -755,6 +783,8 @@ void editorDelChar(int back) {
             filecol = E.row[filerow-1].size;
 
 fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows, row->chars, row->size);
+
+//BB-00 108 0, 1, 0 0
 
             if (filecol == 0 && E.numrows == 1 && row->size == 0) {
               //NO-OP????
@@ -767,7 +797,8 @@ fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows
 
             editorDelRow(filerow);
 
-            row = NULL;
+            //row = NULL;
+            row = &E.row[filerow-1];
 
             if (E.cy == 0) {
                 E.rowoff--;
@@ -775,15 +806,57 @@ fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows
                 E.cy--;
             }
 
-            E.cx = filecol;
+            //E.cx = filecol;
+            /* Get display width of line join point */
+            E.cx = getRenderCol(row, filecol) - getRenderCol(row, E.coloff);
 
             if (E.cx >= E.screencols) {
                 int shift = (E.screencols-E.cx)+1;
-                E.cx -= shift;
-                E.coloff += shift;
+                E.cx += shift;
+                E.coloff -= shift;
             }
+
+
+    /////* Fix cx if the current line has not enough chars. */
+    filerow = E.rowoff+E.cy;
+    filecol = E.coloff+E.cx;
+    //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    rowlen = row ? row->size : 0;
+
+    fprintf(stdout, "CHSZZZ %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
+
+    if (filecol > rowlen) {
+        E.cx -= filecol-rowlen;
+        if (E.cx < 0) {
+            E.coloff += E.cx;
+            E.cx = 0;
+        }
+    }
+
+//BB-00 0 1, 2, 0 0
+//CHSZZZ 1 0 0 0
+//BB-00 117 0, 2, 6017040 0
+//CHSZZZ 0 117 117 117
+
+
+//LLLLLLLRRRRRR 1 0 0 0
+//LLLLLLLRRRRRR 0 114 114 102
+//CHSZZZ 0 114 114 114
+
+//CHSZZZ 1 0 108 0
+//LLLLLLLRRRRRR 1 0 0 0
+//LLLLLLLRRRRRR 0 108 108 102
+
+
+
+
+
+
+
+
+
         } else {
-            fprintf(stderr, "BB-11\n");
+            //fprintf(stderr, "BB-11\n");
             editorRowDelChar(row,filecol-1);
             if (E.cx == 0 && E.coloff)
                 E.coloff--;
@@ -793,46 +866,57 @@ fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows
     } else {
         /* not backspace */
         if (filerow == E.numrows-1 && filecol >= row->size) {
-          fprintf(stderr, "CC\n");
+          //fprintf(stderr, "CC\n");
 
-            if (filecol == 0 && E.numrows == 1 && row->size == 0) {
-              //NO-OP????
-              fprintf(stdout, "WTF123123\n");
-              //editorRowDelChar(&E.row[filerow-1],1);
-              editorDelRow(0);
-            }
-
+          if (filecol == 0 && E.numrows == 1 && row->size == 0) {
+            //NO-OP????
+            //fprintf(stdout, "WTF123123\n");
+            editorDelRow(0);
+          }
 
           return;
         }
 
         if (filecol == row->size) {
-            fprintf(stderr, "CC-00\n");
+            //fprintf(stderr, "CC-00\n");
 
             /* Handle the case of last column, we need to delete the newline on the end of line */
             if ((filerow + 1 < E.numrows)) {
 
-            erow *nextrow = (filerow + 1 >= E.numrows) ? NULL : &E.row[filerow + 1];
+              erow *nextrow = (filerow + 1 >= E.numrows) ? NULL : &E.row[filerow + 1];
 
-            fprintf(stderr, "CC-01\n");
+              //fprintf(stderr, "CC-01\n");
 
-            editorRowAppendString(&E.row[filerow], nextrow->chars, nextrow->size);
+              editorRowAppendString(&E.row[filerow], nextrow->chars, nextrow->size);
 
-            fprintf(stderr, "CC-02\n");
+              //fprintf(stderr, "CC-02\n");
 
-            fprintf(stderr, "CC-03\n");
-            editorDelRow(filerow + 1);
+              //fprintf(stderr, "CC-03\n");
+              editorDelRow(filerow + 1);
             }
+
+    /////* Fix cx if the current line has not enough chars. */
+    //filerow = E.rowoff+E.cy;
+    //filecol = E.coloff+E.cx;
+    //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    //rowlen = row ? row->size : 0;
+    //if (filecol > rowlen) {
+    //    E.cx -= filecol-rowlen;
+    //    if (E.cx < 0) {
+    //        E.coloff += E.cx;
+    //        E.cx = 0;
+    //    }
+    //}
 
             row = NULL;
         } else {
-            fprintf(stderr, "CC-11\n");
+            //fprintf(stderr, "CC-11\n");
             editorRowDelChar(row,filecol);
         }
     }
 
     if (row) {
-      fprintf(stderr, "DD-00\n");
+      //fprintf(stderr, "DD-00\n");
       editorUpdateRow(row);
     }
 
@@ -948,10 +1032,11 @@ static void setCursor(struct abuf *ab) {
 
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     if (row) {
-        for (j = E.coloff; j < (E.cx+E.coloff); j++) {
-            if (j < row->size && row->chars[j] == TAB) cx += 7-((cx)%8);
-            cx++;
-        }
+        //for (j = E.coloff; j < (E.cx+E.coloff); j++) {
+        //    if (j < row->size && row->chars[j] == TAB) cx += 7-((cx)%8);
+        //    cx++;
+        //}
+        cx = getRenderCol(row, cx+E.cx+E.coloff) - getRenderCol(row, E.coloff);
     }
     snprintf(buf,sizeof(buf),"\x1b[%d;%dH",E.cy+1,cx);
     abAppend(ab,buf,strlen(buf));
@@ -1024,12 +1109,25 @@ void editorRefreshScreen(struct abuf *ab) {
 
         r = &E.row[filerow];
 
-        int len = r->rsize - E.coloff;
+
+        //int len = r->rsize - E.coloff;
+
+/* Get display width of hidden LH part of the row */
+int rcoloff = getRenderCol(r, E.coloff);
+int len = r->rsize - rcoloff;
+
         int current_color = -1;
+
+
+
         if (len > 0) {
             if (len > E.screencols) len = E.screencols;
-            char *c = r->render+E.coloff;
-            unsigned char *hl = r->hl+E.coloff;
+
+            //char *c = r->render+E.coloff;
+            //unsigned char *hl = r->hl+E.coloff;
+            char *c = r->render+rcoloff;
+            unsigned char *hl = r->hl+rcoloff;
+
             int j;
             for (j = 0; j < len; j++) {
                 if (hl[j] == HL_NONPRINT) {
@@ -1257,6 +1355,7 @@ void editorMoveCursor(int key) {
     filecol = E.coloff+E.cx;
     row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     rowlen = row ? row->size : 0;
+    fprintf(stdout, "LLLLLLLRRRRRR %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
     if (filecol > rowlen) {
         E.cx -= filecol-rowlen;
         if (E.cx < 0) {
