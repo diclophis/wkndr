@@ -129,4 +129,20 @@ class Wkndr
       }
     }
   end
+
+  def self.timer(fps, &block)
+    if block
+      if fps < 0.0
+        fps = 0.1
+      end
+
+      timer = UV::Timer.new
+      fps = 1000.0/fps.to_f
+      timer.start(fps, fps) do
+        #log!(:wtf2, "foop timer")
+        #TODO: timer.stop
+        block.call
+      end
+    end
+  end
 end

@@ -181,7 +181,8 @@ class Connection
   end
 
   def write_response(response_bytes)
-    self.socket && response_bytes && self.socket.write(response_bytes) {
+    self.socket && response_bytes && self.socket.write(response_bytes) { |*a|
+      log!(:WWEWEWEWE, a)
       self.halt!
     }
   end
@@ -305,6 +306,11 @@ class Connection
             end
           end
         }
+
+      elsif msg[:opcode] == :text_frame
+        block.call(self, msg.msg) if block
+      else
+        log!(:TODO, msg[:opcode])
       end
     end
 
@@ -324,6 +330,7 @@ class Connection
     end
 
     self.ws = Wslay::Event::Context::Server.new self.wslay_callbacks
+    #log!(:SETWSWSWSWSWS, self.ws, self)
 
     sec_websocket_key = self.phr.headers.detect { |k,v|
       k == "sec-websocket-key"
@@ -378,7 +385,7 @@ class Connection
         outg
       end
     rescue Wslay::Err => e
-      #log!(:connection_out_err, e)
+      log!(:connection_out_err, e)
 
       self.halt!
       self.shutdown

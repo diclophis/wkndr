@@ -1,5 +1,6 @@
 /* */
 
+
 var textEncoder = new TextEncoder();
 var splitScreen = "split-screen";
 var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
@@ -217,7 +218,13 @@ window.startLiveConnection = function() {
     window.conn = new WebSocket(wsUrl);
 
     window.conn.onopen = function (event) {
-      console.log("connected");
+      let initialBits = JSON.stringify({
+        'party': window.location.pathname
+      });
+
+      console.log("connected", initialBits);
+
+      let sent = window.conn.send(initialBits);
     };
 
     window.conn.onclose = function (event) {
@@ -260,3 +267,4 @@ window.startLiveConnection = function() {
 
 
 startLiveConnection();
+console.log("WTF!!!");

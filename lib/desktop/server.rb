@@ -7,6 +7,7 @@ class ProtocolServer
     @all_connections = []
     @clients_to_notify = {}
     @subscriptions = {}
+    @reduxi = {}
 
     @idents = -1
 
@@ -18,6 +19,7 @@ class ProtocolServer
       cn.upgrade_to_websocket! { |cn, channel, msg|
         unless channel == "party"
           @all_connections.each { |client|
+            # worlds cheapest public broadcast system
             client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
           }
         end
@@ -27,7 +29,22 @@ class ProtocolServer
     @handlers["/wsb"] = upgrade_to_binary_websocket_handler
 
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      cn.upgrade_to_websocket!
+      #log!(:WTFUPGRADEBITSSADASDASDASDASD, cn, phr)
+
+      cn.upgrade_to_websocket! { |cn, msg|
+        live_msg = JSON.load(msg)
+
+        live_msg.each { |k, v|
+          case k
+            when "party"
+              #TODO: !!!!
+              #cn.add_subscription!(path, phr)
+              @subscriptions[v] ||= {}
+              @subscriptions[v][cn] = phr
+          end
+        }
+      }
+
       #{ |cn, channel, msg|
       #  #TODO ????
       #  #@all_connections.each { |client|
@@ -71,7 +88,7 @@ class ProtocolServer
     #}
 
     timer = UV::Timer.new
-    timer.start(1000/60, 1000/60) do
+    timer.start(1000.0/60.0, 1000.0/60.0) do
       #unless @keep_running
         timer.stop
       #end
@@ -109,11 +126,14 @@ class ProtocolServer
         if cn.has_pending_request?
           request = cn.pop_request!
 
+          #log!(:REQREQREQ, request)
+
           response = match_dispatch(cn, request)
 
           case response
             when String
-              cn.write_response(response)
+              wrote = cn.write_response(response)
+              #log!(:LENGTH, response.length, wrote)
 
             when UV::Req
 
@@ -177,6 +197,33 @@ class ProtocolServer
     rebuild_tree!
   end
 
+  def delta(path, &block)
+    if found_reduxi = @reduxi[path]
+
+      if @subscriptions[path]
+
+        @subscriptions[path].each { |cn, phr|
+
+
+          ##if @subscriptions[path] && phr = @subscriptions[path][cn]
+          ##if phr = cn.subscribed_to?(path)
+          #cn.write_text(JSON.dump({"foo" => al_inner_mab_bytes.call(cn, {})}))
+
+          foop = cn.write_text(JSON.dump({"foo" => found_reduxi.call(cn, phr)}))
+
+          #log!(:updating_sbscripts, foop, cn)
+
+          #else
+   
+   #lib/desktop/server.rb:186:in live: --- /sevengui --- #<Connection:0x557b969e3230> --- {} --- [#<Connection:0x557b969e3230 @socket=#<UV::TCP:0x557b969e3290>, @ss="", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b969e3170>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={}>] --- {"/sevengui"=>{#<Connection:0x557b9691ef10 @socket=nil, @ss="GET /sevengui HTTP/1.1\r\nHost: localhost:8000\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nCache-Control: max-age=0\r\n\r\n", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b9691ee50>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={"/sevengui"=>{}}, @offset=375, @halting=true>=>{}}} (RuntimeError)
+   
+          #  raise "#{@all_connections} --- #{@subscriptions}" if @subscriptions.keys.length > 0
+          #end
+        }
+      end
+    end
+  end
+
   def live(path, title, &block)
     initial_inner_mab_bytes = Proc.new { |cn, phr|
       inner_mab = Markaby::Builder.new
@@ -186,6 +233,8 @@ class ProtocolServer
       inner_mab.to_s
     }
 
+    @reduxi[path] = initial_inner_mab_bytes
+
     #@all_connections.each { |cn|
     #  if phr = cn.subscribed_to?(path)
     #    cn.write_text(next_inner_mab_bytes.call(cn, phr))
@@ -194,24 +243,21 @@ class ProtocolServer
     #  end
     #}
 
-    if @handlers[path]
-      @all_connections.each { |cn|
-        ##if @subscriptions[path] && phr = @subscriptions[path][cn]
-        ##if phr = cn.subscribed_to?(path)
-          cn.write_text(JSON.dump({"foo" => initial_inner_mab_bytes.call(cn, {})}))
-        #else
-
-#lib/desktop/server.rb:186:in live: --- /sevengui --- #<Connection:0x557b969e3230> --- {} --- [#<Connection:0x557b969e3230 @socket=#<UV::TCP:0x557b969e3290>, @ss="", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b969e3170>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={}>] --- {"/sevengui"=>{#<Connection:0x557b9691ef10 @socket=nil, @ss="GET /sevengui HTTP/1.1\r\nHost: localhost:8000\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nCache-Control: max-age=0\r\n\r\n", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b9691ee50>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={"/sevengui"=>{}}, @offset=375, @halting=true>=>{}}} (RuntimeError)
-
-        #  raise "#{@all_connections} --- #{@subscriptions}" if @subscriptions.keys.length > 0
-        #end
-      }
-    else
+#    if @handlers[path]
+#      @all_connections.each { |cn|
+#        ##if @subscriptions[path] && phr = @subscriptions[path][cn]
+#        ##if phr = cn.subscribed_to?(path)
+#          cn.write_text(JSON.dump({"foo" => initial_inner_mab_bytes.call(cn, {})}))
+#        #else
+#
+##lib/desktop/server.rb:186:in live: --- /sevengui --- #<Connection:0x557b969e3230> --- {} --- [#<Connection:0x557b969e3230 @socket=#<UV::TCP:0x557b969e3290>, @ss="", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b969e3170>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={}>] --- {"/sevengui"=>{#<Connection:0x557b9691ef10 @socket=nil, @ss="GET /sevengui HTTP/1.1\r\nHost: localhost:8000\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nCache-Control: max-age=0\r\n\r\n", @last_buf="", @processing_handshake=true, @phr=#<Phr:0x557b9691ee50>, @closing=false, @closed=false, @pending_requests=[], @pending_parties=[], @subscriptions={"/sevengui"=>{}}, @offset=375, @halting=true>=>{}}} (RuntimeError)
+#
+#        #  raise "#{@all_connections} --- #{@subscriptions}" if @subscriptions.keys.length > 0
+#        #end
+#      }
+#    else
+      # ... this Proc routing is broken
       handler = Proc.new { |cn, phr|
-        #TODO: !!!!
-        #cn.add_subscription!(path, phr)
-        #@subscriptions[path] ||= {}
-        #@subscriptions[path][cn] = phr
 
         #inner_mab = Markaby::Builder.new
         #inner_mab.div "id" => "wkndr-live-throwaway" do
@@ -232,17 +278,17 @@ class ProtocolServer
             #  end
             #end
 
-            #mab.div "id" => "wkndr-live-#{title}", "class" => "wkndr-live-container" do
-            #  initial_inner_mab_bytes.call(cn, phr)
-            #end
-
-            mab.h2 do
-              "404"
+            mab.div "id" => "wkndr-live-#{title}", "class" => "wkndr-live-container" do
+              initial_inner_mab_bytes.call(cn, phr)
             end
 
-            #mab.script do
-            #  GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
+            #mab.h2 do
+            #  "404"
             #end
+
+            mab.script do
+              GIGAMOCK_TRANSFER_STATIC_BRIDGE_JS
+            end
           end
         end
 
@@ -251,8 +297,10 @@ class ProtocolServer
 
       @handlers[path] = handler
 
+      #log!(:installed_handler, @handlers.keys)
+
       rebuild_tree!
-    end
+#    end
   end
 
   def wsb(path, &block)
@@ -308,13 +356,25 @@ class ProtocolServer
 
   def match_dispatch(cn, request)
     if @tree
-      ids_from_path, handler = @tree.match(request.path)
+
+      pathpath = nil
+      query_string = nil
+      if px = request.path.index("?")
+        pathpath = request.path[0, px]
+        query_string = request.path[px, request.path.length]
+      else
+        pathpath = request.path
+      end
+
+      log!(:PATHPATH, request.path, pathpath, query_string)
+
+      ids_from_path, handler = @tree.match(pathpath)
 
       if ids_from_path && handler
-          resp_from_handler = handler.call(cn, ids_from_path)
+        resp_from_handler = handler.call(cn, ids_from_path)
         return (resp_from_handler)
       else
-        requested_path = "#{@required_prefix}#{request.path}"
+        requested_path = "#{@required_prefix}#{pathpath}"
 
         xyz = UV::FS.realpath(requested_path, &handle_static_file(cn))
 

@@ -64,7 +64,8 @@ MRuby::Build.new do |conf|
   #end
 
   #conf.enable_cxx_exception
-  conf.cc do |cc|
-    cc.flags = ["-O3"]
-  end
+  
+  #conf.cc do |cc|
+  #  cc.flags = ["-O3", "-DMRB_UTF8_STRING", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=1000"]
+  #end
 end
