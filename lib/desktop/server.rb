@@ -199,17 +199,14 @@ class ProtocolServer
 
   def delta(path, &block)
     if found_reduxi = @reduxi[path]
-
       if @subscriptions[path]
-
         @subscriptions[path].each { |cn, phr|
-
-
           ##if @subscriptions[path] && phr = @subscriptions[path][cn]
           ##if phr = cn.subscribed_to?(path)
           #cn.write_text(JSON.dump({"foo" => al_inner_mab_bytes.call(cn, {})}))
 
           foop = cn.write_text(JSON.dump({"foo" => found_reduxi.call(cn, phr)}))
+          @subscriptions[path].delete(cn) unless foop
 
           #log!(:updating_sbscripts, foop, cn)
 
