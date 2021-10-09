@@ -268,6 +268,8 @@ class Connection
 #TODO: is this server side only??????????
 
           channels.each do |channel|
+#          log!(channel, typed_msg)
+
             #NOTE: channels are as follows
             #
             #  0 stdin of connected tty

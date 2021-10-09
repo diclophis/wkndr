@@ -84,6 +84,9 @@ class Wkndr
     begin
       eval(ruby_string)
     rescue => e
+      log!(e)
+      log!(e.inspect)
+      log!(e.backtrace)
       e.inspect
     end
   end

@@ -19,18 +19,18 @@ Wkndr.nonce {
 }
 
 
-Wkndr.client_side { |gl|
-  gl.update { |global_time, delta_time, sw, sh|
-    gl.drawmode {
-      gl.threed {
-        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
-      }
-      gl.twod {
-        gl.draw_circle(10.0, 20, 20, 20, 1.0, 0.0, 0.1, 0.5)
-      }
-    }
-  }
-}
+#Wkndr.client_side { |gl|
+#  gl.update { |global_time, delta_time, sw, sh|
+#    gl.drawmode {
+#      gl.threed {
+#        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
+#      }
+#      gl.twod {
+#        gl.draw_circle(10.0, 20, 20, 20, 1.0, 0.0, 0.1, 0.5)
+#      }
+#    }
+#  }
+#}
 
 
 Wkndr.client_side { |gl|
