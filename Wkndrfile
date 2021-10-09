@@ -33,22 +33,22 @@ Wkndr.client_side { |gl|
 }
 
 
-#Wkndr.client_side { |gl|
-#  store = StorageManager.new 
-#  a = Cube.new(gl, 10.0, 10.0, 10.0, 10.0)
-#  batcher = CubicBatchingSystem.new(store, a, 1)
-#
-#  gl.update { |global_time, delta_time, sw, sh|
-#    gl.drawmode {
-#      gl.threed {
-#        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
-#        batcher.at(0).deltap(0, 0, 0)
-#        batcher.at(0).deltar(1, 0, 0, global_time * 100.0)
-#        batcher.draw(1)
-#      }
-#    }
-#  }
-#}
+Wkndr.client_side { |gl|
+  store = StorageManager.new
+  a = Cube.new(gl, 10.0, 10.0, 10.0, 10.0)
+  batcher = CubicBatchingSystem.new(store, a, 1)
+
+  gl.update { |global_time, delta_time, sw, sh|
+    gl.drawmode {
+      gl.threed {
+        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
+        batcher.at(0).deltap(0, 0, 0)
+        batcher.at(0).deltar(1, 0, 0, global_time * 100.0)
+        batcher.draw(1)
+      }
+    }
+  }
+}
 
 
 Wkndr.server_side { |gl, server|
@@ -74,9 +74,31 @@ Wkndr.server_side { |gl, server|
       mab.li do
         "bap bar: " + cn.session["gt"].inspect
       end
-      mab.li do
-        $ticks.inspect
+      $ticks.times do |i|
+        mab.li do
+          i
+        end
       end
     end
   }
+
+  server.raw("/about") do |cn, phr|
+    #raise "Server First Error"
+
+    mab = Markaby::Builder.new
+    mab.html5 "lang" => "en" do
+      mab.head do
+        mab.title "about"
+      end
+
+      mab.body do
+        mab.h1 "what is wkndr"
+        mab.p "it is a new hypertext application platform"
+        mab.a "href" => "/" do
+          "//////"
+        end
+      end
+    end
+    Protocol.ok(mab.to_s)
+  end
 }

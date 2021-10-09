@@ -782,13 +782,13 @@ void editorDelChar(int back) {
              * on the right of the previous one. */
             filecol = E.row[filerow-1].size;
 
-fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows, row->chars, row->size);
+//fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows, row->chars, row->size);
 
 //BB-00 108 0, 1, 0 0
 
             if (filecol == 0 && E.numrows == 1 && row->size == 0) {
               //NO-OP????
-              fprintf(stdout, "WTF123123\n");
+              //fprintf(stdout, "WTF123123\n");
               //editorRowDelChar(&E.row[filerow-1],1);
               editorDelRow(0);
             } else {
@@ -823,7 +823,7 @@ fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows
     //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     rowlen = row ? row->size : 0;
 
-    fprintf(stdout, "CHSZZZ %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
+    //fprintf(stdout, "CHSZZZ %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
 
     if (filecol > rowlen) {
         E.cx -= filecol-rowlen;
@@ -1355,7 +1355,7 @@ void editorMoveCursor(int key) {
     filecol = E.coloff+E.cx;
     row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     rowlen = row ? row->size : 0;
-    fprintf(stdout, "LLLLLLLRRRRRR %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
+    //fprintf(stdout, "LLLLLLLRRRRRR %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
     if (filecol > rowlen) {
         E.cx -= filecol-rowlen;
         if (E.cx < 0) {
