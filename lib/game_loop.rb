@@ -2,28 +2,42 @@
 
 class GameLoop
   attr_accessor :width, :height
+  attr_accessor :play_procs, :event_procs
 
-  def update(gt = 0, dt = 0, sw = 0, sh = 0, &block)
-    if block
-      @play_proc = block
+  def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, &block)
+    if cli && block 
+      #@play_proc = block
+      self.play_procs[cli] = block
     else
-      if @play_proc
-        rez = @play_proc.call(gt, dt, sw, sh)
-        #log!([:wtf, rez].inspect)
+      #if @play_proc
+      if cli == false && self.play_procs
+        #log!(:playcnt, self.play_procs.length)
 
+        self.play_procs.each { |cli, play_proc|
+          rez = play_proc.call(gt, dt, sw, sh)
+        }
+      end
+
+        #log!([:wtf, rez].inspect)
         #  halt!
         #end
-      end
+      #end
     end
   end
 
-  def event(channel = nil, msg = nil, &block)
-    if block
-      @event_proc = block
+  def event(cli, channel = nil, msg = nil, &block)
+    if cli && block
+      #@event_proc = block
+      self.event_procs[cli] = block
     else
-      if @event_proc
-        @event_proc.call(channel, msg)
-      end
+      #if @event_proc
+      self.event_procs.each { |cli_inner, event_proc|
+        #log!(:FOOOO, cli, cli_inner, channel, msg, event_proc, block)
+#[:FOOOO, "mkmaze", 1, nil, #<Proc:0x55caab044bf0>, nil]                                                               
+
+        event_proc.call(channel, msg)
+      }
+      #end
     end
   end
 
@@ -53,10 +67,13 @@ class GameLoop
     self.width = w
     self.height = h
 
-    log!(:INIT_WINDOW, w, h, wp)
+    self.play_procs = {}
+    self.event_procs = {}
+
+    #log!(:INIT_WINDOW, w, h, wp)
 
     socket_stream = SocketStream.create_websocket_connection(wp) { |channel, typed_msg|
-      self.event(channel, typed_msg)
+      self.event(nil, channel, typed_msg)
     }
 
     self.emit { |msg|
@@ -67,7 +84,7 @@ class GameLoop
   end
 
   def open_default_view!(fps = 0)
-    #log!("wkndr", self.width, self.height, 0) # screenSize and FPS
+    #log!("open_def_wkndr_win", self.width, self.height, 0) # screenSize and FPS
 
     #TODO: make this more modular ???
     self.open("wkndr", self.width.to_i, self.height.to_i, fps) # screenSize and FPS

@@ -28,8 +28,6 @@ else
   raylib_static_lib=$(build)/libraylib.a
 endif
 
-#./mruby/build/host/mrbgems/mruby-simplemsgpack/build/libmsgpackc.a
-#./mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 ifeq ($(TARGET),desktop)
   msgpack_static_lib=mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 else

@@ -20,7 +20,12 @@ class ProtocolServer
         unless channel == "party"
           @all_connections.each { |client|
             # worlds cheapest public broadcast system
-            client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
+
+            if (client.object_id != cn.object_id)
+              #TODO: localhost de-dup log!(:DUP, msg, client.object_id, cn.object_id)
+              client.write_typed({channel => msg})
+            end
+
           }
         end
       }
@@ -100,7 +105,7 @@ class ProtocolServer
     end
   end
 
-  def update(gt = nil, dt = nil, sw = 0, sh = 0)
+  def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0)
     @gt = gt
 
     connections_to_drop = []
@@ -303,7 +308,6 @@ class ProtocolServer
 
   def match_dispatch(cn, request)
     if @tree
-
       pathpath = nil
       query_string = nil
       if px = request.path.index("?")
@@ -313,7 +317,7 @@ class ProtocolServer
         pathpath = request.path
       end
 
-      log!(:PATHPATH, request.path, pathpath, query_string)
+      log!(:LOOKING_FOR_MATCH, request.path, pathpath, query_string)
 
       ids_from_path, handler = @tree.match(pathpath)
 

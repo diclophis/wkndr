@@ -102,6 +102,10 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   const char *c_game_name = mrb_string_value_cstr(mrb, &game_name);
 
+  if (screenWidth < 0 && screenHeight < 0) {
+    return self;
+  }
+
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);

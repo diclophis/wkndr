@@ -13,13 +13,13 @@ class Wkndr
     @stacks_to_care_about << run_loop_blocker
   end
 
-  def self.server_side(&block)
+  def self.server_side(cli, &block)
     if @server && block
       block.call(@server)
     end
   end
 
-  def self.client_side(&block)
+  def self.client_side(cli, &block)
     if @client && block
       block.call(@client)
     end
@@ -78,7 +78,6 @@ class Wkndr
 
   def self.wkndr_client_eval(ruby_string)
     #ruby_string = "module Anon\n" + ruby_string + "\nend"
-
     #log!(:wtf, ruby_string)
 
     begin
@@ -101,24 +100,23 @@ class Wkndr
     self.show!(self.first_stack)
   end
 
-  def self.nonce
-    unless @nonce
-      @nonce = true
+  def self.nonce(cli)
+    @nonce ||= {}
+    unless @nonce[cli]
+      @nonce[cli] = true
       yield
     end
   end
 
   def self.run(klass)
-    Wkndr.server_side { |gl, server|
-      server.wsb("/")
-    }
-
-    Wkndr.client_side { |gl|
-      gl.event { |channel, msg|
+    Wkndr.client_side(klass) { |gl|
+      gl.event(klass) { |channel, msg|
         klass.event(channel, msg)
       }
 
-      gl.update { |global_time, delta_time|
+      gl.update(klass) { |global_time, delta_time|
+        #log!(:foo, global_time)
+
         gl.drawmode {
           gl.threed {
             klass.draw_threed(gl)

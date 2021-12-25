@@ -93,7 +93,7 @@ class SocketStream
     end
   end
 
-  def update(gt = nil, dt = nil, sw = 0, sh = 0)
+  def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0)
     if some_outbound_messages = @outbound_messages.slice!(0, 1)
       unless some_outbound_messages.empty?
         write_typed(*some_outbound_messages)

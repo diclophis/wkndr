@@ -57,7 +57,7 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
   sw = GetScreenWidth();
   sh = GetScreenHeight();
 
-  mrb_funcall(mrb, self, "update", 4, mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
+  mrb_funcall(mrb, self, "update", 5, mrb_false_value(), mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
 
   latestTime = time;
 
@@ -79,7 +79,7 @@ mrb_value platform_bits_server(mrb_state* mrb, mrb_value self) {
 
   sw = sh = time = dt = -22;
 
-  mrb_funcall(mrb, self, "update", 4, mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
+  mrb_funcall(mrb, self, "update", 5, mrb_false_value(), mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
     mrb_print_error(mrb);
