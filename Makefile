@@ -48,8 +48,6 @@ endif
 
 headers += $(wildcard include/*.h)
 
-objects = $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
-
 static_ruby_headers = $(patsubst %,$(build)/%, $(patsubst lib/%.rb,%.h, $(wildcard lib/*.rb)))
 ifeq ($(TARGET),desktop)
 static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h, $(wildcard lib/desktop/*.rb)))
@@ -61,12 +59,13 @@ giga_static_txt = gigamock-transfer/static/robots.txt
 giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/xterm-dist/xterm.css gigamock-transfer/static/wkndr.css 
 
-.SECONDARY: $(static_ruby_headers) $(objects)
-.PHONY: $(target)
-
+objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
 objects += $(mruby_static_lib)
 objects += $(raylib_static_lib)
 objects += $(msgpack_static_lib)
+
+.SECONDARY: $(static_ruby_headers) $(objects)
+.PHONY: $(target)
 
 ##TODO: platform switch
 ifeq ($(TARGET),desktop)
@@ -88,7 +87,7 @@ else
   CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src #-s RESERVED_FUNCTION_POINTERS=32
 endif
 
-$(target): $(static_ruby_headers) $(objects) $(sources)
+$(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else

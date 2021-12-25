@@ -46,9 +46,6 @@ class ClientSide < Wkndr
 
     stack = StackBlocker.new
 
-    gl = GameLoop.new
-    stack.up(gl)
-
     if party_args.empty?
       wps << "Wkndrfile"
     else
@@ -57,6 +54,10 @@ class ClientSide < Wkndr
         wps << b
       }
     end
+
+    last_gl = nil
+    last_gl = gl = GameLoop.new
+    stack.up(gl)
 
     wps.each_with_index { |wp, i|
       mca = whs[i] || whs[0]
@@ -69,7 +70,7 @@ class ClientSide < Wkndr
       stack.up(socket_stream)
     }
 
-    Wkndr.set_client(gl)
+    Wkndr.set_client(last_gl)
 
     runblock!(stack)
   end

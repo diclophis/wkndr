@@ -34,10 +34,11 @@ class ProtocolServer
     @handlers["/wsb"] = upgrade_to_binary_websocket_handler
 
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
-      #log!(:WTFUPGRADEBITSSADASDASDASDASD, cn, phr)
 
       cn.upgrade_to_websocket! { |cn, msg|
         live_msg = JSON.load(msg)
+
+      log!(:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg)
 
         live_msg.each { |k, v|
           case k
@@ -94,7 +95,7 @@ class ProtocolServer
 
     timer = UV::Timer.new
     timer.start(1000.0/60.0, 1000.0/60.0) do
-      log!(:WTF)
+      #log!(:WTF)
       ########TODO############
       #unless @keep_running
         timer.stop

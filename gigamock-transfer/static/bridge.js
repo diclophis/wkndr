@@ -218,13 +218,13 @@ window.startLiveConnection = function() {
     window.conn = new WebSocket(wsUrl);
 
     window.conn.onopen = function (event) {
-      let initialBits = JSON.stringify({
-        'party': window.location.pathname
-      });
+      //let initialBits = JSON.stringify({
+      //  'party': window.location.pathname
+      //});
 
-      console.log("connected", initialBits);
+      console.log("connected", event);
 
-      let sent = window.conn.send(initialBits);
+      //let sent = window.conn.send(initialBits);
     };
 
     window.conn.onclose = function (event) {

@@ -295,7 +295,8 @@ class Connection
               #TODO: what is this loop for???
               when "party" #TODO: rename this something not stupid
                 wkndrfile_req = typed_msg[channel]
-                #log!(:client_wants, wkndrfile_req)
+                log!(:client_wants, wkndrfile_req)
+
                 if wkndrfile_req == "/"
                   wkndrfile_req = "Wkndrfile" #TODO: ?????
                 end

@@ -526,6 +526,7 @@ int main(int argc, char** argv) {
   for (i=1; i<argc; i++) {
     mrb_ary_push(mrb_client, args, mrb_str_new_cstr(mrb_client, argv[i]));
     mrb_ary_push(mrb, args_server, mrb_str_new_cstr(mrb, argv[i]));
+    fprintf(stderr, "argv %s\n", argv[i]);
   }
 
   mrb_define_global_const(mrb, "ARGV", args_server);
@@ -576,6 +577,8 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, ecs, NULL);
   eval_static_libs(mrb_client, ecs, NULL);
 
+  fprintf(stderr, "loaded globals 2 ... \n");
+
   ////TODO: this is related to Window
   mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
 
@@ -593,6 +596,8 @@ int main(int argc, char** argv) {
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
   mrb_mruby_model_gem_init(mrb_client);
+
+  fprintf(stderr, "loaded globals 3 ... \n");
 
 #ifdef TARGET_DESKTOP
 
@@ -635,12 +640,16 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
+  fprintf(stderr, "loaded globals 4 ... \n");
+
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "startup_clientside", 1, args);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTSTARTUP\n");
     mrb_print_error(mrb_client);
     mrb_print_backtrace(mrb_client);
   }
+
+  fprintf(stderr, "loaded globals 5 ... \n");
 
 #ifdef TARGET_DESKTOP
 
