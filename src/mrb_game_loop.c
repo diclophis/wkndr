@@ -107,6 +107,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
   InitWindow(screenWidth, screenHeight, c_game_name);
+  //InitWindow(GetScreenWidth() / 4, GetScreenHeight() / 4, c_game_name);
 
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
@@ -412,6 +413,11 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
   mrb_ary_set(mrb, mousexyz, 0, mrb_float_value(mrb, mousePosition.x));
   mrb_ary_set(mrb, mousexyz, 1, mrb_float_value(mrb, mousePosition.y));
   mrb_ary_set(mrb, mousexyz, 2, mrb_int_value(mrb, IsMouseButtonDown(MOUSE_LEFT_BUTTON)));
+
+  //TODO: debug window close
+  //if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+  //  CloseWindow();
+  //}
 
   return mrb_yield_argv(mrb, block, 3, &mousexyz);
 }

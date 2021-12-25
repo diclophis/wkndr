@@ -29,7 +29,7 @@ class ServerSide < Wkndr
       @idle_runloop = true
     end
 
-    if args.include?("--and-client")
+    if args.include?("--and-client") || args.empty?
       #raise "wtf"
       @run_clientside_fps = true
     end
