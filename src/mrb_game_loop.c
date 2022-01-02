@@ -165,11 +165,16 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     shader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "matModel");
     shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
+    shader.locs[LOC_VERTEX_POSITION] = GetShaderLocationAttrib(shader, "vertexPosition");
+    shader.locs[LOC_VERTEX_TEXCOORD01] = GetShaderLocationAttrib(shader, "vertexTexCoord");
+    shader.locs[LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+
+
     // ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
     SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 0.5f }, UNIFORM_VEC4);
 
-    p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
+    //p_data->globalDebugTexture = LoadTexture("resources/texel_checker.png");
 
     //lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 5, 7, 9 }, Vector3Zero(), WHITE, shader);
     //lights[1] = CreateLight(LIGHT_POINT, (Vector3){ -30, 60, 10 }, Vector3Zero(), WHITE, shader);

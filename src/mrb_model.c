@@ -17,7 +17,7 @@
 
 extern struct mrb_data_type play_data_type;
 
-static int counter = 0;
+//static int counter = 0;
 
 typedef struct {
   float angle;
@@ -243,6 +243,8 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   Material material = LoadMaterialDefault();
   material.shader = standardShader;
+  
+  //material.maps[MAP_DIFFUSE].color = ColorFromHSV((float)(((1)*18)%360), 0.75f, 0.9f);;
   //material.maps[MAP_DIFFUSE].color = RED;
 
   p_data->model.materials[0] = material;
@@ -260,12 +262,12 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->scale.y = scalef;
   p_data->scale.z = scalef;
 
-  float colors = 32.0;
-  float freq = 64.0 / colors;
+  //float colors = 32.0;
+  //float freq = 64.0 / colors;
 
-  int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
-  int g = (sin(freq * 1.0) * (127.0) + 128.0);
-  int b = 128; //(sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+  //int r = 128; //(sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  //int g = (sin(freq * 1.0) * (127.0) + 128.0);
+  //int b = 128; //(sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
 
   //counter++;
   //if (counter == colors) {
@@ -282,19 +284,22 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   p_data->color.b = 255;
   p_data->color.a = 255;
 
-  r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
-  g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
-  b = (sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+  //r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
+  //g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
+  //b = (sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);
+  //counter++;
+  //if (counter == colors) {
+  //  counter *= -1;
+  //}
 
-  counter++;
+  //p_data->label_color.r = r;
+  //p_data->label_color.g = g;
+  //p_data->label_color.b = b;
+  //p_data->label_color.a = 255;
 
-  if (counter == colors) {
-    counter *= -1;
-  }
-
-  p_data->label_color.r = r;
-  p_data->label_color.g = g;
-  p_data->label_color.b = b;
+  p_data->label_color.r = 255;
+  p_data->label_color.g = 255;
+  p_data->label_color.b = 255;
   p_data->label_color.a = 255;
 
   mrb_iv_set(
@@ -405,6 +410,30 @@ static mrb_value model_yawpitchroll(mrb_state* mrb, mrb_value self)
   transform = MatrixMultiply(transform, MatrixTranslate(-ox, -oy, -oz));
 
   p_data->model.transform = transform;
+
+  return mrb_nil_value();
+}
+
+
+static mrb_value model_color_rainbow(mrb_state* mrb, mrb_value self)
+{
+  mrb_int i;
+
+  mrb_get_args(mrb, "i", &i);
+
+  model_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &model_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  p_data->color = ColorFromHSV((float)(((i))%360), 0.75f, 0.9f);
+
+  fprintf(stderr, "foo %d %d %d\n", p_data->color.r, p_data->color.g, p_data->color.b);
 
   return mrb_nil_value();
 }
@@ -930,6 +959,7 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
   mrb_define_method(mrb, model_class, "deltas", model_deltas, MRB_ARGS_REQ(3));
   mrb_define_method(mrb, model_class, "yawpitchroll", model_yawpitchroll, MRB_ARGS_REQ(6));
   mrb_define_method(mrb, model_class, "label", model_label, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, model_class, "color_rainbow", model_color_rainbow, MRB_ARGS_REQ(1));
 
   // class Cube
   struct RClass *cube_class = mrb_define_class(mrb, "Cube", model_class);

@@ -505,7 +505,7 @@ int main(int argc, char** argv) {
   mrb_state *mrb_client;
   int i;
 
-  SetTraceLogLevel(LOG_FATAL);
+  SetTraceLogLevel(LOG_DEBUG);
 
   // initialize mruby serverside
   if (!(mrb = mrb_open())) {
