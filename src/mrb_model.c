@@ -117,18 +117,17 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   }
 
   Shader standardShader = pp_data->globalDebugShader;
-  Texture standardTexture = pp_data->globalDebugTexture;
+  //Texture standardTexture = pp_data->globalDebugTexture;
 
-  for (int mi=0; mi<p_data->model.materialCount; mi++) {
-    //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
-    p_data->model.materials[mi].shader = standardShader;
-    p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
-  }
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  //  p_data->model.materials[mi].shader = standardShader;
+  //  p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+  //}
 
-  //Material material = LoadMaterialDefault();
-  //material.shader = standardShader;
-  //material.maps[MAP_DIFFUSE].color = RED;
-  //p_data->model.materials[0] = material;
+  Material material = LoadMaterialDefault();
+  material.shader = standardShader;
+  p_data->model.materials[0] = material;
 
   p_data->scale.x = scalef;
   p_data->scale.y = scalef;
@@ -233,21 +232,23 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   if (!pp_data) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
-  Shader standardShader = pp_data->globalDebugShader;
-  Texture standardTexture = pp_data->globalDebugTexture;
-  
-  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
-  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
-  //  p_data->model.materials[mi].shader = standardShader;
-  //}
 
+  Shader standardShader = pp_data->globalDebugShader;
+  //Texture standardTexture = pp_data->globalDebugTexture;
+  
   Material material = LoadMaterialDefault();
   material.shader = standardShader;
+
+  for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  //  p_data->model.materials[mi].shader = standardShader;
+      //p_data->mesh.materials[mi] = material;
+      p_data->model.materials[mi] = material;
+  }
   
   //material.maps[MAP_DIFFUSE].color = ColorFromHSV((float)(((1)*18)%360), 0.75f, 0.9f);;
   //material.maps[MAP_DIFFUSE].color = RED;
-
-  p_data->model.materials[0] = material;
+  //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;
@@ -279,10 +280,14 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   //p_data->color.b = b;
   //p_data->color.a = 255;
 
-  p_data->color.r = 255;
+  p_data->color.r = 0;
   p_data->color.g = 255;
-  p_data->color.b = 255;
+  p_data->color.b = 0;
   p_data->color.a = 255;
+
+  material.maps[MATERIAL_MAP_DIFFUSE].color = p_data->color;
+
+  //for mesh->vertexCount
 
   //r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
   //g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
@@ -418,8 +423,9 @@ static mrb_value model_yawpitchroll(mrb_state* mrb, mrb_value self)
 static mrb_value model_color_rainbow(mrb_state* mrb, mrb_value self)
 {
   mrb_int i;
+  mrb_value model_game_loop = mrb_nil_value();
 
-  mrb_get_args(mrb, "i", &i);
+  mrb_get_args(mrb, "oi", &model_game_loop, &i);
 
   model_data_s *p_data = NULL;
   mrb_value data_value; // this IV holds the data
@@ -431,7 +437,11 @@ static mrb_value model_color_rainbow(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  p_data->color = ColorFromHSV((float)(((i))%360), 0.75f, 0.9f);
+  p_data->color = ColorFromHSV((float)(((i))%360), 1.0f, 1.0f);
+
+  //if (p_data->model.materials) {
+  //p_data->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = ColorFromHSV((float)(((i))%360), 1.0f, 1.0f);
+  //}
 
   fprintf(stderr, "foo %d %d %d\n", p_data->color.r, p_data->color.g, p_data->color.b);
 
@@ -439,11 +449,12 @@ static mrb_value model_color_rainbow(mrb_state* mrb, mrb_value self)
 }
 
 
-//    //static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
 static mrb_value batcher_at(mrb_state* mrb, mrb_value self)
 {
   mrb_int ind;
-  mrb_get_args(mrb, "i", &ind);
+  mrb_value model_game_loop = mrb_nil_value();
+
+  mrb_get_args(mrb, "oi", &model_game_loop, &ind);
 
   batch_data_s *b_data = NULL;
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
@@ -458,10 +469,11 @@ static mrb_value batcher_at(mrb_state* mrb, mrb_value self)
                     Data_Wrap_Struct(mrb, mrb->object_class, &model_data_type, p_data_pointer)
                   );
 
-  mrb_int argc = 1;
-  mrb_value argv[1];
+  mrb_int argc = 2;
+  mrb_value argv[2];
 
-  argv[0] = obj;
+  argv[0] = model_game_loop;
+  argv[1] = obj;
 
   mrb_value resulting_proxy = mrb_obj_new(mrb, mrb_class_get(mrb, "MeshProxy"), argc, argv);
 
@@ -666,7 +678,9 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  rlDrawMeshInstanced(og_data->model.meshes[0], og_data->model.materials[0], b_data->transforms, count);
+  //void DrawMeshInstanced(Mesh mesh, Material material, Matrix *transforms, int instances);  
+  //rlDrawMeshInstanced(og_data->model.meshes[0], og_data->model.materials[0], b_data->transforms, count);
+  DrawMeshInstanced(og_data->model.meshes[0], og_data->model.materials[0], b_data->transforms, count);
 
   return mrb_nil_value();
 }
@@ -676,10 +690,12 @@ static mrb_value batcher_draw(mrb_state* mrb, mrb_value self)
 static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
 {
   mrb_value model_pointer = mrb_nil_value();
+  mrb_value model_game_loop = mrb_nil_value();
 
-  mrb_get_args(mrb, "o", &model_pointer);
+  mrb_get_args(mrb, "oo", &model_game_loop, &model_pointer);
 
   model_data_s *p_data = NULL;
+
   //mrb_value data_value; // this IV holds the data
   //data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
 
@@ -687,6 +703,32 @@ static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
   if (!p_data) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
+
+  play_data_s *pp_data = NULL;
+  mrb_value data_value = mrb_iv_get(mrb, model_game_loop, mrb_intern_lit(mrb, "@pointer"));
+  Data_Get_Struct(mrb, data_value, &play_data_type, pp_data);
+  if (!pp_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  Shader standardShader = pp_data->globalDebugShader;
+  //Texture standardTexture = pp_data->globalDebugTexture;
+
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  //  p_data->model.materials[mi].shader = standardShader;
+  //  p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
+  //}
+
+  Material material = LoadMaterialDefault();
+  material.shader = standardShader;
+  
+  //p_data->model.materials[0] = material;
+
+  p_data->color.r = 255;
+  p_data->color.g = 0;
+  p_data->color.b = 129;
+  p_data->color.a = 255;
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@pointer"),
@@ -807,7 +849,6 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
       mrb_fixnum_value(count)
   );
 
-
   batch_data_s *b_data;
 
   b_data = malloc(sizeof(batch_data_s));
@@ -830,8 +871,13 @@ static mrb_value batcher_initialize(mrb_state* mrb, mrb_value self)
     p_data->rotation.x = 0.0f;
     p_data->rotation.y = 1.0f;
     p_data->rotation.z = 0.0f; // Set model position
-  }
 
+    p_data->color.r = 128;
+    p_data->color.g = 0;
+    p_data->color.b = 255;
+    p_data->color.a = 255;
+
+  }
 
 //    
 //    
@@ -959,7 +1005,7 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
   mrb_define_method(mrb, model_class, "deltas", model_deltas, MRB_ARGS_REQ(3));
   mrb_define_method(mrb, model_class, "yawpitchroll", model_yawpitchroll, MRB_ARGS_REQ(6));
   mrb_define_method(mrb, model_class, "label", model_label, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, model_class, "color_rainbow", model_color_rainbow, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, model_class, "color_rainbow", model_color_rainbow, MRB_ARGS_REQ(2));
 
   // class Cube
   struct RClass *cube_class = mrb_define_class(mrb, "Cube", model_class);
@@ -974,6 +1020,6 @@ void mrb_mruby_model_gem_init(mrb_state *mrb) {
   mrb_define_method(mrb, batcher_class, "initialize", batcher_initialize, MRB_ARGS_REQ(3));
 
   //mrb_define_method(mrb, batcher_class, "hydrate", batcher_hydrate, MRB_ARGS_REQ(0));
-  mrb_define_method(mrb, batcher_class, "at", batcher_at, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, batcher_class, "at", batcher_at, MRB_ARGS_REQ(2));
   mrb_define_method(mrb, batcher_class, "draw", batcher_draw, MRB_ARGS_REQ(1));
 }

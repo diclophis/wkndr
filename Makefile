@@ -78,7 +78,7 @@ endif
 RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
 #TODO: svga bootdisk RAYLIB_TARGET_DEFINED=PLATFORM_DRM
 ifeq ($(TARGET),desktop)
-  CFLAGS=-Wcast-align -O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src
+  CFLAGS=-Wcast-align -O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src -Iraylib/src/external/glfw/include
   ifeq ($(TARGET_OS),Darwin)
     CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
   endif

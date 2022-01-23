@@ -18,10 +18,19 @@
 #include <mruby/numeric.h>
 
 // raylib stuff
-//#include <raylib.h>
+#include <raylib.h>
 #include <raymath.h>
-
 #include <rlgl.h>
+//
+#define RLIGHTS_IMPLEMENTATION
+#include <rlights.h>
+//#include <rcamera.h>
+
+#if defined(PLATFORM_DESKTOP)
+    #define GLSL_VERSION            330
+#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
+    #define GLSL_VERSION            100
+#endif
 
 //#include <GL/gl.h>
 //#include <GL/glext.h>
@@ -49,8 +58,9 @@
 //    #include <GLES2/gl2.h>              // OpenGL ES 2.0 library
 //    #include <GLES2/gl2ext.h>           // OpenGL ES 2.0 extensions library
 //#endif
-#define RLIGHTS_IMPLEMENTATION
-#include "rlights.h"
+
+//#define RLIGHTS_IMPLEMENTATION
+//#include "rlights.h"
 
 // local stuff
 #include "mrb_game_loop.h"
@@ -76,7 +86,7 @@ static mrb_value mousexyz;
 static mrb_value pressedkeys;
 
 // Using 4 point lights, white, red, green and blue
-static Light lights[MAX_LIGHTS] = { 0 };
+////static Light lights[MAX_LIGHTS] = { 0 };
 
 
 // Garbage collector handler, for play_data struct
@@ -122,10 +132,41 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
+
+    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+                             TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+
+    //rlLoadShaderDefault();
+    //shader.id = rlGetShaderIdDefault();
+
+    p_data->globalDebugShader = shader;
+
+    // Get some shader loactions
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+
+    //shader.locs[RL_SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+    //shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+
+
+    // Ambient light level
+    int ambientLoc = GetShaderLocation(shader, "ambient");
+    SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+    Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 50.0f, 50.0f, 0.0f }, Vector3Zero(), WHITE, shader);
+    foo.enabled = true;
+
+    // NOTE: We are assigning the intancing shader to material.shader
+    // to be used on mesh drawing with DrawMeshInstanced()
+    Material material = LoadMaterialDefault();
+    material.shader = shader;
+    
+    //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
+
 //LoadShaderCode
 //LoadFileText
 
-
+/*
   char *newerVer = "#version 300 es\n#define NEWER_GL\n";
   //char *olderVer = "#version 100\n#define highp\n#define mediump\n#define lowp\n";
   char *olderVer = "#version 100\n";
@@ -260,6 +301,7 @@ lights[3].intensity = 0.125;
 //  //SetWindowMonitor(0);
 //  SetTargetFPS(screenFps);
 //#endif
+*/
 
   return self;
 }
@@ -409,11 +451,11 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  RayHitInfo nearestHit;
+  RayCollision nearestHit;
   char *hitObjectName = "None";
   nearestHit.distance = FLT_MAX;
   nearestHit.hit = false;
-  Color cursorColor = WHITE;
+  Color cursorColor = RAYWHITE;
 
   Vector2 mousePosition = { -0.0f, -0.0f };
 
@@ -476,8 +518,8 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
   cubeScreenPosition = GetWorldToScreen2D((Vector2){600, 75}, p_data->cameraTwo);
 
-  DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 1300, 75, WHITE);
-  DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, BLUE);
+  DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 1300, 75, RAYWHITE);
+  DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, SKYBLUE);
 
   return mrb_nil_value();
 }
@@ -503,13 +545,14 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   // Camera mode type
   switch(type) {
     case 0:
-      p_data->camera.type = CAMERA_ORTHOGRAPHIC;
+      //p_data->camera.type = CAMERA_ORTHOGRAPHIC;
       //SetCameraMode(p_data->camera, CAMERA_ORBITAL);
-      //SetCameraMode(p_data->camera, CAMERA_THIRD_PERSON);
+      SetCameraMode(p_data->camera, CAMERA_ORTHOGRAPHIC);
       break;
     case 1:
-      p_data->camera.type = CAMERA_PERSPECTIVE;
+      //p_data->camera.type = CAMERA_PERSPECTIVE;
       //SetCameraMode(p_data->camera, CAMERA_ORBITAL);
+      SetCameraMode(p_data->camera, CAMERA_PERSPECTIVE);
       break;
   }
 
@@ -533,7 +576,14 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
 
   float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
-  SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
+
+  //SetShaderValue(RLGL.State.defaultShaderId, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+
+          //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+                  SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+
+                  UpdateCamera(&p_data->camera);
+
 
   //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
   //SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
@@ -573,40 +623,40 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
 }
 
 
-void DrawLight(Light light)
-{
-    switch (light.type)
-    {
-        case LIGHT_POINT:
-        {
-            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
-            
-            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 0, 0 }, 0.0f, (light.enabled ? light.color : GRAY));
-            DrawCircle3D(light.position, light.radius, (Vector3){ 1, 0, 0 }, 90.0f, (light.enabled ? light.color : GRAY));
-            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 1, 0 },90.0f, (light.enabled ? light.color : GRAY));
-        } break;
-        case LIGHT_DIRECTIONAL:
-        {
-            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
-            
-            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
-            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
-        } break;
-        case LIGHT_SPOT:
-        {
-            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
-            
-            Vector3 dir = Vector3Subtract(light.target, light.position);
-            dir = Vector3Normalize(dir);
-            
-            DrawCircle3D(light.position, 0.5f, dir, 0.0f, (light.enabled ? light.color : GRAY));
-            
-            //DrawCylinderWires(light.position, 0.0f, 0.3f*light.coneAngle/50, 0.6f, 5, (light.enabled ? light.color : GRAY));
-            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
-        } break;
-        default: break;
-    }
-}
+//void DrawLight(Light light)
+//{
+//    switch (light.type)
+//    {
+//        case LIGHT_POINT:
+//        {
+//            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+//            
+//            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 0, 0 }, 0.0f, (light.enabled ? light.color : GRAY));
+//            DrawCircle3D(light.position, light.radius, (Vector3){ 1, 0, 0 }, 90.0f, (light.enabled ? light.color : GRAY));
+//            DrawCircle3D(light.position, light.radius, (Vector3){ 0, 1, 0 },90.0f, (light.enabled ? light.color : GRAY));
+//        } break;
+//        case LIGHT_DIRECTIONAL:
+//        {
+//            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
+//            
+//            DrawSphereWires(light.position, 0.3f*light.intensity, 8, 8, (light.enabled ? light.color : GRAY));
+//            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
+//        } break;
+//        case LIGHT_SPOT:
+//        {
+//            DrawLine3D(light.position, light.target, (light.enabled ? light.color : GRAY));
+//            
+//            Vector3 dir = Vector3Subtract(light.target, light.position);
+//            dir = Vector3Normalize(dir);
+//            
+//            DrawCircle3D(light.position, 0.5f, dir, 0.0f, (light.enabled ? light.color : GRAY));
+//            
+//            //DrawCylinderWires(light.position, 0.0f, 0.3f*light.coneAngle/50, 0.6f, 5, (light.enabled ? light.color : GRAY));
+//            DrawCubeWires(light.target, 0.3f, 0.3f, 0.3f, (light.enabled ? light.color : GRAY));
+//        } break;
+//        default: break;
+//    }
+//}
 
 
 static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
@@ -623,10 +673,10 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  UpdateLightValues(p_data->globalDebugShader, lights[0]);
-  UpdateLightValues(p_data->globalDebugShader, lights[1]);
-  UpdateLightValues(p_data->globalDebugShader, lights[2]);
-  UpdateLightValues(p_data->globalDebugShader, lights[3]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[0]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[1]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[2]);
+  //UpdateLightValues(p_data->globalDebugShader, lights[3]);
 
   BeginMode3D(p_data->camera);
 

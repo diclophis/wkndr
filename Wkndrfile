@@ -35,16 +35,32 @@ Wkndr.nonce("main") {
 
 Wkndr.client_side("main") { |gl|
   store = StorageManager.new
-  a = Cube.new(gl, 10.0, 10.0, 10.0, 10.0)
-  batcher = CubicBatchingSystem.new(store, a, 1)
+  a = Cube.new(gl, 10.0, 10.0, 10.0, 1.0)
+  
+  #a.color_rainbow(gl, (rand * 360.0).to_i)
+
+  batcher = CubicBatchingSystem.new(store, a, 3)
+
+  bits = []
+
+  3.times { |zzz|
+    bits << batcher.at(gl, zzz)
+    #      a.color_rainbow(gl, (rand * 360).to_i)
+    #      bits[zzz].color_rainbow(gl, (rand * 360.0).to_i)
+  }
 
   gl.update("main") { |global_time, delta_time, sw, sh|
     gl.drawmode {
       gl.threed {
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
-        batcher.at(0).deltap(0, 0, 0)
-        batcher.at(0).deltar(1, 0, 0, global_time * 100.0)
-        batcher.draw(1)
+        3.times { |zzz|
+          
+          #batcher.at(zzz).color_rainbow(gl, (rand * 360.0).to_i)
+
+          bits[zzz].deltap(0, 0, zzz * 10.0)
+          bits[zzz].deltar(1, 0, 0, global_time * 100.0)
+        }
+        batcher.draw(3)
       }
     }
   }

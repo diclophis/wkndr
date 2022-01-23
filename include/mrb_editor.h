@@ -50,7 +50,7 @@ static struct editorConfig E;
 
 
 enum KEY_ACTION{
-        KEY_NULL = 0,       /* NULL */
+        KEY_NULL_EDITOR = 0,       /* NULL */
         CTRL_C = 3,         /* Ctrl-c */
         CTRL_D = 4,         /* Ctrl-d */
         CTRL_F = 6,         /* Ctrl-f */
