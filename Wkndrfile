@@ -54,11 +54,10 @@ Wkndr.client_side("main") { |gl|
       gl.threed {
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
         3.times { |zzz|
-          
           #batcher.at(zzz).color_rainbow(gl, (rand * 360.0).to_i)
 
           bits[zzz].deltap(0, 0, zzz * 10.0)
-          bits[zzz].deltar(1, 0, 0, global_time * 100.0)
+          bits[zzz].deltar(1, 0, 0, global_time * 100.0 * zzz.to_f)
         }
         batcher.draw(3)
       }
