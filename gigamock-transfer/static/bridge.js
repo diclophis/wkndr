@@ -108,14 +108,17 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
-      console.log("got message from server", event);
+      console.log("FOOO got message from server", event);
 
       var origData = event.data;
-      var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
+      //var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
+      //var ptr = allocate(intArrayFromString(origData, true), ALLOC_NORMAL)
+      var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
+
       window.handle_js_websocket_event(mrbPointer, callbackPointer, ptr, origData.byteLength);
     };
 
-    return addFunction(function(channel, bytes, length) { //write_packed_pointer
+    return addFunction(function(channel, bytes, length) { //IMPL: write_packed_pointer
       switch(channel) {
         case 0:
           var buf = new ArrayBuffer(length);
@@ -158,7 +161,7 @@ if (graphicsContainer) {
     arguments: ['--no-server', '--client=' + graphicsContainer.offsetWidth.toString() + 'x' + graphicsContainer.offsetHeight.toString()],
     preRun: [(function() {
       window.handle_js_websocket_event = Module.cwrap(
-        'handle_js_websocket_event', 'number', ['number', 'number', 'number', 'number']
+        'handle_js_websocket_event', 'number', ['number', 'number', 'string', 'number']
       );
 
       window.pack_outbound_tty = Module.cwrap(
@@ -218,13 +221,13 @@ window.startLiveConnection = function() {
     window.conn = new WebSocket(wsUrl);
 
     window.conn.onopen = function (event) {
+      //this is hypertext app port
       //let initialBits = JSON.stringify({
       //  'party': window.location.pathname
       //});
+      //let sent = window.conn.send(initialBits);
 
       console.log("connected", event);
-
-      //let sent = window.conn.send(initialBits);
     };
 
     window.conn.onclose = function (event) {

@@ -288,7 +288,6 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   material.maps[MATERIAL_MAP_DIFFUSE].color = p_data->color;
 
   //for mesh->vertexCount
-
   //r = (sin(freq * abs(counter) + 0.0) * (127.0) + 128.0);
   //g = (sin(freq * abs(counter) + 1.0) * (127.0) + 128.0);
   //b = (sin(freq * abs(counter) + 3.0) * (127.0) + 128.0);

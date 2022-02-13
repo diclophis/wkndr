@@ -21,6 +21,8 @@ class SocketStream
   end
 
   def dispatch_next_events(bytes = nil)
+    #log!("WTF!!!!!", bytes)
+
     #@clients_to_notify.each { |wkndrfile, clients|
     #  clients.each { |cn|
     #    cn.write_typed({"party" => wkread})
@@ -28,9 +30,12 @@ class SocketStream
     #}
 
     process_as_msgpack_stream(bytes).each { |typed_msg|
+      log!(:foop, typed_msg.inspect)
       channels = typed_msg.keys
+
       channels.each do |channel|
         cmsg = typed_msg[channel]
+        log!(:WTF111111111, cmsg, channel)
         #NOTE: channels are as follows
         #
         #  1 stdout of connected tty
@@ -78,11 +83,13 @@ class SocketStream
 
   def process_as_msgpack_stream(bytes)
     if bytes && bytes.length
+      log!(:bytes, bytes.inspect)
       @left_over_bits += bytes
 
       unpacked_typed = []
       unpacked_length = MessagePack.unpack(@left_over_bits) do |result|
         if result
+          #log!(:wtf_result, result.inspect)
           unpacked_typed << result
         end
       end

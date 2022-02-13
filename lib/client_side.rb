@@ -59,6 +59,8 @@ class ClientSide < Wkndr
     last_gl = gl = GameLoop.new
     stack.up(gl)
 
+    log!(:WkndrfileFetchAAAAA, wps, client_args)
+
     wps.each_with_index { |wp, i|
       mca = whs[i] || whs[0]
 

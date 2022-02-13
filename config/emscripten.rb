@@ -7,6 +7,7 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   # load specific toolchain settings
   #toolchain :clang
   #enable_debug
+
   #conf.disable_cxx_exception
   #conf.enable_cxx_exception
   #conf.disable_cxx_exception
@@ -31,7 +32,8 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   #, "-DMSGPACK_ENDIAN_LITTLE_BYTE=1", "-DTEST_BIG_ENDIAN=0"]
 
   #conf.enable_cxx_exception
-  #conf.enable_debug
+  conf.disable_cxx_exception
+  enable_debug
 
   conf.bins = []
 
@@ -55,6 +57,7 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.cc do |cc|
     #"-DMRB_UTF8_STRING"
     #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
-    cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
   end
 end

@@ -34,11 +34,11 @@ RUN cd /var/lib/wkndr && \
     git clone https://github.com/raysan5/raylib && \
     cd raylib && \
     git fetch && \
-    git checkout 4d5ee7953ccac5c1d59f4223899d3d6bffc329b8
+    git checkout 7eb341ccafa1cb39006b354714e4524a612c6e25
 
-COPY rlgl.h.patch /var/lib/wkndr/
-RUN cd /var/lib/wkndr/raylib && \
-    cat ../rlgl.h.patch | git apply
+#COPY rlgl.h.patch /var/lib/wkndr/
+#RUN cd /var/lib/wkndr/raylib && \
+#    cat ../rlgl.h.patch | git apply
 
 COPY Makefile gigamock-transfer/simple-cp.sh gigamock-transfer/simple-bake.sh gigamock-transfer/iterate-server.sh gigamock-transfer/iterate-web.sh /var/lib/wkndr/
 COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer/mkstatic-mruby-module.rb

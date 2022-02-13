@@ -173,9 +173,17 @@ static mrb_value eval_static_libs(mrb_state* mrb, ...) {
 #ifdef PLATFORM_WEB
 
 EMSCRIPTEN_KEEPALIVE
-size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, const char* buf, size_t n) {
+size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, char* buf, size_t n) {
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
+
+  fprintf(stderr, "START BIT %d\n", n);
+
+  //mrb_value clikestr_as_string;
+  //clikestr_as_string = mrb_str_new_lit(mrb, buf);
+
+  //mrb_value empty_string = mrb_str_new_lit(mrb, buf);
+
   mrb_funcall(mrb, mrb_obj_value(selfP), "dispatch_next_events", 1, clikestr_as_string);
   return 0;
 }
@@ -311,6 +319,7 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
 //97
 //99
 		fprintf(stderr, "%ld\n", buf[0]);
+
     if (
       buf[0] == 12 ||
       buf[0] == 13 ||
@@ -327,8 +336,8 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
       //run Wkndrfile
       mrb_value empty_string = mrb_str_new_lit(mrb, "");
 
-    int codelen;
-    char *codebuf = editorRowsToString(&codelen);
+      int codelen;
+      char *codebuf = editorRowsToString(&codelen);
 
       mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, codebuf, codelen);
       mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
@@ -349,6 +358,14 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
       }
     }
   }
+
+  mrb_sym sym = mrb_intern_lit(mrb, "$cheese");
+  mrb_value varff = mrb_gv_get(mrb, sym);
+
+  const char *foofff = mrb_string_value_ptr(mrb, varff);
+  int lenfff = mrb_string_value_len(mrb, varff);
+  editorSetStatusMessage(foofff, lenfff);
+
 
   editorRefreshScreen(ab2);
   write_packed_pointer(0, ab2->b, ab2->len);

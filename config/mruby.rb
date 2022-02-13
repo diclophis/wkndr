@@ -9,8 +9,6 @@
 MRuby::Build.new do |conf|
   # load specific toolchain settings
   toolchain :gcc
-  enable_debug
-  conf.disable_cxx_exception
 
   # desired cli tooling
   conf.bins = ["mrbc"]
@@ -63,10 +61,15 @@ MRuby::Build.new do |conf|
   #  cc.flags = ["-lm", "-O3"]
   #end
 
+  conf.disable_cxx_exception
   #conf.enable_cxx_exception
+  conf.enable_debug
+
+  #enable_debug
   
   conf.cc do |cc|
     #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
-    cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
   end
 end

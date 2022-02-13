@@ -36,11 +36,16 @@ KEY_X = 88
 KEY_Y = 89
 KEY_Z = 90
 
+$cheese = "foo"
+
 def log!(*args, &block)
+  $cheese = args.inspect
+
   if $stdout
     $stdout.write(args.inspect)
     $stdout.write("\n")
   end
+
   yield if block
 end
 
