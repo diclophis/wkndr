@@ -55,10 +55,10 @@ log!(:string, MessagePack.unpack(packed_string))
             self.write_tty(cmsg)
           when "party" #TODO: rename this something not stupid
             #begin
-              #wkndrfile_cstr = cmsg
-              #log!(:WTF2, cmsg.length)
-              #did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
-              #log!(:WTF3, did_parse, cmsg.length)
+              wkndrfile_cstr = cmsg
+              log!(:WTF2, cmsg.length)
+              did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
+              log!(:WTF3, did_parse, cmsg.length)
             #rescue => e
             #  log!(e.backtrace)
             #  log!(:cmsg_bad, e)
