@@ -328,6 +328,8 @@ class ProtocolServer
       else
         requested_path = "#{@required_prefix}#{pathpath}"
 
+        log!(:wtf_index, requested_path)
+
         xyz = UV::FS.realpath(requested_path, &handle_static_file(cn))
 
         return xyz

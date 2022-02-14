@@ -2,6 +2,13 @@
 
 class SocketStream
   def initialize(got_bytes_block)
+
+packed_hash = { a: 'hash', with: [1, 'embedded', 'array'] }.to_msgpack
+packed_string = MessagePack.pack('bye')
+
+log!(:hash, MessagePack.unpack(packed_hash))
+log!(:string, MessagePack.unpack(packed_string))
+
     @got_bytes_block = got_bytes_block
 
     @outbound_messages = []
@@ -31,6 +38,7 @@ class SocketStream
 
     process_as_msgpack_stream(bytes).each { |typed_msg|
       log!(:foop, typed_msg.inspect)
+
       channels = typed_msg.keys
 
       channels.each do |channel|
@@ -46,16 +54,16 @@ class SocketStream
           when 1,2 #TODO: deprecate this loopback mechanism
             self.write_tty(cmsg)
           when "party" #TODO: rename this something not stupid
-            begin
-              wkndrfile_cstr = cmsg
-              log!(:WTF2, cmsg.length)
-              did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
-              log!(:WTF3, did_parse, cmsg.length)
-            rescue => e
-              #log!(:cmsg_bad, e)
-              #log!(e.backtrace)
-              raise
-            end
+            #begin
+              #wkndrfile_cstr = cmsg
+              #log!(:WTF2, cmsg.length)
+              #did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
+              #log!(:WTF3, did_parse, cmsg.length)
+            #rescue => e
+            #  log!(e.backtrace)
+            #  log!(:cmsg_bad, e)
+            #  #raise
+            #end
 
         else
 
@@ -84,19 +92,36 @@ class SocketStream
   def process_as_msgpack_stream(bytes)
     if bytes && bytes.length
       log!(:bytes, bytes.inspect)
-      @left_over_bits += bytes
 
-      unpacked_typed = []
-      unpacked_length = MessagePack.unpack(@left_over_bits) do |result|
-        if result
-          #log!(:wtf_result, result.inspect)
-          unpacked_typed << result
+      #begin
+        @left_over_bits += bytes
+
+        log!(:bytes_2)
+
+        unpacked_typed = []
+
+        log!(:bytes_3, @left_over_bits.length)
+        unpacked_length = 0
+
+        unpacked_length = MessagePack.unpack(@left_over_bits) do |result|
+          log!(:bytes_4)
+          if result
+            log!(:bytes_5)
+            unpacked_typed << result
+          end
         end
-      end
 
-      @left_over_bits.slice!(0, unpacked_length)
+        log!(:bytes_6)
 
-      unpacked_typed
+        @left_over_bits.slice!(0, unpacked_length)
+
+        log!(:unpacked, unpacked_length, unpacked_typed.inspect)
+
+        unpacked_typed
+      #rescue => e
+      #  log!(:err, e.inspect)
+      #  []
+      #end
     end
   end
 

@@ -1052,7 +1052,7 @@ static void setStatus(struct abuf *ab, int putcursor) {
     /* Create a two rows status. First row: */
     abAppend(ab,"\x1b[0K",4);
     abAppend(ab,"\x1b[7m",4);
-    char status[80], rstatus[80];
+    char status[256], rstatus[256];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
         E.filename, E.numrows, E.dirty ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus),
@@ -1073,6 +1073,8 @@ static void setStatus(struct abuf *ab, int putcursor) {
     /* Second row depends on E.statusmsg and the status message update time. */
     abAppend(ab,"\x1b[0K",4);
     int msglen = strlen(E.statusmsg);
+    fprintf(stderr, "WTF12313: %d\n", msglen);
+
     if (msglen && time(NULL)-E.statusmsg_time < 5)
         abAppend(ab,E.statusmsg,msglen <= E.screencols ? msglen : E.screencols);
 }

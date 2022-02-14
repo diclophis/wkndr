@@ -72,6 +72,8 @@ class Connection
     self.processing_handshake = -1
     self.ss = self.ss[@offset..-1]
 
+    log!(:wtf, filename)
+
     fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0)
     file_size =  fd.stat.size
     sent = 0
@@ -90,6 +92,8 @@ class Connection
           end
 
           wkread = fd.read(left, sent)
+          #self.socket can be nil!!!!
+          return unless self.socket
           self.socket.write(wkread) { |foo|
             if foo.is_a?(UVError)
               send_proc.call

@@ -36,7 +36,7 @@ MRuby::Build.new do |conf|
   conf.gem :github => "katzer/mruby-r3"
   conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0" #TODO: get this merged with upstream https://github.com/tatsuhiro-t/wslay
   conf.gem :github => "Asmod4n/mruby-phr"
-  conf.gem :github => "Asmod4n/mruby-simplemsgpack"
+  conf.gem :github => "Asmod4n/mruby-simplemsgpack" #, :branch => "v2.0"
   conf.gem :github => "mattn/mruby-json"
 
   ##Desktop specific
@@ -61,7 +61,7 @@ MRuby::Build.new do |conf|
   #  cc.flags = ["-lm", "-O3"]
   #end
 
-  conf.disable_cxx_exception
+  #conf.disable_cxx_exception
   #conf.enable_cxx_exception
   conf.enable_debug
 
@@ -70,6 +70,6 @@ MRuby::Build.new do |conf|
   conf.cc do |cc|
     #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
     #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
-    cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    #cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
   end
 end

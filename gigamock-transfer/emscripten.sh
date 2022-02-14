@@ -17,13 +17,3 @@ cd emsdk
 ./emsdk list
 
 ./emsdk install latest
-
-#TODO: fix this upgrade
-#./emsdk install 1.40.0
-#./emsdk install 1.39.19
-#1.39.0
-#latest
-#emscripten-1.38.36
-#./emsdk install emscripten-1.38.36
-#./emsdk install sdk-master-64bit
-#./emsdk install latest sdk-1.38.36-64bit

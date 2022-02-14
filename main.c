@@ -364,6 +364,8 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
 
   const char *foofff = mrb_string_value_ptr(mrb, varff);
   int lenfff = mrb_string_value_len(mrb, varff);
+  fprintf(stderr, "cheesePOOO: %d\n", lenfff);
+
   editorSetStatusMessage(foofff, lenfff);
 
 

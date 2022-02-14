@@ -37,12 +37,12 @@ builds:
     https://github.com/Asmod4n/mruby-simplemsgpack.git:
       url: https://github.com/Asmod4n/mruby-simplemsgpack.git
       branch: HEAD
-      commit: 6abf4f0a370c5bb6b96182a50e2c537beec9f282
+      commit: f074dc36d61f6347caf8e2193aa536fabd38349a
       version: '2.0'
     https://github.com/mattn/mruby-json.git:
       url: https://github.com/mattn/mruby-json.git
       branch: HEAD
-      commit: '054699892b0d681110e7348440cddb70a3fd671e'
+      commit: f99d9428025469f2400f93c53b185f65f963e507
       version: 0.0.0
     https://github.com/Asmod4n/mruby-sysrandom.git:
       url: https://github.com/Asmod4n/mruby-sysrandom.git

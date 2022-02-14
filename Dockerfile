@@ -28,7 +28,7 @@ RUN cd /var/lib/wkndr && \
     git clone https://github.com/mruby/mruby && \
     cd mruby && \
     git fetch && \
-    git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
+    git checkout ad3ce7b41c4375f818d02a24e6a09cbc790048c9
 
 RUN cd /var/lib/wkndr && \
     git clone https://github.com/raysan5/raylib && \
