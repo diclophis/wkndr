@@ -72,7 +72,7 @@ class Connection
     self.processing_handshake = -1
     self.ss = self.ss[@offset..-1]
 
-    log!(:wtf, filename)
+    #log!(:wtf, filename)
 
     fd = UV::FS::open(filename, UV::FS::O_RDONLY, 0)
     file_size =  fd.stat.size
@@ -186,7 +186,7 @@ class Connection
 
   def write_response(response_bytes)
     self.socket && response_bytes && self.socket.write(response_bytes) { |*a|
-      log!(:WWEWEWEWE, a)
+      #log!(:WWEWEWEWE, a)
       self.halt!
     }
   end
@@ -304,7 +304,7 @@ class Connection
                   wkndrfile_req = "Wkndrfile" #TODO: ?????
                 end
 
-                log!(:client_wants, wkndrfile_req)
+                #log!(:client_wants, wkndrfile_req)
 
                 @pending_parties << wkndrfile_req
 
@@ -318,7 +318,7 @@ class Connection
       elsif msg[:opcode] == :text_frame
         block.call(self, msg.msg) if block
       else
-        log!(:TODO, msg[:opcode])
+        log!(:UNKNOWN_OPCODE, msg[:opcode])
       end
     end
 

@@ -144,7 +144,7 @@ $(raylib_static_lib): $(raylib_static_lib_deps)
 ifeq ($(TARGET),desktop)
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
 else
-	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -B -e
+	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
 endif
 
 build-mruby: $(mruby_static_lib)
