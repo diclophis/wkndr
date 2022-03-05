@@ -37,7 +37,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
-    window.fit = new FitAddon.FitAddon();
+    window.fit = new FitAddon();
 
     window.addEventListener('resize', function(resizeEvent) {
       window.fit.fit();
@@ -57,7 +57,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
     window.terminal.onData(function(termInputData) {
       //let encIn = textEncoder.encode(termInputData);
-      //console.log(termInputData, byteLength(termInputData), termInputData.length, encIn.length);
+      console.log(termInputData);
       //var ptr = allocate(intArrayFromString(encIn), ALLOC_NORMAL);
       //window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, encIn.length);
           //var buf = new ArrayBuffer(termInputData.length);

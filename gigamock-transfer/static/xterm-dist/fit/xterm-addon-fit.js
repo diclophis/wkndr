@@ -1,2 +1,58 @@
-!function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.FitAddon=t():e.FitAddon=t()}(self,(function(){return(()=>{"use strict";var e={775:(e,t)=>{Object.defineProperty(t,"__esModule",{value:!0}),t.FitAddon=void 0;var r=function(){function e(){}return e.prototype.activate=function(e){this._terminal=e},e.prototype.dispose=function(){},e.prototype.fit=function(){var e=this.proposeDimensions();if(e&&this._terminal){var t=this._terminal._core;this._terminal.rows===e.rows&&this._terminal.cols===e.cols||(t._renderService.clear(),this._terminal.resize(e.cols,e.rows))}},e.prototype.proposeDimensions=function(){if(this._terminal&&this._terminal.element&&this._terminal.element.parentElement){var e=this._terminal._core;if(0!==e._renderService.dimensions.actualCellWidth&&0!==e._renderService.dimensions.actualCellHeight){var t=window.getComputedStyle(this._terminal.element.parentElement),r=parseInt(t.getPropertyValue("height")),i=Math.max(0,parseInt(t.getPropertyValue("width"))),n=window.getComputedStyle(this._terminal.element),o=r-(parseInt(n.getPropertyValue("padding-top"))+parseInt(n.getPropertyValue("padding-bottom"))),a=i-(parseInt(n.getPropertyValue("padding-right"))+parseInt(n.getPropertyValue("padding-left")))-e.viewport.scrollBarWidth;return{cols:Math.max(2,Math.floor(a/e._renderService.dimensions.actualCellWidth)),rows:Math.max(1,Math.floor(o/e._renderService.dimensions.actualCellHeight))}}}},e}();t.FitAddon=r}},t={};return function r(i){if(t[i])return t[i].exports;var n=t[i]={exports:{}};return e[i](n,n.exports,r),n.exports}(775)})()}));
-//# sourceMappingURL=xterm-addon-fit.js.map
+"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.FitAddon = void 0;
+var MINIMUM_COLS = 2;
+var MINIMUM_ROWS = 1;
+window.FitAddon = (function () {
+    function FitAddon() {
+    }
+    FitAddon.prototype.activate = function (terminal) {
+        this._terminal = terminal;
+    };
+    FitAddon.prototype.dispose = function () { };
+    FitAddon.prototype.fit = function () {
+        var dims = this.proposeDimensions();
+        if (!dims || !this._terminal) {
+            return;
+        }
+        var core = this._terminal._core;
+        if (this._terminal.rows !== dims.rows || this._terminal.cols !== dims.cols) {
+            core._renderService.clear();
+            this._terminal.resize(dims.cols, dims.rows);
+        }
+    };
+    FitAddon.prototype.proposeDimensions = function () {
+        if (!this._terminal) {
+            return undefined;
+        }
+        if (!this._terminal.element || !this._terminal.element.parentElement) {
+            return undefined;
+        }
+        var core = this._terminal._core;
+        if (core._renderService.dimensions.actualCellWidth === 0 || core._renderService.dimensions.actualCellHeight === 0) {
+            return undefined;
+        }
+        var parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
+        var parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
+        var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
+        var elementStyle = window.getComputedStyle(this._terminal.element);
+        var elementPadding = {
+            top: parseInt(elementStyle.getPropertyValue('padding-top')),
+            bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
+            right: parseInt(elementStyle.getPropertyValue('padding-right')),
+            left: parseInt(elementStyle.getPropertyValue('padding-left'))
+        };
+        var elementPaddingVer = elementPadding.top + elementPadding.bottom;
+        var elementPaddingHor = elementPadding.right + elementPadding.left;
+        var availableHeight = parentElementHeight - elementPaddingVer;
+        var availableWidth = parentElementWidth - elementPaddingHor - core.viewport.scrollBarWidth;
+        var geometry = {
+            cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth)),
+            rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight))
+        };
+        return geometry;
+    };
+    return FitAddon;
+}());
+//exports.FitAddon = FitAddon;
+//# sourceMappingURL=FitAddon.js.map
