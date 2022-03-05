@@ -1073,7 +1073,7 @@ static void setStatus(struct abuf *ab, int putcursor) {
     /* Second row depends on E.statusmsg and the status message update time. */
     abAppend(ab,"\x1b[0K",4);
     int msglen = strlen(E.statusmsg);
-    fprintf(stderr, "WTF12313: %d\n", msglen);
+    //fprintf(stderr, "WTF12313: %d\n", msglen);
 
     if (msglen && time(NULL)-E.statusmsg_time < 5)
         abAppend(ab,E.statusmsg,msglen <= E.screencols ? msglen : E.screencols);

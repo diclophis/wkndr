@@ -140,8 +140,6 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   }
 
   return mrb_true_value();
-
-  //if (mrb_test(wiz_return_halt)) MRB_TEST WIZ
 }
 
 
@@ -177,40 +175,13 @@ size_t handle_js_websocket_event(mrb_state* mrb, struct RObject* selfP, char* bu
   mrb_value empty_string = mrb_str_new_lit(mrb, "");
   mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
 
-  fprintf(stderr, "START BIT %d\n", n);
-
-  //mrb_value clikestr_as_string;
-  //clikestr_as_string = mrb_str_new_lit(mrb, buf);
-
-  //mrb_value empty_string = mrb_str_new_lit(mrb, buf);
-
   mrb_funcall(mrb, mrb_obj_value(selfP), "dispatch_next_events", 1, clikestr_as_string);
   return 0;
 }
 
-  //mrb_value empty_string = mrb_str_new_lit(mrb, "");
-  //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, buf, n);
-  //TODO: shell support bypass
-  //////mrb_value outbound_tty_msg = mrb_hash_new(mrb);
-  //////mrb_hash_set(mrb, outbound_tty_msg, mrb_fixnum_value(0), clikestr_as_string);
-  ////////TODO: this calles into editorProcessKeypress
-  //////mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_tty_msg);
-  //fprintf(stderr, "START BIT %d %d %d\n", n, i, buf[0]);
-  //struct abuf *ab = malloc(sizeof(struct abuf) * 1);
-  //ab->b = NULL;
-  //ab->len = 0;
-  //editorRefreshScreen(ab);
-  //write_packed_pointer(0, ab->b, ab->len);
-  //free(ab);
-  //for (i=0; i<(int)n; i+=1) {
-
-
-
-
-
-
 
 char last_typed = 0;
+
 
 EMSCRIPTEN_KEEPALIVE
 size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
@@ -272,54 +243,6 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
       fprintf(stderr, "WTF %d\n", buf[0]);
     }
   } else {
-//1
-//10
-//100 
-//101 
-//101 
-//101 
-//105 
-//105 
-//107 
-//109 
-//11
-//110 
-//111 
-//114 
-//114 
-//116 
-//116 
-//119 
-//12
-//13
-//15
-//16
-//18
-//2
-//21
-//24
-//25
-//26
-//26
-//27
-//27
-//28
-//28
-//29
-//29
-//4
-//4
-//44
-//5
-//7
-//8
-//80
-//80
-//9
-//97
-//99
-		fprintf(stderr, "%ld\n", buf[0]);
-
     if (
       buf[0] == 12 ||
       buf[0] == 13 ||
@@ -350,24 +273,22 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
         //editorSetStatusMessage(RSTRING_PTR(mesg));
         //"XXX %.*s\n", (int)RSTRING_LEN(mesg), RSTRING_PTR(mesg));
       } else {
-        mrb_value rezstr = mrb_funcall(mrb, editr_eval, "to_s", 0);
+        if (!mrb_nil_p(editr_eval)) {
+          mrb_value rezstr = mrb_funcall(mrb, editr_eval, "to_s", 0);
 
-        const char *foo = mrb_string_value_ptr(mrb, rezstr);
-        int len = mrb_string_value_len(mrb, rezstr);
-        editorSetStatusMessage(foo, len);
+          const char *foo = mrb_string_value_ptr(mrb, rezstr);
+          int len = mrb_string_value_len(mrb, rezstr);
+          editorSetStatusMessage(foo, len);
+        }
       }
     }
   }
 
-  mrb_sym sym = mrb_intern_lit(mrb, "$cheese");
-  mrb_value varff = mrb_gv_get(mrb, sym);
-
-  const char *foofff = mrb_string_value_ptr(mrb, varff);
-  int lenfff = mrb_string_value_len(mrb, varff);
-  fprintf(stderr, "cheesePOOO: %d\n", lenfff);
-
-  editorSetStatusMessage(foofff, lenfff);
-
+  //mrb_sym sym = mrb_intern_lit(mrb, "$cheese");
+  //mrb_value varff = mrb_gv_get(mrb, sym);
+  //const char *foofff = mrb_string_value_ptr(mrb, varff);
+  //int lenfff = mrb_string_value_len(mrb, varff);
+  //editorSetStatusMessage(foofff, lenfff);
 
   editorRefreshScreen(ab2);
   write_packed_pointer(0, ab2->b, ab2->len);
@@ -441,16 +362,12 @@ void Alert(const char *msg) {
 mrb_value socket_stream_connect(mrb_state* mrb, mrb_value self) {
   long int start_connection_js_c = 0;
 
-  //fprintf(stderr, "going to create to websocket\n");
-
   //write_packed_pointer is created in js, as addFunction
 #ifdef PLATFORM_WEB
   start_connection_js_c = EM_ASM_INT({
     return window.startConnection($0, $1);
   }, mrb, mrb_obj_ptr(self));
 #endif
-
-  //fprintf(stderr, "connection started\n");
 
   mrb_iv_set(
       mrb, self, mrb_intern_lit(mrb, "@client"), // set @data
@@ -481,7 +398,6 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
 }
 
 
-//TODO
 void platform_bits_update_void(void* arg) {
   loop_data_s* loop_data = arg;
 
@@ -516,10 +432,6 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 
 
 int main(int argc, char** argv) {
-  //fprintf(stderr,"%ld  %ld", sizeof(int), sizeof(char));
-  //const char fff = 'g';
-  //int bop = fff;
-
   mrb_state *mrb;
   mrb_state *mrb_client;
   int i;
@@ -553,8 +465,6 @@ int main(int argc, char** argv) {
 
   eval_static_libs(mrb, globals, NULL);
   eval_static_libs(mrb_client, globals, NULL);
-
-  fprintf(stderr, "loaded globals ... \n");
 
   //TODO: vt100 tty support for inline IDE
   //struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
@@ -596,8 +506,6 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb, ecs, NULL);
   eval_static_libs(mrb_client, ecs, NULL);
 
-  fprintf(stderr, "loaded globals 2 ... \n");
-
   ////TODO: this is related to Window
   mrb_define_class_method(mrb_client, thor_class_client, "show!", global_show, MRB_ARGS_REQ(1));
 
@@ -615,8 +523,6 @@ int main(int argc, char** argv) {
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
   mrb_mruby_model_gem_init(mrb_client);
-
-  fprintf(stderr, "loaded globals 3 ... \n");
 
 #ifdef TARGET_HEAVY
 
@@ -659,16 +565,12 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
-  fprintf(stderr, "loaded globals 4 ... \n");
-
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "startup_clientside", 1, args);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTSTARTUP\n");
     mrb_print_error(mrb_client);
     mrb_print_backtrace(mrb_client);
   }
-
-  fprintf(stderr, "loaded globals 5 ... \n");
 
 #ifdef TARGET_HEAVY
 
@@ -683,11 +585,7 @@ int main(int argc, char** argv) {
 
 #ifdef PLATFORM_WEB
 
-  fprintf(stderr, "going for editor ... \n");
-
   initEditor();
-
-  fprintf(stderr, "going for wizbang ... \n");
 
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "wizbang!", 0, 0);
   if (mrb_client->exc) {
@@ -697,8 +595,6 @@ int main(int argc, char** argv) {
   }
 
 #endif
-
-  fprintf(stderr, "no more blocking operations, closing contexts ... \n");
 
   mrb_close(mrb);
   mrb_close(mrb_client);

@@ -82,6 +82,11 @@ class Wkndr
 
     begin
       eval(ruby_string)
+    rescue SyntaxError => e
+      log!(e)
+      log!(e.inspect)
+      log!(e.backtrace)
+      e.inspect
     rescue => e
       log!(e)
       log!(e.inspect)
