@@ -11,7 +11,7 @@
 
 
 //server stuff
-#ifdef TARGET_DESKTOP
+#ifdef TARGET_HEAVY
 
 #include <openssl/sha.h>
 #include <b64/cencode.h>
@@ -47,7 +47,7 @@ mrb_value mrb_websocket_create_accept(mrb_state *mrb, mrb_value self) {
   mrb_value accept_key = mrb_str_new(mrb, NULL, 28);
   char *c = RSTRING_PTR(accept_key);
 
-#ifdef TARGET_DESKTOP
+#ifdef TARGET_HEAVY
   uint8_t sha1buf[20];
   if (!SHA1((const unsigned char *) key_src, 60, sha1buf)) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "SHA1 failed");

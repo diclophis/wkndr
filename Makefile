@@ -2,7 +2,7 @@
 
 TARGET ?= desktop
 TARGET_OS ?= $(shell uname)
-DEBUG ?= -g
+OPTIM = -O3
 build=release
 
 ifeq ($(TARGET),desktop)
@@ -75,24 +75,34 @@ ifeq ($(TARGET),desktop)
   endif
 endif
 
-RAYLIB_TARGET_DEFINED=PLATFORM_DESKTOP
-#TODO: svga bootdisk RAYLIB_TARGET_DEFINED=PLATFORM_DRM
+RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
+#TODO: svga bootdisk RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
+#-D$(RAYLIB_TARGET_DEFINED)
+
+CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112 
+#TODO 
+#-Imruby/build/mrbgems/mruby-b64/include 
+
 ifeq ($(TARGET),desktop)
-  CFLAGS=-Wcast-align -O3 -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) $(DEBUG) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src -Iraylib/src/external/glfw/include
-  ifeq ($(TARGET_OS),Darwin)
-    CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
-  endif
+  #CFLAGS=$(OPTIM) -Wcast-align -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src -Iraylib/src/external/glfw/include
+  #ifeq ($(TARGET_OS),Darwin)
+	#  #TODO
+  #  #CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
+  #endif
+  CFLAGS+=-DTARGET_HEAVY
 else
   #NOTE: SAFE_HEAP=1 breaks things, could be fixed possibly?? https://github.com/emscripten-core/emscripten/blob/main/site/source/docs/porting/Debugging.rst
-  EMSCRIPTEN_FLAGS=-O0 -g3 -gsource-map -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s USE_ZLIB=1 -s SAFE_HEAP=0 -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=128
-  CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src
+  #EMSCRIPTEN_FLAGS=-O0 -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s USE_ZLIB=1 -s SAFE_HEAP=0 -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=128
+  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16
+  #CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src
+  CFLAGS+=-DPLATFORM_WEB 
 endif
 
 $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec $(DEBUG) -s WASM=1 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=65536000 -s ABORTING_MALLOC=1 -s DETERMINISTIC=1 --source-map-base http://localhost:8000/ --preload-file resources
+	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s WASM=1 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=65536000 -s ABORTING_MALLOC=1 -s DETERMINISTIC=1 --source-map-base http://localhost:8000/ --preload-file resources
 endif
 
 $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
@@ -100,15 +110,15 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_css) > $(build)/embed_static_css.rb
-	mruby/bin/mrbc $(DEBUG) -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
-	mruby/bin/mrbc $(DEBUG) -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
-	mruby/bin/mrbc $(DEBUG) -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
-	mruby/bin/mrbc $(DEBUG) -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
+	mruby/bin/mrbc -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
+	mruby/bin/mrbc -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
+	mruby/bin/mrbc -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
+	mruby/bin/mrbc -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
 	cd mruby && make clean && rm -Rf build && git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
-	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) clean
+	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_HEAVY_PLATFORM) clean
 	rm -R $(build)
 	mkdir -p $(build)
 	mkdir -p $(build)/src
@@ -126,7 +136,7 @@ endif
 
 $(raylib_static_lib): $(raylib_static_lib_deps)
 ifeq ($(TARGET),desktop)
-	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_TARGET_DEFINED) $(MAKE) -B -e
+	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
 else
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) $(MAKE) PLATFORM=PLATFORM_WEB -B -e
 endif
@@ -136,7 +146,7 @@ build-mruby: $(mruby_static_lib)
 $(mrbc): $(mruby_static_lib)
 
 $(build)/%.h: lib/desktop/%.rb $(mrbc)
-	mruby/bin/mrbc $(DEBUG) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
+	mruby/bin/mrbc -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
 
 $(build)/%.h: lib/%.rb $(mrbc)
-	mruby/bin/mrbc $(DEBUG) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
+	mruby/bin/mrbc -B $(patsubst $(build)/%.h,%, $@) -o $@ $<

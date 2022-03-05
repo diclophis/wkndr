@@ -296,7 +296,7 @@ lights[3].intensity = 0.125;
 //
 //  SetExitKey(0);
 //
-//#ifdef TARGET_DESKTOP
+//#ifdef TARGET_HEAVY
 //  //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
 //  //SetWindowMonitor(0);
 //  SetTargetFPS(screenFps);

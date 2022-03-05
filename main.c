@@ -81,7 +81,7 @@
 
 
 //server stuff
-#ifdef TARGET_DESKTOP
+#ifdef TARGET_HEAVY
 
 #include "connection.h"
 #include "server.h"
@@ -618,7 +618,7 @@ int main(int argc, char** argv) {
 
   fprintf(stderr, "loaded globals 3 ... \n");
 
-#ifdef TARGET_DESKTOP
+#ifdef TARGET_HEAVY
 
   // libuv stuff
   mrb_mruby_uv_gem_init(mrb);
@@ -670,7 +670,7 @@ int main(int argc, char** argv) {
 
   fprintf(stderr, "loaded globals 5 ... \n");
 
-#ifdef TARGET_DESKTOP
+#ifdef TARGET_HEAVY
 
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
   if (mrb->exc) {
