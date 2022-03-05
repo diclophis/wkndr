@@ -2,7 +2,7 @@
 
 TARGET ?= desktop
 TARGET_OS ?= $(shell uname)
-OPTIM = -O3
+OPTIM = -O3 -g
 build=release
 
 ifeq ($(TARGET),desktop)
@@ -22,11 +22,11 @@ endif
 
 raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
 
-ifeq ($(TARGET),desktop)
+#ifeq ($(TARGET),desktop)
+#  raylib_static_lib=$(build)/libraylib.a
+#else
   raylib_static_lib=$(build)/libraylib.a
-else
-  raylib_static_lib=$(build)/libraylib.a
-endif
+#endif
 
 ifeq ($(TARGET),desktop)
   msgpack_static_lib=mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
@@ -67,19 +67,25 @@ objects += $(msgpack_static_lib)
 .SECONDARY: $(static_ruby_headers) $(objects)
 .PHONY: $(target)
 
-##TODO: platform switch
 ifeq ($(TARGET),desktop)
   LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lX11 -lxcb -lXau -lXdmcp
-  ifeq ($(TARGET_OS),Darwin)
-    LDFLAGS=-lm -lpthread -ldl -lssl -lcrypto -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
-  endif
+  ###TODO: OSX platform switch
+  #ifeq ($(TARGET_OS),Darwin)
+  #  LDFLAGS=-lm -lpthread -ldl -lssl -lcrypto -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+  #endif
 endif
 
-RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
-#TODO: svga bootdisk RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
-#-D$(RAYLIB_TARGET_DEFINED)
+CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
 
-CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112 
+##TODO: svga bootdisk
+#RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
+#LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm -lpthread -lrt -lm -ldl
+#CFLAGS+=-I/usr/include/libdrm
+#CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
+
+RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
+CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
+
 #TODO 
 #-Imruby/build/mrbgems/mruby-b64/include 
 
@@ -93,16 +99,16 @@ ifeq ($(TARGET),desktop)
 else
   #NOTE: SAFE_HEAP=1 breaks things, could be fixed possibly?? https://github.com/emscripten-core/emscripten/blob/main/site/source/docs/porting/Debugging.rst
   #EMSCRIPTEN_FLAGS=-O0 -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s USE_ZLIB=1 -s SAFE_HEAP=0 -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=128
-  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16
+  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16 -s WASM=1 
   #CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src
-  CFLAGS+=-DPLATFORM_WEB 
+  CFLAGS+=-DPLATFORM_WEB -fdeclspec
 endif
 
 $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -fdeclspec -s WASM=1 -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=65536000 -s ABORTING_MALLOC=1 -s DETERMINISTIC=1 --source-map-base http://localhost:8000/ --preload-file resources
+	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' -s TOTAL_MEMORY=65536000 --preload-file resources
 endif
 
 $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
@@ -117,7 +123,7 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
-	cd mruby && make clean && rm -Rf build && git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
+	#cd mruby && make clean && rm -Rf build && git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
 	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_HEAVY_PLATFORM) clean
 	rm -R $(build)
 	mkdir -p $(build)

@@ -384,11 +384,11 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 
     mrb_yield_argv(mrb, block, 0, NULL);
 
-  //float textSize = 20.0;
+  float textSize = 20.0;
   ////Vector3 cubePosition = p_data->position;
   ////Vector2 cubeScreenPosition;
   ////cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
-  //DrawText("dsdsd", 50, 50, textSize, RED);
+  DrawText("dsdsd", 32.0, 32.0, textSize, RED);
   //Vector2 ballPosition = { (float)512/2, (float)512/2 };
   //DrawCircleV(ballPosition, 50, MAROON);
   ////fprintf(stderr, "wtf\n");
@@ -399,14 +399,20 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 }
 
 
+//color and alpha is 255 based
 static mrb_value game_loop_draw_circle(mrb_state* mrb, mrb_value self)
 {
   mrb_float radius,x,y,z,r,g,b,a;
 
   mrb_get_args(mrb, "ffffffff", &radius, &x, &y, &z, &r, &g, &b, &a);
 
+  //fprintf(stderr, "%f %f %f %f %f %f %f %f\n", radius, x, y, z, r, g, b, a);
+
   //DrawCircle(x, y, radius, (Color){ r, g, b, a });
   DrawCircleV((Vector2){ x, y }, radius, (Color){ r, g, b, a });
+  //64.000000 75.000000 75.000000 0.000000 1.000000 1.000000 1.000000 1.000000
+
+  //DrawCircleV((Vector2){ x, y }, radius, MAROON);
 
   return mrb_nil_value();
 }

@@ -39,6 +39,7 @@ Wkndr.client_side("main") { |gl|
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
 
         1.times { |zzz|
+          bits[zzz].deltap(32.0 * Math.cos(global_time), 0, 32.0 * Math.sin(global_time))
           bits[zzz].deltar(1, 0, 0, global_time * 100.0)
         }
         batcher.draw(1)
@@ -46,6 +47,10 @@ Wkndr.client_side("main") { |gl|
         ##TODO: handle shader switch between w/ lighting and without!!
         #a.deltar(1, 0, 0, global_time * -100.0)
         #a.draw(true)
+      }
+
+      gl.twod {
+        gl.draw_circle(64.0, 256 + (32.0 * Math.cos(global_time)), 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
       }
     }
   }
