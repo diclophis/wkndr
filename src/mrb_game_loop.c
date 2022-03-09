@@ -117,11 +117,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
-  InitWindow(screenWidth, screenHeight, c_game_name);
-  //InitWindow(GetScreenWidth() / 4, GetScreenHeight() / 4, c_game_name);
+  //InitWindow(screenWidth, screenHeight, c_game_name);
+  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
 
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
@@ -524,7 +524,7 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   Vector2 cubeScreenPosition;
   //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
-  cubeScreenPosition = GetWorldToScreen2D((Vector2){48, 32}, p_data->cameraTwo);
+  cubeScreenPosition = GetWorldToScreen2D((Vector2){128, 32}, p_data->cameraTwo);
 
   //DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 100, 64, RAYWHITE);
   DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, SKYBLUE);

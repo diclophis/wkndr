@@ -26,12 +26,12 @@ Wkndr.nonce("main") {
 Wkndr.client_side("main") { |gl|
   a = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
   
-  store = StorageManager.new
-  batcher = CubicBatchingSystem.new(store, a, 1)
-  bits = []
-  1.times { |zzz|
-    bits << batcher.at(gl, zzz)
-  }
+  #store = StorageManager.new
+  #batcher = CubicBatchingSystem.new(store, a, 1)
+  #bits = []
+  #1.times { |zzz|
+  #  bits << batcher.at(gl, zzz)
+  #}
 
   gl.update("main") { |global_time, delta_time, sw, sh|
     if global_time > 999.0
@@ -40,19 +40,18 @@ Wkndr.client_side("main") { |gl|
 
     gl.drawmode {
       gl.threed {
-
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
         
-        1.times { |zzz|
-          bits[zzz].deltap(Math.cos(global_time), 0, Math.sin(global_time))
-          bits[zzz].deltar(1, 0, 0, global_time * 1.0)
-        }
-        batcher.draw(1)
+        #1.times { |zzz|
+        #  bits[zzz].deltap(Math.cos(global_time), 0, Math.sin(global_time))
+        #  bits[zzz].deltar(1, 0, 0, global_time * 1.0)
+        #}
+        #batcher.draw(1)
 
-        ##TODO: handle shader switch between w/ lighting and without!!
-        #a.deltap(8.0 * Math.cos(global_time * 2.0), 0, 8.0 * Math.sin(global_time * 2.0))
-        #a.deltar(1, Math.cos(global_time) * (Math.sin(global_time * 0.1) * 0.759), 0, global_time * 100.0)
-        #a.draw(true)
+        ###TODO: handle shader switch between w/ lighting and without!!
+        a.deltap(8.0 * Math.cos(global_time * 2.0), 0, 8.0 * Math.sin(global_time * 2.0))
+        a.deltar(1, Math.cos(global_time) * (Math.sin(global_time * 0.1) * 0.759), 0, global_time * 100.0)
+        a.draw(true)
       }
 
       gl.twod {
