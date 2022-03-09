@@ -95,6 +95,7 @@ class ProtocolServer
 
     timer = UV::Timer.new
     timer.start(1000.0/60.0, 1000.0/60.0) do
+      #TODO: !!!!!
       #log!(:WTF)
       ########TODO############
       #unless @keep_running
@@ -105,6 +106,10 @@ class ProtocolServer
       did_parse = Wkndr.wkndr_server_eval(wkread)
     end
   end
+
+  #def stop
+  #  @server.stop
+  #end
 
   def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0)
     @gt = gt
@@ -173,7 +178,12 @@ class ProtocolServer
   end
 
   def halt!
-    @halting = @all_connections.all? { |cn| cn.halt! }
+    @server.close
+    @server = nil
+    @halting_check = @all_connections.all? { |cn| cn.halt! }
+    @halting = true
+
+    log!(:foop, @halting_check)
   end
 
   def create_connection(connection_error)

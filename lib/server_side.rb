@@ -64,7 +64,7 @@ class ServerSide < Wkndr
 
     if @run_clientside_fps
       @timer = UV::Timer.new
-      fps = 1000.0/120.0
+      fps = 1000.0/300.0
       @timer.start(fps, fps) do
         rez = self.server_side_tick!
 
@@ -72,7 +72,11 @@ class ServerSide < Wkndr
           @keep_running = false
           @timer.stop
           @trap.stop
-          log!(:rez_falsey_exit_now)
+          a,b = *Wkndr.the_server
+          b.halt!
+          log!(:rez_falsey_exit_now, a, b)
+          UV.run(UV::UV_RUN_NOWAIT)
+          UV.default_loop.stop
           false
         end
       end

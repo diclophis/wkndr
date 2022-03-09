@@ -26,11 +26,11 @@
 #include <rlights.h>
 //#include <rcamera.h>
 
-#if defined(PLATFORM_DESKTOP)
-    #define GLSL_VERSION            330
-#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
+//#if defined(PLATFORM_DESKTOP)
+//    #define GLSL_VERSION            330
+//#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
     #define GLSL_VERSION            100
-#endif
+//#endif
 
 //#include <GL/gl.h>
 //#include <GL/glext.h>
@@ -133,33 +133,33 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
 
-    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
-                             TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+    //Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+    //                         TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
 
-    //rlLoadShaderDefault();
-    //shader.id = rlGetShaderIdDefault();
+    ////rlLoadShaderDefault();
+    ////shader.id = rlGetShaderIdDefault();
 
-    p_data->globalDebugShader = shader;
+    //p_data->globalDebugShader = shader;
 
     // Get some shader loactions
-    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    //shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    //shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
 
     //shader.locs[RL_SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
     //shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
 
 
     // Ambient light level
-    int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
-    Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 50.0f, 50.0f, 0.0f }, Vector3Zero(), WHITE, shader);
-    foo.enabled = true;
+    //int ambientLoc = GetShaderLocation(shader, "ambient");
+    //SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+    //Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 50.0f, 50.0f, 0.0f }, Vector3Zero(), WHITE, shader);
+    //foo.enabled = true;
 
     // NOTE: We are assigning the intancing shader to material.shader
     // to be used on mesh drawing with DrawMeshInstanced()
     Material material = LoadMaterialDefault();
-    material.shader = shader;
+    //TODO: material.shader = shader;
     
     //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
 
@@ -586,7 +586,8 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   //SetShaderValue(RLGL.State.defaultShaderId, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
           //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
-                  SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+                  
+                  //TODO SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
                   UpdateCamera(&p_data->camera);
 

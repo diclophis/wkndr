@@ -136,6 +136,8 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
     mrb_print_error(loop_data->mrb_pointer);
     //TODO: exit runtime, unhandled exception
+    //CloseSurface();
+    CloseWindow();
     return mrb_false_value();
   }
 

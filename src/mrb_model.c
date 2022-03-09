@@ -233,18 +233,18 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  Shader standardShader = pp_data->globalDebugShader;
+  //Shader standardShader = pp_data->globalDebugShader;
   //Texture standardTexture = pp_data->globalDebugTexture;
   
   Material material = LoadMaterialDefault();
-  material.shader = standardShader;
+  //material.shader = standardShader;
 
-  for (int mi=0; mi<p_data->model.materialCount; mi++) {
-  //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
-  //  p_data->model.materials[mi].shader = standardShader;
-      //p_data->mesh.materials[mi] = material;
-      p_data->model.materials[mi] = material;
-  }
+  //for (int mi=0; mi<p_data->model.materialCount; mi++) {
+  ////  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
+  ////  p_data->model.materials[mi].shader = standardShader;
+  //    //p_data->mesh.materials[mi] = material;
+  //    p_data->model.materials[mi] = material;
+  //}
   
   //material.maps[MAP_DIFFUSE].color = ColorFromHSV((float)(((1)*18)%360), 0.75f, 0.9f);;
   //material.maps[MAP_DIFFUSE].color = RED;

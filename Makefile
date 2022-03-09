@@ -77,14 +77,15 @@ endif
 
 CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
 
-##TODO: svga bootdisk
-#RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
-#LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm -lpthread -lrt -lm -ldl
-#CFLAGS+=-I/usr/include/libdrm
+CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
 #CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
 
+######TODO: svga bootdisk
+#RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
+#LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm
+#CFLAGS+=-I/usr/include/libdrm
+
 RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
-CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
 
 #TODO 
 #-Imruby/build/mrbgems/mruby-b64/include 

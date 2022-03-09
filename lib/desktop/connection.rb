@@ -34,25 +34,25 @@ class Connection
   end
 
   def shutdown
-    if @ps
-      @ps.kill(UV::Signal::SIGINT)
-      @ps.close
-      @ps = nil
+    #if @ps
+    #  @ps.kill(UV::Signal::SIGINT)
+    #  @ps.close
+    #  @ps = nil
+    #  @stdin_tty = nil
+    #  @stdout_tty = nil
+    #  @stderr_tty = nil
+    #end
 
-      @stdin_tty = nil
-      @stdout_tty = nil
-      @stderr_tty = nil
-    end
-
-    if @t
-      @t.stop
-      @t = nil
-    end
+    #if @t
+    #  @t.stop
+    #  @t = nil
+    #end
 
     #if @fsev
     #  @fsev.stop
     #  @fsev = nil
     #end
+    halt!
   end
 
   def running?
