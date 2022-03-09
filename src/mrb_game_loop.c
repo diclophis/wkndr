@@ -133,32 +133,33 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
 
-    //Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
-    //                         TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+                             TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
 
+    //Shader shader;
     ////rlLoadShaderDefault();
-    ////shader.id = rlGetShaderIdDefault();
+    //shader.id = rlGetShaderIdDefault();
 
-    //p_data->globalDebugShader = shader;
+    p_data->globalDebugShader = shader;
 
-    // Get some shader loactions
-    //shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-    //shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    //// Get some shader loactions
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
 
-    //shader.locs[RL_SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
-    //shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+    ////shader.locs[RL_SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+    ////shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
 
 
-    // Ambient light level
-    //int ambientLoc = GetShaderLocation(shader, "ambient");
-    //SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
-    //Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 50.0f, 50.0f, 0.0f }, Vector3Zero(), WHITE, shader);
-    //foo.enabled = true;
+    //// Ambient light level
+    int ambientLoc = GetShaderLocation(shader, "ambient");
+    SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+    Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 50.0f, 50.0f, 0.0f }, Vector3Zero(), WHITE, shader);
+    foo.enabled = true;
 
     // NOTE: We are assigning the intancing shader to material.shader
     // to be used on mesh drawing with DrawMeshInstanced()
-    Material material = LoadMaterialDefault();
+    //Material material = LoadMaterialDefault();
     //TODO: material.shader = shader;
     
     //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
