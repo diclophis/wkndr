@@ -55,6 +55,13 @@ class ServerSide < Wkndr
   end
 
   def self.install_trap!
+    @trap = UV::Signal.new
+    
+    @trap.start(UV::Signal::SIGINT) do
+      log!(:foop)
+      @keep_running = false
+    end
+
     if @run_clientside_fps
       @timer = UV::Timer.new
       fps = 1000.0/120.0
@@ -64,14 +71,11 @@ class ServerSide < Wkndr
         unless rez
           @keep_running = false
           @timer.stop
+          @trap.stop
+          log!(:rez_falsey_exit_now)
+          false
         end
       end
-    end
-
-    @trap = UV::Signal.new
-    
-    @trap.start(UV::Signal::SIGINT) do
-      @keep_running = false
     end
   end
 

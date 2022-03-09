@@ -36,6 +36,10 @@ Wkndr.client_side("main") { |gl|
   gl.update("main") { |global_time, delta_time, sw, sh|
     gl.drawmode {
       gl.threed {
+        if global_time > 5.0
+          raise
+        end
+
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
 
         1.times { |zzz|
