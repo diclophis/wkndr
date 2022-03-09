@@ -73,7 +73,9 @@ class ServerSide < Wkndr
           @timer.stop
           @trap.stop
           a,b = *Wkndr.the_server
-          b.halt!
+          if b
+            b.halt!
+          end
           log!(:rez_falsey_exit_now, a, b)
           UV.run(UV::UV_RUN_NOWAIT)
           UV.default_loop.stop

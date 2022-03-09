@@ -52,7 +52,8 @@ class Connection
     #  @fsev.stop
     #  @fsev = nil
     #end
-    halt!
+    
+    #halt!
   end
 
   def running?

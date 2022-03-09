@@ -384,14 +384,15 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
 
     mrb_yield_argv(mrb, block, 0, NULL);
 
-  float textSize = 20.0;
-  ////Vector3 cubePosition = p_data->position;
-  ////Vector2 cubeScreenPosition;
-  ////cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
-  DrawText("dsdsd", 32.0, 32.0, textSize, RED);
-  //Vector2 ballPosition = { (float)512/2, (float)512/2 };
-  //DrawCircleV(ballPosition, 50, MAROON);
-  ////fprintf(stderr, "wtf\n");
+  //float textSize = 20.0;
+  //DrawText("dsdsd", 32.0, 32.0, textSize, RED);
+
+  //////Vector3 cubePosition = p_data->position;
+  //////Vector2 cubeScreenPosition;
+  //////cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
+  ////Vector2 ballPosition = { (float)512/2, (float)512/2 };
+  ////DrawCircleV(ballPosition, 50, MAROON);
+  //////fprintf(stderr, "wtf\n");
   
   EndMode2D();
 
@@ -522,9 +523,9 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   Vector2 cubeScreenPosition;
   //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
-  cubeScreenPosition = GetWorldToScreen2D((Vector2){600, 75}, p_data->cameraTwo);
+  cubeScreenPosition = GetWorldToScreen2D((Vector2){48, 32}, p_data->cameraTwo);
 
-  DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 1300, 75, RAYWHITE);
+  //DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 100, 64, RAYWHITE);
   DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, SKYBLUE);
 
   return mrb_nil_value();
