@@ -14,8 +14,6 @@ class GameLoop
         #log!(:playcnt, self.play_procs.length)
 
         self.play_procs.each { |cli, play_proc|
-          log!(cli)
-
           rez = play_proc.call(gt, dt, sw, sh)
         }
       end

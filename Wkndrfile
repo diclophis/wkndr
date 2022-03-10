@@ -116,3 +116,10 @@ Wkndr.server_side("main") { |gl, server|
     Protocol.ok(mab.to_s)
   end
 }
+
+
+#Wkndr.client_side("foo") { |gl|
+#  gl.update("foo") { |global_time, delta_time, sw, sh|
+#    $radius = ((10.0) + (1.0 + Math.sin(global_time * 1.0) * 5.0))
+#  }
+#}
