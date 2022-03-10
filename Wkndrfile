@@ -23,9 +23,11 @@ Wkndr.nonce("main") {
 #}
 
 
+$radius = 16.0
+
 Wkndr.client_side("main") { |gl|
   a = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
-  
+
   store = StorageManager.new
   batcher = CubicBatchingSystem.new(store, a, 1)
   bits = []
@@ -55,7 +57,7 @@ Wkndr.client_side("main") { |gl|
       }
 
       gl.twod {
-        gl.draw_circle(16.0, 256 + (32.0 * Math.cos(global_time)), 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
+        gl.draw_circle($radius, 256 + (32.0 * Math.cos(global_time)), 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
         gl.label("foo %3.1f" % (1.0 / delta_time))
       }
     }
