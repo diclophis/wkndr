@@ -28,13 +28,13 @@ RUN cd /var/lib/wkndr && \
     git clone https://github.com/mruby/mruby && \
     cd mruby && \
     git fetch && \
-    git checkout ad3ce7b41c4375f818d02a24e6a09cbc790048c9
+    git checkout 6f2efebbb9e0d43ca471d89ea76f396baa43eb62
 
 RUN cd /var/lib/wkndr && \
     git clone https://github.com/raysan5/raylib && \
     cd raylib && \
     git fetch && \
-    git checkout 7eb341ccafa1cb39006b354714e4524a612c6e25
+    git checkout cda1324e87e0e3b3c1f488ac93a928d1b1b3d50b
 
 #COPY rlgl.h.patch /var/lib/wkndr/
 #RUN cd /var/lib/wkndr/raylib && \

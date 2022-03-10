@@ -123,8 +123,8 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
-	#cd mruby && make clean && rm -Rf build && git checkout 1e1d2964972eda9dd0317dfa422311e5c5b80783
-	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_HEAVY_PLATFORM) clean
+	cd mruby && make clean && rm -Rf build
+	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) clean
 	rm -R $(build)
 	mkdir -p $(build)
 	mkdir -p $(build)/src
