@@ -125,8 +125,8 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //}
 
   Material material = LoadMaterialDefault();
-  //Shader standardShader = pp_data->globalDebugShader;
-  //material.shader = standardShader;
+  Shader standardShader = pp_data->globalDebugShader;
+  material.shader = standardShader;
   p_data->model.materials[0] = material;
 
   p_data->scale.x = scalef;
@@ -235,9 +235,9 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   
   Material material = LoadMaterialDefault();
-  //Shader standardShader = pp_data->globalDebugShader;
+  Shader standardShader = pp_data->globalDebugShader;
+  material.shader = standardShader;
   ////Texture standardTexture = pp_data->globalDebugTexture;
-  //material.shader = standardShader;
 
   for (int mi=0; mi<p_data->model.materialCount; mi++) {
   ////  //p_data->model.materials[mi].maps[MAP_DIFFUSE].texture = standardTexture;
@@ -710,7 +710,6 @@ static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-  //Shader standardShader = pp_data->globalDebugShader;
   //Texture standardTexture = pp_data->globalDebugTexture;
 
   //for (int mi=0; mi<p_data->model.materialCount; mi++) {
@@ -719,7 +718,9 @@ static mrb_value mesh_proxy_initialize(mrb_state* mrb, mrb_value self)
   //  p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
   //}
 
-  Material material = LoadMaterialDefault();
+  //Material material = LoadMaterialDefault();
+
+  //Shader standardShader = pp_data->globalDebugShader;
   //material.shader = standardShader;
   
   //p_data->model.materials[0] = material;

@@ -26,11 +26,11 @@
 #include <rlights.h>
 //#include <rcamera.h>
 
-//#if defined(PLATFORM_DESKTOP)
-//    #define GLSL_VERSION            330
-//#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
+#if defined(PLATFORM_DESKTOP)
+    #define GLSL_VERSION            330
+#else   // PLATFORM_RPI, PLATFORM_ANDROID, PLATFORM_WEB
     #define GLSL_VERSION            100
-//#endif
+#endif
 
 //#include <GL/gl.h>
 //#include <GL/glext.h>
@@ -117,11 +117,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
-  //InitWindow(screenWidth, screenHeight, c_game_name);
-  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  InitWindow(screenWidth, screenHeight, c_game_name);
+  //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
 
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
@@ -154,15 +154,16 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     //// Ambient light level
     int ambientLoc = GetShaderLocation(shader, "ambient");
     SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
-    Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 50.0f, 50.0f, 0.0f }, Vector3Zero(), WHITE, shader);
-    foo.enabled = true;
+
+    //Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 75.0f, 75.0f, 0.0f }, Vector3Zero(), WHITE, shader);
+
+    //foo.enabled = true;
 
     // NOTE: We are assigning the intancing shader to material.shader
     // to be used on mesh drawing with DrawMeshInstanced()
-    //Material material = LoadMaterialDefault();
-    //TODO: material.shader = shader;
-    
-    //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    Material material = LoadMaterialDefault();
+    material.shader = shader;
+    material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
 
 //LoadShaderCode
 //LoadFileText
@@ -589,7 +590,7 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
 
           //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
                   
-                  //TODO SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+                  SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
                   UpdateCamera(&p_data->camera);
 
