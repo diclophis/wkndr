@@ -99,7 +99,7 @@ ifeq ($(TARGET),desktop)
 else
   #NOTE: SAFE_HEAP=1 breaks things, could be fixed possibly?? https://github.com/emscripten-core/emscripten/blob/main/site/source/docs/porting/Debugging.rst
   #EMSCRIPTEN_FLAGS=-O0 -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s USE_ZLIB=1 -s SAFE_HEAP=0 -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=128
-  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16 -s WASM=1 
+  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1
   #CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src
   CFLAGS+=-DPLATFORM_WEB -fdeclspec
 endif

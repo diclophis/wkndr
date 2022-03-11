@@ -35,6 +35,9 @@ Wkndr.client_side("main") { |gl|
   #  bits << batcher.at(gl, zzz)
   #}
 
+  frame_count = 0
+  running_average = 0.0
+
   gl.update("main") { |global_time, delta_time, sw, sh|
     if global_time > 999.0
       raise
@@ -58,7 +61,9 @@ Wkndr.client_side("main") { |gl|
 
       gl.twod {
         gl.draw_circle($radius, 256 + (32.0 * Math.cos(global_time)), 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
-        gl.label("foo %3.1f" % (1.0 / delta_time))
+        frame_count += 1
+        running_average += delta_time
+        gl.label("foo %3.1f" % (1.0 / (running_average / frame_count.to_f)))
       }
     }
   }

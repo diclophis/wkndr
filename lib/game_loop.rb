@@ -8,6 +8,7 @@ class GameLoop
     if cli && block 
       #@play_proc = block
       self.play_procs[cli] = block
+      "installed #{cli}: #{block.object_id}"
     else
       #if @play_proc
       if cli == false && self.play_procs
