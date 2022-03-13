@@ -762,12 +762,12 @@ void editorDelChar(int back) {
       return;
     }
 
-    //fprintf(stderr, "FOO %ld\n", filerow);
     erow *row = NULL;
 
-    if (filerow < E.numrows) {
+    if (filerow <= E.numrows) {
       row = &E.row[filerow];
     }
+    fprintf(stderr, "FOO %x %d %d %d\n", row, filerow, E.numrows, row->size);
 
     int rowlen;
 
@@ -777,34 +777,39 @@ void editorDelChar(int back) {
           return;
         }
         //if (!row || (back && filecol == 0)) {
-        if ((back && filecol == 0)) {
-            /* Handle the case of column 0, we need to move the current line
-             * on the right of the previous one. */
-            filecol = E.row[filerow-1].size;
-
-//fprintf(stderr, "BB-00 %ld %ld, %ld, %ld %ld\n", filecol, (filerow-1), E.numrows, row->chars, row->size);
-
-//BB-00 108 0, 1, 0 0
-
+        fprintf(stderr, "AA %d %d\n", back, filecol);
+        if (1 == back && 0 == filecol) {   // Handle the case of column 0, we need to move the current line on the right of the previous one. */
+        fprintf(stderr, "BB %d %d\n", back, filecol);
             if (filecol == 0 && E.numrows == 1 && row->size == 0) {
+        fprintf(stderr, "CC %d %d\n", back, filecol);
               //NO-OP????
               //fprintf(stdout, "WTF123123\n");
               //editorRowDelChar(&E.row[filerow-1],1);
               editorDelRow(0);
             } else {
+        fprintf(stderr, "DD %d %d\n", back, filecol);
               editorRowAppendString(&E.row[filerow-1],row->chars,row->size);
             }
 
             editorDelRow(filerow);
 
+        fprintf(stderr, "EE %d %d %d %d\n", back, filecol, filerow, E.numrows);
+        //EE 1 0 1 0
+
             //row = NULL;
+            if (E.numrows > 0) {
+
             row = &E.row[filerow-1];
+
+            }
 
             if (E.cy == 0) {
                 E.rowoff--;
             } else {
                 E.cy--;
             }
+
+            filecol = E.row[filerow-1].size;
 
             //E.cx = filecol;
             /* Get display width of line join point */
@@ -846,7 +851,6 @@ void editorDelChar(int back) {
 //CHSZZZ 1 0 108 0
 //LLLLLLLRRRRRR 1 0 0 0
 //LLLLLLLRRRRRR 0 108 108 102
-
 
 
 
@@ -915,7 +919,7 @@ void editorDelChar(int back) {
         }
     }
 
-    if (row) {
+    if (row && row->size > 0) {
       //fprintf(stderr, "DD-00\n");
       editorUpdateRow(row);
     }

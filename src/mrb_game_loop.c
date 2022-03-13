@@ -32,6 +32,9 @@
     #define GLSL_VERSION            100
 #endif
 
+#include "mrb_editor.h"
+#include "mrb_terminal.h"
+
 //#include <GL/gl.h>
 //#include <GL/glext.h>
 //#include "external/glad.h"
@@ -304,6 +307,9 @@ lights[3].intensity = 0.125;
 //  SetTargetFPS(screenFps);
 //#endif
 */
+  initEditor();
+  setupTerminal();
+
 
   return self;
 }
@@ -349,17 +355,93 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
+static int ctrl_key_pressed = 0;
+
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
+
+  int key = 99;
+  char chey = 0;
+
+  struct abuf *ab2 = malloc(sizeof(struct abuf));
+  ab2->b = NULL;
+  ab2->len = 0;
+
+  //// Check if more characters have been pressed on the same frame
+  while (key = GetKeyPressed()) {
+    chey = key;
+    //bell when 263
+    //fprintf(stderr, "Key: %d  %c \n", key, chey);
+
+    if (key == 341) {
+      ctrl_key_pressed = 1;
+    }
+
+    if (key == 259) {
+      editorProcessKeypress(BACKSPACE);
+    }
+
+    if (key == 257) {
+      editorProcessKeypress(ENTER);
+    }
+    if (key == 263) {
+      editorProcessKeypress(ARROW_LEFT);
+    }
+    if (key == 265) {
+      editorProcessKeypress(ARROW_UP);
+    }
+    if (key == 262) {
+      editorProcessKeypress(ARROW_RIGHT);
+    }
+    if (key == 264) {
+      editorProcessKeypress(ARROW_DOWN);
+    }
+  }
+
+  if (IsKeyReleased(341)) {
+      ctrl_key_pressed = 1;
+      fprintf(stderr, "done ctrl\n");
+  }
+    
+
+  while (key = GetCharPressed()) {
+    chey = key;
+  //{
+  //    // NOTE: Only allow keys in range [32..125]
+  //    if ((key >= 32) && (key <= 125) && (letterCount < MAX_INPUT_CHARS))
+  //    {
+  //        name[letterCount] = (char)key;
+  //        name[letterCount+1] = '\0'; // Add null terminator at the end of the string.
+  //        letterCount++;
+  //    }
+  //    key = GetCharPressed();  // Check next character in the queue
+  //}
+
+    //fprintf(stderr, "Char: %d %c\n", key, chey);
+  
+    editorProcessKeypress(key);
+  }
+
+  editorRefreshScreen(ab2);
+
+  //fprintf(stdout, "wtf %d\n", ab2->len);
+  terminalRender(ab2->len, ab2->b);
+
+  free(ab2);
+
   mrb_value block;
   mrb_get_args(mrb, "&", &block);
 
   {
     BeginDrawing();
     ClearBackground(BLANK);
+
     {
       mrb_yield_argv(mrb, block, 0, NULL);
     }
+
+    DrawTexture(terminalTexture(), 0, 0, WHITE);
+
     EndDrawing();
   }
 
