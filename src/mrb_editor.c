@@ -557,11 +557,19 @@ int getRenderCol( erow *row, int coloff ) {
 /* Insert a row at the specified position, shifting the other rows on the bottom
  * if required. */
 void editorInsertRow(int at, char *s, size_t len) {
-    if (at > E.numrows) return;
+    fprintf(stderr, "insert Row %d %d\n", at, (int)len);
+
+    if (at > E.numrows) {
+      return;
+    }
+
     E.row = realloc(E.row,sizeof(erow)*(E.numrows+1));
+
     if (at != E.numrows) {
         memmove(E.row+at+1,E.row+at,sizeof(E.row[0])*(E.numrows-at));
-        for (int j = at+1; j <= E.numrows; j++) E.row[j].idx++;
+        for (int j = at+1; j <= E.numrows; j++) {
+          E.row[j].idx++;
+        }
     }
     E.row[at].size = len;
     E.row[at].chars = malloc(len+1);
@@ -572,6 +580,9 @@ void editorInsertRow(int at, char *s, size_t len) {
     E.row[at].rsize = 0;
     E.row[at].idx = at;
     editorUpdateRow(E.row+at);
+
+    fprintf(stderr, "xRow %d %d %p\n", at, (int)len, (void *)&E.row[at]);
+
     E.numrows++;
     E.dirty++;
 }
@@ -588,7 +599,7 @@ void editorFreeRow(erow *row) {
 void editorDelRow(int at) {
     erow *row;
 
-    //fprintf("CHUZ %ld %ld\n", at, E.numrows);
+    fprintf(stderr, "CHUZ %d %d\n", at, E.numrows);
 
     if (at >= E.numrows) return;
     row = E.row+at;
@@ -717,7 +728,7 @@ void editorInsertNewline(void) {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     /////////erow *row = &E.row[filerow];
-    //fprintf(stdout, "WTF %ld %ld %ld\n", filerow, filecol, row);
+    fprintf(stdout, "WTF %d %d %p / %d\n", filerow, filecol, row, E.numrows);
 
     if (!row) {
         if (filerow == E.numrows) {
@@ -726,9 +737,13 @@ void editorInsertNewline(void) {
         }
         return;
     }
+
     /* If the cursor is over the current line size, we want to conceptually
      * think it's just over the last character. */
-    if (filecol >= row->size) filecol = row->size;
+    if (filecol >= row->size) {
+      filecol = row->size;
+    }
+
     if (filecol == 0) {
         editorInsertRow(filerow,"",0);
     } else {
@@ -755,55 +770,78 @@ void editorDelChar(int back) {
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
 
+    
     //if (filerow >= E.numrows) {
+    fprintf(stderr, "DELETING %d / %d .... cxy %d %d\n", filerow, E.numrows, E.cx, E.cy);
 
     if (filerow == 0 && E.numrows == 0) {
-      //fprintf(stderr, "AA %d %d\n", filerow, E.numrows);
       return;
     }
 
     erow *row = NULL;
 
     if (filerow <= E.numrows) {
-      row = &E.row[filerow];
+
+//AXX 12 12
+//XX 12 12 32533
+
+      //AXX 7 7
+      //XX 7 7 21845 0x5555564f84d0
+
+      fprintf(stderr, "AXX %d %d\n", E.numrows, filerow);
+
+      row = &E.row[filerow-1];
+      //XX 15 15 65535
+      fprintf(stderr, "XX %d %d %d %p\n", E.numrows, filerow, row->size, row);
+      if (row->size > 4) {
+        fprintf(stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11 %d %d %d %p\n", E.numrows, filerow, row->size, row);
+      }
+
+
+        
     }
     
-    //fprintf(stderr, "FOO %x %d %d %d\n", row, filerow, E.numrows, row->size);
-
     int rowlen;
 
     if (back) {
         if (filecol == 0 && filerow == 0) {
-          //fprintf(stderr, "BB\n");
           return;
         }
-        //if (!row || (back && filecol == 0)) {
+
         fprintf(stderr, "AA %d %d\n", back, filecol);
+
         if (1 == back && 0 == filecol) {   // Handle the case of column 0, we need to move the current line on the right of the previous one. */
-        fprintf(stderr, "BB %d %d\n", back, filecol);
-            if (filecol == 0 && E.numrows == 1 && row->size == 0) {
-        fprintf(stderr, "CC %d %d\n", back, filecol);
+
+            fprintf(stderr, "BB %d %d\n", back, filecol);
+
+            if (row != NULL && filecol == 0 && E.numrows == 1 && row->size == 0) {
+
               //NO-OP????
               //fprintf(stdout, "WTF123123\n");
-              //editorRowDelChar(&E.row[filerow-1],1);
+              editorRowDelChar(&E.row[filerow-1],1);
               editorDelRow(0);
             } else {
-        fprintf(stderr, "DD %d %d\n", back, filecol);
-            if (E.numrows > 0 && filerow > 1) {
-              editorRowAppendString(&E.row[filerow-1],row->chars,row->size);
-            }
+//nd pos: 0 13 0 0 (nil)
+//Key: 259
+//DELETING 13 / 13 .... cxy 0 13
+//AXX 13 13
+//XX 13 13 85 0x55558c189680
+
+              //DD 1 0 85
+              fprintf(stderr, "DD %d %d %d\n", back, filecol, row->size);
+
+              if (row != NULL && row->size > 0 && E.numrows > 0 && filerow >= 1) {
+                editorRowAppendString(&E.row[filerow-1],row->chars,row->size);
+              }
             }
 
             editorDelRow(filerow);
 
-        fprintf(stderr, "EE %d %d %d %d\n", back, filecol, filerow, E.numrows);
-        //EE 1 0 1 0
+            fprintf(stderr, "EE %d %d %d %d\n", back, filecol, filerow, E.numrows);
 
             //row = NULL;
             if (E.numrows > 0 && filerow > 1) {
-
-            row = &E.row[filerow-1];
-
+              row = &E.row[filerow-1];
             }
 
             if (E.cy == 0) {
@@ -812,11 +850,16 @@ void editorDelChar(int back) {
                 E.cy--;
             }
 
-            filecol = E.row[filerow-1].size;
+            if (E.numrows > 0 && filerow >= 1) {
+              filecol = E.row[filerow-1].size;
+            }
 
             //E.cx = filecol;
             /* Get display width of line join point */
-            E.cx = getRenderCol(row, filecol) - getRenderCol(row, E.coloff);
+
+            if (row != NULL) {
+              E.cx = getRenderCol(row, filecol) - getRenderCol(row, E.coloff);
+            }
 
             if (E.cx >= E.screencols) {
                 int shift = (E.screencols-E.cx)+1;
@@ -825,59 +868,35 @@ void editorDelChar(int back) {
             }
 
 
-    /////* Fix cx if the current line has not enough chars. */
-    filerow = E.rowoff+E.cy;
-    filecol = E.coloff+E.cx;
-    //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
-    rowlen = row ? row->size : 0;
+            /////* Fix cx if the current line has not enough chars. */
+            filerow = E.rowoff+E.cy;
+            filecol = E.coloff+E.cx;
+            //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+            rowlen = row ? row->size : 0;
 
-    //fprintf(stdout, "CHSZZZ %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
+            fprintf(stdout, "CHSZZZ %d %d %d %d\n", filerow, filecol, rowlen, E.cx);
 
-    if (filecol > rowlen) {
-        E.cx -= filecol-rowlen;
-        if (E.cx < 0) {
-            E.coloff += E.cx;
-            E.cx = 0;
-        }
-    }
-
-//BB-00 0 1, 2, 0 0
-//CHSZZZ 1 0 0 0
-//BB-00 117 0, 2, 6017040 0
-//CHSZZZ 0 117 117 117
-
-
-//LLLLLLLRRRRRR 1 0 0 0
-//LLLLLLLRRRRRR 0 114 114 102
-//CHSZZZ 0 114 114 114
-
-//CHSZZZ 1 0 108 0
-//LLLLLLLRRRRRR 1 0 0 0
-//LLLLLLLRRRRRR 0 108 108 102
-
-
-
-
-
-
-
-
+            if (filecol > rowlen) {
+                E.cx -= filecol-rowlen;
+                if (E.cx < 0) {
+                    E.coloff += E.cx;
+                    E.cx = 0;
+                }
+            }
         } else {
             //fprintf(stderr, "BB-11\n");
             editorRowDelChar(row,filecol-1);
-            if (E.cx == 0 && E.coloff)
+            if (E.cx == 0 && E.coloff) {
                 E.coloff--;
-            else
+            } else {
                 E.cx--;
+            }
         }
     } else {
         /* not backspace */
         if (filerow == E.numrows-1 && filecol >= row->size) {
-          //fprintf(stderr, "CC\n");
-
           if (filecol == 0 && E.numrows == 1 && row->size == 0) {
             //NO-OP????
-            //fprintf(stdout, "WTF123123\n");
             editorDelRow(0);
           }
 
@@ -902,22 +921,8 @@ void editorDelChar(int back) {
               editorDelRow(filerow + 1);
             }
 
-    /////* Fix cx if the current line has not enough chars. */
-    //filerow = E.rowoff+E.cy;
-    //filecol = E.coloff+E.cx;
-    //row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
-    //rowlen = row ? row->size : 0;
-    //if (filecol > rowlen) {
-    //    E.cx -= filecol-rowlen;
-    //    if (E.cx < 0) {
-    //        E.coloff += E.cx;
-    //        E.cx = 0;
-    //    }
-    //}
-
             row = NULL;
         } else {
-            //fprintf(stderr, "CC-11\n");
             editorRowDelChar(row,filecol);
         }
     }
@@ -1295,6 +1300,8 @@ void editorMoveCursor(int key) {
     int rowlen;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
+    fprintf(stderr, "start pos: %d %d %d %d -- %p\n", E.cx, E.cy, E.rowoff, E.coloff, row);
+
     switch(key) {
     case ARROW_LEFT:
         if (E.cx == 0) {
@@ -1365,6 +1372,7 @@ void editorMoveCursor(int key) {
     row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     rowlen = row ? row->size : 0;
     //fprintf(stdout, "LLLLLLLRRRRRR %ld %ld %ld %ld\n", filerow, filecol, rowlen, E.cx);
+    
     if (filecol > rowlen) {
         E.cx -= filecol-rowlen;
         if (E.cx < 0) {
@@ -1372,6 +1380,16 @@ void editorMoveCursor(int key) {
             E.cx = 0;
         }
     }
+
+    if (row == NULL) {
+			E.cy = 0;
+    } 
+
+    if (E.cy < 0) {
+      E.cy = 0;
+    }
+
+    fprintf(stderr, "end pos: %d %d %d %d %p\n", E.cx, E.cy, E.rowoff, E.coloff, row);
 }
 
 /* Process events arriving from the standard input, which is, the user

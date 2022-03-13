@@ -358,6 +358,9 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 
 
 static int ctrl_key_pressed = 0;
+static int arrow_right_key_pressed = 0;
+static int backspace_key_pressed = 0;
+static int enter_key_pressed = 0;
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
@@ -380,29 +383,62 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     }
 
     if (key == 259) {
-      editorProcessKeypress(BACKSPACE);
+      backspace_key_pressed = 1;
     }
 
     if (key == 257) {
-      editorProcessKeypress(ENTER);
+      enter_key_pressed = 1;
     }
+
     if (key == 263) {
       editorProcessKeypress(ARROW_LEFT);
     }
+
     if (key == 265) {
       editorProcessKeypress(ARROW_UP);
     }
+
     if (key == 262) {
-      editorProcessKeypress(ARROW_RIGHT);
+      arrow_right_key_pressed = 1;
     }
     if (key == 264) {
       editorProcessKeypress(ARROW_DOWN);
     }
   }
 
+  if (enter_key_pressed) {
+    keyCount += 1;
+    editorProcessKeypress(ENTER);
+  }
+
+  if (backspace_key_pressed) {
+    keyCount += 1;
+    editorProcessKeypress(BACKSPACE);
+  }
+
+  if (arrow_right_key_pressed) {
+    keyCount += 1;
+    editorProcessKeypress(ARROW_RIGHT);
+  }
+
+  if (IsKeyReleased(257)) {
+    enter_key_pressed = 0;
+    fprintf(stderr, "done enter\n");
+  }
+
+  if (IsKeyReleased(262)) {
+    arrow_right_key_pressed = 0;
+    fprintf(stderr, "done right arrow\n");
+  }
+
   if (IsKeyReleased(341)) {
     ctrl_key_pressed = 1;
     fprintf(stderr, "done ctrl\n");
+  }
+
+  if (IsKeyReleased(259)) {
+    backspace_key_pressed = 0;
+    fprintf(stderr, "done backspace\n");
   }
 
   while (key = GetCharPressed()) {
