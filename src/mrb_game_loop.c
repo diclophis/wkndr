@@ -120,7 +120,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE); // | FLAG_VSYNC_HINT | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
   InitWindow(screenWidth, screenHeight, c_game_name);
@@ -503,13 +503,13 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   {
     BeginDrawing();
-    ClearBackground(BLANK);
+    ClearBackground((Color){0.0, 0.0, 0.0, 0.0});
 
     {
       mrb_yield_argv(mrb, block, 0, NULL);
     }
 
-    DrawTexture(terminalTexture(), 0, 0, WHITE);
+    DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
 
     EndDrawing();
   }

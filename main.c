@@ -658,10 +658,10 @@ struct pseudobuffer {
 
 
 /* See LICENSE for licence details. */
-enum gif_opetion {
+enum gif_option {
 	GIF_REPEAT      = 1,
 	GIF_DELAY       = 0,
-	GIF_TRANSPARENT = -1,
+	GIF_TRANSPARENT = 0,
 	GIF_DISPOSAL    = 2,
 };
 
@@ -3201,13 +3201,14 @@ void terminalRender (ssize_t size, uint8_t* buf)
 
   parse(term_g, buf, size);
   refresh(pb_g, term_g);
+  
   apply_colormap(pb_g, capture);
   putgif(gif.data, capture);
-
   int sizeXX = endgif(gif.data);
-  Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
 
+  Image r = LoadImageFromMemory(".png", gif.image, sizeXX);      // Load image from memory buffer
   UpdateTexture(thisTerm, r.data);
+  free(gif.image);
 
   //TODO: free gif.image !!!! valgrind tests
 }

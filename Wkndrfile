@@ -23,7 +23,7 @@ Wkndr.nonce("main") {
 #}
 
 
-$radius = 16.0
+$radius = 64.0
 
 Wkndr.client_side("main") { |gl|
   a = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
@@ -56,11 +56,11 @@ Wkndr.client_side("main") { |gl|
         ###TODO: handle shader switch between w/ lighting and without!!
         a.deltap(8.0 * Math.cos(global_time * 2.0), 0, 8.0 * Math.sin(global_time * 2.0))
         a.deltar(1, Math.cos(global_time) * (Math.sin(global_time * 0.1) * 0.759), 0, global_time * 100.0)
-        a.draw(true)
+        a.draw(false)
       }
 
       gl.twod {
-        gl.draw_circle($radius, 256 + (32.0 * Math.cos(global_time)), 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
+        gl.draw_circle($radius, 128 + 256 + (32.0 * Math.cos(global_time)), 128 + 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
         frame_count += 1
         running_average += delta_time
         gl.label("foo %3.1f" % (1.0 / (running_average / frame_count.to_f)))
