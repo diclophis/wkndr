@@ -58,6 +58,7 @@ RUN cd /var/lib/wkndr && \
     make release/libraylib.a
 
 COPY main.c /var/lib/wkndr/
+COPY glyph /var/lib/wkndr/glyph
 COPY src /var/lib/wkndr/src
 COPY include /var/lib/wkndr/include
 COPY lib /var/lib/wkndr/lib

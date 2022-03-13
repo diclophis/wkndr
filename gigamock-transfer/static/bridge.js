@@ -37,62 +37,62 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     window.conn = new WebSocket(wsbUrl);
     window.conn.binaryType = 'arraybuffer';
 
-    window.fit = new FitAddon();
+    //window.fit = new FitAddon();
 
-    window.addEventListener('resize', function(resizeEvent) {
-      window.fit.fit();
-    });
+    //window.addEventListener('resize', function(resizeEvent) {
+    //  window.fit.fit();
+    //});
 
-    window.terminal = new Terminal();
-    window.terminal.loadAddon(window.fit);
+    //window.terminal = new Terminal();
+    //window.terminal.loadAddon(window.fit);
 
-    window.terminal.onKey(function(event) {
-      // put the keycode you copied from the console
-      if (window.terminal.hasSelection() && event.key === "\u0003") {
-        return document.execCommand('copy');
-      } else if (event.key === "\u0016") {
-        throw "paste-event-bug, snafu";
-      }
-    });
+    //window.terminal.onKey(function(event) {
+    //  // put the keycode you copied from the console
+    //  if (window.terminal.hasSelection() && event.key === "\u0003") {
+    //    return document.execCommand('copy');
+    //  } else if (event.key === "\u0016") {
+    //    throw "paste-event-bug, snafu";
+    //  }
+    //});
 
-    window.terminal.onData(function(termInputData) {
-      //let encIn = textEncoder.encode(termInputData);
-      console.log(termInputData);
-      //var ptr = allocate(intArrayFromString(encIn), ALLOC_NORMAL);
-      //window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, encIn.length);
-          //var buf = new ArrayBuffer(termInputData.length);
-          //var bufView = new Uint8Array(buf);
-          //for (var i=0; i < length; i++) {
-          //  var ic = Module.getValue(bytes + (i), 'i8');
-          //  bufView[i] = ic;
-          //}
-          //window.terminal.write(bufView);
-      //var s = "😀";
-      //window.terminal.write(s);
-      //var ptr = allocate(new Uint8Array(s), ALLOC_NORMAL);
-      //console.log(byteLength(s), s.length);
-
-      window.pack_outbound_tty(mrbPointer, callbackPointer, termInputData);
-    });
+    //window.terminal.onData(function(termInputData) {
+    //  ///////let encIn = textEncoder.encode(termInputData);
+    //  ///////console.log(termInputData);
+    //  ///////var ptr = allocate(intArrayFromString(encIn), ALLOC_NORMAL);
+    //  ///////window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, encIn.length);
+    //  /////    //var buf = new ArrayBuffer(termInputData.length);
+    //  /////    //var bufView = new Uint8Array(buf);
+    //  /////    //for (var i=0; i < length; i++) {
+    //  /////    //  var ic = Module.getValue(bytes + (i), 'i8');
+    //  /////    //  bufView[i] = ic;
+    //  /////    //}
+    //  /////    //window.terminal.write(bufView);
+    //  ///////var s = "😀";
+    //  ///////window.terminal.write(s);
+    //  ///////var ptr = allocate(new Uint8Array(s), ALLOC_NORMAL);
+    //  ///////console.log(byteLength(s), s.length);
+    //  window.pack_outbound_tty(mrbPointer, callbackPointer, termInputData);
+    //});
 
     document.body.addEventListener('paste', (event) => {
+      //TODO: !!!
       let paste = (event.clipboardData || window.clipboardData).getData('text');
-      let encPaste = textEncoder.encode(paste);
+      console.log(paste);
 
-      var ptr = allocate(intArrayFromString(encPaste), ALLOC_NORMAL);
-
-      console.log("wtf paste event", event, byteLength(paste), encPaste.length, paste.length);
-      window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, byteLength(paste));
+      //let encPaste = textEncoder.encode(paste);
+      //var ptr = allocate(intArrayFromString(encPaste), ALLOC_NORMAL);
+      //console.log("wtf paste event", event, byteLength(paste), encPaste.length, paste.length);
+      //window.pack_outbound_tty(mrbPointer, callbackPointer, ptr, byteLength(paste));
     });
 
-    window.terminal.onResize(function(newSize) {
-      window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight, newSize.rows, newSize.cols);
-    });
+    //window.terminal.onResize(function(newSize) {
+    //  window.resize_tty(mrbPointer, callbackPointer, graphicsContainer.offsetWidth, graphicsContainer.offsetHeight, newSize.rows, newSize.cols);
+    //});
 
-    window.terminal.open(terminalContainer);
+    //window.terminal.open(terminalContainer);
 
     window.conn.onopen = function (event) {
-      window.fit.fit();
+      //window.fit.fit();
 
       window.onbeforeunload = function() {
         window.conn.onclose = function () {};
@@ -111,27 +111,23 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       console.log("FOOO got message from server", event);
 
       var origData = event.data;
-      //var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
-      
-      //var ptr = allocate(intArrayFromString(new TextDecoder().decode(origData), true), ALLOC_NORMAL)
-      //window.handle_js_websocket_event(mrbPointer, callbackPointer, ptr, origData.byteLength);
 
-      //var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
-      //var ptr  = allocate(origData, ALLOC_NORMAL);
-      //var ptr  = allocate(intArrayFromString(new TextDecoder().decode(origData), true), ALLOC_NORMAL);
-
-      //var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
-
-      //window.handle_js_websocket_event(mrbPointer, callbackPointer, new TextDecoder().decode(origData), origData.byteLength);
-
-      //var sv = new StringView(origData)
-      //TODO: debug stringView of raw msg bits
+      //////var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
+      //////var ptr = allocate(intArrayFromString(new TextDecoder().decode(origData), true), ALLOC_NORMAL)
+      //////window.handle_js_websocket_event(mrbPointer, callbackPointer, ptr, origData.byteLength);
+      //////var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
+      //////var ptr  = allocate(origData, ALLOC_NORMAL);
+      //////var ptr  = allocate(intArrayFromString(new TextDecoder().decode(origData), true), ALLOC_NORMAL);
+      //////var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
+      //////window.handle_js_websocket_event(mrbPointer, callbackPointer, new TextDecoder().decode(origData), origData.byteLength);
+      //////var sv = new StringView(origData)
+      //////TODO: debug stringView of raw msg bits
 
       var typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
       window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, origData.byteLength);
-      //Module._free(heapBuffer);
+      //TODO???? Module._free(heapBuffer);
 
       return 0;
     };
@@ -139,14 +135,14 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     return addFunction(function(channel, bytes, length) { //IMPL: write_packed_pointer
       switch(channel) {
         case 0:
-          var buf = new ArrayBuffer(length);
-          var bufView = new Uint8Array(buf);
-          for (var i=0; i < length; i++) {
-            var ic = Module.getValue(bytes + (i), 'i8');
-            bufView[i] = ic;
-          }
-
-          window.terminal.write(bufView);
+          //TODO
+          //var buf = new ArrayBuffer(length);
+          //var bufView = new Uint8Array(buf);
+          //for (var i=0; i < length; i++) {
+          //  var ic = Module.getValue(bytes + (i), 'i8');
+          //  bufView[i] = ic;
+          //}
+          //window.terminal.write(bufView);
           break;
 
         case 1:
@@ -167,7 +163,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 };
 
 var graphicsContainer = document.getElementById('canvas');
-var terminalContainer = document.getElementById("wkndr-terminal");
+//var terminalContainer = document.getElementById("wkndr-terminal");
 
 if (graphicsContainer) {
   // As a default initial behavior, pop up an alert when webgl context is lost. To make your

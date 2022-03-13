@@ -767,7 +767,8 @@ void editorDelChar(int back) {
     if (filerow <= E.numrows) {
       row = &E.row[filerow];
     }
-    fprintf(stderr, "FOO %x %d %d %d\n", row, filerow, E.numrows, row->size);
+    
+    //fprintf(stderr, "FOO %x %d %d %d\n", row, filerow, E.numrows, row->size);
 
     int rowlen;
 
@@ -788,7 +789,9 @@ void editorDelChar(int back) {
               editorDelRow(0);
             } else {
         fprintf(stderr, "DD %d %d\n", back, filecol);
+            if (E.numrows > 0 && filerow > 1) {
               editorRowAppendString(&E.row[filerow-1],row->chars,row->size);
+            }
             }
 
             editorDelRow(filerow);
@@ -797,7 +800,7 @@ void editorDelChar(int back) {
         //EE 1 0 1 0
 
             //row = NULL;
-            if (E.numrows > 0) {
+            if (E.numrows > 0 && filerow > 1) {
 
             row = &E.row[filerow-1];
 

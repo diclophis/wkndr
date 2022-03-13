@@ -276,11 +276,12 @@ class ProtocolServer
             GIGAMOCK_TRANSFER_STATIC_WKNDR_CSS
           end
         end
-        mab.body "id" => "wkndr-body", "class" => "split-screen" do
-          mab.div "id" => "wkndr-terminal-container" do
-            mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
-            end
-          end
+        mab.body "id" => "wkndr-body" do
+          #LOGGING bits????
+          #mab.div "id" => "wkndr-terminal-container" do
+          #  mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
+          #  end
+          #end
           mab.div "id" => "wkndr-graphics-container", "oncontextmenu" => "event.preventDefault()" do
             mab.canvas "id" => "canvas", "class" => "maxwh" do
             end

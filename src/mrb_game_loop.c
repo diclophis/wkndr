@@ -307,9 +307,11 @@ lights[3].intensity = 0.125;
 //  SetTargetFPS(screenFps);
 //#endif
 */
-  initEditor();
-  setupTerminal();
 
+  
+  initEditor();
+  
+  setupTerminal();
 
   return self;
 }
@@ -360,18 +362,18 @@ static int ctrl_key_pressed = 0;
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
 
+  int keyCount = 0;
+
   int key = 99;
   char chey = 0;
 
-  struct abuf *ab2 = malloc(sizeof(struct abuf));
-  ab2->b = NULL;
-  ab2->len = 0;
-
   //// Check if more characters have been pressed on the same frame
   while (key = GetKeyPressed()) {
+    keyCount += 1;
+
     chey = key;
     //bell when 263
-    //fprintf(stderr, "Key: %d  %c \n", key, chey);
+    fprintf(stderr, "Key: %d\n", key);
 
     if (key == 341) {
       ctrl_key_pressed = 1;
@@ -399,13 +401,13 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   }
 
   if (IsKeyReleased(341)) {
-      ctrl_key_pressed = 1;
-      fprintf(stderr, "done ctrl\n");
+    ctrl_key_pressed = 1;
+    fprintf(stderr, "done ctrl\n");
   }
-    
 
   while (key = GetCharPressed()) {
-    chey = key;
+    keyCount += 1;
+
   //{
   //    // NOTE: Only allow keys in range [32..125]
   //    if ((key >= 32) && (key <= 125) && (letterCount < MAX_INPUT_CHARS))
@@ -417,17 +419,23 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   //    key = GetCharPressed();  // Check next character in the queue
   //}
 
-    //fprintf(stderr, "Char: %d %c\n", key, chey);
+    fprintf(stderr, "Char: %d\n", key);
   
     editorProcessKeypress(key);
   }
 
-  editorRefreshScreen(ab2);
+  if (keyCount > 0) {
+    struct abuf *ab2 = malloc(sizeof(struct abuf));
+    ab2->b = NULL;
+    ab2->len = 0;
 
-  //fprintf(stdout, "wtf %d\n", ab2->len);
-  terminalRender(ab2->len, ab2->b);
+    editorRefreshScreen(ab2);
 
-  free(ab2);
+    //fprintf(stdout, "wtf %d\n", ab2->len);
+    terminalRender(ab2->len, ab2->b);
+
+    free(ab2);
+  }
 
   mrb_value block;
   mrb_get_args(mrb, "&", &block);

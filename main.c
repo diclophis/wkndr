@@ -8,6 +8,7 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+#include <unistd.h>
 
 
 // mruby stuff
@@ -360,9 +361,9 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h, int r, in
   //  //mrb_hash_set(mrb, outbound_msg, mrb_fixnum_value(3), outbound_resize_msg);
   //  //mrb_funcall(mrb, mrb_obj_value(selfP), "write_typed", 1, outbound_msg);
 
-  fprintf(stdout, "WTFRESIZETTY!!!!!\n")
-  fprintf(stdout, "WTFRESIZETTY!!!!!\n")
-  fprintf(stdout, "WTFRESIZETTY!!!!!\n")
+  //fprintf(stdout, "WTFRESIZETTY!!!!!\n")
+  //fprintf(stdout, "WTFRESIZETTY!!!!!\n")
+  //fprintf(stdout, "WTFRESIZETTY!!!!!\n")
 
   if (IsWindowReady()) {
     SetWindowSize(w, h);
@@ -3522,8 +3523,9 @@ int mk_wcswidth_cjk(const uint32_t *pwcs, size_t n)
 }
 
 
-int setupTerminal()
+void setupTerminal()
 {
+
   uint16_t rows = TERM_ROWS, cols = TERM_COLS;
 
   updateWindowSize(rows, cols);
@@ -3535,7 +3537,7 @@ int setupTerminal()
   pb_g =  malloc(sizeof(struct pseudobuffer));
   term_g = malloc(sizeof(struct terminal));
 
-  /* init */
+  // init 
   pb_init(pb_g, CELL_WIDTH * cols, CELL_HEIGHT * rows);
   term_init(term_g, pb_g->width, pb_g->height, ambiguous_is_wide);
 
@@ -3548,8 +3550,10 @@ int setupTerminal()
   apply_colormap(pb_g, capture);
   putgif(gif.data, capture);
   int sizeXX = endgif(gif.data);
+
   Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
   thisTerm = LoadTextureFromImage(r);
+
   //TODO: !!!!
   //term_die(&term);
   //pb_die(&pb);
