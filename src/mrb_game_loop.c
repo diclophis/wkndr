@@ -313,6 +313,15 @@ lights[3].intensity = 0.125;
   
   setupTerminal();
 
+    struct abuf *ab2 = malloc(sizeof(struct abuf));
+    ab2->b = NULL;
+    ab2->len = 0;
+
+    editorRefreshScreen(ab2);
+    terminalRender(ab2->len, ab2->b);
+
+    free(ab2);
+
   return self;
 }
 
@@ -361,6 +370,7 @@ static int ctrl_key_pressed = 0;
 static int arrow_right_key_pressed = 0;
 static int backspace_key_pressed = 0;
 static int enter_key_pressed = 0;
+static int del_key_pressed = 0;
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
@@ -380,6 +390,10 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     if (key == 341) {
       ctrl_key_pressed = 1;
+    }
+
+    if (key == 261) {
+      del_key_pressed = 1;
     }
 
     if (key == 259) {
@@ -411,6 +425,12 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     editorProcessKeypress(ENTER);
   }
 
+  if (del_key_pressed) {
+    keyCount += 1;
+    editorProcessKeypress(ARROW_RIGHT);
+    editorProcessKeypress(BACKSPACE);
+  }
+
   if (backspace_key_pressed) {
     keyCount += 1;
     editorProcessKeypress(BACKSPACE);
@@ -419,6 +439,11 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   if (arrow_right_key_pressed) {
     keyCount += 1;
     editorProcessKeypress(ARROW_RIGHT);
+  }
+
+  if (IsKeyReleased(261)) {
+    del_key_pressed = 0;
+    fprintf(stderr, "del enter\n");
   }
 
   if (IsKeyReleased(257)) {

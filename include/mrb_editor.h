@@ -1,6 +1,5 @@
 //
 
-
 struct editorSyntax {
     char **filematch;
     char **keywords;
@@ -9,7 +8,6 @@ struct editorSyntax {
     char multiline_comment_end[3];
     int flags;
 };
-
 
 /* This structure represents a single line of the file we are editing. */
 typedef struct erow {
@@ -23,11 +21,9 @@ typedef struct erow {
                            check. */
 } erow;
 
-
 typedef struct hlcolor {
     int r,g,b;
 } hlcolor;
-
 
 struct editorConfig {
     int cx,cy;  /* Cursor x and y position in characters */
@@ -40,14 +36,12 @@ struct editorConfig {
     erow *row;      /* Rows */
     int dirty;      /* File modified but not saved. */
     char *filename; /* Currently open filename */
-    char statusmsg[512];
+    char statusmsg[80];
     time_t statusmsg_time;
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
 };
 
-
 static struct editorConfig E;
-
 
 enum KEY_ACTION{
         KEY_NULL_EDITOR = 0,       /* NULL */
@@ -82,8 +76,8 @@ enum KEY_ACTION{
  * write all the escape sequences in a buffer and flush them to the standard
  * output in a single call, to avoid flickering effects. */
 struct abuf {
-    char *b;
-    int len;
+  char *b;
+  int len;
 };
 
 
@@ -91,8 +85,24 @@ void editorSetStatusMessage(const char *fmt, ...);
 int editorOpen(char *filename);
 int editorSave(void);
 void editorRefreshScreen(struct abuf *);
-int editorProcessKeypress(int c);
+
+
+//void editorRefreshScreen(void) {
+//    int y;
+//    erow *r;
+//    char buf[32];
+//    struct abuf ab = ABUF_INIT;
+//
+//    abAppend(&ab,"\x1b[?25l",6); /* Hide cursor. */
+//    abAppend(&ab,"\x1b[H",3); /* Go home. */
+
+
+void editorProcessKeypress(int c);
+//void editorProcessKeypress(int fd)
+
 void updateWindowSize(int, int);
+//void updateWindowSize(void)
+
 void handleSigWinCh(int unused __attribute__((unused)));
 void initEditor(void);
 char *editorRowsToString(int *buflen);
