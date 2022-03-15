@@ -120,11 +120,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE); // | FLAG_VSYNC_HINT | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
-  InitWindow(screenWidth, screenHeight, c_game_name);
-  //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  //InitWindow(screenWidth, screenHeight, c_game_name);
+  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
 
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
@@ -390,33 +390,22 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     if (key == 341) {
       ctrl_key_pressed = 1;
-    }
-
-    if (key == 261) {
+    } else if (key == 261) {
       del_key_pressed = 1;
-    }
-
-    if (key == 259) {
-      backspace_key_pressed = 1;
-    }
-
-    if (key == 257) {
+    } else if (key == 257) {
       enter_key_pressed = 1;
-    }
-
-    if (key == 263) {
+    } else if (key == 259) {
+      backspace_key_pressed = 1;
+    } else if (key == 263) {
       editorProcessKeypress(ARROW_LEFT);
-    }
-
-    if (key == 265) {
+    } else if (key == 265) {
       editorProcessKeypress(ARROW_UP);
-    }
-
-    if (key == 262) {
+    } else if (key == 262) {
       arrow_right_key_pressed = 1;
-    }
-    if (key == 264) {
+    } else if (key == 264) {
       editorProcessKeypress(ARROW_DOWN);
+    } else {
+      editorProcessKeypress(key + 32);
     }
   }
 
@@ -466,24 +455,23 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     fprintf(stderr, "done backspace\n");
   }
 
-  while (key = GetCharPressed()) {
-    keyCount += 1;
+  //while (key = GetCharPressed()) {
+  //  keyCount += 1;
 
-  //{
-  //    // NOTE: Only allow keys in range [32..125]
-  //    if ((key >= 32) && (key <= 125) && (letterCount < MAX_INPUT_CHARS))
-  //    {
-  //        name[letterCount] = (char)key;
-  //        name[letterCount+1] = '\0'; // Add null terminator at the end of the string.
-  //        letterCount++;
-  //    }
-  //    key = GetCharPressed();  // Check next character in the queue
+  //////{
+  //////    // NOTE: Only allow keys in range [32..125]
+  //////    if ((key >= 32) && (key <= 125) && (letterCount < MAX_INPUT_CHARS))
+  //////    {
+  //////        name[letterCount] = (char)key;
+  //////        name[letterCount+1] = '\0'; // Add null terminator at the end of the string.
+  //////        letterCount++;
+  //////    }
+  //////    key = GetCharPressed();  // Check next character in the queue
+  //////}
+
+  //  fprintf(stderr, "Char: %d\n", key);
+  //  editorProcessKeypress(key);
   //}
-
-    fprintf(stderr, "Char: %d\n", key);
-  
-    editorProcessKeypress(key);
-  }
 
   if (keyCount > 0) {
     struct abuf *ab2 = malloc(sizeof(struct abuf));
@@ -491,8 +479,6 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     ab2->len = 0;
 
     editorRefreshScreen(ab2);
-
-    //fprintf(stdout, "wtf %d\n", ab2->len);
     terminalRender(ab2->len, ab2->b);
 
     free(ab2);
@@ -512,6 +498,17 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
 
     EndDrawing();
+
+    SwapScreenBuffer();                  // Copy back buffer to front buffer (screen)
+
+    //// Frame time control system
+    //CORE.Time.current = GetTime();
+    //CORE.Time.draw = CORE.Time.current - CORE.Time.previous;
+    //CORE.Time.previous = CORE.Time.current;
+
+    //CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
+
+    PollInputEvents();      // Poll user events (before next frame update)
   }
 
   return mrb_nil_value();

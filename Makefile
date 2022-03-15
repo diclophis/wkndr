@@ -81,10 +81,12 @@ CFLAGS+=-DGRAPHICS_API_OPENGL_ES3
 #CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
 
 ######TODO: svga bootdisk
-#RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
-#LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm
-#CFLAGS+=-I/usr/include/libdrm
-RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
+#RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
+RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
+LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm
+CFLAGS+=-I/usr/include/libdrm 
+CFLAGS+=-DPLATFORM_DESKTOP=1
+CFLAGS+=-DSUPPORT_CUSTOM_FRAME_CONTROL=1
 
 #TODO 
 #-Imruby/build/mrbgems/mruby-b64/include 
@@ -106,6 +108,7 @@ endif
 
 $(target): $(objects) $(sources)
 ifeq ($(TARGET),desktop)
+	echo AAA
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
 	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' --preload-file resources
@@ -123,7 +126,7 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
-	cd mruby && make clean && rm -Rf build
+	#cd mruby && make clean && rm -Rf build
 	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) clean
 	rm -R $(build)
 	mkdir -p $(build)
@@ -142,8 +145,10 @@ endif
 
 $(raylib_static_lib): $(raylib_static_lib_deps)
 ifeq ($(TARGET),desktop)
+	echo FOOO
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
 else
+	echo BAAR
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
 endif
 

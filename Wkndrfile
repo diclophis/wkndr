@@ -39,7 +39,7 @@ Wkndr.client_side("main") { |gl|
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh|
-    if global_time > 999.0
+    if global_time > 10.0
       raise
     end
 
@@ -54,8 +54,8 @@ Wkndr.client_side("main") { |gl|
         #batcher.draw(1)
 
         ###TODO: handle shader switch between w/ lighting and without!!
-        a.deltap(8.0 * Math.cos(global_time * 2.0), 0, 8.0 * Math.sin(global_time * 2.0))
-        a.deltar(1, Math.cos(global_time) * (Math.sin(global_time * 0.1) * 0.759), 0, global_time * 100.0)
+        a.deltap(8.0 * Math.cos(global_time * 9.0), Math.tan(global_time * 0.333)+0.1, 8.0 * Math.sin(global_time * 9.0))
+        a.deltar(1, Math.cos(global_time) * (Math.sin(global_time * 1.5) * 0.759), 0, global_time * 179.0)
         a.draw(false)
       }
 
