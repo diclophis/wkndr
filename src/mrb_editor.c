@@ -871,12 +871,12 @@ void editorMoveCursor(int key) {
  * If return value is 0, only cursor position needs to be updated,
  * else the entire screen.
  */
-#define KILO_QUIT_TIMES 3
+//#define KILO_QUIT_TIMES 3
 //int editorProcessKeypress(int c) {
 void editorProcessKeypress(int c) {
     /* When the file is modified, requires Ctrl-q to be pressed N times
      * before actually quitting. */
-    static int quit_times = KILO_QUIT_TIMES;
+    //static int quit_times = KILO_QUIT_TIMES;
 
     //int c = editorReadKey(fd);
     switch(c) {
@@ -887,16 +887,16 @@ void editorProcessKeypress(int c) {
         /* We ignore ctrl-c, it can't be so simple to lose the changes
          * to the edited file. */
         break;
-    case CTRL_Q:        /* Ctrl-q */
-        /* Quit if the file was already saved. */
-        if (E.dirty && quit_times) {
-            editorSetStatusMessage("WARNING!!! File has unsaved changes. "
-                "Press Ctrl-Q %d more times to quit.", quit_times);
-            quit_times--;
-            return;
-        }
-        exit(0);
-        break;
+    //case CTRL_Q:        /* Ctrl-q */
+    //    /* Quit if the file was already saved. */
+    //    if (E.dirty && quit_times) {
+    //        editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+    //            "Press Ctrl-Q %d more times to quit.", quit_times);
+    //        quit_times--;
+    //        return;
+    //    }
+    //    exit(0);
+    //    break;
     case CTRL_S:        /* Ctrl-s */
         editorSave();
         break;
@@ -939,7 +939,7 @@ void editorProcessKeypress(int c) {
         break;
     }
 
-    quit_times = KILO_QUIT_TIMES; /* Reset it to the original value. */
+    //quit_times = KILO_QUIT_TIMES; /* Reset it to the original value. */
 
     //return quit_times;
 }

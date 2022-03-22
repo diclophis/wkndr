@@ -62,27 +62,28 @@ class ServerSide < Wkndr
       @keep_running = false
     end
 
-    if @run_clientside_fps
-      @timer = UV::Timer.new
-      fps = 1000.0000/248.0000
-      @timer.start(fps, fps) do
-        rez = self.server_side_tick!
+      if @run_clientside_fps
+        @timer = UV::Timer.new
+        fps = 1000.0000/60.00
+        @timer.start(fps, fps) do
+          rez = self.server_side_tick!
 
-        unless rez
-          @keep_running = false
-          @timer.stop
-          @trap.stop
-          a,b = *Wkndr.the_server
-          if b
-            b.halt!
+          unless rez
+            @keep_running = false
+            @timer.stop
+            @trap.stop
+            a,b = *Wkndr.the_server
+            if b
+              b.halt!
+            end
+            log!(:rez_falsey_exit_now, a, b)
+            #UV.run(UV::UV_RUN_NOWAIT)
+            #UV.default_loop.stop
+            #@keep_running = false
           end
-          log!(:rez_falsey_exit_now, a, b)
-          UV.run(UV::UV_RUN_NOWAIT)
-          UV.default_loop.stop
-          false
         end
       end
-    end
+
   end
 
   def self.block!
@@ -92,6 +93,7 @@ class ServerSide < Wkndr
 
     while @keep_running
       #self.server_side_tick!
+
 
       #unless @run_clientside_fps
         self.process_stacks!

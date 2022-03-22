@@ -28,8 +28,8 @@ class ClientSide < Wkndr
 
     party_args = args.find_all { |arg| arg[0,8] == "--party=" }
 
-    dw = 512
-    dh = 512
+    dw = 640
+    dh = 480
 
     whs = []
     wps = []

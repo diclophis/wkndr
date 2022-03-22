@@ -125,8 +125,8 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //}
 
   Material material = LoadMaterialDefault();
-  Shader standardShader = pp_data->globalDebugShader;
-  material.shader = standardShader;
+  //Shader standardShader = pp_data->globalDebugShader;
+  //material.shader = standardShader;
   p_data->model.materials[0] = material;
 
   p_data->scale.x = scalef;
@@ -235,8 +235,8 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
 
   
   Material material = LoadMaterialDefault();
-  Shader standardShader = pp_data->globalDebugShader;
-  material.shader = standardShader;
+  //Shader standardShader = pp_data->globalDebugShader;
+  //material.shader = standardShader;
   ////Texture standardTexture = pp_data->globalDebugTexture;
 
   for (int mi=0; mi<p_data->model.materialCount; mi++) {
@@ -248,7 +248,7 @@ static mrb_value cube_initialize(mrb_state* mrb, mrb_value self)
   
   //material.maps[MAP_DIFFUSE].color = ColorFromHSV((float)(((1)*18)%360), 0.75f, 0.9f);;
   //material.maps[MAP_DIFFUSE].color = RED;
-  material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
+  //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
 
   p_data->position.x = 0.0f;
   p_data->position.y = 0.0f;

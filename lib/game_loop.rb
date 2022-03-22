@@ -6,23 +6,14 @@ class GameLoop
 
   def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, &block)
     if cli && block 
-      #@play_proc = block
       self.play_procs[cli] = block
       "installed #{cli}: #{block.object_id}"
     else
-      #if @play_proc
       if cli == false && self.play_procs
-        #log!(:playcnt, self.play_procs.length)
-
         self.play_procs.each { |cli, play_proc|
           rez = play_proc.call(gt, dt, sw, sh)
         }
       end
-
-        #log!([:wtf, rez].inspect)
-        #  halt!
-        #end
-      #end
     end
   end
 

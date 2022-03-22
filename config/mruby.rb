@@ -68,6 +68,9 @@ MRuby::Build.new do |conf|
   #enable_debug
   
   conf.cc do |cc|
+    cc.flags = ["-O3"]
+    #cc.flags = ["-O3", "-DMRB_UTF8_STRING"]
+
     #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
     #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
     #cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]

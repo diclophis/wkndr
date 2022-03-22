@@ -5,10 +5,7 @@ set -x
 
 cd /root
 
-if ! (test -e emsdk && git --git-dir=emsdk/.git status)
-then
-  git clone https://github.com/juj/emsdk.git
-fi
+git clone https://github.com/juj/emsdk.git
 
 cd emsdk
 

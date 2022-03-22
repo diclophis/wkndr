@@ -8,62 +8,44 @@ Wkndr.nonce("main") {
   }
 }
 
-
-#Wkndr.client_side { |gl|
-#  gl.update { |global_time, delta_time, sw, sh|
-#    gl.drawmode {
-#      gl.threed {
-#        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
-#      }
-#      gl.twod {
-#        gl.draw_circle(10.0, 20, 20, 20, 1.0, 0.0, 0.1, 0.5)
-#      }
-#    }
-#  }
-#}
-
-
-$radius = 64.0
+$speed = 64.0
 
 Wkndr.client_side("main") { |gl|
   a = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
-
-  #store = StorageManager.new
-  #batcher = CubicBatchingSystem.new(store, a, 1)
-  #bits = []
-  #1.times { |zzz|
-  #  bits << batcher.at(gl, zzz)
-  #}
 
   frame_count = 0
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh|
-    if global_time > 10.0
+    if global_time > 300.0
       raise
     end
 
     gl.drawmode {
       gl.threed {
         gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
-        
-        #1.times { |zzz|
-        #  bits[zzz].deltap(Math.cos(global_time), 0, Math.sin(global_time))
-        #  bits[zzz].deltar(1, 0, 0, global_time * 100.0)
-        #}
-        #batcher.draw(1)
 
-        ###TODO: handle shader switch between w/ lighting and without!!
-        a.deltap(8.0 * Math.cos(global_time * 9.0), Math.tan(global_time * 0.333)+0.1, 8.0 * Math.sin(global_time * 9.0))
-        a.deltar(1, Math.cos(global_time) * (Math.sin(global_time * 1.5) * 0.759), 0, global_time * 179.0)
+        x = 0.0
+        y = 0.0
+        z = 0.0
+
+        e = 1.0 
+        f = 0.0
+        g = 0.0
+        d = global_time * $speed
+
+        a.deltap(x, y, z)
+        a.deltar(e, f, g, d)
+
         a.draw(false)
       }
 
       gl.twod {
-        gl.draw_circle($radius, 128 + 256 + (32.0 * Math.cos(global_time)), 128 + 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
+        #TODO: gl.draw_circle($radius, 128 + 256 + (32.0 * Math.cos(global_time)), 128 + 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
         frame_count += 1
         running_average += delta_time
-        gl.label("foo %3.1f" % (1.0 / (running_average / frame_count.to_f)))
+        fps = (1.0 / (running_average / frame_count.to_f))
+        gl.label("frames: %d gt: %3.3f" % [frame_count, global_time])
       }
     }
   }
@@ -78,32 +60,7 @@ Wkndr.server_side("main") { |gl, server|
     Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
   end
 
-  ## live urls are canonical subscription connection strings
-  ## all connected users recieve updates when input delta occurs
-  ## mechanism TBD
-  #server.live("/sevengui", "wkndr sevengui") { |cn, phr, mab|
-  #  # cn  ??????
-  #  # phr = client connection
-  #  # mab = html string builder DSL
-  #  mab.a(:href => "/sevengui") do
-  #    mab.h1 "sevengui example"
-  #  end
-
-  #  mab.ul do
-  #    mab.li do
-  #      "bap bar: " + cn.session["gt"].inspect
-  #    end
-  #    $ticks.times do |i|
-  #      mab.li do
-  #        i
-  #      end
-  #    end
-  #  end
-  #}
-
   server.raw("/about") do |cn, phr|
-    #raise "Server First Error"
-
     mab = Markaby::Builder.new
     mab.html5 "lang" => "en" do
       mab.head do

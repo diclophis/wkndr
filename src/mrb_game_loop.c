@@ -68,6 +68,25 @@
 // local stuff
 #include "mrb_game_loop.h"
 
+static Font the_font;
+
+typedef struct {
+  float debounce_time;
+  float debounce_timer;
+
+  int ctrl_key_pressed;
+  int tab_key_pressed;
+  int arrow_right_key_pressed;
+  int arrow_up_key_pressed;
+  int arrow_down_key_pressed;
+  int arrow_left_key_pressed;
+  int backspace_key_pressed;
+  int enter_key_pressed;
+  int del_key_pressed;
+  int shift_key_pressed;
+} keyset;
+
+static keyset foop;
 
 //#if defined(PLATFORM_DESKTOP)
 //    #define GLSL_VERSION            330
@@ -120,11 +139,11 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
-  //InitWindow(screenWidth, screenHeight, c_game_name);
-  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  InitWindow(screenWidth, screenHeight, c_game_name);
+  //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
 
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
@@ -135,38 +154,47 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   }
 
-
-    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
-                             TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
-
-    //Shader shader;
-    ////rlLoadShaderDefault();
-    //shader.id = rlGetShaderIdDefault();
-
-    p_data->globalDebugShader = shader;
-
-    //// Get some shader loactions
-    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
-
-    ////shader.locs[RL_SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
-    ////shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+int *fontChars = malloc(sizeof(int) * 95);
+for (int i=0; i<95; i++) {
+  fontChars[i] = i+32;
+}
 
 
-    //// Ambient light level
-    int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+//the_font = LoadFont("resources/unifont-14.0.02.ttf");
+the_font = LoadFontEx("resources/unifont-14.0.02.ttf", 32, fontChars, 95);
 
-    //Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 75.0f, 75.0f, 0.0f }, Vector3Zero(), WHITE, shader);
 
-    //foo.enabled = true;
+    //Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+    //                         TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
 
-    // NOTE: We are assigning the intancing shader to material.shader
-    // to be used on mesh drawing with DrawMeshInstanced()
-    Material material = LoadMaterialDefault();
-    material.shader = shader;
-    material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    ////Shader shader;
+    //////rlLoadShaderDefault();
+    ////shader.id = rlGetShaderIdDefault();
+
+    //p_data->globalDebugShader = shader;
+
+    ////// Get some shader loactions
+    //shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    //shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+
+    //////shader.locs[RL_SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+    //////shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "vertexColor");
+
+
+    ////// Ambient light level
+    //int ambientLoc = GetShaderLocation(shader, "ambient");
+    //SetShaderValue(shader, ambientLoc, (float[4]){ 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+
+    ////Light foo = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 75.0f, 75.0f, 0.0f }, Vector3Zero(), WHITE, shader);
+
+    ////foo.enabled = true;
+
+    //// NOTE: We are assigning the intancing shader to material.shader
+    //// to be used on mesh drawing with DrawMeshInstanced()
+    //Material material = LoadMaterialDefault();
+    //material.shader = shader;
+    //material.maps[MATERIAL_MAP_DIFFUSE].color = RED;
 
 //LoadShaderCode
 //LoadFileText
@@ -345,6 +373,20 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
   
   fovy = 5.0;
 
+  foop.debounce_timer = 0;
+  foop.debounce_time = 0.125;
+
+  foop.ctrl_key_pressed = 0;
+  foop.tab_key_pressed = 0;
+  foop.shift_key_pressed = 0;
+  foop.arrow_right_key_pressed = 0;
+  foop.arrow_left_key_pressed = 0;
+  foop.arrow_up_key_pressed = 0;
+  foop.arrow_down_key_pressed = 0;
+  foop.backspace_key_pressed = 0;
+  foop.enter_key_pressed = 0;
+  foop.del_key_pressed = 0;
+
   //p_data->camera.type = CAMERA_PERSPECTIVE;
   //// Define the camera to look into our 3d world
   //p_data->camera.position = (Vector3){ px, py, pz };    // Camera position
@@ -366,14 +408,10 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 }
 
 
-static int ctrl_key_pressed = 0;
-static int arrow_right_key_pressed = 0;
-static int backspace_key_pressed = 0;
-static int enter_key_pressed = 0;
-static int del_key_pressed = 0;
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
+  foop.debounce_timer -= 1.0 / 24.0;
 
   int keyCount = 0;
 
@@ -385,93 +423,190 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     keyCount += 1;
 
     chey = key;
-    //bell when 263
     fprintf(stderr, "Key: %d\n", key);
 
-    if (key == 341) {
-      ctrl_key_pressed = 1;
+    //76  ctrl-l
+    if (key == 89) { // ctrl-y
+      if (foop.ctrl_key_pressed) {
+        fprintf(stderr, "Exec Code!!!!!!\n");
+
+        // run Wkndrfile
+        mrb_value empty_string = mrb_str_new_lit(mrb, "");
+
+        int codelen;
+        char *codebuf = editorRowsToString(&codelen);
+
+        mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, codebuf, codelen);
+        mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
+
+        if (mrb->exc) {
+          //mrb_print_error(mrb_client);
+          //mrb_print_backtrace(mrb_client);
+          //mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
+          //mrb_value mesg = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
+          //editorSetStatusMessage(RSTRING_PTR(mesg));
+          //"XXX %.*s\n", (int)RSTRING_LEN(mesg), RSTRING_PTR(mesg));
+        } else {
+          if (!mrb_nil_p(editr_eval)) {
+            mrb_value rezstr = mrb_funcall(mrb, editr_eval, "to_s", 0);
+
+            const char *foo = mrb_string_value_ptr(mrb, rezstr);
+            int len = mrb_string_value_len(mrb, rezstr);
+            editorSetStatusMessage(foo, len);
+          }
+        }
+      }
+    } else if (key == 258) {
+      foop.tab_key_pressed = 1;
+    } else if (key == 344) {
+      foop.shift_key_pressed = 1;
+    } else if (key == 341) {
+      foop.ctrl_key_pressed = 1;
     } else if (key == 261) {
-      del_key_pressed = 1;
+      foop.del_key_pressed = 1;
     } else if (key == 257) {
-      enter_key_pressed = 1;
+      foop.enter_key_pressed = 1;
     } else if (key == 259) {
-      backspace_key_pressed = 1;
+      foop.backspace_key_pressed = 1;
     } else if (key == 263) {
-      editorProcessKeypress(ARROW_LEFT);
-    } else if (key == 265) {
-      editorProcessKeypress(ARROW_UP);
-    } else if (key == 262) {
-      arrow_right_key_pressed = 1;
+      foop.arrow_left_key_pressed = 1;
     } else if (key == 264) {
-      editorProcessKeypress(ARROW_DOWN);
+      foop.arrow_down_key_pressed = 1;
+    } else if (key == 265) {
+      foop.arrow_up_key_pressed = 1;
+    } else if (key == 262) {
+      foop.arrow_right_key_pressed = 1;
     } else {
-      editorProcessKeypress(key + 32);
+      //if (foop.shift_key_pressed) {
+      //  editorProcessKeypress(key);
+      //} else {
+      //  editorProcessKeypress(key + 32);
+      //}
+    }
+
+    foop.debounce_timer = 0.0;
+  }
+
+  if (foop.debounce_timer <= 0.0) {
+    foop.debounce_timer = foop.debounce_time;
+
+    if (foop.del_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(ARROW_RIGHT);
+      editorProcessKeypress(BACKSPACE);
+    }
+
+    if (foop.tab_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(TAB);
+      //fprintf(stderr, "sentTab\n");
+    }
+
+    if (foop.enter_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(ENTER);
+    }
+
+    if (foop.backspace_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(BACKSPACE);
+    }
+
+    if (foop.arrow_right_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(ARROW_RIGHT);
+    }
+
+    if (foop.arrow_left_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(ARROW_LEFT);
+    }
+
+    if (foop.arrow_up_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(ARROW_UP);
+    }
+
+    if (foop.arrow_down_key_pressed) {
+      keyCount += 1;
+      editorProcessKeypress(ARROW_DOWN);
     }
   }
 
-  if (enter_key_pressed) {
-    keyCount += 1;
-    editorProcessKeypress(ENTER);
-  }
-
-  if (del_key_pressed) {
-    keyCount += 1;
-    editorProcessKeypress(ARROW_RIGHT);
-    editorProcessKeypress(BACKSPACE);
-  }
-
-  if (backspace_key_pressed) {
-    keyCount += 1;
-    editorProcessKeypress(BACKSPACE);
-  }
-
-  if (arrow_right_key_pressed) {
-    keyCount += 1;
-    editorProcessKeypress(ARROW_RIGHT);
-  }
-
   if (IsKeyReleased(261)) {
-    del_key_pressed = 0;
-    fprintf(stderr, "del enter\n");
+    foop.debounce_timer = 0.0;
+    foop.del_key_pressed = 0;
+    //fprintf(stderr, "del enter\n");
   }
 
   if (IsKeyReleased(257)) {
-    enter_key_pressed = 0;
-    fprintf(stderr, "done enter\n");
+    foop.debounce_timer = 0.0;
+    foop.enter_key_pressed = 0;
+    //fprintf(stderr, "done enter\n");
+  }
+
+  if (IsKeyReleased(258)) {
+    foop.debounce_timer = 0.0;
+    foop.tab_key_pressed = 0;
+    //fprintf(stderr, "done tab\n");
+  }
+
+  if (IsKeyReleased(344)) {
+    foop.debounce_timer = 0.0;
+    foop.shift_key_pressed = 0;
+    //fprintf(stderr, "done shift\n");
+  }
+
+//Key: 265 U
+//Key: 262 R
+//Key: 264 D
+//Key: 263 L
+
+  if (IsKeyReleased(265)) {
+    foop.debounce_timer = 0.0;
+    foop.arrow_up_key_pressed = 0;
+    //fprintf(stderr, "done up arrow\n");
   }
 
   if (IsKeyReleased(262)) {
-    arrow_right_key_pressed = 0;
-    fprintf(stderr, "done right arrow\n");
+    foop.debounce_timer = 0.0;
+    foop.arrow_right_key_pressed = 0;
+    //fprintf(stderr, "done right arrow\n");
+  }
+
+  if (IsKeyReleased(263)) {
+    foop.debounce_timer = 0.0;
+    foop.arrow_left_key_pressed = 0;
+    //fprintf(stderr, "done left arrow\n");
+  }
+
+  if (IsKeyReleased(264)) {
+    foop.debounce_timer = 0.0;
+    foop.arrow_down_key_pressed = 0;
+    //fprintf(stderr, "done down arrow\n");
   }
 
   if (IsKeyReleased(341)) {
-    ctrl_key_pressed = 1;
-    fprintf(stderr, "done ctrl\n");
+    foop.debounce_timer = 0.0;
+    foop.ctrl_key_pressed = 0;
+    //fprintf(stderr, "done ctrl\n");
   }
 
   if (IsKeyReleased(259)) {
-    backspace_key_pressed = 0;
-    fprintf(stderr, "done backspace\n");
+    foop.debounce_timer = 0.0;
+    foop.backspace_key_pressed = 0;
+    //fprintf(stderr, "done backspace\n");
   }
 
-  //while (key = GetCharPressed()) {
-  //  keyCount += 1;
-
-  //////{
-  //////    // NOTE: Only allow keys in range [32..125]
-  //////    if ((key >= 32) && (key <= 125) && (letterCount < MAX_INPUT_CHARS))
-  //////    {
-  //////        name[letterCount] = (char)key;
-  //////        name[letterCount+1] = '\0'; // Add null terminator at the end of the string.
-  //////        letterCount++;
-  //////    }
-  //////    key = GetCharPressed();  // Check next character in the queue
-  //////}
-
-  //  fprintf(stderr, "Char: %d\n", key);
-  //  editorProcessKeypress(key);
-  //}
+  while (key = GetCharPressed()) {
+    fprintf(stderr, "Char: %d\n", key);
+    if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
+    {
+        keyCount += 1;
+        editorProcessKeypress((char)key);
+    }
+    foop.debounce_timer = 0.0;
+  }
 
   if (keyCount > 0) {
     struct abuf *ab2 = malloc(sizeof(struct abuf));
@@ -481,6 +616,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     editorRefreshScreen(ab2);
     terminalRender(ab2->len, ab2->b);
 
+    free(ab2->b);
     free(ab2);
   }
 
@@ -630,7 +766,6 @@ static mrb_value game_loop_mousep(mrb_state* mrb, mrb_value self)
   return mrb_yield_argv(mrb, block, 3, &mousexyz);
 }
 
-
 static mrb_value model_label(mrb_state* mrb, mrb_value self)
 {
   mrb_value label_txt = mrb_nil_value();
@@ -673,10 +808,13 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   Vector2 cubeScreenPosition;
   //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
-  cubeScreenPosition = GetWorldToScreen2D((Vector2){128, 32}, p_data->cameraTwo);
+  //cubeScreenPosition = GetWorldToScreen2D((Vector2){512, 32}, p_data->cameraTwo);
 
   //DrawRectangle(cubeScreenPosition.x - (float)MeasureText(c_label_txt, textSize) / 2.0, cubeScreenPosition.y, 100, 64, RAYWHITE);
-  DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, SKYBLUE);
+  //DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, SKYBLUE);
+  //fprintf(stdout, c_label_txt);
+  //fprintf(stdout, "\n");
+  DrawTextEx(the_font, c_label_txt, (Vector2){256.0, 256.0}, 64.0, 1.0, SKYBLUE);  // Draw text using font and additional parameters
 
   return mrb_nil_value();
 }
@@ -732,15 +870,15 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   //// Update the light shader with the camera view position
   //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
 
-  float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
+  //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };
 
-  //SetShaderValue(RLGL.State.defaultShaderId, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+  ////SetShaderValue(RLGL.State.defaultShaderId, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
-          //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
-                  
-                  SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+  //        //float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+  //                
+  //                SetShaderValue(p_data->globalDebugShader, p_data->globalDebugShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
-                  UpdateCamera(&p_data->camera);
+  //                UpdateCamera(&p_data->camera);
 
 
   //float cameraPos[3] = { p_data->camera.position.x, p_data->camera.position.y, p_data->camera.position.z };

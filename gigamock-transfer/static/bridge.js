@@ -112,17 +112,6 @@ window.startConnection = function(mrbPointer, callbackPointer) {
 
       var origData = event.data;
 
-      //////var ptr = allocate(new Uint8Array(origData), ALLOC_NORMAL);
-      //////var ptr = allocate(intArrayFromString(new TextDecoder().decode(origData), true), ALLOC_NORMAL)
-      //////window.handle_js_websocket_event(mrbPointer, callbackPointer, ptr, origData.byteLength);
-      //////var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
-      //////var ptr  = allocate(origData, ALLOC_NORMAL);
-      //////var ptr  = allocate(intArrayFromString(new TextDecoder().decode(origData), true), ALLOC_NORMAL);
-      //////var ptr  = allocate(intArrayFromString(origData, true), ALLOC_NORMAL);
-      //////window.handle_js_websocket_event(mrbPointer, callbackPointer, new TextDecoder().decode(origData), origData.byteLength);
-      //////var sv = new StringView(origData)
-      //////TODO: debug stringView of raw msg bits
-
       var typedData = new Uint8Array(origData);
       var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);

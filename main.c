@@ -3208,7 +3208,10 @@ void terminalRender (ssize_t size, uint8_t* buf)
 
   Image r = LoadImageFromMemory(".png", gif.image, sizeXX);      // Load image from memory buffer
   UpdateTexture(thisTerm, r.data);
+
+  free(capture);
   free(gif.image);
+  free(r.data);
 
   //TODO: free gif.image !!!! valgrind tests
 }
