@@ -374,7 +374,7 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
   fovy = 5.0;
 
   foop.debounce_timer = 0;
-  foop.debounce_time = 0.125;
+  foop.debounce_time = 0.25;
 
   foop.ctrl_key_pressed = 0;
   foop.tab_key_pressed = 0;

@@ -35,7 +35,7 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
   double currentTime = 0.0;
 
 #if defined(__EMSCRIPTEN__)
-  currentTime = (double)(emscripten_get_now() * 1000.0);
+  currentTime = (double)(emscripten_get_now() / 1000.0);
 #else
 //  struct timeval timev;
 //  gettimeofday(&timev, NULL);
@@ -78,8 +78,12 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
 
   mrb_funcall(mrb, self, "update", 5, mrb_false_value(), mrb_float_value(mrb, currentTime - startTime), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh));
 
+#if defined(__EMSCRIPTEN__)
+  latestTime = (double)(emscripten_get_now() / 1000.0);
+#else
     clock_gettime(CLOCK_REALTIME, &_t);
     latestTime = (_t.tv_sec*1000 + lround(_t.tv_nsec/1e6)) / 1000.0;
+#endif
 
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER_UPDATE_BITS");

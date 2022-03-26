@@ -167,7 +167,7 @@ class Wkndr
 
     default_fps = fps.to_f
     default_timeout = (1.0 / default_fps)
-    @fibers_by_name[name] ||= {
+    @fibers_by_name[name] = {
       :last_fired => 0.0,
       :fps => default_fps,
       :fiber => air_thread,

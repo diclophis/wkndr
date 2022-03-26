@@ -1,19 +1,12 @@
 # vi:syntax=ruby
 
-sync_counter = 0
+@one_position = [0.0, 1.0]
+@two_position = [-5.0, -5.0]
+@three_position = [5.0, 5.0]
 
-one_counter = 0
-two_counter = 0
-three_counter = 0
-direction = 1.0
-
-one_position = [0.0, 1.0]
-two_position = [-5.0, -5.0]
-three_position = [5.0, 5.0]
-
-one_target = [0.0, 0.0]
-two_target = [0.0, 0.0]
-three_target = [0.0, 0.0]
+@one_target = [0.0, 0.0]
+@two_target = [0.0, 0.0]
+@three_target = [0.0, 0.0]
 
 def centroid(coords)
   x_sum = 0
@@ -33,19 +26,24 @@ def centroid(coords)
 end
 
 xloop(:a) { |delta_time|
-  one_counter += (10.0 * delta_time * direction)
-
-  delta_time = xleap(1)
-
-  one_counter += (10.0 * delta_time * direction)
+  loop do
+    delta_time = xleap(7)
+    @one_target = [(rand * 50.0) - 25.0, (rand * 50.0) - 25.0]
+  end
 }
 
 xloop(:b) { |delta_time|
-  two_counter += (10.0 * delta_time)
+  loop do
+    delta_time = xleap(5)
+    @two_target = [(rand * 50.0) - 25.0, (rand * 50.0) - 25.0]
+  end
 }
 
 xloop(:c) { |delta_time|
-  three_counter += (10.0 * delta_time)
+  loop do
+    delta_time = xleap(1)
+    @three_target = centroid([@one_position, @two_position])
+  end
 }
 
 Wkndr.nonce("main") {
@@ -67,47 +65,24 @@ Wkndr.client_side("main") { |gl|
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh|
-    #bt = fps_scheduler.runblock(global_time)
     fiberz(global_time)
 
-    #if global_time > 300.0
-    #  raise
-    #end
+    @one_position[0] -= (@one_position[0] - @one_target[0]) * 0.7 * delta_time
+    @one_position[1] -= (@one_position[1] - @one_target[1]) * 0.7 * delta_time
 
-    one_position[0] -= (one_position[0] - one_target[0]) * 0.1 * delta_time
-    one_position[1] -= (one_position[1] - one_target[1]) * 0.1 * delta_time
+    @two_position[0] -= (@two_position[0] - @two_target[0]) * 0.7 * delta_time
+    @two_position[1] -= (@two_position[1] - @two_target[1]) * 0.7 * delta_time
 
-    two_position[0] -= (two_position[0] - two_target[0]) * 0.1 * delta_time
-    two_position[1] -= (two_position[1] - two_target[1]) * 0.1 * delta_time
+    @three_position[0] -= (@three_position[0] - @three_target[0]) * 0.7 * delta_time
+    @three_position[1] -= (@three_position[1] - @three_target[1]) * 0.7 * delta_time
 
-    three_position[0] -= (three_position[0] - three_target[0]) * 0.1 * delta_time
-    three_position[1] -= (three_position[1] - three_target[1]) * 0.1 * delta_time
-
-    a.deltap(one_position[0], one_position[1], 0.0)
-    b.deltap(two_position[0], two_position[1], 0.0)
-    c.deltap(three_position[0], three_position[1], 0.0)
+    a.deltap(@one_position[0], @one_position[1], 0.0)
+    b.deltap(@two_position[0], @two_position[1], 0.0)
+    c.deltap(@three_position[0], @three_position[1], 0.0)
 
     gl.drawmode {
       gl.threed {
         gl.lookat(1, 0.0, 0.0, 100.0, 0.0, 0.1, 0.0, 50.0)
-
-        #x = 0.0
-        #y = 0.0
-        #z = 0.0
-
-        #e = 1.0 
-        #f = 0.0
-        #g = 0.0
-        ##d = global_time * $speed
-
-        #a.deltap(x, y, z)
-        #a.deltar(e, f, g, one_counter)
-
-        #b.deltap(x, y - 10.0, z)
-        #b.deltar(e, f, g, two_counter)
-
-        #c.deltap(x, y - 20.0, z)
-        #c.deltar(e, f, g, three_counter)
 
         a.draw(false)
         b.draw(false)
@@ -115,18 +90,10 @@ Wkndr.client_side("main") { |gl|
       }
 
       gl.twod {
-        #TODO: gl.draw_circle($radius, 128 + 256 + (32.0 * Math.cos(global_time)), 128 + 256 + (32.0 * Math.sin(global_time)), 0.0, 255.0, 1.0, 1.0, 255.0)
         frame_count += 1
         running_average += delta_time
         fps = (1.0 / (running_average / frame_count.to_f))
-        #one = $air_thread_1.resume || -1
-        #two = $air_thread_2.resume || -1
-        #gl.label("%f %f" % [global_time, bt])
-        if (one_counter == two_counter && two_counter == three_counter)
-          sync_counter += 1
-        end
-        gl.label("%d %3.3f %3.3f %3.3f %3.3f" % [sync_counter, global_time, one_counter, two_counter, three_counter])
-        #gl.label("%3.3f %3.3f %3.3f %3.3f %3.3f gt:%3.3f" % [delta_time, one_counter, two_counter, three_counter, fps, global_time])
+        gl.label("%3.3f %3.3f %3.3f %d" % [delta_time, global_time, fps, frame_count])
       }
     }
   }
