@@ -136,18 +136,64 @@ class Wkndr
     }
   end
 
-  def self.timer(fps, &block)
-    if block
-      if fps < 0.0
-        fps = 0.1
-      end
+  #def self.timer(fps, &block)
+  #  if block
+  #    if fps < 0.0
+  #      fps = 0.1
+  #    end
+  #    timer = UV::Timer.new
+  #    fps = 1000.0/fps.to_f
+  #    timer.start(fps, fps) do
+  #      #log!(:wtf2, "foop timer")
+  #      #TODO: timer.stop
+  #      block.call
+  #    end
+  #  end
+  #end
 
-      timer = UV::Timer.new
-      fps = 1000.0/fps.to_f
-      timer.start(fps, fps) do
-        #log!(:wtf2, "foop timer")
-        #TODO: timer.stop
-        block.call
+  #def initialize
+  #  #@timeout = 0.0
+  #end
+
+  def self.xloop(name, fps = 60, &block)
+    @fibers_by_name ||= {}
+
+    air_thread = Fiber.new do |dt|
+      while true
+        dt = Fiber.yield
+        block.call(dt)
+      end
+    end
+
+    default_fps = fps.to_f
+    default_timeout = (1.0 / default_fps)
+    @fibers_by_name[name] ||= {
+      :last_fired => 0.0,
+      :fps => default_fps,
+      :fiber => air_thread,
+      :timeout => default_timeout
+    }
+
+    air_thread
+  end
+
+  def self.xleap(timeout)
+    Fiber.yield(timeout)
+  end
+
+  def self.fiberz(gt)
+    @fibers_by_name.collect do |name, details|
+      if (gt - details[:last_fired]) > details[:timeout]
+        delta = gt - details[:last_fired]
+
+        msg = details[:fiber].resume(delta)
+        if msg
+          details[:timeout] = msg
+        else
+          details[:timeout] = (1.0 / details[:fps])
+        end
+
+        details[:last_fired] = gt
       end
     end
   end

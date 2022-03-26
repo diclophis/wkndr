@@ -1,65 +1,50 @@
 # vi:syntax=ruby
 
-
-class FpsScheduler
-  def initialize
-    @fibers_by_fps = {}
-    #@timeout = 0.0
-  end
-
-  def loop(fps, &block)
-    @fibers_by_fps[fps] ||= {
-      :last_fired => 0.0,
-      :timeout => (1.0 / fps.to_f),
-      :fibers => []
-    }
-
-    air_thread = Fiber.new do |dt|
-      while true
-        dt = Fiber.yield(block.call(dt))
-      end
-    end
-
-    @fibers_by_fps[fps][:fibers] << air_thread
-
-    air_thread
-  end
-
-  def runblock(gt)
-    @fibers_by_fps.collect do |fps, details|
-      if (gt - details[:last_fired]) > details[:timeout]
-        delta = gt - details[:last_fired]
-        details[:fibers].each do |f|
-          f.resume(delta)
-        end
-        details[:last_fired] = gt
-      end
-    end
-
-    3.0 + gt
-  end
-end
-
-fps_scheduler = FpsScheduler.new
+sync_counter = 0
 
 one_counter = 0
 two_counter = 0
 three_counter = 0
 direction = 1.0
 
-fps_scheduler.loop(1) { |delta_time|
+one_position = [0.0, 1.0]
+two_position = [-5.0, -5.0]
+three_position = [5.0, 5.0]
+
+one_target = [0.0, 0.0]
+two_target = [0.0, 0.0]
+three_target = [0.0, 0.0]
+
+def centroid(coords)
+  x_sum = 0
+  y_sum = 0
+  len = 0
+
+  coords.each do |coord|
+    x_sum += coord[0]
+    y_sum += coord[1]
+    len += 1
+  end
+
+  rx = x_sum / len
+  ry = y_sum / len
+
+  return [rx, ry]
+end
+
+xloop(:a) { |delta_time|
   one_counter += (10.0 * delta_time * direction)
 
-  #TODO: xleap(10)
+  delta_time = xleap(1)
 
-  direction *= -1.0
+  one_counter += (10.0 * delta_time * direction)
 }
 
-fps_scheduler.loop(30) { |delta_time|
+xloop(:b) { |delta_time|
   two_counter += (10.0 * delta_time)
 }
 
-fps_scheduler.loop(60) { |delta_time|
+xloop(:c) { |delta_time|
   three_counter += (10.0 * delta_time)
 }
 
@@ -82,33 +67,47 @@ Wkndr.client_side("main") { |gl|
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh|
-    bt = fps_scheduler.runblock(global_time)
+    #bt = fps_scheduler.runblock(global_time)
+    fiberz(global_time)
 
     #if global_time > 300.0
     #  raise
     #end
 
+    one_position[0] -= (one_position[0] - one_target[0]) * 0.1 * delta_time
+    one_position[1] -= (one_position[1] - one_target[1]) * 0.1 * delta_time
+
+    two_position[0] -= (two_position[0] - two_target[0]) * 0.1 * delta_time
+    two_position[1] -= (two_position[1] - two_target[1]) * 0.1 * delta_time
+
+    three_position[0] -= (three_position[0] - three_target[0]) * 0.1 * delta_time
+    three_position[1] -= (three_position[1] - three_target[1]) * 0.1 * delta_time
+
+    a.deltap(one_position[0], one_position[1], 0.0)
+    b.deltap(two_position[0], two_position[1], 0.0)
+    c.deltap(three_position[0], three_position[1], 0.0)
+
     gl.drawmode {
       gl.threed {
-        gl.lookat(1, 45.0, 3.0, 45.0, 0.0, 0.1, 0.0, 50.0)
+        gl.lookat(1, 0.0, 0.0, 100.0, 0.0, 0.1, 0.0, 50.0)
 
-        x = 0.0
-        y = 0.0
-        z = 0.0
+        #x = 0.0
+        #y = 0.0
+        #z = 0.0
 
-        e = 1.0 
-        f = 0.0
-        g = 0.0
-        #d = global_time * $speed
+        #e = 1.0 
+        #f = 0.0
+        #g = 0.0
+        ##d = global_time * $speed
 
-        a.deltap(x, y, z)
-        a.deltar(e, f, g, one_counter)
+        #a.deltap(x, y, z)
+        #a.deltar(e, f, g, one_counter)
 
-        b.deltap(x, y - 10.0, z)
-        b.deltar(e, f, g, two_counter)
+        #b.deltap(x, y - 10.0, z)
+        #b.deltar(e, f, g, two_counter)
 
-        c.deltap(x, y - 20.0, z)
-        c.deltar(e, f, g, three_counter)
+        #c.deltap(x, y - 20.0, z)
+        #c.deltar(e, f, g, three_counter)
 
         a.draw(false)
         b.draw(false)
@@ -122,10 +121,11 @@ Wkndr.client_side("main") { |gl|
         fps = (1.0 / (running_average / frame_count.to_f))
         #one = $air_thread_1.resume || -1
         #two = $air_thread_2.resume || -1
-
-
         #gl.label("%f %f" % [global_time, bt])
-        gl.label("%3.3f %3.3f %3.3f %3.3f %3.3f" % [global_time, bt, one_counter, two_counter, three_counter])
+        if (one_counter == two_counter && two_counter == three_counter)
+          sync_counter += 1
+        end
+        gl.label("%d %3.3f %3.3f %3.3f %3.3f" % [sync_counter, global_time, one_counter, two_counter, three_counter])
         #gl.label("%3.3f %3.3f %3.3f %3.3f %3.3f gt:%3.3f" % [delta_time, one_counter, two_counter, three_counter, fps, global_time])
       }
     }
