@@ -623,6 +623,17 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   mrb_value block;
   mrb_get_args(mrb, "&", &block);
 
+
+
+        // Check if screen is resized
+        if (IsWindowResized())
+        {
+            int screenWidth = GetScreenWidth();
+            int screenHeight = GetScreenHeight();
+            //float resolution[2] = { (float)screenWidth, (float)screenHeight };
+            //SetShaderValue(shader, resolutionLoc, resolution, SHADER_UNIFORM_VEC2);
+        }
+
   {
     BeginDrawing();
     ClearBackground((Color){0.0, 0.0, 0.0, 0.0});
@@ -635,7 +646,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     EndDrawing();
 
-    SwapScreenBuffer();                  // Copy back buffer to front buffer (screen)
+    //SwapScreenBuffer();                  // Copy back buffer to front buffer (screen)
 
     //// Frame time control system
     //CORE.Time.current = GetTime();
@@ -644,7 +655,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     //CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
 
-    PollInputEvents();      // Poll user events (before next frame update)
+    //PollInputEvents();      // Poll user events (before next frame update)
   }
 
   return mrb_nil_value();

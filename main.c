@@ -445,6 +445,7 @@ mrb_value socket_stream_write_packed(mrb_state* mrb, mrb_value self) {
   const char *foo = mrb_string_value_ptr(mrb, packed_bytes);
   int len = mrb_string_value_len(mrb, packed_bytes);
 
+  //NOTE: this is sent to the JS for outbound on a websocket connect !!!
   write_packed_pointer(1, foo, len);
 
   return self;
@@ -3534,8 +3535,7 @@ void setupTerminal()
 
   updateWindowSize(rows, cols);
 
-  bool ambiguous_is_wide = true;
-
+  bool ambiguous_is_wide = false;
   my_wcwidth = (ambiguous_is_wide) ? mk_wcwidth_cjk: mk_wcwidth;
 
   pb_g =  malloc(sizeof(struct pseudobuffer));

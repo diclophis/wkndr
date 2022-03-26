@@ -1,5 +1,68 @@
 # vi:syntax=ruby
 
+
+class FpsScheduler
+  def initialize
+    @fibers_by_fps = {}
+    #@timeout = 0.0
+  end
+
+  def loop(fps, &block)
+    @fibers_by_fps[fps] ||= {
+      :last_fired => 0.0,
+      :timeout => (1.0 / fps.to_f),
+      :fibers => []
+    }
+
+    air_thread = Fiber.new do |dt|
+      while true
+        dt = Fiber.yield(block.call(dt))
+      end
+    end
+
+    @fibers_by_fps[fps][:fibers] << air_thread
+
+    air_thread
+  end
+
+  def runblock(gt)
+    @fibers_by_fps.collect do |fps, details|
+      if (gt - details[:last_fired]) > details[:timeout]
+        delta = gt - details[:last_fired]
+        details[:fibers].each do |f|
+          f.resume(delta)
+        end
+        details[:last_fired] = gt
+      end
+    end
+
+    3.0 + gt
+  end
+end
+
+fps_scheduler = FpsScheduler.new
+
+one_counter = 0
+two_counter = 0
+three_counter = 0
+direction = 1.0
+
+fps_scheduler.loop(1) { |delta_time|
+  one_counter += (10.0 * delta_time * direction)
+
+  #TODO: xleap(10)
+
+  direction *= -1.0
+}
+
+fps_scheduler.loop(30) { |delta_time|
+  two_counter += (10.0 * delta_time)
+}
+
+fps_scheduler.loop(60) { |delta_time|
+  three_counter += (10.0 * delta_time)
+}
+
 Wkndr.nonce("main") {
   $ticks = 0
 
@@ -12,14 +75,18 @@ $speed = 64.0
 
 Wkndr.client_side("main") { |gl|
   a = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
+  b = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
+  c = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
 
   frame_count = 0
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh|
-    if global_time > 300.0
-      raise
-    end
+    bt = fps_scheduler.runblock(global_time)
+
+    #if global_time > 300.0
+    #  raise
+    #end
 
     gl.drawmode {
       gl.threed {
@@ -32,12 +99,20 @@ Wkndr.client_side("main") { |gl|
         e = 1.0 
         f = 0.0
         g = 0.0
-        d = global_time * $speed
+        #d = global_time * $speed
 
         a.deltap(x, y, z)
-        a.deltar(e, f, g, d)
+        a.deltar(e, f, g, one_counter)
+
+        b.deltap(x, y - 10.0, z)
+        b.deltar(e, f, g, two_counter)
+
+        c.deltap(x, y - 20.0, z)
+        c.deltar(e, f, g, three_counter)
 
         a.draw(false)
+        b.draw(false)
+        c.draw(false)
       }
 
       gl.twod {
@@ -45,7 +120,13 @@ Wkndr.client_side("main") { |gl|
         frame_count += 1
         running_average += delta_time
         fps = (1.0 / (running_average / frame_count.to_f))
-        gl.label("frames: %d gt: %3.3f" % [frame_count, global_time])
+        #one = $air_thread_1.resume || -1
+        #two = $air_thread_2.resume || -1
+
+
+        #gl.label("%f %f" % [global_time, bt])
+        gl.label("%3.3f %3.3f %3.3f %3.3f %3.3f" % [global_time, bt, one_counter, two_counter, three_counter])
+        #gl.label("%3.3f %3.3f %3.3f %3.3f %3.3f gt:%3.3f" % [delta_time, one_counter, two_counter, three_counter, fps, global_time])
       }
     }
   }
