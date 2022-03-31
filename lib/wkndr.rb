@@ -158,10 +158,10 @@ class Wkndr
   def self.xloop(name, fps = 60, &block)
     @fibers_by_name ||= {}
 
-    air_thread = Fiber.new do |dt|
+    air_thread = Fiber.new do |recycle_msg|
       while true
-        dt = Fiber.yield
-        block.call(dt)
+        recycle_msg = block.call(recycle_msg)
+        recycle_msg = Fiber.yield(recycle_msg)
       end
     end
 
@@ -171,27 +171,35 @@ class Wkndr
       :last_fired => 0.0,
       :fps => default_fps,
       :fiber => air_thread,
-      :timeout => default_timeout
+      :timeout => default_timeout,
+      :recycle_msg => {:msg => :restart, :timeout => nil}
     }
 
     air_thread
   end
 
-  def self.xleap(timeout)
-    Fiber.yield(timeout)
+  def self.xleap(recycle_msg, timeout)
+    Fiber.yield({:msg => recycle_msg, :timeout => timeout})
   end
+
 
   def self.fiberz(gt)
     @fibers_by_name.collect do |name, details|
       if (gt - details[:last_fired]) > details[:timeout]
         delta = gt - details[:last_fired]
 
-        msg = details[:fiber].resume(delta)
-        if msg
-          details[:timeout] = msg
+        details[:recycle_msg].delete(:timeout)
+        details[:recycle_msg][:delta_time] = delta
+
+        recycle_msg = details[:fiber].resume(details[:recycle_msg])
+        
+        if recycle_msg[:timeout]
+          details[:timeout] = recycle_msg[:timeout]
         else
           details[:timeout] = (1.0 / details[:fps])
         end
+
+        details[:recycle_msg] = recycle_msg
 
         details[:last_fired] = gt
       end

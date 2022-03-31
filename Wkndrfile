@@ -25,26 +25,34 @@ def centroid(coords)
   return [rx, ry]
 end
 
-xloop(:a) { |delta_time|
-  loop do
-    delta_time = xleap(7)
-    @one_target = [(rand * 50.0) - 25.0, (rand * 50.0) - 25.0]
+xloop(:a) { |recycle_msg|
+  case recycle_msg[:msg]
+    when :restart
+      @one_target = [(rand * 100.0) - 50.0, (rand * 100.0) - 50.0]
+      xleap :idle, 1.1
+
+      @two_target = [(rand * 100.0) - 50.0, (rand * 100.0) - 50.0]
+      xleap :idle, 1.1
+
+      @three_target = [(rand * 100.0) - 50.0, (rand * 100.0) - 50.0]
+      xleap :restart, 1.1
+
   end
 }
 
-xloop(:b) { |delta_time|
-  loop do
-    delta_time = xleap(5)
-    @two_target = [(rand * 50.0) - 25.0, (rand * 50.0) - 25.0]
-  end
-}
-
-xloop(:c) { |delta_time|
-  loop do
-    delta_time = xleap(1)
-    @three_target = centroid([@one_position, @two_position])
-  end
-}
+#xloop(:b) { |delta_time|
+#  loop do
+#    delta_time = xleap(5.0)
+#    @two_target = [(rand * 150.0) - 75.0, (rand * 150.0) - 75.0]
+#  end
+#}
+#
+#xloop(:c) { |delta_time|
+#  loop do
+#    delta_time = xleap(0.33)
+#    @three_target = centroid([@one_position, @two_position])
+#  end
+#}
 
 Wkndr.nonce("main") {
   $ticks = 0
