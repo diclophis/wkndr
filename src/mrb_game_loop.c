@@ -145,6 +145,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   InitWindow(screenWidth, screenHeight, c_game_name);
   //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
 
+  //HideCursor();
+
   play_data_s *p_data = NULL;
   mrb_value data_value;     // this IV holds the data
   data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
@@ -642,7 +644,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       mrb_yield_argv(mrb, block, 0, NULL);
     }
 
-    DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
+    //DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
 
     EndDrawing();
 
@@ -709,7 +711,6 @@ static mrb_value game_loop_draw_circle(mrb_state* mrb, mrb_value self)
   //DrawCircle(x, y, radius, (Color){ r, g, b, a });
   DrawCircleV((Vector2){ x, y }, radius, (Color){ r, g, b, a });
   //64.000000 75.000000 75.000000 0.000000 1.000000 1.000000 1.000000 1.000000
-
   //DrawCircleV((Vector2){ x, y }, radius, MAROON);
 
   return mrb_nil_value();
@@ -781,7 +782,8 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
 {
   mrb_value label_txt = mrb_nil_value();
   mrb_value pointer_value;
-  mrb_get_args(mrb, "o", &label_txt);
+  mrb_float x,y;
+  mrb_get_args(mrb, "ffo", &x, &y, &label_txt);
 
   const char *c_label_txt = mrb_string_value_cstr(mrb, &label_txt);
 
@@ -812,11 +814,11 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   //  mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
   //}
 
-  float textSize = 30.0;
+  float textSize = 16.0;
 
   //Vector3 cubePosition = p_data->position;
 
-  Vector2 cubeScreenPosition;
+  //Vector2 cubeScreenPosition;
   //cubeScreenPosition = GetWorldToScreen((Vector3){cubePosition.x, cubePosition.y, cubePosition.z}, gl_p_data->camera);
   //cubeScreenPosition = GetWorldToScreen((Vector3){0, 0, 0}, p_data->cameraTwo);
   //cubeScreenPosition = GetWorldToScreen2D((Vector2){512, 32}, p_data->cameraTwo);
@@ -825,7 +827,7 @@ static mrb_value model_label(mrb_state* mrb, mrb_value self)
   //DrawText(c_label_txt, cubeScreenPosition.x - ((float)MeasureText(c_label_txt, textSize) / 2.0) + 32, cubeScreenPosition.y + 32, textSize, SKYBLUE);
   //fprintf(stdout, c_label_txt);
   //fprintf(stdout, "\n");
-  DrawTextEx(the_font, c_label_txt, (Vector2){256.0, 256.0}, 64.0, 1.0, SKYBLUE);  // Draw text using font and additional parameters
+  DrawTextEx(the_font, c_label_txt, (Vector2){x + 8.0, y-(textSize/2.0)}, textSize, 1.0, SKYBLUE);  // Draw text using font and additional parameters
 
   return mrb_nil_value();
 }
@@ -927,6 +929,32 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   //UpdateLightValues(standardShader, lights[3]);
 
   return mrb_nil_value();
+}
+
+static mrb_value game_loop_screenat(mrb_state* mrb, mrb_value self)
+{
+  mrb_int type;
+  mrb_float wx,wy,wz;
+
+  mrb_get_args(mrb, "fff", &wx, &wy, &wz);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value;     // this IV holds the data
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  Vector2 foo = GetWorldToScreen((Vector3){wx, wy, wz}, p_data->camera); 
+
+  mrb_value screenxy = mrb_ary_new(mrb);
+  mrb_ary_set(mrb, screenxy, 0, mrb_float_value(mrb, foo.x));
+  mrb_ary_set(mrb, screenxy, 1, mrb_float_value(mrb, foo.y));
+
+  return screenxy;
 }
 
 
@@ -1048,12 +1076,13 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   mrb_define_method(mrb, game_class, "initialize", game_loop_initialize, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, game_class, "open", platform_bits_open, MRB_ARGS_REQ(4));
   mrb_define_method(mrb, game_class, "lookat", game_loop_lookat, MRB_ARGS_REQ(8));
+  mrb_define_method(mrb, game_class, "screenat", game_loop_screenat, MRB_ARGS_REQ(3));
   mrb_define_method(mrb, game_class, "drawmode", game_loop_drawmode, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "twod", game_loop_twod, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "threed", game_loop_threed, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(3));
   mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
   mrb_define_method(mrb, game_class, "draw_texture", game_loop_draw_texture, MRB_ARGS_REQ(8));
 

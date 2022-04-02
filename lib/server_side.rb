@@ -64,7 +64,7 @@ class ServerSide < Wkndr
 
       if @run_clientside_fps
         @timer = UV::Timer.new
-        fps = 1000.0000/24.00
+        fps = 1000.0000/60.00
         @timer.start(fps, fps) do
           rez = self.server_side_tick!
 

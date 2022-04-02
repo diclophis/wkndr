@@ -1,40 +1,72 @@
 # vi:syntax=ruby
 
-@one_position = [0.0, 1.0]
-@two_position = [-5.0, -5.0]
-@three_position = [5.0, 5.0]
+@one_position = [0.0, 1.0, 0.0]
+@two_position = [-5.0, -5.0, 0.0]
+@three_position = [5.0, 5.0, 0.0]
 
 @one_target = [0.0, 0.0]
 @two_target = [0.0, 0.0]
 @three_target = [0.0, 0.0]
 
 def centroid(coords)
-  x_sum = 0
-  y_sum = 0
-  len = 0
+  #x_sum = 0.0
+  #y_sum = 0.0
+  #len = 0.0
 
-  coords.each do |coord|
-    x_sum += coord[0]
-    y_sum += coord[1]
-    len += 1
-  end
+  #coords.each do |coord|
+  #  x_sum += coord[0]
+  #  y_sum += coord[1]
+  #  len += 1.0
+  #end
 
-  rx = x_sum / len
-  ry = y_sum / len
+  #rx = x_sum / len
+  #ry = y_sum / len
 
-  return [rx, ry]
+
+  #centroid_lat = 0.0
+  #centroid_lng = 0.0
+  #signed_area = 0.0
+
+  ## Iterate over each element in the list but the last item as it's
+  ## calculated by the i+1 logic
+  #coords[0...-1].each_index do |i|
+  #  x0 = coords[i][0]
+  #  y0 = coords[i][1]
+  #  x1 = coords[i + 1][0]
+  #  y1 = coords[i + 1][1]
+  #  a = (x0 * y1) - (x1 * y0)
+  #  signed_area += a
+  #  centroid_lat += (x0 + x1) * a
+  #  centroid_lng += (y0 + y1) * a
+  #end
+
+  #signed_area *= 0.5
+  #centroid_lat /= (6.0 * signed_area)
+  #centroid_lng /= (6.0 * signed_area)
+
+  #return [centroid_lat, centroid_lng]
+
+  [
+   (coords[0][0] + coords[1][0] + coords[2][0])/3.0,
+   (coords[0][1] + coords[1][1] + coords[2][1])/3.0
+  ]
 end
 
 xloop(:a) { |recycle_msg|
+  d = 10.0
+  hd = d * 0.5
   case recycle_msg[:msg]
     when :restart
-      @one_target = [(rand * 100.0) - 50.0, (rand * 100.0) - 50.0]
+      @one_target[0] = (rand * d) - hd
+      @one_target[1] = (rand * d) - hd
       xleap :idle, 1.1
 
-      @two_target = [(rand * 100.0) - 50.0, (rand * 100.0) - 50.0]
+      @two_target[0] = (rand * d) - hd
+      @two_target[1] = (rand * d) - hd
       xleap :idle, 1.1
 
-      @three_target = [(rand * 100.0) - 50.0, (rand * 100.0) - 50.0]
+      @three_target[0] = (rand * d) - hd
+      @three_target[1] = (rand * d) - hd
       xleap :restart, 1.1
 
   end
@@ -51,14 +83,25 @@ Wkndr.nonce("main") {
 $speed = 64.0
 
 Wkndr.client_side("main") { |gl|
-  a = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
-  b = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
-  c = Cube.new(gl, 11.0, 7.0, 5.0, 1.0)
+  a = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
+  b = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
+  c = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
 
   frame_count = 0
   running_average = 0.0
 
+  all_positions = [@one_position, @two_position, @three_position]
+
   gl.update("main") { |global_time, delta_time, sw, sh|
+    mx, my, l = nil
+
+    gl.mousep { |xyl|
+      mx, my, l = *xyl
+    }
+
+    hsw = (sw * 0.5).to_f
+    hsh = (sh * 0.5).to_f
+
     fiberz(global_time)
 
     @one_position[0] -= (@one_position[0] - @one_target[0]) * 0.7 * delta_time
@@ -76,7 +119,7 @@ Wkndr.client_side("main") { |gl|
 
     gl.drawmode {
       gl.threed {
-        gl.lookat(1, 0.0, 0.0, 100.0, 0.0, 0.1, 0.0, 50.0)
+        gl.lookat(1, 0.0, 0.0, 25.0, 0.0, 0.1, 0.0, 60.0)
 
         a.draw(false)
         b.draw(false)
@@ -87,7 +130,11 @@ Wkndr.client_side("main") { |gl|
         frame_count += 1
         running_average += delta_time
         fps = (1.0 / (running_average / frame_count.to_f))
-        gl.label("%3.3f %3.3f %3.3f %d" % [delta_time, global_time, fps, frame_count])
+        center_of_boxes = centroid(all_positions)
+        sx, sy = gl.screenat(center_of_boxes[0], center_of_boxes[1], 0)
+        gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
+        gl.draw_circle(5.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
+        gl.label(sx, sy, "%d %3.3f %3.3f %3.0f" % [frame_count, global_time, delta_time, fps])
       }
     }
   }

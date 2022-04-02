@@ -3142,6 +3142,7 @@ static inline void draw_line(struct pseudobuffer *pb, struct terminal *term, int
 			|| (cellp->width == WIDE && (col + 1) == term->cursor.x)
 			|| (cellp->width == NEXT_TO_WIDE && (col - 1) == term->cursor.x))) {
 			color_pair.fg = DEFAULT_BG;
+      //NOTE: draws different cursor based on window focus or not
 			//color_pair.bg = (!tty.visible && BACKGROUND_DRAW) ? PASSIVE_CURSOR_COLOR: ACTIVE_CURSOR_COLOR;
 			color_pair.bg = ACTIVE_CURSOR_COLOR;
 		}
@@ -3182,7 +3183,6 @@ void refresh(struct pseudobuffer *pb, struct terminal *term)
 	}
 }
 
-
 static struct pseudobuffer *pb_g;
 static struct terminal *term_g;
 static Texture2D thisTerm;
@@ -3207,14 +3207,13 @@ void terminalRender (ssize_t size, uint8_t* buf)
   putgif(gif.data, capture);
   int sizeXX = endgif(gif.data);
 
-  Image r = LoadImageFromMemory(".png", gif.image, sizeXX);      // Load image from memory buffer
-  UpdateTexture(thisTerm, r.data);
-
+  //Image r = LoadImageFromMemory(".png", gif.image, sizeXX);      // Load image from memory buffer
+  //UpdateTexture(thisTerm, r.data);
   free(capture);
   free(gif.image);
-  free(r.data);
+  //free(r.data);
 
-  //TODO: free gif.image !!!! valgrind tests
+  //TODO: free gif.image !!!! valgrind tests !!!
 }
 
 /*
@@ -3555,8 +3554,8 @@ void setupTerminal()
   putgif(gif.data, capture);
   int sizeXX = endgif(gif.data);
 
-  Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
-  thisTerm = LoadTextureFromImage(r);
+  //Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
+  //thisTerm = LoadTextureFromImage(r);
 
   //TODO: !!!!
   //term_die(&term);
