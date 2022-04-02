@@ -425,7 +425,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     keyCount += 1;
 
     chey = key;
-    fprintf(stderr, "Key: %d\n", key);
+    //fprintf(stderr, "Key: %d\n", key);
 
     //76  ctrl-l
     if (key == 89) { // ctrl-y
@@ -601,7 +601,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   }
 
   while (key = GetCharPressed()) {
-    fprintf(stderr, "Char: %d\n", key);
+    //fprintf(stderr, "Char: %d\n", key);
     if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
     {
         keyCount += 1;
