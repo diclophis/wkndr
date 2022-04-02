@@ -137,7 +137,7 @@ Wkndr.client_side("main") { |gl|
         gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
         gl.draw_circle(5.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
         touchpoints.each { |tx, ty|
-          gl.draw_circle(15.0, mx, my, 0.0, 32.0, 32.0, 255.0, 255.0)
+          gl.draw_circle(35.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
         }
         gl.label(sx, sy, "%d %3.3f %3.3f %3.0f" % [frame_count, global_time, delta_time, fps])
       }
