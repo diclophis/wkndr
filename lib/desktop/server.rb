@@ -111,7 +111,7 @@ class ProtocolServer
   #  @server.stop
   #end
 
-  def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0)
+  def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0, touchpoints = nil)
     @gt = gt
 
     connections_to_drop = []

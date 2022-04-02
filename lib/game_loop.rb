@@ -4,14 +4,14 @@ class GameLoop
   attr_accessor :width, :height
   attr_accessor :play_procs, :event_procs
 
-  def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, &block)
+  def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, touchpoints = nil, &block)
     if cli && block 
       self.play_procs[cli] = block
       "installed #{cli}: #{block.object_id}"
     else
       if cli == false && self.play_procs
         self.play_procs.each { |cli, play_proc|
-          rez = play_proc.call(gt, dt, sw, sh)
+          rez = play_proc.call(gt, dt, sw, sh, touchpoints)
         }
       end
     end

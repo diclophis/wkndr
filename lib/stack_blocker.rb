@@ -45,7 +45,8 @@ class StackBlocker
     @stack.each { |srb| srb.shutdown }
   end
 
-  def update(cli = 0, gt = 0, dt = 0, sw = 0, sh = 0)
-    @stack.each { |srb| srb.update(cli, gt, dt, sw, sh) }
+  #TODO: this could be in C maybe???
+  def update(cli = 0, gt = 0, dt = 0, sw = 0, sh = 0, touchpoints = nil)
+    @stack.each { |srb| srb.update(cli, gt, dt, sw, sh, touchpoints) }
   end
 end
