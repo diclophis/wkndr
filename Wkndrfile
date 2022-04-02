@@ -135,10 +135,14 @@ Wkndr.client_side("main") { |gl|
         center_of_boxes = centroid(all_positions)
         sx, sy = gl.screenat(center_of_boxes[0], center_of_boxes[1], 0)
         gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-        gl.draw_circle(5.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
-        touchpoints.each { |tx, ty|
-          gl.draw_circle(35.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
-        }
+        if touchpoints.length == 3
+          touchpoints.each { |tx, ty|
+            gl.draw_circle(100.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
+          }
+          center_of_touches = centroid(touchpoints)
+          gl.draw_circle(20.0, center_of_touches[0], center_of_touches[1], 0.0, 128.0, 32.0, 192.0, 255.0)
+        end
+        gl.draw_circle(50.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
         gl.label(sx, sy, "%d %3.3f %3.3f %3.0f" % [frame_count, global_time, delta_time, fps])
       }
     }
