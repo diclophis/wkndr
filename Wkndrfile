@@ -4,53 +4,10 @@
 @two_position = [-5.0, -5.0, 0.0]
 @three_position = [5.0, 5.0, 0.0]
 
-@one_target = [0.0, 0.0]
-@two_target = [0.0, 0.0]
-@three_target = [0.0, 0.0]
+@one_target = [0.0, 0.0, 0.0]
+@two_target = [0.0, 0.0, 0.0]
+@three_target = [0.0, 0.0, 0.0]
 
-def centroid(coords)
-  #x_sum = 0.0
-  #y_sum = 0.0
-  #len = 0.0
-
-  #coords.each do |coord|
-  #  x_sum += coord[0]
-  #  y_sum += coord[1]
-  #  len += 1.0
-  #end
-
-  #rx = x_sum / len
-  #ry = y_sum / len
-
-
-  #centroid_lat = 0.0
-  #centroid_lng = 0.0
-  #signed_area = 0.0
-
-  ## Iterate over each element in the list but the last item as it's
-  ## calculated by the i+1 logic
-  #coords[0...-1].each_index do |i|
-  #  x0 = coords[i][0]
-  #  y0 = coords[i][1]
-  #  x1 = coords[i + 1][0]
-  #  y1 = coords[i + 1][1]
-  #  a = (x0 * y1) - (x1 * y0)
-  #  signed_area += a
-  #  centroid_lat += (x0 + x1) * a
-  #  centroid_lng += (y0 + y1) * a
-  #end
-
-  #signed_area *= 0.5
-  #centroid_lat /= (6.0 * signed_area)
-  #centroid_lng /= (6.0 * signed_area)
-
-  #return [centroid_lat, centroid_lng]
-
-  [
-   (coords[0][0] + coords[1][0] + coords[2][0])/3.0,
-   (coords[0][1] + coords[1][1] + coords[2][1])/3.0
-  ]
-end
 
 xloop(:a) { |recycle_msg|
   d = 10.0
@@ -132,14 +89,14 @@ Wkndr.client_side("main") { |gl|
         frame_count += 1
         running_average += delta_time
         fps = (1.0 / (running_average / frame_count.to_f))
-        center_of_boxes = centroid(all_positions)
+        center_of_boxes = Polygon.centroid(all_positions)
         sx, sy = gl.screenat(center_of_boxes[0], center_of_boxes[1], 0)
         gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-        if touchpoints.length == 3
+        if touchpoints.length > 0
           touchpoints.each { |tx, ty|
             gl.draw_circle(100.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
           }
-          center_of_touches = centroid(touchpoints)
+          center_of_touches = Polygon.centroid(touchpoints)
           gl.draw_circle(20.0, center_of_touches[0], center_of_touches[1], 0.0, 128.0, 32.0, 192.0, 255.0)
         end
         gl.draw_circle(50.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)

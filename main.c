@@ -79,6 +79,7 @@
 #include "socket_stream.h"
 #include "camera.h"
 #include "aabb.h"
+#include "polygon.h"
 
 
 //server stuff
@@ -3629,6 +3630,7 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb_client, game_loop, NULL);
   eval_static_libs(mrb_client, camera, NULL);
   eval_static_libs(mrb_client, aabb, NULL);
+  eval_static_libs(mrb_client, polygon, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", mrb_client->object_class);
