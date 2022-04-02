@@ -163,7 +163,8 @@ for (int i=0; i<95; i++) {
 
 
 //the_font = LoadFont("resources/unifont-14.0.02.ttf");
-the_font = LoadFontEx("resources/unifont-14.0.02.ttf", 32, fontChars, 95);
+//the_font = LoadFontEx("resources/unifont-14.0.02.ttf", 32, fontChars, 95);
+the_font = LoadFontEx("resources/freemono.ttf", 32, fontChars, 95);
 
 
     //Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),

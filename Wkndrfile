@@ -50,8 +50,6 @@ Wkndr.client_side("main") { |gl|
   all_positions = [@one_position, @two_position, @three_position]
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
-    #log!(:touchpoints, touchpoints)
-
     mx, my, l = nil
 
     gl.mousep { |xyl|
