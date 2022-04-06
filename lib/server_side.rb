@@ -25,13 +25,15 @@ class ServerSide < Wkndr
       return
     end
 
-    if args.include?("--no-client")
+
+    if (args.include?("--and-client") && !args.include?("--no-client")) || args.empty?
+      @run_clientside_fps = true
+    else
       @idle_runloop = true
     end
 
-    if args.include?("--and-client") || args.empty?
-      @run_clientside_fps = true
-    end
+    #if args.empty?
+    #end
 
     server_args = args.find { |arg| arg[0,9] == "--server=" }
 

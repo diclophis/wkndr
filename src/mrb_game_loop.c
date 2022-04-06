@@ -142,6 +142,12 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
+//fprintf(stderr, "WTFOPENPLATFORMBITS!???\n");
+//mrb_raise(mrb, E_ARGUMENT_ERROR, "uninitialized rational");
+//return mrb_nil_value();
+
+//          mrb_print_backtrace(mrb);
+
   InitWindow(screenWidth, screenHeight, c_game_name);
   //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
 
@@ -1037,37 +1043,37 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 }
 
 
-//static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
-//{
-//  mrb_int argc;
-//  mrb_value *checkkeys;
-//  mrb_get_args(mrb, "*", &checkkeys, &argc);
-//
-//  play_data_s *p_data = NULL;
-//  mrb_value data_value; // this IV holds the data
-//
-//  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
-//
-//  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
-//  if (!p_data) {
-//    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
-//  }
-//
-//  int rc = 0;
-//
-//  mrb_ary_clear(mrb, pressedkeys);
-//
-//  for (int i=0; i<argc; i++) {
-//    mrb_value key_to_check = checkkeys[i];
-//
-//    if (IsKeyDown(mrb_int(mrb, key_to_check))) {
-//      mrb_ary_set(mrb, pressedkeys, rc, key_to_check);
-//      rc++;
-//    }
-//  }
-//
-//  return pressedkeys;
-//}
+static mrb_value game_loop_keyspressed(mrb_state* mrb, mrb_value self)
+{
+  mrb_int argc;
+  mrb_value *checkkeys;
+  mrb_get_args(mrb, "*", &checkkeys, &argc);
+
+  play_data_s *p_data = NULL;
+  mrb_value data_value; // this IV holds the data
+
+  data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pointer"));
+
+  Data_Get_Struct(mrb, data_value, &play_data_type, p_data);
+  if (!p_data) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @pointer");
+  }
+
+  int rc = 0;
+
+  mrb_ary_clear(mrb, pressedkeys);
+
+  for (int i=0; i<argc; i++) {
+    mrb_value key_to_check = checkkeys[i];
+
+    if (IsKeyDown(mrb_int(mrb, key_to_check))) {
+      mrb_ary_set(mrb, pressedkeys, rc, key_to_check);
+      rc++;
+    }
+  }
+
+  return pressedkeys;
+}
 
 
 struct RClass *mrb_define_game_loop(mrb_state *mrb) {
@@ -1085,7 +1091,7 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(3));
-  //mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
+  mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
   mrb_define_method(mrb, game_class, "draw_texture", game_loop_draw_texture, MRB_ARGS_REQ(8));
 
   return game_class;

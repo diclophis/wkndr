@@ -8,7 +8,6 @@
 @two_target = [0.0, 0.0, 0.0]
 @three_target = [0.0, 0.0, 0.0]
 
-
 xloop(:a) { |recycle_msg|
   d = 10.0
   hd = d * 0.5
@@ -106,9 +105,6 @@ Wkndr.client_side("main") { |gl|
 
 
 Wkndr.server_side("main") { |gl, server|
-  server.wsb("/") do |cn, phr|
-  end
-
   server.raw("/status") do |cn, phr|
     Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
   end
