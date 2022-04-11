@@ -123,8 +123,6 @@ class Wkndr
       }
 
       gl.update(klass) { |global_time, delta_time|
-        #log!(:foo, global_time)
-
         gl.drawmode {
           gl.threed {
             klass.draw_threed(gl)

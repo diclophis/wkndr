@@ -178,6 +178,7 @@ static mrb_value model_draw(mrb_state* mrb, mrb_value self)
   }
 
   DrawModelEx(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
+  //DrawModel(p_data->model, p_data->position, p_data->rotation, p_data->angle, p_data->scale, p_data->color);
 
   return mrb_nil_value();
 }

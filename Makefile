@@ -2,7 +2,7 @@
 
 TARGET ?= desktop
 TARGET_OS ?= $(shell uname)
-OPTIM = -O3 -g
+OPTIM = -O0 -g
 build=release
 
 ifeq ($(TARGET),desktop)
@@ -21,12 +21,7 @@ else
 endif
 
 raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
-
-#ifeq ($(TARGET),desktop)
-#  raylib_static_lib=$(build)/libraylib.a
-#else
-  raylib_static_lib=$(build)/libraylib.a
-#endif
+raylib_static_lib=$(build)/libraylib.a
 
 ifeq ($(TARGET),desktop)
   msgpack_static_lib=mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
@@ -42,6 +37,7 @@ endif
 
 sources = $(wildcard *.c)
 sources += $(wildcard src/*.c)
+cxx_sources = $(wildcard src/*.cpp)
 ifeq ($(TARGET),desktop)
 sources += $(wildcard src/desktop/*.c)
 endif
@@ -60,6 +56,7 @@ giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/wkndr.css 
 
 objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
+objects += $(patsubst %,$(build)/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
 objects += $(mruby_static_lib)
 objects += $(raylib_static_lib)
 objects += $(msgpack_static_lib)
@@ -76,6 +73,7 @@ ifeq ($(TARGET),desktop)
 endif
 
 CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
+CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include
 
 CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
 #CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
@@ -106,9 +104,8 @@ else
   CFLAGS+=-DPLATFORM_WEB -fdeclspec
 endif
 
-$(target): $(objects) $(sources)
+$(target): $(objects) #$(sources)
 ifeq ($(TARGET),desktop)
-	echo AAA
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
 	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' --preload-file resources
@@ -133,8 +130,14 @@ clean:
 	mkdir -p $(build)/src
 	mkdir -p $(build)/src/desktop
 
-$(build)/%.o: %.c $(static_ruby_headers) $(sources) $(headers)
+$(build)/main.o: main.c $(static_ruby_headers)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(build)/%.o: %.c #$(static_ruby_headers) $(sources) $(headers)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(build)/%.o: %.cpp #$(static_ruby_headers) $(sources) $(headers)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(mruby_static_lib): config/mruby.rb
 ifeq ($(TARGET),desktop)

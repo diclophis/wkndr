@@ -296,6 +296,10 @@ class ProtocolServer
     raw('/favicon.ico') { |cn, ids_from_path|
       Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
     }
+
+    raw("/status") do |cn, phr|
+      Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
+    end
   end
 
   def rebuild_tree!

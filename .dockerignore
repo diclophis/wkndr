@@ -2,6 +2,7 @@ build
 .git
 mruby
 raylib
+qu3e
 vendor
 release
 *.o

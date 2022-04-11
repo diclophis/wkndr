@@ -875,6 +875,7 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   p_data->camera.position = (Vector3){ px, py, pz };    // Camera position
   p_data->camera.target = (Vector3){ tx, ty, tz };      // Camera looking at point
 
+  //NOTE: Y IS UP
   p_data->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };    // Camera up vector (rotation towards target)
   p_data->camera.fovy = fovy;                           // Camera field-of-view Y
 
@@ -1023,6 +1024,7 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
   BeginMode3D(p_data->camera);
 
+
     mrb_yield_argv(mrb, block, 0, NULL);
 
     ////////////drawLighting
@@ -1036,6 +1038,7 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     //if (lights[2].enabled) { DrawSphereEx(lights[2].position, 2.0f, 8, 8, GREEN); }
     //if (lights[3].enabled) { DrawSphereEx(lights[3].position, 2.0f, 8, 8, BLUE); }
     //DrawGrid(10, 1.0f);
+    DrawGrid(100, 1.0); 
 
   EndMode3D();
 
