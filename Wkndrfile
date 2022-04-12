@@ -44,31 +44,36 @@ Wkndr.client_side("main") { |gl|
   b = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
   c = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
 
+  mx = my = l = 0.0
+  nmx = nmy = l = 0.0
+
   frame_count = 0
   running_average = 0.0
 
   all_positions = [@one_position, @two_position, @three_position]
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
-    mx, my, l = nil
 
     gl.mousep { |xyl|
-      mx, my, l = *xyl
+      nmx, nmy, l = *xyl
     }
+
+    mx -= (mx - nmx) * 0.579 * 33.0 * delta_time
+    my -= (my - nmy) * 0.579 * 33.0 * delta_time
 
     hsw = (sw * 0.5).to_f
     hsh = (sh * 0.5).to_f
 
     fiberz(global_time)
 
-    @one_position[0] -= (@one_position[0] - @one_target[0]) * 0.7 * delta_time
-    @one_position[1] -= (@one_position[1] - @one_target[1]) * 0.7 * delta_time
+    @one_position[0] -= (@one_position[0] - @one_target[0]) * 0.999 * 25.0 * delta_time
+    @one_position[1] -= (@one_position[1] - @one_target[1]) * 0.999 * 25.0 * delta_time
 
-    @two_position[0] -= (@two_position[0] - @two_target[0]) * 0.7 * delta_time
-    @two_position[1] -= (@two_position[1] - @two_target[1]) * 0.7 * delta_time
+    @two_position[0] -= (@two_position[0] - @two_target[0]) * 0.999 * 25.0 * delta_time
+    @two_position[1] -= (@two_position[1] - @two_target[1]) * 0.999 * 25.0 * delta_time
 
-    @three_position[0] -= (@three_position[0] - @three_target[0]) * 0.7 * delta_time
-    @three_position[1] -= (@three_position[1] - @three_target[1]) * 0.7 * delta_time
+    @three_position[0] -= (@three_position[0] - @three_target[0]) * 0.999 * 25.0 * delta_time
+    @three_position[1] -= (@three_position[1] - @three_target[1]) * 0.999 * 25.0 * delta_time
 
     a.deltap(@one_position[0], @one_position[1], 0.0)
     b.deltap(@two_position[0], @two_position[1], 0.0)

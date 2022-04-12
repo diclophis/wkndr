@@ -65,6 +65,7 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
     mrb_value touchxy = mrb_ary_new(mrb);
     mrb_ary_set(mrb, touchxy, 0, mrb_float_value(mrb, touchPosition.x));
     mrb_ary_set(mrb, touchxy, 1, mrb_float_value(mrb, touchPosition.y));
+    mrb_ary_set(mrb, touchxy, 2, mrb_float_value(mrb, 0));
 
     mrb_ary_set(mrb, touchpoints, i, touchxy);
   }
