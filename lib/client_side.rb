@@ -20,7 +20,13 @@ class ClientSide < Wkndr
   def self.startup_clientside(args)
     log!(:client_side, self, Object.object_id, args)
 
-    if args.include?("--no-client")
+    if args.empty?
+      #NOTE: default case includes client
+    elsif (args.include?("--no-client"))
+      log!(:short_circuit_client_aaa)
+      return
+    elsif (!args.include?("--and-client") && !args.include?("--no-server"))
+      log!(:short_circuit_client_bbb)
       return
     end
 

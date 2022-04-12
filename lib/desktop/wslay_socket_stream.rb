@@ -161,7 +161,7 @@ class WslaySocketStream < SocketStream
   end
 
   def write_ws_request!
-    path = "/wsb"
+    path = "/ws-msgpack"
     key = B64.encode(Sysrandom.buf(16)).chomp!
     @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@host}:#{@port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
       yield

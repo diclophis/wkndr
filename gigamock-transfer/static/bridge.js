@@ -3,8 +3,8 @@
 
 var textEncoder = new TextEncoder();
 var splitScreen = "split-screen";
-var wsUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws");
-var wsbUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/wsb");
+var wsHtmlUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws-html");
+var wsMsgpackUrl = ((window.location.protocol == "https:" ? "wss" : "ws") + "://" + window.location.host + "/ws-msgpack");
 
 
 function download(filename, text) {
@@ -34,7 +34,7 @@ function byteLength(str) {
 
 window.startConnection = function(mrbPointer, callbackPointer) {
   if (window["WebSocket"]) {
-    window.conn = new WebSocket(wsbUrl);
+    window.conn = new WebSocket(wsMsgpackUrl);
     window.conn.binaryType = 'arraybuffer';
 
     //window.fit = new FitAddon();
@@ -221,7 +221,7 @@ if (graphicsContainer) {
 
 window.startLiveConnection = function() {
   if (window["WebSocket"]) {
-    window.conn = new WebSocket(wsUrl);
+    window.conn = new WebSocket(wsHtmlUrl);
 
     window.conn.onopen = function (event) {
       //this is hypertext app port

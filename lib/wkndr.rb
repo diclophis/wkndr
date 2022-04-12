@@ -16,6 +16,7 @@ class Wkndr
   def self.server_side(cli, &block)
     if @server && block
       block.call(@server)
+
     end
   end
 
@@ -114,14 +115,14 @@ class Wkndr
   end
 
   def self.run(klass)
+    Wkndr.server_side(klass) { |gl, server|
+    }
     Wkndr.client_side(klass) { |gl|
       gl.event(klass) { |channel, msg|
         klass.event(channel, msg)
       }
 
       gl.update(klass) { |global_time, delta_time|
-        #log!(:foo, global_time)
-
         gl.drawmode {
           gl.threed {
             klass.draw_threed(gl)

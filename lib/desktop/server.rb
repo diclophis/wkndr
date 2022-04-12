@@ -31,14 +31,14 @@ class ProtocolServer
       }
     }
 
-    @handlers["/wsb"] = upgrade_to_binary_websocket_handler
+    @handlers["/ws-msgpack"] = upgrade_to_binary_websocket_handler
 
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
 
       cn.upgrade_to_websocket! { |cn, msg|
         live_msg = JSON.load(msg)
 
-      log!(:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg)
+        ######log!(:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg)
 
         live_msg.each { |k, v|
           case k
@@ -58,7 +58,7 @@ class ProtocolServer
       #  #}
       #}
     }
-    @handlers["/ws"] = upgrade_to_websocket_handler
+    @handlers["/ws-html"] = upgrade_to_websocket_handler
 
     #receive_http_post = Proc.new { |cn, phr, mab|
     #  raise "#{cn.phr.msg} #{cn.phr.headers} #{cn.phr.status}"
@@ -72,13 +72,15 @@ class ProtocolServer
     #@handlers["/inbox"] = receive_http_post
     #@handlers["/ws"] = upgrade_to_websocket_handler
 
-    raw('/robots.txt') { |cn, ids_from_path|
-      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
-    }
+    #raw('/robots.txt') { |cn, ids_from_path|
+    #  Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
+    #}
 
-    raw('/favicon.ico') { |cn, ids_from_path|
-      Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
-    }
+    #raw('/favicon.ico') { |cn, ids_from_path|
+    #  Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
+    #}
+
+    install_root_handlers!
 
     rebuild_tree!
 
@@ -90,26 +92,18 @@ class ProtocolServer
       create_connection(connection_error)
     }
 
-    #@async_place_holder = Proc.new { |requested_filename|
-    #}
-
     timer = UV::Timer.new
-    timer.start(1000.0/60.0, 1000.0/60.0) do
+    timer.start(1000.0/60.0, 1000.0/1.0) do
       #TODO: !!!!!
-      #log!(:WTF)
-      ########TODO############
-      #unless @keep_running
-        timer.stop
-      #end
+      #hot reload of serverside bits!!!!!!!
+      timer.stop
+      #TODO: #TODO:
       #TODO: ?????? subscribe_to_wkndrfile
-      wkread = read_wkndrfile("Wkndrfile") #TODO: #TODO:
+      wkread = read_wkndrfile("Wkndrfile")
       did_parse = Wkndr.wkndr_server_eval(wkread)
+      log!(:serverside_reloaded, did_parse)
     end
   end
-
-  #def stop
-  #  @server.stop
-  #end
 
   def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0, touchpoints = nil)
     @gt = gt
@@ -125,7 +119,6 @@ class ProtocolServer
     ##  #@clear_wkndrfile_change -= dt
     ##  #if
     ##  raise "wtf"
-
     ##    handle_wkndrfile_change
     ##    #watch_wkndrfile
     ##    @clear_wkndrfile_change = nil
@@ -188,8 +181,6 @@ class ProtocolServer
 
   def create_connection(connection_error)
     if connection_error
-      #log!(:server_on_connection_connection_error, connection_error)
-
       return nil
     end
 
@@ -266,7 +257,7 @@ class ProtocolServer
     rebuild_tree!
   end
 
-  def wsb(path, &block)
+  def install_root_handlers!
     raw('/') { |cn, ids_from_path|
       mab = Markaby::Builder.new
       mab.html5 "lang" => "en" do
@@ -278,6 +269,7 @@ class ProtocolServer
         end
         mab.body "id" => "wkndr-body" do
           #LOGGING bits????
+          #TODO: !!!!!!!
           #mab.div "id" => "wkndr-terminal-container" do
           #  mab.div "id" => "wkndr-terminal", "class" => "maxwh" do
           #  end
@@ -297,13 +289,17 @@ class ProtocolServer
       Protocol.ok(mab.to_s)
     }
 
-    raw(path + 'robots.txt') { |cn, ids_from_path|
+    raw('/robots.txt') { |cn, ids_from_path|
       Protocol.ok(GIGAMOCK_TRANSFER_STATIC_ROBOTS_TXT)
     }
 
-    raw(path + 'favicon.ico') { |cn, ids_from_path|
+    raw('/favicon.ico') { |cn, ids_from_path|
       Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
     }
+
+    raw("/status") do |cn, phr|
+      Protocol.ok("ONLINE\n") #TODO: present SHA1 of existing code somehow?????
+    end
   end
 
   def rebuild_tree!

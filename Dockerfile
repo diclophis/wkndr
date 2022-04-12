@@ -36,6 +36,12 @@ RUN cd /var/lib/wkndr && \
     git fetch && \
     git checkout cda1324e87e0e3b3c1f488ac93a928d1b1b3d50b
 
+RUN cd /var/lib/wkndr && \
+    git clone https://github.com/RandyGaul/qu3e && \
+    cd qu3e && \
+    git fetch && \
+    git checkout 1f519c95460ce2852356576b0f895861edbfe0be
+
 #COPY rlgl.h.patch /var/lib/wkndr/
 #RUN cd /var/lib/wkndr/raylib && \
 #    cat ../rlgl.h.patch | git apply
@@ -60,6 +66,7 @@ RUN cd /var/lib/wkndr && \
 COPY main.c /var/lib/wkndr/
 COPY glyph /var/lib/wkndr/glyph
 COPY src /var/lib/wkndr/src
+RUN ls -l /var/lib/wkndr/src
 COPY include /var/lib/wkndr/include
 COPY lib /var/lib/wkndr/lib
 COPY gigamock-transfer/static /var/lib/wkndr/gigamock-transfer/static
