@@ -185,25 +185,27 @@ class Wkndr
 
 
   def self.fiberz(gt)
-    @fibers_by_name.collect do |name, details|
-      if (gt - details[:last_fired]) > details[:timeout]
-        delta = gt - details[:last_fired]
+    if @fibers_by_name
+    #@fibers_by_name.collect do |name, details|
+    #  if (gt - details[:last_fired]) > details[:timeout]
+    #    delta = gt - details[:last_fired]
 
-        details[:recycle_msg].delete(:timeout)
-        details[:recycle_msg][:delta_time] = delta
+    #    details[:recycle_msg].delete(:timeout)
+    #    details[:recycle_msg][:delta_time] = delta
 
-        recycle_msg = details[:fiber].resume(details[:recycle_msg])
-        
-        if recycle_msg[:timeout]
-          details[:timeout] = recycle_msg[:timeout]
-        else
-          details[:timeout] = (1.0 / details[:fps])
-        end
+    #    recycle_msg = details[:fiber].resume(details[:recycle_msg])
+    #    
+    #    if recycle_msg[:timeout]
+    #      details[:timeout] = recycle_msg[:timeout]
+    #    else
+    #      details[:timeout] = (1.0 / details[:fps])
+    #    end
 
-        details[:recycle_msg] = recycle_msg
+    #    details[:recycle_msg] = recycle_msg
 
-        details[:last_fired] = gt
-      end
+    #    details[:last_fired] = gt
+    #  end
+    #end
     end
   end
 end

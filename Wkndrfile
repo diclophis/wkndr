@@ -1,33 +1,5 @@
 # vi:syntax=ruby
 
-@one_position = [0.0, 1.0, 0.0]
-@two_position = [-5.0, -5.0, 0.0]
-@three_position = [5.0, 5.0, 0.0]
-
-@one_target = [0.0, 0.0, 0.0]
-@two_target = [0.0, 0.0, 0.0]
-@three_target = [0.0, 0.0, 0.0]
-
-xloop(:a) { |recycle_msg|
-  d = 10.0
-  hd = d * 0.5
-  case recycle_msg[:msg]
-    when :restart
-      @one_target[0] = (rand * d) - hd
-      @one_target[1] = (rand * d) - hd
-      xleap :idle, 1.1
-
-      @two_target[0] = (rand * d) - hd
-      @two_target[1] = (rand * d) - hd
-      xleap :idle, 1.1
-
-      @three_target[0] = (rand * d) - hd
-      @three_target[1] = (rand * d) - hd
-      xleap :restart, 1.1
-
-  end
-}
-
 Wkndr.nonce("main") {
   $ticks = 0
 
@@ -70,10 +42,10 @@ class BaseBatchingSystem
 end
 
 Wkndr.client_side("main") { |gl|
-  cs = 1.25
+  cs = 1.0
   a = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
 
-  xs = ys = zs = 9
+  xs = ys = zs = 6
   instances = xs * ys * zs
   i = 0
 
@@ -85,7 +57,10 @@ Wkndr.client_side("main") { |gl|
   xs.times { |xd|
     ys.times { |yd|
       zs.times { |zd|
-        p = PositionComponent.new((-xs * 0.5 * cs) + (xd * cs).to_f, (-ys * 0.5 * cs) + (yd * cs).to_f, (-zs * 0.5 * cs) + (zd * cs).to_f)
+        ix = xd.to_f + (0.5 * cs)
+        iy = yd.to_f + (0.5 * cs)
+        iz = zd.to_f + (0.5 * cs)
+        p = PositionComponent.new(ix, iy, iz)
         all_positions << p
         f = batcher.at(gl, i)
         store.add(
@@ -105,7 +80,6 @@ Wkndr.client_side("main") { |gl|
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
-
     gl.mousep { |xyl|
       nmx, nmy, l = *xyl
     }
@@ -118,19 +92,6 @@ Wkndr.client_side("main") { |gl|
 
     fiberz(global_time)
 
-    #@one_position[0] -= (@one_position[0] - @one_target[0]) * 0.999 * 25.0 * delta_time
-    #@one_position[1] -= (@one_position[1] - @one_target[1]) * 0.999 * 25.0 * delta_time
-
-    #@two_position[0] -= (@two_position[0] - @two_target[0]) * 0.999 * 25.0 * delta_time
-    #@two_position[1] -= (@two_position[1] - @two_target[1]) * 0.999 * 25.0 * delta_time
-
-    #@three_position[0] -= (@three_position[0] - @three_target[0]) * 0.999 * 25.0 * delta_time
-    #@three_position[1] -= (@three_position[1] - @three_target[1]) * 0.999 * 25.0 * delta_time
-
-    #a.deltap(@one_position[0], @one_position[1], 0.0)
-    #b.deltap(@two_position[0], @two_position[1], 0.0)
-    #c.deltap(@three_position[0], @three_position[1], 0.0)
-
     gl.drawmode {
       gl.threed {
         gl.lookat(1, 10.0, 2.0, Math.sin(global_time) * 10.0, 0.0, 0.0, 0.01, 80.0)
@@ -142,24 +103,18 @@ Wkndr.client_side("main") { |gl|
 
         #running_average += delta_time
         #fps = (1.0 / (running_average / frame_count.to_f))
-        #center_of_boxes = Polygon.centroid(all_positions)
-
+        center_of_boxes = Polygon.centroid(all_positions)
 
         batcher.each { |e, m, position|
-          pos_a = [position.x, position.y, position.z]
-          sx, sy = gl.screenat(*pos_a)
-          gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-        ##if touchpoints.length > 0
-        ##  touchpoints.each { |tx, ty|
-        ##    gl.draw_circle(100.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
-        ##  }
-        ##  center_of_touches = Polygon.centroid(touchpoints)
-        ##  gl.draw_circle(20.0, center_of_touches[0], center_of_touches[1], 0.0, 128.0, 32.0, 192.0, 255.0)
-        ##end
-        ##gl.draw_circle(50.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
-        #gl.label(sx, sy, "%d %3.3f %3.3f %3.0f" % [frame_count, global_time, delta_time, fps])
-          gl.label(sx, sy, "%3.3f %3.3f %3.3f" % pos_a)
+          #pos_a = [position.x, position.y, position.z]
+          #sx, sy = gl.screenat(*pos_a)
+          #gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
+          #gl.label(sx, sy, "%3.3f %3.3f %3.3f" % pos_a)
         }
+
+        sx, sy = gl.screenat(*center_of_boxes)
+        gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
+        gl.label(sx, sy, "%3.3f %3.3f %3.3f" % center_of_boxes)
       }
     }
   }
@@ -202,3 +157,55 @@ Wkndr.server_side("main") { |gl, server|
     end
   end
 }
+
+    #@one_position[0] -= (@one_position[0] - @one_target[0]) * 0.999 * 25.0 * delta_time
+    #@one_position[1] -= (@one_position[1] - @one_target[1]) * 0.999 * 25.0 * delta_time
+
+    #@two_position[0] -= (@two_position[0] - @two_target[0]) * 0.999 * 25.0 * delta_time
+    #@two_position[1] -= (@two_position[1] - @two_target[1]) * 0.999 * 25.0 * delta_time
+
+    #@three_position[0] -= (@three_position[0] - @three_target[0]) * 0.999 * 25.0 * delta_time
+    #@three_position[1] -= (@three_position[1] - @three_target[1]) * 0.999 * 25.0 * delta_time
+
+    #a.deltap(@one_position[0], @one_position[1], 0.0)
+    #b.deltap(@two_position[0], @two_position[1], 0.0)
+    #c.deltap(@three_position[0], @three_position[1], 0.0)
+
+        ##if touchpoints.length > 0
+        ##  touchpoints.each { |tx, ty|
+        ##    gl.draw_circle(100.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
+        ##  }
+        ##  center_of_touches = Polygon.centroid(touchpoints)
+        ##  gl.draw_circle(20.0, center_of_touches[0], center_of_touches[1], 0.0, 128.0, 32.0, 192.0, 255.0)
+        ##end
+        ##gl.draw_circle(50.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
+        #gl.label(sx, sy, "%d %3.3f %3.3f %3.0f" % [frame_count, global_time, delta_time, fps])
+
+#@one_position = [0.0, 1.0, 0.0]
+#@two_position = [-5.0, -5.0, 0.0]
+#@three_position = [5.0, 5.0, 0.0]
+#
+#@one_target = [0.0, 0.0, 0.0]
+#@two_target = [0.0, 0.0, 0.0]
+#@three_target = [0.0, 0.0, 0.0]
+#
+#xloop(:a) { |recycle_msg|
+#  d = 10.0
+#  hd = d * 0.5
+#  case recycle_msg[:msg]
+#    when :restart
+#      @one_target[0] = (rand * d) - hd
+#      @one_target[1] = (rand * d) - hd
+#      xleap :idle, 1.1
+#
+#      @two_target[0] = (rand * d) - hd
+#      @two_target[1] = (rand * d) - hd
+#      xleap :idle, 1.1
+#
+#      @three_target[0] = (rand * d) - hd
+#      @three_target[1] = (rand * d) - hd
+#      xleap :restart, 1.1
+#
+#  end
+#}
+
