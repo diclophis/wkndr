@@ -31,16 +31,22 @@ RUN cd /var/lib/wkndr && \
     git checkout 6f2efebbb9e0d43ca471d89ea76f396baa43eb62
 
 RUN cd /var/lib/wkndr && \
-    git clone https://github.com/raysan5/raylib && \
+    git clone https://github.com/raysan5/raylib.git && \
     cd raylib && \
     git fetch && \
     git checkout cda1324e87e0e3b3c1f488ac93a928d1b1b3d50b
 
 RUN cd /var/lib/wkndr && \
-    git clone https://github.com/RandyGaul/qu3e && \
+    git clone https://github.com/RandyGaul/qu3e.git && \
     cd qu3e && \
     git fetch && \
     git checkout 1f519c95460ce2852356576b0f895861edbfe0be
+
+RUN cd /var/lib/wkndr && \
+    git clone https://bitbucket.org/odedevs/ode.git && \
+    cd ode && \
+    git fetch && \
+    git checkout 92362ac1e6cf3a12343493f67807780505253e1c
 
 #COPY rlgl.h.patch /var/lib/wkndr/
 #RUN cd /var/lib/wkndr/raylib && \

@@ -6,7 +6,7 @@ set -x
 apt-get update \
   && apt-get upgrade --no-install-recommends -y \
   && apt-get install --no-install-recommends -y \
-       locales git ca-certificates automake build-essential cmake make python3 rake ruby2.7 libssl-dev zlib1g-dev libuv1 libuv1-dev libx11-dev libxrandr-dev libxi-dev xorg-dev \
+       locales git ca-certificates automake autotools-dev build-essential cmake libtool make python3 rake ruby2.7 libssl-dev zlib1g-dev libuv1 libuv1-dev libx11-dev libxrandr-dev libxi-dev xorg-dev \
        bash-static \
        busybox-static \
        clang clang-10 clang-tools-10 \

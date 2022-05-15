@@ -23,6 +23,9 @@ endif
 raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
 raylib_static_lib=$(build)/libraylib.a
 
+ode_static_lib_deps=$(shell find ode -type f -name "*.h" 2> /dev/null)
+ode_static_lib=ode/ode/src/.libs/libode.a
+
 ifeq ($(TARGET),desktop)
   msgpack_static_lib=mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 else
@@ -59,6 +62,7 @@ objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
 objects += $(patsubst %,$(build)/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
 objects += $(mruby_static_lib)
 objects += $(raylib_static_lib)
+objects += $(ode_static_lib)
 objects += $(msgpack_static_lib)
 
 .SECONDARY: $(static_ruby_headers) $(objects)
@@ -72,8 +76,8 @@ ifeq ($(TARGET),desktop)
   #endif
 endif
 
-CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
-CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include
+CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
+CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Iode/include -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include
 
 CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
 #CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
@@ -153,6 +157,17 @@ ifeq ($(TARGET),desktop)
 else
 	echo BAAR
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
+endif
+
+$(ode_static_lib): $(ode_static_lib_deps)
+ifeq ($(TARGET),desktop)
+	echo FOOO
+	cd ode && ./bootstrap && ./configure && $(MAKE)
+	#RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
+else
+	echo BAAR
+	#cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
+	cd ode && ./bootstrap && ./configure && $(MAKE)
 endif
 
 build-mruby: $(mruby_static_lib)
