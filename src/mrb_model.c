@@ -124,10 +124,12 @@ static mrb_value model_initialize(mrb_state* mrb, mrb_value self)
   //  //p_data->model.materials[mi].maps[MAP_DIFFUSE].color = WHITE;
   //}
 
+/*
   Material material = LoadMaterialDefault();
   //Shader standardShader = pp_data->globalDebugShader;
   //material.shader = standardShader;
   p_data->model.materials[0] = material;
+*/
 
   p_data->scale.x = scalef;
   p_data->scale.y = scalef;

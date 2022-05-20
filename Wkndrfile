@@ -10,10 +10,19 @@ Wkndr.nonce("main") {
 
 $speed = 64.0
 
+class CubeModel < Cube
+end
+
+class FrameModel < Model
+end
+
+class CoreModel < Model
+end
+
 class BaseBatchingSystem
   def initialize(store, mesh, instances)
     @mesh = mesh
-    @selector = store.watch(Cube, PositionComponent)
+    @selector = store.watch(mesh.class, PositionComponent)
   end
 
   def at(gl, i)
@@ -27,10 +36,38 @@ class BaseBatchingSystem
     @selector.each { |entity, mesh, position|
       mesh.deltap(position.x, position.y, position.z)
       mesh.deltar(
-        0, 0, 0, 0 
+        0, 0, 1, gt * 100.0
       )
       mesh.deltas(1.0, 1.0, 1.0)
-      mesh.draw(true)
+      mesh.draw(false)
+    }
+  end
+
+  def each
+    @selector.each { |entity, mesh, position|
+      yield entity, mesh, position
+    }
+  end
+end
+
+class FrameBatchingSystem
+  def initialize(store, mesh, instances)
+    @mesh = mesh
+    @selector = store.watch(mesh.class, PositionComponent)
+  end
+
+  def at(gl, i)
+    @mesh
+  end
+
+  def draw(instances)
+  end
+
+  def process(gt, dt)
+    @selector.each { |entity, mesh, position|
+      mesh.deltap(position.x, position.y, position.z)
+      mesh.deltas(1.0, 1.0, 1.0)
+      mesh.draw(false)
     }
   end
 
@@ -43,14 +80,38 @@ end
 
 Wkndr.client_side("main") { |gl|
   cs = 1.0
-  a = Cube.new(gl, 1.0, 1.0, 1.0, 1.0)
+  a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
 
-  xs = ys = zs = 6
+  xs = ys = zs = 2
   instances = xs * ys * zs
   i = 0
 
   store = StorageManager.new
-  batcher = BaseBatchingSystem.new(store, a, instances)
+  batcher = FrameBatchingSystem.new(store, a, instances)
+
+    frame_model = FrameModel.new(gl, "resources/cpu_frame.obj", 1.0)
+    spinner_model = CoreModel.new(gl, "resources/cpu_core.obj", 1.0)
+
+    #spinner_batcher = CubicBatchingSystem.new(store, spinner_model, 32)
+
+    spinner_batcher = BaseBatchingSystem.new(store, spinner_model, 1)
+    frame_batcher = FrameBatchingSystem.new(store, frame_model, 1)
+
+        sf = spinner_batcher.at(gl, 0)
+        sp = PositionComponent.new(0, 0, 0)
+        store.add(
+          sf,
+          sp
+        )
+
+        ff = frame_batcher.at(gl, 0)
+        fp = PositionComponent.new(0, 0, 0)
+        store.add(
+          ff,
+          fp
+        )
+
+
   
   all_positions = []
 
@@ -60,14 +121,13 @@ Wkndr.client_side("main") { |gl|
         ix = xd.to_f + (0.5 * cs)
         iy = yd.to_f + (0.5 * cs)
         iz = zd.to_f + (0.5 * cs)
+        f = batcher.at(gl, i)
         p = PositionComponent.new(ix, iy, iz)
         all_positions << p
-        f = batcher.at(gl, i)
         store.add(
           f,
           p
         )
-
         i += 1
       }
     }
@@ -96,6 +156,8 @@ Wkndr.client_side("main") { |gl|
       gl.threed {
         gl.lookat(1, 10.0, 2.0, Math.sin(global_time) * 10.0, 0.0, 0.0, 0.01, 80.0)
         batcher.process(global_time, delta_time)
+        spinner_batcher.process(global_time, delta_time)
+        frame_batcher.process(global_time, delta_time)
       }
 
       gl.twod {
@@ -103,18 +165,22 @@ Wkndr.client_side("main") { |gl|
 
         #running_average += delta_time
         #fps = (1.0 / (running_average / frame_count.to_f))
-        center_of_boxes = Polygon.centroid(all_positions)
+        if all_positions.length > 0
+          center_of_boxes = Polygon.centroid(all_positions)
 
-        batcher.each { |e, m, position|
-          #pos_a = [position.x, position.y, position.z]
-          #sx, sy = gl.screenat(*pos_a)
-          #gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-          #gl.label(sx, sy, "%3.3f %3.3f %3.3f" % pos_a)
-        }
+          batcher.each { |e, m, position|
+            #pos_a = [position.x, position.y, position.z]
+            #sx, sy = gl.screenat(*pos_a)
+            #gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
+            #gl.label(sx, sy, "%3.3f %3.3f %3.3f" % pos_a)
+          }
 
-        sx, sy = gl.screenat(*center_of_boxes)
-        gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-        gl.label(sx, sy, "%3.3f %3.3f %3.3f" % center_of_boxes)
+          sx, sy = gl.screenat(*center_of_boxes)
+          if sx && sy
+            gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
+            gl.label(sx, sy, "%3.3f %3.3f %3.3f" % center_of_boxes)
+          end
+        end
       }
     }
   }

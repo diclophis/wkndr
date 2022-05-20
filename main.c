@@ -3570,7 +3570,7 @@ int main(int argc, char** argv) {
   mrb_state *mrb_client;
   int i;
 
-  SetTraceLogLevel(LOG_WARNING);
+  SetTraceLogLevel(LOG_DEBUG);
 
   // initialize mruby serverside
   if (!(mrb = mrb_open())) {
@@ -3657,6 +3657,7 @@ int main(int argc, char** argv) {
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
 
+  mrb_mruby_model_gem_init(mrb);
   mrb_mruby_model_gem_init(mrb_client);
 
 #ifdef TARGET_HEAVY
