@@ -2,12 +2,13 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#include <ode/ode.h>
+//#include <ode/ode.h>
+
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
 
-#include <ode/ode.h>
+//#include <ode/ode.h>
 
 //      #include "raylibODE.h"
 //      
