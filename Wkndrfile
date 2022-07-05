@@ -111,8 +111,6 @@ Wkndr.client_side("main") { |gl|
           fp
         )
 
-
-  
   all_positions = []
 
   xs.times { |xd|
