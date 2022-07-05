@@ -34,7 +34,7 @@ RUN cd /var/lib/wkndr && \
     git clone https://github.com/raysan5/raylib.git && \
     cd raylib && \
     git fetch && \
-    git checkout cda1324e87e0e3b3c1f488ac93a928d1b1b3d50b
+    git checkout d0f53db65f4b245f536bc6a9f386a94466cf37c2
 
 RUN cd /var/lib/wkndr && \
     git clone https://github.com/RandyGaul/qu3e.git && \
