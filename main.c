@@ -351,6 +351,8 @@ size_t pack_outbound_tty(mrb_state* mrb, struct RObject* selfP, char *buf) {
 
 EMSCRIPTEN_KEEPALIVE
 size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h, int r, int c) {
+  //TODO: this happens client-side... no ws needed
+
   //TODO support remove vt100 tty
   //  mrb_value outbound_resize_msg = mrb_ary_new(mrb);
   //  //mrb_ary_push(mrb, outbound_resize_msg, mrb_fixnum_value(cols));
@@ -3208,8 +3210,9 @@ void terminalRender (ssize_t size, uint8_t* buf)
   putgif(gif.data, capture);
   int sizeXX = endgif(gif.data);
 
-  //Image r = LoadImageFromMemory(".png", gif.image, sizeXX);      // Load image from memory buffer
-  //UpdateTexture(thisTerm, r.data);
+  Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
+  UpdateTexture(thisTerm, r.data);
+
   free(capture);
   free(gif.image);
   //free(r.data);
@@ -3555,8 +3558,8 @@ void setupTerminal()
   putgif(gif.data, capture);
   int sizeXX = endgif(gif.data);
 
-  //Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
-  //thisTerm = LoadTextureFromImage(r);
+  Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
+  thisTerm = LoadTextureFromImage(r);
 
   //TODO: !!!!
   //term_die(&term);

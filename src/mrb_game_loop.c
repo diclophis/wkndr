@@ -641,17 +641,18 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
             int screenHeight = GetScreenHeight();
             //float resolution[2] = { (float)screenWidth, (float)screenHeight };
             //SetShaderValue(shader, resolutionLoc, resolution, SHADER_UNIFORM_VEC2);
+            //todo tty resize!
         }
 
   {
     BeginDrawing();
-    ClearBackground((Color){0.0, 0.0, 0.0, 0.0});
+    ClearBackground((Color){0.0, 11.0, 33.0, 57.0});
 
     {
-      mrb_yield_argv(mrb, block, 0, NULL);
+      //mrb_yield_argv(mrb, block, 0, NULL);
     }
 
-    //DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
+    DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
 
     EndDrawing();
 
