@@ -30,14 +30,14 @@ MRuby::Build.new do |conf|
 
 
   # community provided gems
-  conf.gem :github => "Asmod4n/mruby-b64"
-  conf.gem :github => "yui-knk/mruby-set"
-  conf.gem :github => "iij/mruby-zlib"
-  conf.gem :github => "katzer/mruby-r3"
+  conf.gem :github => "Asmod4n/mruby-b64", :branch => "master"
+  conf.gem :github => "yui-knk/mruby-set", :branch => "master"
+  conf.gem :github => "iij/mruby-zlib", :branch => "master"
+  conf.gem :github => "katzer/mruby-r3", :branch => "master"
   conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0" #TODO: get this merged with upstream https://github.com/tatsuhiro-t/wslay
-  conf.gem :github => "Asmod4n/mruby-phr"
-  conf.gem :github => "Asmod4n/mruby-simplemsgpack" #, :branch => "v2.0"
-  conf.gem :github => "mattn/mruby-json"
+  conf.gem :github => "Asmod4n/mruby-phr", :branch => "master"
+  conf.gem :github => "Asmod4n/mruby-simplemsgpack", :branch => "master" #, :branch => "v2.0"
+  conf.gem :github => "mattn/mruby-json", :branch => "master"
 
   ##Desktop specific
   ##conf.gem :github => "h2so5/mruby-pure-regexp"
