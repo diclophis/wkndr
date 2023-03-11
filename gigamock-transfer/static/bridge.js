@@ -116,7 +116,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
       var heapBuffer = Module._malloc(origData.byteLength * typedData.BYTES_PER_ELEMENT);
       Module.HEAPU8.set(typedData, heapBuffer);
       window.handle_js_websocket_event(mrbPointer, callbackPointer, heapBuffer, origData.byteLength);
-      //TODO???? Module._free(heapBuffer);
+      Module._free(heapBuffer);
 
       return 0;
     };
