@@ -3296,7 +3296,8 @@ void terminalRender (ssize_t size, uint8_t* buf)
 
   free(capture);
   free(gif.image);
-  //free(r.data);
+
+  UnloadImage(r);
 
   //TODO: free gif.image !!!! valgrind tests !!!
 }
@@ -3643,6 +3644,10 @@ void setupTerminal()
   Image r = LoadImageFromMemory(".gif", gif.image, sizeXX);      // Load image from memory buffer
   thisTerm = LoadTextureFromImage(r);
 
+  free(capture);
+  free(gif.image);
+  UnloadImage(r);
+
   //TODO: !!!!
   //term_die(&term);
   //pb_die(&pb);
@@ -3655,7 +3660,7 @@ int main(int argc, char** argv) {
   mrb_state *mrb_client;
   int i;
 
-  SetTraceLogLevel(LOG_DEBUG);
+  SetTraceLogLevel(LOG_FATAL); //raylib TRACELOG
 
   // initialize mruby serverside
   if (!(mrb = mrb_open())) {
