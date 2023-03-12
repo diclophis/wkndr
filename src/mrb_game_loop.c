@@ -446,14 +446,19 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
         char *codebuf = editorRowsToString(&codelen);
 
         mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, codebuf, codelen);
+
+        //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, "", 0);
+
         mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
 
+        fprintf(stderr, "AFTER!!!! Exec Code!!!!!!\n");
+
         if (mrb->exc) {
-          //mrb_print_error(mrb_client);
-          //mrb_print_backtrace(mrb_client);
+          mrb_print_error(mrb);
+          mrb_print_backtrace(mrb);
           //mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
-          //mrb_value mesg = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
-          //editorSetStatusMessage(RSTRING_PTR(mesg));
+          mrb_value mesg = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
+          editorSetStatusMessage(RSTRING_PTR(mesg));
           //"XXX %.*s\n", (int)RSTRING_LEN(mesg), RSTRING_PTR(mesg));
         } else {
           if (!mrb_nil_p(editr_eval)) {

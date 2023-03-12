@@ -23,6 +23,7 @@
 #include <mruby/value.h>
 #include <mruby/variable.h>
 #include <mruby/error.h>
+#include <mruby/internal.h>
 #include <mruby/array.h>
 #include <mruby/irep.h>
 #include <mruby/compile.h>
@@ -140,11 +141,82 @@ static void crisscross_data_destructor(mrb_state *mrb, void *p_);
 const struct mrb_data_type crisscross_data_type = {"crisscross_data", crisscross_data_destructor};
 
 
+//TODO: make this work
+static void
+print_backtrace_XXX(mrb_state *mrb, struct RObject *exc, struct RArray *backtrace)
+{
+  mrb_int i;
+  mrb_int n = (backtrace ? ARY_LEN(backtrace) : 0);
+  mrb_value *loc, mesg;
+
+  if (n != 0) {
+    if (n > 1) {
+      fputs("trace (most recent call last):\n", stderr);
+    }
+    for (i=n-1,loc=&ARY_PTR(backtrace)[i]; i>0; i--,loc--) {
+      if (mrb_string_p(*loc)) {
+        fprintf(stderr, "\t[%d] ", (int)i);
+        fwrite(RSTRING_PTR(*loc), (int)RSTRING_LEN(*loc), 1, stderr);
+        fputc('\n', stderr);
+      }
+    }
+    if (mrb_string_p(*loc)) {
+      fwrite(RSTRING_PTR(*loc), (int)RSTRING_LEN(*loc), 1, stderr);
+      fputs(": ", stderr);
+    }
+  }
+  else {
+    fputs("(unknown):0: ", stderr);
+  }
+
+  if (exc == mrb->nomem_err) {
+    static const char nomem[] = "Out of memory (NoMemoryError)\n";
+    fwrite(nomem, sizeof(nomem)-1, 1, stderr);
+  }
+  else {
+    mesg = mrb_exc_inspect(mrb, mrb_obj_value(exc));
+    fwrite(RSTRING_PTR(mesg), RSTRING_LEN(mesg), 1, stderr);
+    fputc('\n', stderr);
+  }
+}
+
+MRB_API void
+mrb_print_backtrace_XXX(mrb_state *mrb)
+{
+  if (!mrb->exc || mrb->exc->tt != MRB_TT_EXCEPTION) {
+    return;
+  }
+
+  struct RObject *backtrace = ((struct RException*)mrb->exc)->backtrace;
+  //if (backtrace && backtrace->tt != MRB_TT_ARRAY) backtrace = mrb_unpack_backtrace(mrb, backtrace);
+  print_backtrace_XXX(mrb, mrb->exc, (struct RArray*)backtrace);
+}
+
+MRB_API void
+mrb_print_error_XXX(mrb_state *mrb)
+{
+  //if (mrb->jmp == NULL) {
+  //  struct mrb_jmpbuf c_jmp;
+  //  MRB_TRY(&c_jmp) {
+  //    mrb->jmp = &c_jmp;
+  //    mrb_print_backtrace(mrb);
+  //  } MRB_CATCH(&c_jmp) {
+  //    /* ignore exception during print_backtrace() */
+  //  } MRB_END_EXC(&c_jmp);
+  //  mrb->jmp = NULL;
+  //}
+  //else {
+    mrb_print_backtrace_XXX(mrb);
+  //}
+}
+
+
 static void if_exception_error_and_exit(mrb_state* mrb, char *context) {
   // check for exception, only one can exist at any point in time
   if (mrb->exc) {
     fprintf(stderr, "Exception in %s", context);
-    mrb_print_error(mrb);
+    mrb_print_error_XXX(mrb);
+    mrb_print_backtrace(mrb);
     exit(2);
   }
 }
@@ -169,9 +241,19 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   //TODO
   mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
 
+  //TODO.... pass
+
+  //printf("wtf22222\n");
+  //this block is called in a fast loop
+
+  if (mrb->exc) {
+    mrb_print_error_XXX(mrb);
+  }
+
   if (loop_data->mrb_pointer->exc) {
     fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
-    mrb_print_error(loop_data->mrb_pointer);
+    mrb_print_error_XXX(loop_data->mrb_pointer);
+
     //TODO: exit runtime, unhandled exception
     //CloseSurface();
     CloseWindow();
@@ -472,7 +554,6 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
   mrb_get_args(mrb, "o", &stack_self);
 
   loop_data_s* loop_data = (loop_data_s*)malloc(sizeof(loop_data_s));
-
 
   loop_data->mrb_pointer = mrb;
   loop_data->self_pointer = mrb_obj_ptr(stack_self);
@@ -3531,6 +3612,7 @@ int mk_wcswidth_cjk(const uint32_t *pwcs, size_t n)
 }
 
 
+
 void setupTerminal()
 {
 
@@ -3600,8 +3682,12 @@ int main(int argc, char** argv) {
   mrb_define_global_const(mrb, "ARGV", args_server);
   mrb_define_global_const(mrb_client, "ARGV", args);
 
+  fprintf(stderr, "wtf-7-%d\n", 0);
   eval_static_libs(mrb, globals, NULL);
+
+  fprintf(stderr, "wtf-7-%d\n", 1);
   eval_static_libs(mrb_client, globals, NULL);
+
 
   //TODO: vt100 tty support for inline IDE
   //struct RClass *fast_utmp = mrb_define_class(mrb, "FastUTMP", mrb->object_class);
@@ -3625,23 +3711,36 @@ int main(int argc, char** argv) {
   //// class GameLoop
   mrb_define_game_loop(mrb_client);
 
+  fprintf(stderr, "wtf-7-%d\n", 2);
   eval_static_libs(mrb, markaby, NULL);
+
+  fprintf(stderr, "wtf-7-%d\n", 3);
   eval_static_libs(mrb, stack_blocker, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 4);
   eval_static_libs(mrb, game_loop, NULL);
 
+  fprintf(stderr, "wtf-7-%d\n", 5);
   eval_static_libs(mrb_client, stack_blocker, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 6);
   eval_static_libs(mrb_client, game_loop, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 7);
   eval_static_libs(mrb_client, camera, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 8);
   eval_static_libs(mrb_client, aabb, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 9);
   eval_static_libs(mrb_client, polygon, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", mrb_client->object_class);
 
+  fprintf(stderr, "wtf-7-%d\n", 10);
   eval_static_libs(mrb, wkndr, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 11);
   eval_static_libs(mrb_client, wkndr, NULL);
 
+  fprintf(stderr, "wtf-7-%d\n", 12);
   eval_static_libs(mrb, ecs, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 13);
   eval_static_libs(mrb_client, ecs, NULL);
 
   ////TODO: this is related to Window
@@ -3656,6 +3755,7 @@ int main(int argc, char** argv) {
   //TODO: inline vt100 tty
   //mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
+  fprintf(stderr, "wtf-7-%d\n", 14);
   eval_static_libs(mrb_client, socket_stream, NULL);
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
@@ -3669,13 +3769,19 @@ int main(int argc, char** argv) {
   mrb_mruby_uv_gem_init(mrb);
   mrb_mruby_uv_gem_init(mrb_client);
 
+  fprintf(stderr, "wtf-7-%d\n", 15);
   eval_static_libs(mrb, embed_static_js, embed_static_txt, embed_static_css, embed_static_ico, NULL);
 
+  fprintf(stderr, "wtf-7-%d\n", 16);
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 17);
   eval_static_libs(mrb, connection, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 18);
   eval_static_libs(mrb, server, NULL);
+  fprintf(stderr, "wtf-7-%d\n", 19);
   eval_static_libs(mrb, protocol, NULL);
 
+  fprintf(stderr, "wtf-7-%d\n", 20);
   eval_static_libs(mrb_client, wslay_socket_stream, uv_io, NULL);
 
   struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
@@ -3696,7 +3802,7 @@ int main(int argc, char** argv) {
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "startup_serverside", 1, args_server);
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVERSTARTUP\n");
-    mrb_print_error(mrb);
+    mrb_print_error_XXX(mrb);
     mrb_print_backtrace(mrb);
   }
 
@@ -3707,7 +3813,7 @@ int main(int argc, char** argv) {
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "startup_clientside", 1, args);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTSTARTUP\n");
-    mrb_print_error(mrb_client);
+    mrb_print_error_XXX(mrb_client);
     mrb_print_backtrace(mrb_client);
   }
 
@@ -3717,7 +3823,7 @@ int main(int argc, char** argv) {
   if (mrb->exc) {
     //THIS IS EXCEPTION ON SERVER SIDE!!!
     fprintf(stderr, "Exception in SERVERBLOCKINIT\n");
-    mrb_print_error(mrb);
+    mrb_print_error_XXX(mrb);
   }
 
 #endif
@@ -3727,7 +3833,7 @@ int main(int argc, char** argv) {
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "wizbang!", 0, 0);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTBLOCK\n");
-    mrb_print_error(mrb_client);
+    mrb_print_error_XXX(mrb_client);
     mrb_print_backtrace(mrb_client);
   }
 
