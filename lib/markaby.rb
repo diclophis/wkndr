@@ -1,10 +1,4 @@
-#!/usr/bin/env ruby
-
-#require 'builder/blankslate'
-
-
-
-#!/usr/bin/env ruby
+#
 
 # The XChar library is provided courtesy of Sam Ruby (See
 # http://intertwingly.net/stories/2005/09/28/xchar.rb)
