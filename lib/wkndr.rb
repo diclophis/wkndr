@@ -79,21 +79,38 @@ class Wkndr
 
   def self.wkndr_client_eval(ruby_string)
     #ruby_string = "module Anon\n" + ruby_string + "\nend"
-    #log!(:wtf, ruby_string)
+    log!(:wtf, ruby_string)
 
     begin
       eval(ruby_string)
-    rescue SyntaxError => e
-      log!(e)
-      log!(e.inspect)
-      log!(e.backtrace)
-      e.inspect
-    rescue => e
-      log!(e)
-      log!(e.inspect)
-      log!(e.backtrace)
-      e.inspect
+    rescue NoMethodError => e
+      e.exception
+    rescue LocalJumpError => e
+      e.exception
+    rescue ScriptError => e
+      e.exception
     end
+
+    #TODO: better scripting isolation, 3rd mrb_context ????
+    #rescue ScriptError => e
+    #  log!(:FOO)
+    #  log!(e)
+    #  log!(e.inspect)
+    #  log!(e.backtrace)
+    #  e.inspect
+    #rescue SyntaxError => e
+    #  log!(:whazzzzz)
+    #  log!(e)
+    #  log!(e.inspect)
+    #  log!(e.backtrace)
+    #  e.inspect
+    #rescue => e
+    #  log!(:wha)
+    #  log!(e)
+    #  log!(e.inspect)
+    #  log!(e.backtrace)
+    #  e.inspect
+    #end
   end
 
   def self.first_stack

@@ -1,6 +1,6 @@
 #
 
-require_relative './mruby.rb'
+require_relative './vanilla.rb'
 
 MRuby::CrossBuild.new('emscripten') do |conf|
   #EMSDK_VERSION="1.38.36"
@@ -55,11 +55,12 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.archiver.command = "/root/emsdk/upstream/emscripten/emar"
 
   conf.cc do |cc|
-    cc.flags = ["-O3"]
-    #cc.flags = ["-O3", "-DMRB_UTF8_STRING"]
-    #"-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
-    #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
-    #cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
-    #cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    cc.flags = ["-O3", "-DMRB_NO_STDIO"]
+    #cc.flags = ["-O3"]
+    ##cc.flags = ["-O3", "-DMRB_UTF8_STRING"]
+    ##"-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
+    ##cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_INT64", "-DMRB_GC_ARENA_SIZE=10000"]
+    ##cc.flags = ["-O3", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
+    ##cc.flags = ["-O0", "-DMRB_METHOD_CACHE_SIZE=512", "-DMRB_GC_FIXED_ARENA", "-DMRB_GC_ARENA_SIZE=10000"]
   end
 end

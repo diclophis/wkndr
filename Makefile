@@ -15,7 +15,7 @@ target=$(build)/$(product)
 $(shell mkdir -p $(build))
 
 ifeq ($(TARGET),desktop)
-  mruby_static_lib = mruby/build/host/lib/libmruby.a
+  mruby_static_lib = mruby/build/heavy/lib/libmruby.a
 else
   mruby_static_lib = mruby/build/emscripten/lib/libmruby.a
 endif
@@ -27,16 +27,17 @@ ode_static_lib_deps=$(shell find ode -type f -name "*.h" 2> /dev/null)
 ode_static_lib=ode/ode/src/.libs/libode.a
 
 ifeq ($(TARGET),desktop)
-  msgpack_static_lib=mruby/build/host/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
+  msgpack_static_lib=mruby/build/heavy/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 else
   msgpack_static_lib=mruby/build/emscripten/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 endif
 
-ifeq ($(TARGET),desktop)
-  mrbc=mruby/bin/mrbc
-else
+#ifeq ($(TARGET),desktop)
+#  #mrbc=mruby/bin/mrbc
+#  mrbc=release/mrbc
+#else
   mrbc=mruby/build/host/bin/mrbc
-endif
+#endif
 
 sources = $(wildcard *.c)
 sources += $(wildcard src/*.c)
@@ -76,8 +77,8 @@ ifeq ($(TARGET),desktop)
   #endif
 endif
 
-CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
-CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Iode/include -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/host/mruby-b64/include -Iraylib/src/external/glfw/include
+CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
+CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Iode/include -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include
 
 CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
 #CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
@@ -120,10 +121,10 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_css) > $(build)/embed_static_css.rb
-	mruby/bin/mrbc -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
-	mruby/bin/mrbc -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
-	mruby/bin/mrbc -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
-	mruby/bin/mrbc -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
+	$(mrbc) -B embed_static_js -o $(build)/embed_static_js.h $(build)/embed_static_js.rb
+	$(mrbc) -B embed_static_txt -o $(build)/embed_static_txt.h $(build)/embed_static_txt.rb
+	$(mrbc) -B embed_static_ico -o $(build)/embed_static_ico.h $(build)/embed_static_ico.rb
+	$(mrbc) -B embed_static_css -o $(build)/embed_static_css.h $(build)/embed_static_css.rb
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
@@ -143,9 +144,9 @@ $(build)/%.o: %.c #$(static_ruby_headers) $(sources) $(headers)
 $(build)/%.o: %.cpp #$(static_ruby_headers) $(sources) $(headers)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(mruby_static_lib): config/mruby.rb
+$(mruby_static_lib): config/heavy.rb config/vanilla.rb config/emscripten.rb
 ifeq ($(TARGET),desktop)
-	cd mruby && MRUBY_CONFIG=../config/mruby.rb $(MAKE)
+	cd mruby && MRUBY_CONFIG=../config/heavy.rb $(MAKE)
 else
 	cd mruby && MRUBY_CONFIG=../config/emscripten.rb $(MAKE)
 endif
@@ -159,6 +160,7 @@ else
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
 endif
 
+#TODO: finish phsycs engine integration!
 $(ode_static_lib): $(ode_static_lib_deps)
 ifeq ($(TARGET),desktop)
 	echo FOOO
@@ -175,7 +177,7 @@ build-mruby: $(mruby_static_lib)
 $(mrbc): $(mruby_static_lib)
 
 $(build)/%.h: lib/desktop/%.rb $(mrbc)
-	mruby/bin/mrbc -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
+	$(mrbc) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
 
 $(build)/%.h: lib/%.rb $(mrbc)
-	mruby/bin/mrbc -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
+	$(mrbc) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
