@@ -166,9 +166,9 @@ int is_separator(int c) {
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
 int editorRowHasOpenComment(erow *row) {
-    if (row->hl && row->rsize && row->hl[row->rsize-1] == HL_MLCOMMENT &&
+    if ((row->size > 0) && (row->hl && row->rsize && row->hl[row->rsize-1] == HL_MLCOMMENT &&
         (row->rsize < 2 || (row->render[row->rsize-2] != '*' ||
-                            row->render[row->rsize-1] != '/'))) return 1;
+                            row->render[row->rsize-1] != '/')))) return 1;
     return 0;
 }
 
@@ -197,6 +197,10 @@ void editorUpdateSyntax(erow *row) {
     prev_sep = 1; /* Tell the parser if 'i' points to start of word. */
     in_string = 0; /* Are we inside "" or '' ? */
     in_comment = 0; /* Are we inside multi-line comment? */
+
+    if (row->idx > E.numrows) { //TODO: figure out this bug
+      return;
+    }
 
     /* If the previous line has an open comment, this line starts
      * with an open comment state. */
@@ -306,8 +310,10 @@ void editorUpdateSyntax(erow *row) {
      * state changed. This may recursively affect all the following rows
      * in the file. */
     int oc = editorRowHasOpenComment(row);
+
     if (row->hl_oc != oc && row->idx+1 < E.numrows)
         editorUpdateSyntax(&E.row[row->idx+1]);
+
     row->hl_oc = oc;
 }
 
@@ -562,6 +568,7 @@ void editorDelChar() {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     if (!row || (filecol == 0 && filerow == 0)) return;
+
     if (filecol == 0) {
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
@@ -825,6 +832,8 @@ void editorMoveCursor(int key) {
                 E.cx += 1;
             }
         } else if (row && filecol == row->size) {
+
+          if (filerow < (E.numrows - 1)) {
             E.cx = 0;
             E.coloff = 0;
             if (E.cy == E.screenrows-1) {
@@ -832,6 +841,7 @@ void editorMoveCursor(int key) {
             } else {
                 E.cy += 1;
             }
+          }
         }
         break;
     case ARROW_UP:
@@ -842,7 +852,7 @@ void editorMoveCursor(int key) {
         }
         break;
     case ARROW_DOWN:
-        if (filerow < E.numrows) {
+        if (filerow < (E.numrows - 1)) {
             if (E.cy == E.screenrows-1) {
                 E.rowoff++;
             } else {
