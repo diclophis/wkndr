@@ -50,3 +50,6 @@ def log!(*args, &block)
 end
 
 WKNDR_GLOBAL = true
+
+class Timeout < Exception
+end

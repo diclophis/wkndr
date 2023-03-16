@@ -89,6 +89,7 @@ RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
 #LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm
 #CFLAGS+=-I/usr/include/libdrm 
 CFLAGS+=-DSUPPORT_CUSTOM_FRAME_CONTROL=1
+CFLAGS+=-DMRB_USE_DEBUG_HOOK
 
 #TODO 
 #-Imruby/build/mrbgems/mruby-b64/include 

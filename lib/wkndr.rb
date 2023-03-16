@@ -84,11 +84,13 @@ class Wkndr
     begin
       eval(ruby_string)
     rescue NoMethodError => e
-      e.exception
+      e
     rescue LocalJumpError => e
-      e.exception
+      e
+    rescue Timeout => e
+      e
     rescue ScriptError => e
-      e.exception
+      e
     end
 
     #TODO: better scripting isolation, 3rd mrb_context ????
