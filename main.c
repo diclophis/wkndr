@@ -231,6 +231,8 @@ static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
 mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   loop_data_s *loop_data = NULL;
 
+  fprintf(stderr, "CHEESE_CROSS flip_pointer process_stacks! on the fps timer\n");
+
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
 
   Data_Get_Struct(mrb, data_value, &crisscross_data_type, loop_data);
@@ -254,10 +256,17 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
     mrb_print_error_XXX(loop_data->mrb_pointer);
 
+          mrb_print_error(loop_data->mrb_pointer);
+          mrb_print_backtrace(loop_data->mrb_pointer);
+
+          ////mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
+          mrb_value mesg = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->mrb_pointer->exc), "inspect", 0);
+          editorSetStatusMessage(RSTRING_PTR(mesg));
+
     //TODO: exit runtime, unhandled exception
     //CloseSurface();
-    CloseWindow();
-    return mrb_false_value();
+    //CloseWindow();
+    //return mrb_false_value();
   }
 
   return mrb_true_value();

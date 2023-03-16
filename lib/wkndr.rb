@@ -91,6 +91,10 @@ class Wkndr
       e
     rescue ScriptError => e
       e
+    rescue Exception => e
+      e
+    rescue RuntimeError => e
+      e
     end
 
     #TODO: better scripting isolation, 3rd mrb_context ????

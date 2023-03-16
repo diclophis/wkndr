@@ -470,6 +470,8 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
         fprintf(stderr, "AFTER!!!! Exec Code!!!!!!\n");
 
+  opcode_counter = 0;
+
         if (mrb->exc) {
           mrb_print_error(mrb);
           mrb_print_backtrace(mrb);
