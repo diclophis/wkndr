@@ -32,12 +32,7 @@ else
   msgpack_static_lib=mruby/build/emscripten/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 endif
 
-#ifeq ($(TARGET),desktop)
-#  #mrbc=mruby/bin/mrbc
-#  mrbc=release/mrbc
-#else
-  mrbc=mruby/build/host/bin/mrbc
-#endif
+mrbc=mruby/build/host/bin/mrbc
 
 sources = $(wildcard *.c)
 sources += $(wildcard src/*.c)
@@ -71,42 +66,23 @@ objects += $(msgpack_static_lib)
 
 ifeq ($(TARGET),desktop)
   LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lX11 -lxcb -lXau -lXdmcp
-  ###TODO: OSX platform switch
-  #ifeq ($(TARGET_OS),Darwin)
-  #  LDFLAGS=-lm -lpthread -ldl -lssl -lcrypto -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
-  #endif
 endif
 
 CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
 CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Iode/include -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include
 
 CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
-#CFLAGS+=-DGRAPHICS_API_OPENGL_ES2
 
 ######TODO: svga bootdisk
 RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
-#RAYLIB_PLATFORM_HEAVY=PLATFORM_DRM
-#LDFLAGS+=-lGLESv2 -lEGL -ldrm -lgbm
-#CFLAGS+=-I/usr/include/libdrm 
 CFLAGS+=-DSUPPORT_CUSTOM_FRAME_CONTROL=1
 CFLAGS+=-DMRB_USE_DEBUG_HOOK
 
-#TODO 
-#-Imruby/build/mrbgems/mruby-b64/include 
-
 ifeq ($(TARGET),desktop)
-  #CFLAGS=$(OPTIM) -Wcast-align -D_POSIX_C_SOURCE=200112 -DTARGET_DESKTOP -DGRAPHICS_API_OPENGL_ES3 -D$(RAYLIB_TARGET_DEFINED) -std=c99 -Iinclude -Imruby/include -I$(build) -Imruby/build/repos/host/mruby-b64/include -Imruby/build/mrbgems/mruby-b64/include -Iraylib/src -Iraylib/src/external/glfw/include
-  #ifeq ($(TARGET_OS),Darwin)
-	#  #TODO
-  #  #CFLAGS+=-I/usr/local/Cellar/openssl/1.0.2r/include
-  #endif
   CFLAGS+=-DTARGET_HEAVY
   CFLAGS+=-DPLATFORM_DESKTOP=1
 else
-  #NOTE: SAFE_HEAP=1 breaks things, could be fixed possibly?? https://github.com/emscripten-core/emscripten/blob/main/site/source/docs/porting/Debugging.rst
-  #EMSCRIPTEN_FLAGS=-O0 -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s USE_ZLIB=1 -s SAFE_HEAP=0 -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=128
-  EMSCRIPTEN_FLAGS=-s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE='[$$allocate, $$ALLOC_NORMAL]'
-  #CFLAGS=-Wcast-align -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES3 -Iinclude -Imruby/include -I$(build) -Iraylib/src
+  EMSCRIPTEN_FLAGS=$(OPTIM) -s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE='[$$allocate, $$ALLOC_NORMAL]'
   CFLAGS+=-DPLATFORM_WEB -fdeclspec
 endif
 
@@ -114,7 +90,7 @@ $(target): $(objects) #$(sources)
 ifeq ($(TARGET),desktop)
 	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
 else
-	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "addFunction", "getValue"]' --preload-file resources
+	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["allocate", "ccall", "cwrap", "addFunction", "getValue", "ALLOC_NORMAL"]' --preload-file resources
 endif
 
 $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
@@ -129,7 +105,7 @@ $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_sta
 	cat $(build)/embed_static_*h > $(build)/embed_static.h
 
 clean:
-	#cd mruby && make clean && rm -Rf build
+	cd mruby && make clean && rm -Rf build
 	cd raylib/src && make RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) clean
 	rm -R $(build)
 	mkdir -p $(build)
@@ -163,15 +139,7 @@ endif
 
 #TODO: finish phsycs engine integration!
 $(ode_static_lib): $(ode_static_lib_deps)
-ifeq ($(TARGET),desktop)
-	echo FOOO
 	cd ode && ./bootstrap && ./configure && $(MAKE)
-	#RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
-else
-	echo BAAR
-	#cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
-	cd ode && ./bootstrap && ./configure && $(MAKE)
-endif
 
 build-mruby: $(mruby_static_lib)
 
