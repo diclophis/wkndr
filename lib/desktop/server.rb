@@ -101,7 +101,7 @@ class ProtocolServer
       #TODO: ?????? subscribe_to_wkndrfile
       wkread = read_wkndrfile("Wkndrfile")
       did_parse = Wkndr.wkndr_server_eval(wkread)
-      log!(:serverside_reloaded, did_parse)
+      #log!(:serverside_reloaded, did_parse)
     end
   end
 
@@ -176,7 +176,7 @@ class ProtocolServer
     @halting_check = @all_connections.all? { |cn| cn.halt! }
     @halting = true
 
-    log!(:foop, @halting_check)
+    #log!(:foop, @halting_check)
   end
 
   def create_connection(connection_error)
@@ -325,7 +325,7 @@ class ProtocolServer
         pathpath = request.path
       end
 
-      log!(:LOOKING_FOR_MATCH, request.path, pathpath, query_string)
+      #log!(:LOOKING_FOR_MATCH, request.path, pathpath, query_string)
 
       ids_from_path, handler = @tree.match(pathpath)
 
@@ -335,7 +335,7 @@ class ProtocolServer
       else
         requested_path = "#{@required_prefix}#{pathpath}"
 
-        log!(:wtf_index, requested_path)
+        #log!(:wtf_index, requested_path)
 
         xyz = UV::FS.realpath(requested_path, &handle_static_file(cn))
 

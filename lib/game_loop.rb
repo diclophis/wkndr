@@ -5,12 +5,14 @@ class GameLoop
   attr_accessor :play_procs, :event_procs
 
   def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, touchpoints = nil, &block)
+    # being called from c
     if cli && block 
       self.play_procs[cli] = block
-      "installed #{cli}: #{block.object_id}"
+      Wkndr.log! ["installed #{cli}: #{block.object_id}"]
     else
       if cli == false && self.play_procs
         self.play_procs.each { |cli, play_proc|
+          #Wkndr.log! [:bipp, cli, play_proc.object_id]
           rez = play_proc.call(gt, dt, sw, sh, touchpoints)
         }
       end

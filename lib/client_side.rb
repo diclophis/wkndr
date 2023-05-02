@@ -18,15 +18,15 @@ class ClientSide < Wkndr
   end
 
   def self.startup_clientside(args)
-    log!(:client_side, self, Object.object_id, args)
+    #log!([:client_side, self, Object.object_id, args])
 
     if args.empty?
       #NOTE: default case includes client
     elsif (args.include?("--no-client"))
-      log!(:short_circuit_client_aaa)
+      #log!([:short_circuit_client_aaa])
       return
     elsif (!args.include?("--and-client") && !args.include?("--no-server"))
-      log!(:short_circuit_client_bbb)
+      #log!([:short_circuit_client_bbb])
       return
     end
 
@@ -65,12 +65,12 @@ class ClientSide < Wkndr
     last_gl = gl = GameLoop.new
     stack.up(gl)
 
-    log!(:WkndrfileFetchAAAAA, wps, client_args)
+    #log!([:WkndrfileFetchAAAAA, wps, client_args])
 
     wps.each_with_index { |wp, i|
       mca = whs[i] || whs[0]
 
-      log!(:WkndrfileFetch, wp, mca)
+      #log!([:WkndrfileFetch, wp, mca])
 
       socket_stream = gl.connect_window!(mca[0].to_i, mca[1].to_i, wp)
       raise "unknown socket stream: TODO: fix this abstraction" unless socket_stream

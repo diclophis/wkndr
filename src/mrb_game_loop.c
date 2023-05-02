@@ -422,7 +422,7 @@ static int opcode_counter = 0;
 static void code_fetch_hook_timeout(struct mrb_state* mrb, const struct mrb_irep *irep, const mrb_code *pc, mrb_value *regs) {
     opcode_counter++;
 
-    if (opcode_counter > 999) {
+    if (opcode_counter > 9999) {
        fprintf(stdout, "fooo %d\n", opcode_counter);
        opcode_counter = 0;
        mrb_raise(mrb, mrb_class_get(mrb, "Timeout"), "loop detected");
@@ -462,11 +462,11 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
         //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, "", 0);
 
   opcode_counter = 0;
-  mrb->code_fetch_hook = code_fetch_hook_timeout;
+  //mrb->code_fetch_hook = code_fetch_hook_timeout;
 
         mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
 
-  mrb->code_fetch_hook = NULL;
+  //mrb->code_fetch_hook = NULL;
 
         fprintf(stderr, "AFTER!!!! Exec Code!!!!!!\n");
 
@@ -673,7 +673,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     ClearBackground((Color){0.0, 11.0, 33.0, 57.0});
 
     {
-      //mrb_yield_argv(mrb, block, 0, NULL);
+      mrb_yield_argv(mrb, block, 0, NULL);
     }
 
     DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );

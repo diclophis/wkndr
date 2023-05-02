@@ -27,6 +27,7 @@ static double globalTime = 0;
 static double startTime = -1;
 static double latestTime = -1;
 
+//NOTE: this is the client side per every frame, double C-hop possibly???
 mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
   double time = 0.0;
   double dt = 0.0;
@@ -80,7 +81,7 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
 #endif
 
   if (mrb->exc) {
-    fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
+    fprintf(stderr, "Exception in CLIENT_FOO_CLIENT_BITS");
     mrb_print_error(mrb);
     mrb_print_backtrace(mrb);
     return mrb_nil_value();

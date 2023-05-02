@@ -18,7 +18,7 @@ class ServerSide < Wkndr
   end
 
   def self.startup_serverside(args)
-    log!(:server_side, self, Object.object_id, args)
+    #log!([:server_side, self, Object.object_id, args])
 
     if args.include?("--no-server")
       @run_clientside_fps = true
@@ -60,7 +60,7 @@ class ServerSide < Wkndr
     @trap = UV::Signal.new
     
     @trap.start(UV::Signal::SIGINT) do
-      log!(:foop)
+      #log!([:foop])
       @keep_running = false
     end
 
@@ -78,7 +78,7 @@ class ServerSide < Wkndr
             if b
               b.halt!
             end
-            log!(:rez_falsey_exit_now, a, b)
+            #log!([:rez_falsey_exit_now, a, b])
             #UV.run(UV::UV_RUN_NOWAIT)
             #UV.default_loop.stop
             #@keep_running = false

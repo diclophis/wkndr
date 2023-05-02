@@ -16,8 +16,10 @@ $(shell mkdir -p $(build))
 
 ifeq ($(TARGET),desktop)
   mruby_static_lib = mruby/build/heavy/lib/libmruby.a
+  mruby_config = config/heavy.rb
 else
   mruby_static_lib = mruby/build/emscripten/lib/libmruby.a
+  mruby_config = config/emscripten.rb
 endif
 
 raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
@@ -93,7 +95,7 @@ else
 	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["allocate", "ccall", "cwrap", "addFunction", "getValue", "ALLOC_NORMAL"]' --preload-file resources
 endif
 
-$(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
+$(build)/embed_static.h: $(mruby_static_lib) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_js)  > $(build)/embed_static_js.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
@@ -121,7 +123,7 @@ $(build)/%.o: %.c #$(static_ruby_headers) $(sources) $(headers)
 $(build)/%.o: %.cpp #$(static_ruby_headers) $(sources) $(headers)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(mruby_static_lib): config/heavy.rb config/vanilla.rb config/emscripten.rb
+$(mruby_static_lib): config/vanilla.rb ${mruby_config}
 ifeq ($(TARGET),desktop)
 	cd mruby && MRUBY_CONFIG=../config/heavy.rb $(MAKE)
 else
@@ -141,12 +143,10 @@ endif
 $(ode_static_lib): $(ode_static_lib_deps)
 	cd ode && ./bootstrap && ./configure && $(MAKE)
 
-build-mruby: $(mruby_static_lib)
+#$(mrbc): $(mruby_static_lib)
 
-$(mrbc): $(mruby_static_lib)
-
-$(build)/%.h: lib/desktop/%.rb $(mrbc)
+$(build)/%.h: lib/desktop/%.rb $(mruby_static_lib)
 	$(mrbc) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
 
-$(build)/%.h: lib/%.rb $(mrbc)
+$(build)/%.h: lib/%.rb $(mruby_static_lib)
 	$(mrbc) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<

@@ -79,7 +79,7 @@ class Wkndr
 
   def self.wkndr_client_eval(ruby_string)
     #ruby_string = "module Anon\n" + ruby_string + "\nend"
-    log!(:wtf, ruby_string)
+    #log!(:wtf, ruby_string)
 
     begin
       eval(ruby_string)
@@ -180,55 +180,70 @@ class Wkndr
   #end
 
   def self.xloop(name, fps = 60, &block)
-    @fibers_by_name ||= {}
-
-    air_thread = Fiber.new do |recycle_msg|
-      while true
-        recycle_msg = block.call(recycle_msg)
-        recycle_msg = Fiber.yield(recycle_msg)
-      end
-    end
+    #air_thread = Fiber.new do |recycle_msg|
+    #  while true
+    #    recycle_msg = block.call(recycle_msg)
+    #    recycle_msg = Fiber.yield(recycle_msg)
+    #  end
+    #end
 
     default_fps = fps.to_f
     default_timeout = (1.0 / default_fps)
-    @fibers_by_name[name] = {
+    fibers_by_name[name] = {
       :last_fired => 0.0,
       :fps => default_fps,
-      :fiber => air_thread,
+      :block => block,
       :timeout => default_timeout,
       :recycle_msg => {:msg => :restart, :timeout => nil}
     }
 
-    air_thread
+    block
   end
 
-  def self.xleap(recycle_msg, timeout)
-    Fiber.yield({:msg => recycle_msg, :timeout => timeout})
+  def self.xleap(recycle_msg) #, timeout = 0)
+    Fiber.yield(recycle_msg) #{:msg => recycle_msg, :timeout => timeout})
   end
 
+  def self.fibers_by_name
+    $fibers_by_name ||= {}
+    $fibers_by_name
+  end
 
-  def self.fiberz(gt)
-    if @fibers_by_name
-    #@fibers_by_name.collect do |name, details|
-    #  if (gt - details[:last_fired]) > details[:timeout]
-    #    delta = gt - details[:last_fired]
+  def self.fiberz(gt = 0)
+    #if @fibers_by_name
 
-    #    details[:recycle_msg].delete(:timeout)
-    #    details[:recycle_msg][:delta_time] = delta
+#Fiber.new do
+      fibers_by_name.collect do |name, details|
+      log! [name, details]
 
-    #    recycle_msg = details[:fiber].resume(details[:recycle_msg])
-    #    
-    #    if recycle_msg[:timeout]
-    #      details[:timeout] = recycle_msg[:timeout]
-    #    else
-    #      details[:timeout] = (1.0 / details[:fps])
-    #    end
+        details[:fiber] ||= Fiber.new do |recycle_msg|
+          while true
+            recycle_msg = details[:block].call(recycle_msg)
+            recycle_msg = Fiber.yield(recycle_msg)
+          end
+        end
 
-    #    details[:recycle_msg] = recycle_msg
+        #if (gt - details[:last_fired]) > details[:timeout]
+  #raise "wtf #{name} #{self}"
+          #delta = gt - details[:last_fired]
 
-    #    details[:last_fired] = gt
-    #  end
-    #end
-    end
+          #details[:recycle_msg].delete(:timeout)
+          #details[:recycle_msg][:delta_time] = delta
+#raise details[:fiber]
+          recycle_msg = details[:fiber].resume(details[:recycle_msg])
+
+          #if recycle_msg[:timeout]
+          #  details[:timeout] = recycle_msg[:timeout]
+          #else
+          #  details[:timeout] = (1.0 / details[:fps])
+          #end
+
+          details[:recycle_msg] = recycle_msg
+
+          #details[:last_fired] = gt
+        #end
+      end
+#    #end
+#end.resume
   end
 end

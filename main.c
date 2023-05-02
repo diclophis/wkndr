@@ -40,6 +40,8 @@
 #include <mruby/variable.h>
 #include <mruby/string.h>
 #include <mruby/hash.h>
+#include <mruby/throw.h>
+
 #include <string.h>
 
 
@@ -180,6 +182,52 @@ print_backtrace_XXX(mrb_state *mrb, struct RObject *exc, struct RArray *backtrac
   }
 }
 
+struct backtrace_location {
+  int32_t lineno;
+  mrb_sym method_id;
+  const char *filename;
+};
+static const mrb_data_type bt_type = { "Backtrace", mrb_free };
+
+struct RObject*
+mrb_unpack_backtrace_XXX(mrb_state *mrb, struct RObject *backtrace)
+{
+  const struct backtrace_location *bt;
+  mrb_int n, i;
+  int ai;
+
+  if (backtrace == NULL) {
+  empty_backtrace:
+    return mrb_obj_ptr(mrb_ary_new_capa(mrb, 0));
+  }
+  if (backtrace->tt == MRB_TT_ARRAY) return backtrace;
+  bt = (struct backtrace_location*)mrb_data_check_get_ptr(mrb, mrb_obj_value(backtrace), &bt_type);
+  if (bt == NULL) goto empty_backtrace;
+  n = (mrb_int)backtrace->flags;
+  if (n == 0) goto empty_backtrace;
+  backtrace = mrb_obj_ptr(mrb_ary_new_capa(mrb, n));
+  ai = mrb_gc_arena_save(mrb);
+  for (i = 0; i < n; i++) {
+    const struct backtrace_location *entry = &bt[i];
+    mrb_value btline;
+
+    if (entry->lineno != -1) {//debug info was available
+      btline = mrb_format(mrb, "%s:%d", entry->filename, (int)entry->lineno);
+    }
+    else { //all that was left was the stack frame
+      btline = mrb_format(mrb, "%s:0", entry->filename);
+    }
+    if (entry->method_id != 0) {
+      mrb_str_cat_lit(mrb, btline, ":in ");
+      mrb_str_cat_cstr(mrb, btline, mrb_sym_name(mrb, entry->method_id));
+    }
+    mrb_ary_push(mrb, mrb_obj_value(backtrace), btline);
+    mrb_gc_arena_restore(mrb, ai);
+  }
+
+  return backtrace;
+}
+
 MRB_API void
 mrb_print_backtrace_XXX(mrb_state *mrb)
 {
@@ -188,7 +236,7 @@ mrb_print_backtrace_XXX(mrb_state *mrb)
   }
 
   struct RObject *backtrace = ((struct RException*)mrb->exc)->backtrace;
-  //if (backtrace && backtrace->tt != MRB_TT_ARRAY) backtrace = mrb_unpack_backtrace(mrb, backtrace);
+  if (backtrace && backtrace->tt != MRB_TT_ARRAY) backtrace = mrb_unpack_backtrace_XXX(mrb, backtrace);
   print_backtrace_XXX(mrb, mrb->exc, (struct RArray*)backtrace);
 }
 
@@ -227,11 +275,23 @@ static void crisscross_data_destructor(mrb_state *mrb, void *p_) {
 }
 
 
+mrb_value wkndr_log(mrb_state* mrb, mrb_value self) {
+  mrb_value msg = mrb_nil_value();
+
+  mrb_get_args(mrb, "o", &msg);
+  mrb_value msg_inspected = mrb_funcall(mrb, msg, "inspect", 0);
+
+  fprintf(stdout, "%s\n", RSTRING_PTR(msg_inspected));
+
+  return mrb_true_value();
+}
+
+
 //TODO
 mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   loop_data_s *loop_data = NULL;
 
-  fprintf(stderr, "CHEESE_CROSS flip_pointer process_stacks! on the fps timer\n");
+  //TODO fprintf(stderr, "CHEESE_CROSS flip_pointer process_stacks! on the fps timer\n");
 
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
 
@@ -240,8 +300,9 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @flip_pointer");
   }
 
+
+/*
   //TODO
-  mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
 
   //TODO.... pass
 
@@ -256,8 +317,8 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
     mrb_print_error_XXX(loop_data->mrb_pointer);
 
-          mrb_print_error(loop_data->mrb_pointer);
-          mrb_print_backtrace(loop_data->mrb_pointer);
+          //mrb_print_error(loop_data->mrb_pointer);
+          //mrb_print_backtrace(loop_data->mrb_pointer);
 
           ////mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
           mrb_value mesg = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->mrb_pointer->exc), "inspect", 0);
@@ -268,6 +329,56 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     //CloseWindow();
     //return mrb_false_value();
   }
+*/
+
+  struct mrb_jmpbuf *prev_jmp = loop_data->mrb_pointer->jmp;
+  struct mrb_jmpbuf c_jmp;
+  int err = 1;
+
+  MRB_TRY(&c_jmp) {
+    loop_data->mrb_pointer->jmp = &c_jmp;
+
+    //body(loop_data->mrb_pointer, opaque);
+
+    mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+
+    //mrb_value wiz_return_halt2 = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "fiberz", 0, 0);
+
+    err = 0;
+  } MRB_CATCH(&c_jmp) {
+    if (loop_data->mrb_pointer->exc) {
+
+      //mrb_print_error(mrb);
+    fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
+    mrb_print_error_XXX(loop_data->mrb_pointer);
+
+      loop_data->mrb_pointer->exc = NULL;
+    }
+    else {
+      //TODO
+    }
+  } MRB_END_EXC(&c_jmp);
+
+  loop_data->mrb_pointer->jmp = prev_jmp;
+
+
+  //if (loop_data->mrb_pointer->exc) {
+  //  fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS_FIBERZ!\n");
+  //  mrb_print_error_XXX(loop_data->mrb_pointer);
+
+  //        //mrb_print_error(loop_data->mrb_pointer);
+  //        //mrb_print_backtrace(loop_data->mrb_pointer);
+
+  //        ////mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
+  //        mrb_value mesg = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->mrb_pointer->exc), "inspect", 0);
+  //        editorSetStatusMessage(RSTRING_PTR(mesg));
+
+  //  //TODO: exit runtime, unhandled exception
+  //  //CloseSurface();
+  //  //CloseWindow();
+  //  //return mrb_false_value();
+  //}
+
 
   return mrb_true_value();
 }
@@ -3696,10 +3807,8 @@ int main(int argc, char** argv) {
   mrb_define_global_const(mrb, "ARGV", args_server);
   mrb_define_global_const(mrb_client, "ARGV", args);
 
-  fprintf(stderr, "wtf-7-%d\n", 0);
   eval_static_libs(mrb, globals, NULL);
 
-  fprintf(stderr, "wtf-7-%d\n", 1);
   eval_static_libs(mrb_client, globals, NULL);
 
 
@@ -3725,36 +3834,24 @@ int main(int argc, char** argv) {
   //// class GameLoop
   mrb_define_game_loop(mrb_client);
 
-  fprintf(stderr, "wtf-7-%d\n", 2);
   eval_static_libs(mrb, markaby, NULL);
 
-  fprintf(stderr, "wtf-7-%d\n", 3);
   eval_static_libs(mrb, stack_blocker, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 4);
   eval_static_libs(mrb, game_loop, NULL);
 
-  fprintf(stderr, "wtf-7-%d\n", 5);
   eval_static_libs(mrb_client, stack_blocker, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 6);
   eval_static_libs(mrb_client, game_loop, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 7);
   eval_static_libs(mrb_client, camera, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 8);
   eval_static_libs(mrb_client, aabb, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 9);
   eval_static_libs(mrb_client, polygon, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", mrb_client->object_class);
 
-  fprintf(stderr, "wtf-7-%d\n", 10);
   eval_static_libs(mrb, wkndr, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 11);
   eval_static_libs(mrb_client, wkndr, NULL);
 
-  fprintf(stderr, "wtf-7-%d\n", 12);
   eval_static_libs(mrb, ecs, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 13);
   eval_static_libs(mrb_client, ecs, NULL);
 
   ////TODO: this is related to Window
@@ -3769,7 +3866,6 @@ int main(int argc, char** argv) {
   //TODO: inline vt100 tty
   //mrb_define_method(mrb_client, socket_stream_class_client, "write_tty", socket_stream_unpack_inbound_tty, MRB_ARGS_REQ(1));
 
-  fprintf(stderr, "wtf-7-%d\n", 14);
   eval_static_libs(mrb_client, socket_stream, NULL);
 
   struct RClass *client_side_top_most_thor = mrb_define_class(mrb_client, "ClientSide", thor_class_client);
@@ -3783,19 +3879,13 @@ int main(int argc, char** argv) {
   mrb_mruby_uv_gem_init(mrb);
   mrb_mruby_uv_gem_init(mrb_client);
 
-  fprintf(stderr, "wtf-7-%d\n", 15);
   eval_static_libs(mrb, embed_static_js, embed_static_txt, embed_static_css, embed_static_ico, NULL);
 
-  fprintf(stderr, "wtf-7-%d\n", 16);
   eval_static_libs(mrb, wslay_socket_stream, uv_io, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 17);
   eval_static_libs(mrb, connection, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 18);
   eval_static_libs(mrb, server, NULL);
-  fprintf(stderr, "wtf-7-%d\n", 19);
   eval_static_libs(mrb, protocol, NULL);
 
-  fprintf(stderr, "wtf-7-%d\n", 20);
   eval_static_libs(mrb_client, wslay_socket_stream, uv_io, NULL);
 
   struct RClass *server_side_top_most_thor = mrb_define_class(mrb, "ServerSide", thor_class);
@@ -3810,6 +3900,9 @@ int main(int argc, char** argv) {
           Data_Wrap_Struct(mrb, mrb->object_class, &crisscross_data_type, loop_data)));
 
   mrb_define_class_method(mrb, thor_class, "server_side_tick!", cheese_cross, MRB_ARGS_REQ(0));
+
+  mrb_define_class_method(mrb, thor_class, "log!", wkndr_log, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb_client, thor_class_client, "log!", wkndr_log, MRB_ARGS_REQ(1));
 
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 

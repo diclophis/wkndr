@@ -55,16 +55,19 @@ class SocketStream
           when 1,2 #TODO: deprecate this loopback mechanism
             self.write_tty(cmsg)
           when "party" #TODO: rename this something not stupid
-            #begin
+            begin
               wkndrfile_cstr = cmsg
-              #log!(:WTF2, cmsg.length)
+              Wkndr.log!([:WTF2, wkndrfile_cstr, cmsg.length])
               did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
               #log!(:WTF3, did_parse, cmsg.length)
-            #rescue => e
-            #  log!(e.backtrace)
-            #  log!(:cmsg_bad, e)
+            rescue => e
+              Wkndr.log!([e.backtrace])
+              Wkndr.log!([:cmsg_bad, e])
+            rescue Exception => e
+              Wkndr.log!([e.backtrace])
+              Wkndr.log!([:cmsg_bad, e])
             #  #raise
-            #end
+            end
 
         else
 

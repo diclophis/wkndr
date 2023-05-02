@@ -115,7 +115,7 @@ class FooOpt < OptionParser
 
   desc "help"
   def help
-    log!(:help_fu, self)
+    #log!(:help_fu, self)
 
     Linenoise.multi_line = true
 
@@ -210,7 +210,7 @@ class FooOpt < OptionParser
 
     current_parser = @parsers["help"]
 
-    log!(:autocomp, (current_parser.candidate("--xun=b").inspect))
+    #log!(:autocomp, (current_parser.candidate("--xun=b").inspect))
 
     #all_options = current_parser.to_a.join(" ")
 

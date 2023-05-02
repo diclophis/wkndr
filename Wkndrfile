@@ -8,7 +8,7 @@ Wkndr.nonce("main") {
   }
 }
 
-$speed = 64.0
+$speed = 1.0
 
 class CubeModel < Cube
 end
@@ -78,6 +78,8 @@ class FrameBatchingSystem
   end
 end
 
+#$foo = Fiber.new { |in_boot| loop { Wkndr.log! [in_boot]; in_boot = Fiber.yield(in_boot) } }
+
 Wkndr.client_side("main") { |gl|
   cs = 1.0
   a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
@@ -138,6 +140,40 @@ Wkndr.client_side("main") { |gl|
   running_average = 0.0
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
+    #if global_time > 3.0
+    #  log! [:call, global_time, $foo.resume(global_time)]
+    #else
+    #  log! [:fade, $foo, global_time]
+    #end
+
+    #$foo.resume(global_time)
+
+    ##def fiberz
+    #  fibers_by_name.collect do |name, details|
+    #    log! [:begin, name, details]
+
+    #    details[:fiber] ||= Fiber.new do |recycle_msg|
+    #      log! [:while_true]
+    #      #while true
+    #        #recycle_msg = details[:block].call(recycle_msg)
+    #        recycle_msg = true
+    #        log! [:yield, name, details]
+    #        Fiber.yield(recycle_msg)
+    #      #end
+    #    end
+
+    #    #Fiber.new {
+    #    #  Fiber.yield
+    #    #}.resume
+
+    #    log! [:resume, name, details]
+    #    recycle_msg = details[:fiber].resume(details[:recycle_msg])
+    #    details[:recycle_msg] = recycle_msg
+    #  end
+
+    #  log! [:fiberz_done]
+    ##end
+
     gl.mousep { |xyl|
       nmx, nmy, l = *xyl
     }
@@ -148,11 +184,12 @@ Wkndr.client_side("main") { |gl|
     hsw = (sw * 0.5).to_f
     hsh = (sh * 0.5).to_f
 
-    fiberz(global_time)
-
     gl.drawmode {
+
+      #fiberz(global_time)
+
       gl.threed {
-        gl.lookat(1, 10.0, 2.0, Math.sin(global_time) * 10.0, 0.0, 0.0, 0.01, 80.0)
+        gl.lookat(1, 10.0, 2.0, Math.sin(global_time * $speed) * 10.0, 0.0, 0.0, 0.01, 80.0)
         batcher.process(global_time, delta_time)
         spinner_batcher.process(global_time, delta_time)
         frame_batcher.process(global_time, delta_time)
@@ -273,3 +310,6 @@ Wkndr.server_side("main") { |gl, server|
 #  end
 #}
 
+#xloop :a do
+#  $speed += 0.1
+#end
