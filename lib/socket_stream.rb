@@ -57,7 +57,7 @@ class SocketStream
           when "party" #TODO: rename this something not stupid
             begin
               wkndrfile_cstr = cmsg
-              Wkndr.log!([:WTF2, wkndrfile_cstr, cmsg.length])
+              #Wkndr.log!([:WTF2, wkndrfile_cstr, cmsg.length])
               did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
               #log!(:WTF3, did_parse, cmsg.length)
             rescue => e
