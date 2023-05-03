@@ -5,51 +5,43 @@ TARGET_OS ?= $(shell uname)
 OPTIM = -O0 -g
 build=release
 
-ifeq ($(TARGET),desktop)
-  product=wkndr.mruby
-else
-  product=wkndr.html
-endif
-target=$(build)/$(product)
+desktop_heavy_product=wkndr.mruby
+desktop_heavy_target=$(build)/$(desktop_heavy_product)
 
-$(shell mkdir -p $(build))
+wasm_product=wkndr.html
+wasm_target=$(build)/$(wasm_product)
 
-ifeq ($(TARGET),desktop)
-  mruby_static_lib = mruby/build/heavy/lib/libmruby.a
-  mruby_config = config/heavy.rb
-else
-  mruby_static_lib = mruby/build/emscripten/lib/libmruby.a
-  mruby_config = config/emscripten.rb
-endif
+$(shell mkdir -p $(build) $(build)/desktop-heavy $(build)/wasm)
+
+  desktop_heavy_mruby_static_lib = mruby/build/heavy/lib/libmruby.a
+  desktop_heavy_mruby_config = config/heavy.rb
+
+  wasm_mruby_static_lib = mruby/build/emscripten/lib/libmruby.a
+  wasm_mruby_config = config/emscripten.rb
 
 raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
-raylib_static_lib=$(build)/libraylib.a
+desktop_heavy_raylib_static_lib=$(build)/desktop-heavy/libraylib.a
 
 ode_static_lib_deps=$(shell find ode -type f -name "*.h" 2> /dev/null)
 ode_static_lib=ode/ode/src/.libs/libode.a
 
-ifeq ($(TARGET),desktop)
-  msgpack_static_lib=mruby/build/heavy/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
-else
-  msgpack_static_lib=mruby/build/emscripten/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
-endif
+  desktop_heavy_msgpack_static_lib=mruby/build/heavy/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
+  wasm_msgpack_static_lib=mruby/build/emscripten/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a
 
 mrbc=mruby/build/host/bin/mrbc
 
-sources = $(wildcard *.c)
+sources += $(wildcard *.c)
 sources += $(wildcard src/*.c)
 cxx_sources = $(wildcard src/*.cpp)
-ifeq ($(TARGET),desktop)
-sources += $(wildcard src/desktop/*.c)
-endif
+
+desktop_sources = $(wildcard src/desktop/*.c)
 
 headers += $(wildcard include/*.h)
 
 static_ruby_headers = $(patsubst %,$(build)/%, $(patsubst lib/%.rb,%.h, $(wildcard lib/*.rb)))
-ifeq ($(TARGET),desktop)
-static_ruby_headers += $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h, $(wildcard lib/desktop/*.rb)))
-static_ruby_headers += $(build)/embed_static.h
-endif
+
+desktop_heavy_static_ruby_headers = $(patsubst %,$(build)/%, $(patsubst lib/desktop/%.rb,%.h, $(wildcard lib/desktop/*.rb)))
+desktop_heavy_static_ruby_headers += $(build)/embed_static.h
 
 giga_static_js = gigamock-transfer/static/morphdom.js gigamock-transfer/static/stringview.js gigamock-transfer/static/bridge.js
 giga_static_txt = gigamock-transfer/static/robots.txt
@@ -58,17 +50,17 @@ giga_static_css = gigamock-transfer/static/wkndr.css
 
 objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
 objects += $(patsubst %,$(build)/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
-objects += $(mruby_static_lib)
-objects += $(raylib_static_lib)
 objects += $(ode_static_lib)
-objects += $(msgpack_static_lib)
 
-.SECONDARY: $(static_ruby_headers) $(objects)
-.PHONY: $(target)
+desktop_heavy_objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(desktop_sources)))
+desktop_heavy_objects += $(desktop_heavy_mruby_static_lib)
+desktop_heavy_objects += $(desktop_heavy_msgpack_static_lib)
+desktop_heavy_objects += $(desktop_heavy_raylib_static_lib)
 
-ifeq ($(TARGET),desktop)
-  LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lX11 -lxcb -lXau -lXdmcp
-endif
+.SECONDARY: $(desktop_heavy_static_ruby_headers) $(objects)
+.PHONY: $(desktop_heavy_target)
+
+LDFLAGS=-lm -lpthread -ldl -lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lX11 -lxcb -lXau -lXdmcp
 
 CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
 CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Iode/include -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include
@@ -88,14 +80,13 @@ else
   CFLAGS+=-DPLATFORM_WEB -fdeclspec
 endif
 
-$(target): $(objects) #$(sources)
-ifeq ($(TARGET),desktop)
-	$(CC) $(CFLAGS) -o $@ $(objects) $(LDFLAGS)
-else
-	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["allocate", "ccall", "cwrap", "addFunction", "getValue", "ALLOC_NORMAL"]' --preload-file resources
-endif
+$(desktop_heavy_target): $(objects) $(desktop_heavy_objects)
+	$(CC) $(CFLAGS) -o $@ $(objects) $(desktop_heavy_objects) $(LDFLAGS)
 
-$(build)/embed_static.h: $(mruby_static_lib) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
+$(wasm_target): $(objects)
+	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["allocate", "ccall", "cwrap", "addFunction", "getValue", "ALLOC_NORMAL"]' --preload-file resources
+
+$(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_js)  > $(build)/embed_static_js.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_txt) > $(build)/embed_static_txt.rb
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_ico) > $(build)/embed_static_ico.rb
@@ -114,39 +105,32 @@ clean:
 	mkdir -p $(build)/src
 	mkdir -p $(build)/src/desktop
 
-$(build)/main.o: main.c $(static_ruby_headers)
+$(build)/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(build)/%.o: %.c #$(static_ruby_headers) $(sources) $(headers)
+$(build)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(build)/%.o: %.cpp #$(static_ruby_headers) $(sources) $(headers)
+$(build)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(mruby_static_lib): config/vanilla.rb ${mruby_config}
-ifeq ($(TARGET),desktop)
-	cd mruby && MRUBY_CONFIG=../config/heavy.rb $(MAKE)
-else
-	cd mruby && MRUBY_CONFIG=../config/emscripten.rb $(MAKE)
-endif
+$(desktop_heavy_mruby_static_lib): config/vanilla.rb ${desktop_heavy_mruby_config}
+	cd mruby && MRUBY_CONFIG=../$(desktop_heavy_mruby_config) $(MAKE)
 
-$(raylib_static_lib): $(raylib_static_lib_deps)
-ifeq ($(TARGET),desktop)
-	echo FOOO
-	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
-else
-	echo BAAR
-	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build) PLATFORM=PLATFORM_WEB $(MAKE) -B -e
-endif
+$(desktop_heavy_raylib_static_lib): $(raylib_static_lib_deps)
+	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
+
+$(wasm_raylib_static_lib): $(raylib_static_lib_deps)
+	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/wasm PLATFORM=PLATFORM_WEB $(MAKE) -B -e
 
 #TODO: finish phsycs engine integration!
 $(ode_static_lib): $(ode_static_lib_deps)
 	cd ode && ./bootstrap && ./configure && $(MAKE)
 
-#$(mrbc): $(mruby_static_lib)
+$(mrbc): $(desktop_heavy_mruby_static_lib)
 
-$(build)/%.h: lib/desktop/%.rb $(mruby_static_lib)
+$(build)/%.h: lib/desktop/%.rb $(mruby_static_lib) $(mrbc)
 	$(mrbc) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
 
-$(build)/%.h: lib/%.rb $(mruby_static_lib)
+$(build)/%.h: lib/%.rb $(mruby_static_lib) $(mrbc)
 	$(mrbc) -B $(patsubst $(build)/%.h,%, $@) -o $@ $<
