@@ -8,11 +8,11 @@ Wkndr.nonce("main") {
   }
 }
 
-$speed = 1.0
+$speed = 0.1
 
-#class CubeModel < Cube
-#end
-#
+class CubeModel < Cube
+end
+
 #class FrameModel < Model
 #end
 #
@@ -82,7 +82,7 @@ $speed = 1.0
 #
 Wkndr.client_side("main") { |gl|
 #  cs = 1.0
-#  a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
+  a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
 #
 #  xs = ys = zs = 2
 #  instances = xs * ys * zs
@@ -187,10 +187,13 @@ Wkndr.client_side("main") { |gl|
     gl.drawmode {
 #    #  #fiberz(global_time)
       gl.threed {
-        gl.lookat(1, 10.0, 2.0, Math.sin(global_time * $speed) * 10.0, 0.0, 0.0, 0.01, 80.0)
+        gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 0.01, 33.0)
 #    #    batcher.process(global_time, delta_time)
 #    #    spinner_batcher.process(global_time, delta_time)
 #    #    frame_batcher.process(global_time, delta_time)
+        #a.deltap(0.0, 0.0, 0.0)
+        #a.deltas(1.0, 1.0, 1.0)
+        #a.draw(false)
       }
       gl.twod {
 #    #    frame_count += 1
