@@ -21,6 +21,7 @@ $(shell mkdir -p $(build) $(build)/desktop-heavy $(build)/wasm)
 
 raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
 desktop_heavy_raylib_static_lib=$(build)/desktop-heavy/libraylib.a
+wasm_raylib_static_lib=$(build)/wasm/libraylib.a
 
 ode_static_lib_deps=$(shell find ode -type f -name "*.h" 2> /dev/null)
 ode_static_lib=ode/ode/src/.libs/libode.a
@@ -48,14 +49,26 @@ giga_static_txt = gigamock-transfer/static/robots.txt
 giga_static_ico = gigamock-transfer/static/favicon.ico
 giga_static_css = gigamock-transfer/static/wkndr.css 
 
-objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
-objects += $(patsubst %,$(build)/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
-objects += $(ode_static_lib)
+#objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(sources)))
+#objects += $(patsubst %,$(build)/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
+#objects += $(ode_static_lib)
 
-desktop_heavy_objects += $(patsubst %,$(build)/%, $(patsubst %.c,%.o, $(desktop_sources)))
+desktop_heavy_objects += $(patsubst %,$(build)/desktop/%, $(patsubst %.c,%.o, $(sources)))
+desktop_heavy_objects += $(patsubst %,$(build)/desktop/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
+desktop_heavy_objects += $(ode_static_lib)
+
+desktop_heavy_objects += $(patsubst %,$(build)/desktop/%, $(patsubst %.c,%.o, $(desktop_sources)))
 desktop_heavy_objects += $(desktop_heavy_mruby_static_lib)
 desktop_heavy_objects += $(desktop_heavy_msgpack_static_lib)
 desktop_heavy_objects += $(desktop_heavy_raylib_static_lib)
+
+wasm_objects += $(patsubst %,$(build)/wasm/%, $(patsubst %.c,%.o, $(sources)))
+wasm_objects += $(patsubst %,$(build)/wasm/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
+wasm_objects += $(ode_static_lib)
+
+wasm_objects += $(wasm_mruby_static_lib)
+wasm_objects += $(wasm_msgpack_static_lib)
+wasm_objects += $(wasm_raylib_static_lib)
 
 .SECONDARY: $(desktop_heavy_static_ruby_headers) $(objects)
 .PHONY: $(desktop_heavy_target)
@@ -72,19 +85,19 @@ RAYLIB_PLATFORM_HEAVY=PLATFORM_DESKTOP
 CFLAGS+=-DSUPPORT_CUSTOM_FRAME_CONTROL=1
 CFLAGS+=-DMRB_USE_DEBUG_HOOK
 
-ifeq ($(TARGET),desktop)
-  CFLAGS+=-DTARGET_HEAVY
-  CFLAGS+=-DPLATFORM_DESKTOP=1
-else
+#ifeq ($(TARGET),desktop)
+#  CFLAGS+=-DTARGET_HEAVY
+#  CFLAGS+=-DPLATFORM_DESKTOP=1
+#else
   EMSCRIPTEN_FLAGS=$(OPTIM) -s USE_ZLIB=1 -s NO_EXIT_RUNTIME=0 -s USE_GLFW=3 -s RESERVED_FUNCTION_POINTERS=16 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE='[$$allocate, $$ALLOC_NORMAL]'
-  CFLAGS+=-DPLATFORM_WEB -fdeclspec
-endif
+  #CFLAGS+=-DPLATFORM_WEB -fdeclspec
+#endif
 
-$(desktop_heavy_target): $(objects) $(desktop_heavy_objects)
-	$(CC) $(CFLAGS) -o $@ $(objects) $(desktop_heavy_objects) $(LDFLAGS)
+$(desktop_heavy_target): $(desktop_heavy_objects)
+	$(CC) $(CFLAGS) -o $@ $(desktop_heavy_objects) $(LDFLAGS)
 
-$(wasm_target): $(objects)
-	$(CC) $(objects) -o $@ $(LDFLAGS) $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["allocate", "ccall", "cwrap", "addFunction", "getValue", "ALLOC_NORMAL"]' --preload-file resources
+$(wasm_target): $(wasm_objects)
+	$(CC) $(wasm_objects) -o $@ $(EMSCRIPTEN_FLAGS) -s EXPORTED_FUNCTIONS="['_main', '_handle_js_websocket_event', '_pack_outbound_tty', '_resize_tty', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS='["allocate", "ccall", "cwrap", "addFunction", "getValue", "ALLOC_NORMAL"]' --preload-file resources
 
 $(build)/embed_static.h: $(mrbc) $(giga_static_js) $(giga_static_txt) $(giga_static_css) $(giga_static_ico)
 	ruby gigamock-transfer/mkstatic-mruby-module.rb $(giga_static_js)  > $(build)/embed_static_js.rb
@@ -105,14 +118,23 @@ clean:
 	mkdir -p $(build)/src
 	mkdir -p $(build)/src/desktop
 
-$(build)/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
-	$(CC) $(CFLAGS) -c $< -o $@
+$(build)/desktop/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
+	$(CC) $(CFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
 
-$(build)/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(build)/wasm/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
+	$(CC) $(CFLAGS) -DPLATFORM_WEB -c $< -o $@
 
-$(build)/%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(build)/desktop/%.o: %.c
+	$(CC) $(CFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
+
+$(build)/desktop/%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
+
+$(build)/wasm/%.o: %.c
+	$(CC) $(CFLAGS) -DPLATFORM_WEB -c $< -o $@
+
+$(build)/wasm/%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -DPLATFORM_WEB -c $< -o $@
 
 $(desktop_heavy_mruby_static_lib): config/vanilla.rb ${desktop_heavy_mruby_config}
 	cd mruby && MRUBY_CONFIG=../$(desktop_heavy_mruby_config) $(MAKE)
