@@ -117,6 +117,7 @@ clean:
 	mkdir -p $(build)
 	mkdir -p $(build)/src
 	mkdir -p $(build)/src/desktop
+	mkdir -p $(build)/desktop/src/desktop
 
 $(build)/desktop/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
 	$(CC) $(CFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
