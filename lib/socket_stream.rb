@@ -37,7 +37,7 @@ class SocketStream
     #}
 
     process_as_msgpack_stream(bytes).each { |typed_msg|
-      #log!(:foop, typed_msg.inspect)
+      ##### client-side stdout Wkndr.log! [:foop, typed_msg]
 
       channels = typed_msg.keys
 
@@ -52,8 +52,8 @@ class SocketStream
         #  party is the Wkndrfile code stream
         #  * everything else gets sent to user-defined handler
         case channel
-          when 1,2 #TODO: deprecate this loopback mechanism
-            self.write_tty(cmsg)
+          #when 1,2 #TODO: deprecate this loopback mechanism
+          #  self.write_tty(cmsg)
           when "party" #TODO: rename this something not stupid
             begin
               wkndrfile_cstr = cmsg
@@ -143,6 +143,7 @@ class SocketStream
     #TODO: merge this with other bits
     #TODO: this is client side asking for file
     write_typed({"party" => wkndrfile_path})
+    Wkndr.log! ["did_connect"]
   end
 
   def write_typed(*msg_typed)

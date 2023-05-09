@@ -1,7 +1,8 @@
 #
 
 class ProtocolServer
-  def initialize(safety_dir, host = '0.0.0.0', port = 8000)
+  def initialize(gl, safety_dir, host = '0.0.0.0', port = 8000)
+    @gl = gl
     @required_prefix = safety_dir
 
     @all_connections = []
@@ -16,10 +17,20 @@ class ProtocolServer
     @handlers = {}
 
     upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
+      Wkndr.log! [:cn, cn]
+
       cn.upgrade_to_websocket! { |cn, channel, msg|
+        Wkndr.log! [:server_side_cn_hold_gl, cn, cn.class, channel, msg]
+
+        cn.client_to_server(channel, msg)
+
+        Wkndr.log! [:wtf_foop, @all_connections.length, channel]
+
         unless channel == "party"
           @all_connections.each { |client|
             # worlds cheapest public broadcast system
+
+            Wkndr.log! [:to_message_client, client, cn, channel, msg]
 
             if (client.object_id != cn.object_id)
               #TODO: localhost de-dup log!(:DUP, msg, client.object_id, cn.object_id)
@@ -35,12 +46,16 @@ class ProtocolServer
 
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
 
+      Wkndr.log! [:wtf_twice, cn.class]
+
       cn.upgrade_to_websocket! { |cn, msg|
         live_msg = JSON.load(msg)
 
-        ######log!(:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg)
+        Wkndr.log! [:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg]
 
         live_msg.each { |k, v|
+          Wkndr.log! [:k, k, :v, v]
+
           case k
             when "party"
               #TODO: !!!!
@@ -58,6 +73,7 @@ class ProtocolServer
       #  #}
       #}
     }
+
     @handlers["/ws-html"] = upgrade_to_websocket_handler
 
     #receive_http_post = Proc.new { |cn, phr, mab|
@@ -187,12 +203,15 @@ class ProtocolServer
     begin
       @idents -= 1
 
-      http = Connection.new(@server.accept)
+      http = Connection.new(@gl, @server.accept) #NOTE: this is where the server-side connection is created
+      Wkndr.log! [:match_cn, http, self.class]
+      # connection hold gl... ???
 
       @all_connections << http
 
       http
     rescue => e
+      #TODO: repair exception tracking
       #TODO: ???? is this halting ????
       #log!(:create_connection_err, e)
       #log!(e.backtrace)

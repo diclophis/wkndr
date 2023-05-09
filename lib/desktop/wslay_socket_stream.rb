@@ -1,5 +1,6 @@
 #
 
+# TODO: rename this class to something not stupid
 class WslaySocketStream < SocketStream
   def shutdown
     if @socket
@@ -98,6 +99,10 @@ class WslaySocketStream < SocketStream
           #begin
             reset_handshake!
             @socket.read_start(&on_read_start)
+
+            #TODO:
+            Wkndr.log! ["CLIENT OR SERVER??? connection started"]
+
             did_connect(wp) #NOTE: this is where client reqs new Wkndrfile
           #rescue => e
           #  log!(:wslay_socket_stream_write_ws_request_error, e, e.backtrace)
