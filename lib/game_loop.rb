@@ -9,7 +9,7 @@ class GameLoop
     # being called from c
     if cli && block 
       self.play_procs[cli] = block
-      Wkndr.log! ["installed #{cli}: #{block.object_id}"]
+      #Wkndr.log! ["installed #{cli}: #{block.object_id}"]
     else
       if cli == false && self.play_procs
         self.play_procs.each { |cli, play_proc|

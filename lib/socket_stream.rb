@@ -143,7 +143,7 @@ class SocketStream
     #TODO: merge this with other bits
     #TODO: this is client side asking for file
     write_typed({"party" => wkndrfile_path})
-    Wkndr.log! ["did_connect"]
+    #Wkndr.log! ["did_connect"]
   end
 
   def write_typed(*msg_typed)
