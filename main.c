@@ -3780,7 +3780,7 @@ int main(int argc, char** argv) {
   mrb_state *mrb_client;
   int i;
 
-  SetTraceLogLevel(LOG_FATAL); //raylib TRACELOG
+  SetTraceLogLevel(LOG_TRACE); //raylib TRACELOG
 
   // initialize mruby serverside
   if (!(mrb = mrb_open())) {

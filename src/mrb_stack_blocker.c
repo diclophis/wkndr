@@ -57,7 +57,6 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
   sw = GetScreenWidth();
   sh = GetScreenHeight();
 
-
   mrb_value touchpoints = mrb_ary_new(mrb);
 
   for (int i = 0; i < GetTouchPointCount(); ++i) {

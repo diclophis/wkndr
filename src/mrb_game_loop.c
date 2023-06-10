@@ -142,7 +142,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  SetConfigFlags(FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT | FLAG_WINDOW_MAXIMIZED); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
 //fprintf(stderr, "WTFOPENPLATFORMBITS!???\n");
@@ -151,8 +153,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
 //          mrb_print_backtrace(mrb);
 
-  InitWindow(screenWidth, screenHeight, c_game_name);
-  //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  //InitWindow(screenWidth, screenHeight, c_game_name);
+  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  //InitWindow(640, 480, c_game_name);
 
   //HideCursor();
 
@@ -501,6 +504,9 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       foop.shift_key_pressed = 1;
     } else if (key == 341) {
       foop.ctrl_key_pressed = 1;
+    } else if (key == 256) {
+      CloseWindow();
+      exit(0);
     } else if (key == 261) {
       foop.del_key_pressed = 1;
     } else if (key == 257) {
@@ -666,15 +672,15 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   //  //fprintf(stderr, "done backspace\n");
   //}
 
-  while (key = GetCharPressed()) {
-    //fprintf(stderr, "Char: %d\n", key);
-    if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
-    {
-        keyCount += 1;
-        editorProcessKeypress((char)key);
-    }
-    foop.debounce_timer = 0.0;
-  }
+  //while (key = GetCharPressed()) {
+  //  fprintf(stderr, "Char: %d\n", key);
+  //  if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
+  //  {
+  //      keyCount += 1;
+  //      editorProcessKeypress((char)key);
+  //  }
+  //  foop.debounce_timer = 0.0;
+  //}
 
   if (keyCount > 0) {
     struct abuf *ab2 = malloc(sizeof(struct abuf));
