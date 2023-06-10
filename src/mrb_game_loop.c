@@ -143,7 +143,7 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
-  SetConfigFlags(FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE |FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT | FLAG_WINDOW_MAXIMIZED); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
@@ -153,8 +153,8 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
 //          mrb_print_backtrace(mrb);
 
-  //InitWindow(screenWidth, screenHeight, c_game_name);
-  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  InitWindow(screenWidth, screenHeight, c_game_name);
+  //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
   //InitWindow(640, 480, c_game_name);
 
   //HideCursor();

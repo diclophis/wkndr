@@ -79,7 +79,7 @@ desktop_heavy_x11_objects += $(desktop_heavy_msgpack_static_lib)
 
 desktop_heavy_x11_objects += $(desktop_heavy_x11_raylib_static_lib)
 
-wasm_objects += $(patsubst %,$()/wasm/%, $(patsubst %.c,%.o, $(sources)))
+wasm_objects += $(patsubst %,$(build)/wasm/%, $(patsubst %.c,%.o, $(sources)))
 wasm_objects += $(patsubst %,$(build)/wasm/%, $(patsubst %.cpp,%.o, $(cxx_sources)))
 wasm_objects += $(ode_static_lib)
 
@@ -101,7 +101,7 @@ CFLAGS += -I/usr/include/libdrm
 
 CXXFLAGS=$(OPTIM) -Wcast-align -Iinclude -Iode/include -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include
 
-#CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
+CFLAGS+=-DGRAPHICS_API_OPENGL_ES3 
 
 ######TODO: svga bootdisk
 RAYLIB_PLATFORM_HEAVY_X11=PLATFORM_DESKTOP

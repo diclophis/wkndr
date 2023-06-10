@@ -26,7 +26,7 @@ items:
       spec:
         containers:
         - command:
-          - /var/lib/wkndr/release/wkndr.mruby
+          - /var/lib/wkndr/release/wkndr.mruby.x11
           - --server=/var/lib/wkndr/public
           - --no-client
           image: wkndr:latest

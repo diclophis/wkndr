@@ -30,8 +30,9 @@ RUN cd /var/lib/wkndr && \
 RUN cd /root/emsdk && \
     . ./emsdk_env.sh && \
     cd /var/lib/wkndr/raylib/src && \
-    mkdir -p ../../release/wasm ../../release/desktop-heavy && \
-    RAYLIB_RELEASE_PATH=../../release/desktop-heavy PLATFORM=PLATFORM_DESKTOP make -B -e && \
+    mkdir -p ../../release/wasm ../../release/desktop-heavy ../../release/desktop-heavy-x11 && \
+    RAYLIB_RELEASE_PATH=../../release/desktop-heavy PLATFORM=PLATFORM_DRM make -B -e && \
+    RAYLIB_RELEASE_PATH=../../release/desktop-heavy-x11 PLATFORM=PLATFORM_DESKTOP make -B -e && \
     RAYLIB_RELEASE_PATH=../../release/wasm PLATFORM=PLATFORM_WEB emmake make -B -e
 
 RUN cd /var/lib/wkndr && \
@@ -98,7 +99,7 @@ COPY resources /var/lib/wkndr/resources
 RUN cd /var/lib/wkndr && \
     mkdir -p release/desktop/src/desktop && \
     mkdir -p release/src/desktop && \
-    make release/wkndr.mruby
+    make release/wkndr.mruby.x11
 
 RUN cd /root/emsdk && \
     . ./emsdk_env.sh && \
