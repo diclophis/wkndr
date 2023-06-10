@@ -11,7 +11,9 @@ class Connection
                 :session,
                 :hex
 
-  def initialize(socket)
+  def initialize(gl, socket)
+    @gl = gl
+
     self.socket = socket
 
     self.ss = ""
@@ -31,6 +33,10 @@ class Connection
     self.socket.read_start { |b|
       read_bytes_safely(b)
     }
+  end
+
+  def client_to_server(channel, msg)
+    @gl.event("main", channel, msg)
   end
 
   def shutdown
@@ -265,8 +271,7 @@ class Connection
         self.shutdown
       elsif msg[:opcode] == :binary_frame
         process_as_msgpack_stream(msg.msg) { |typed_msg|
-
-          #log!(:wtf, typed_msg)
+          Wkndr.log! [:wtf, self, typed_msg]
 
           channels = typed_msg.keys
 

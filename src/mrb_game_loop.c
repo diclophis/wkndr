@@ -76,6 +76,7 @@ typedef struct {
 
   int ctrl_key_pressed;
   int tab_key_pressed;
+  int tilde_key_pressed;
   int arrow_right_key_pressed;
   int arrow_up_key_pressed;
   int arrow_down_key_pressed;
@@ -106,6 +107,8 @@ extern struct mrb_data_type texture_data_type;
 
 static mrb_value mousexyz;
 static mrb_value pressedkeys;
+
+static int showEditor = -1;
 
 // Using 4 point lights, white, red, green and blue
 ////static Light lights[MAX_LIGHTS] = { 0 };
@@ -139,7 +142,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
   }
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  SetConfigFlags(FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT | FLAG_WINDOW_MAXIMIZED); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
 //fprintf(stderr, "WTFOPENPLATFORMBITS!???\n");
@@ -148,8 +153,9 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
 //          mrb_print_backtrace(mrb);
 
-  InitWindow(screenWidth, screenHeight, c_game_name);
-  //InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  //InitWindow(screenWidth, screenHeight, c_game_name);
+  InitWindow(GetScreenWidth(), GetScreenHeight(), c_game_name);
+  //InitWindow(640, 480, c_game_name);
 
   //HideCursor();
 
@@ -387,6 +393,7 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
 
   foop.ctrl_key_pressed = 0;
   foop.tab_key_pressed = 0;
+  foop.tilde_key_pressed = 0;
   foop.shift_key_pressed = 0;
   foop.arrow_right_key_pressed = 0;
   foop.arrow_left_key_pressed = 0;
@@ -444,7 +451,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     keyCount += 1;
 
     chey = key;
-    //fprintf(stderr, "Key: %d\n", key);
+    fprintf(stderr, "Key: %d\n", key);
 
     //76  ctrl-l
     if (key == 89) { // ctrl-y
@@ -489,12 +496,17 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
           }
         }
       }
+    } else if (key == 96) {
+      foop.tilde_key_pressed = 1;
     } else if (key == 258) {
       foop.tab_key_pressed = 1;
     } else if (key == 344) {
       foop.shift_key_pressed = 1;
     } else if (key == 341) {
       foop.ctrl_key_pressed = 1;
+    } else if (key == 256) {
+      CloseWindow();
+      exit(0);
     } else if (key == 261) {
       foop.del_key_pressed = 1;
     } else if (key == 257) {
@@ -518,128 +530,157 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     }
 
     foop.debounce_timer = 0.0;
+  
+    fprintf(stderr, "twiceB\n");
   }
 
   if (foop.debounce_timer <= 0.0) {
+    //fprintf(stderr, "twiceA\n");
+
     foop.debounce_timer = foop.debounce_time;
 
     if (foop.del_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(ARROW_RIGHT);
       editorProcessKeypress(BACKSPACE);
+      foop.del_key_pressed = 0;
     }
 
     if (foop.tab_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(TAB);
       //fprintf(stderr, "sentTab\n");
+      foop.tab_key_pressed = 0;
+    }
+
+    if (foop.tilde_key_pressed) {
+
+      keyCount += 1;
+      showEditor = showEditor * -1;
+
+
+
+      foop.tilde_key_pressed = 0;
+      fprintf(stderr, "tilde_key_pressed: %d\n", showEditor);
     }
 
     if (foop.enter_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(ENTER);
+      foop.enter_key_pressed = 0;
     }
 
     if (foop.backspace_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(BACKSPACE);
+      foop.backspace_key_pressed = 0;
     }
 
     if (foop.arrow_right_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(ARROW_RIGHT);
+      foop.arrow_right_key_pressed = 0;
     }
 
     if (foop.arrow_left_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(ARROW_LEFT);
+      foop.arrow_left_key_pressed = 0;
     }
 
     if (foop.arrow_up_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(ARROW_UP);
+      foop.arrow_up_key_pressed = 0;
     }
 
     if (foop.arrow_down_key_pressed) {
       keyCount += 1;
       editorProcessKeypress(ARROW_DOWN);
+      foop.arrow_down_key_pressed = 0;
     }
   }
 
-  if (IsKeyReleased(261)) {
-    foop.debounce_timer = 0.0;
-    foop.del_key_pressed = 0;
-    //fprintf(stderr, "del enter\n");
-  }
+  //if (IsKeyReleased(96)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.tilde_key_pressed = 0;
+  //  fprintf(stderr, "tildereleased \n");
+  //}
 
-  if (IsKeyReleased(257)) {
-    foop.debounce_timer = 0.0;
-    foop.enter_key_pressed = 0;
-    //fprintf(stderr, "done enter\n");
-  }
+  //if (IsKeyReleased(261)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.del_key_pressed = 0;
+  //  //fprintf(stderr, "del enter\n");
+  //}
 
-  if (IsKeyReleased(258)) {
-    foop.debounce_timer = 0.0;
-    foop.tab_key_pressed = 0;
-    //fprintf(stderr, "done tab\n");
-  }
+  //if (IsKeyReleased(257)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.enter_key_pressed = 0;
+  //  //fprintf(stderr, "done enter\n");
+  //}
 
-  if (IsKeyReleased(344)) {
-    foop.debounce_timer = 0.0;
-    foop.shift_key_pressed = 0;
-    //fprintf(stderr, "done shift\n");
-  }
+  //if (IsKeyReleased(258)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.tab_key_pressed = 0;
+  //  //fprintf(stderr, "done tab\n");
+  //}
+
+  //if (IsKeyReleased(344)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.shift_key_pressed = 0;
+  //  //fprintf(stderr, "done shift\n");
+  //}
 
 //Key: 265 U
 //Key: 262 R
 //Key: 264 D
 //Key: 263 L
 
-  if (IsKeyReleased(265)) {
-    foop.debounce_timer = 0.0;
-    foop.arrow_up_key_pressed = 0;
-    //fprintf(stderr, "done up arrow\n");
-  }
+  //if (IsKeyReleased(265)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.arrow_up_key_pressed = 0;
+  //  //fprintf(stderr, "done up arrow\n");
+  //}
 
-  if (IsKeyReleased(262)) {
-    foop.debounce_timer = 0.0;
-    foop.arrow_right_key_pressed = 0;
-    //fprintf(stderr, "done right arrow\n");
-  }
+  //if (IsKeyReleased(262)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.arrow_right_key_pressed = 0;
+  //  //fprintf(stderr, "done right arrow\n");
+  //}
 
-  if (IsKeyReleased(263)) {
-    foop.debounce_timer = 0.0;
-    foop.arrow_left_key_pressed = 0;
-    //fprintf(stderr, "done left arrow\n");
-  }
+  //if (IsKeyReleased(263)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.arrow_left_key_pressed = 0;
+  //  //fprintf(stderr, "done left arrow\n");
+  //}
 
-  if (IsKeyReleased(264)) {
-    foop.debounce_timer = 0.0;
-    foop.arrow_down_key_pressed = 0;
-    //fprintf(stderr, "done down arrow\n");
-  }
+  //if (IsKeyReleased(264)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.arrow_down_key_pressed = 0;
+  //  //fprintf(stderr, "done down arrow\n");
+  //}
 
-  if (IsKeyReleased(341)) {
-    foop.debounce_timer = 0.0;
-    foop.ctrl_key_pressed = 0;
-    //fprintf(stderr, "done ctrl\n");
-  }
+  //if (IsKeyReleased(341)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.ctrl_key_pressed = 0;
+  //  //fprintf(stderr, "done ctrl\n");
+  //}
 
-  if (IsKeyReleased(259)) {
-    foop.debounce_timer = 0.0;
-    foop.backspace_key_pressed = 0;
-    //fprintf(stderr, "done backspace\n");
-  }
+  //if (IsKeyReleased(259)) {
+  //  foop.debounce_timer = 0.0;
+  //  foop.backspace_key_pressed = 0;
+  //  //fprintf(stderr, "done backspace\n");
+  //}
 
-  while (key = GetCharPressed()) {
-    //fprintf(stderr, "Char: %d\n", key);
-    if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
-    {
-        keyCount += 1;
-        editorProcessKeypress((char)key);
-    }
-    foop.debounce_timer = 0.0;
-  }
+  //while (key = GetCharPressed()) {
+  //  fprintf(stderr, "Char: %d\n", key);
+  //  if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
+  //  {
+  //      keyCount += 1;
+  //      editorProcessKeypress((char)key);
+  //  }
+  //  foop.debounce_timer = 0.0;
+  //}
 
   if (keyCount > 0) {
     struct abuf *ab2 = malloc(sizeof(struct abuf));
@@ -663,10 +704,12 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
         {
             int screenWidth = GetScreenWidth();
             int screenHeight = GetScreenHeight();
+            //TODO TODO TODO
             //float resolution[2] = { (float)screenWidth, (float)screenHeight };
             //SetShaderValue(shader, resolutionLoc, resolution, SHADER_UNIFORM_VEC2);
             //todo tty resize!
         }
+
 
   {
     BeginDrawing();
@@ -676,10 +719,13 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       mrb_yield_argv(mrb, block, 0, NULL);
     }
 
-    DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
+    if (showEditor > 0) {
+      DrawTexture(terminalTexture(), 0, 0, (Color){255.0, 255.0, 255.0, 255.0} );
+    }
 
     EndDrawing();
 
+    //TODO??
     //SwapScreenBuffer();                  // Copy back buffer to front buffer (screen)
 
     //// Frame time control system

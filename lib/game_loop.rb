@@ -4,6 +4,7 @@ class GameLoop
   attr_accessor :width, :height
   attr_accessor :play_procs, :event_procs
 
+
   def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, touchpoints = nil, &block)
     # being called from c
     if cli && block 
@@ -20,13 +21,19 @@ class GameLoop
   end
 
   def event(cli, channel = nil, msg = nil, &block)
+    ##def initialize
+      self.play_procs ||= {}
+      self.event_procs ||= {}
+    ##end
+
     if cli && block
       #@event_proc = block
       self.event_procs[cli] = block
     else
       #if @event_proc
       self.event_procs.each { |cli_inner, event_proc|
-        #log!(:FOOOO, cli, cli_inner, channel, msg, event_proc, block)
+        Wkndr.log! [:FOOOO, cli, cli_inner, channel, msg, event_proc, block]
+
 #[:FOOOO, "mkmaze", 1, nil, #<Proc:0x55caab044bf0>, nil]                                                               
 
         event_proc.call(channel, msg)
@@ -61,8 +68,8 @@ class GameLoop
     self.width = w
     self.height = h
 
-    self.play_procs = {}
-    self.event_procs = {}
+    self.play_procs ||= {}
+    self.event_procs ||= {}
 
     #log!(:INIT_WINDOW, w, h, wp)
 
@@ -71,6 +78,7 @@ class GameLoop
     }
 
     self.emit { |msg|
+      Wkndr.log! [:sending, msg]
       socket_stream.write(msg)
     }
 

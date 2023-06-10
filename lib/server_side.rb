@@ -48,7 +48,9 @@ class ServerSide < Wkndr
     gl = GameLoop.new
     stack.up(gl)
  
-    if protocol_server = ProtocolServer.new(safety_dir_arg)
+    if protocol_server = ProtocolServer.new(gl, safety_dir_arg)
+      Wkndr.log! [:server_side2, :gl, gl, protocol_server, self]
+
       stack.up(protocol_server)
       Wkndr.set_server([gl, protocol_server])
     end
@@ -66,7 +68,7 @@ class ServerSide < Wkndr
 
       if @run_clientside_fps
         @timer = UV::Timer.new
-        fps = 1000.0000/59.99
+        fps = 1000.0000/120.00001
         @timer.start(fps, fps) do
           rez = self.server_side_tick!
 

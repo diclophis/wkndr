@@ -82,6 +82,10 @@ end
 ##$foo = Fiber.new { |in_boot| loop { Wkndr.log! [in_boot]; in_boot = Fiber.yield(in_boot) } }
 #
 Wkndr.client_side("main") { |gl|
+  gl.event("main") { |channel, msg|
+    Wkndr.log! [:wkndrfile, {channel => msg}]
+  }
+
 #  cs = 1.0
   a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
 #
@@ -218,10 +222,26 @@ Wkndr.client_side("main") { |gl|
     }
   }
 }
-#
-#
+
+#Wkndr.server_side("main") { |gl, server|
+#  server.raw("/about") do |cn, phr|
+
 Wkndr.server_side("main") { |gl, server|
+  gl.event("main") { |channel, msg|
+    Wkndr.log! [:WkndrServerFile, channel, msg]
+
+    # msg _is params_ ... !
+    # republish_subscribed_html(/#{channel}, msg
+    # msg is streaming params
+    # how does rendering multi-agent html subscriptions look like
+    # read-write-through cache, publish from event, and single-take http params
+    # # url based on event, tsdb?
+    # # route to pre-archive pattern match from channel/msg
+  }
+
   server.raw("/about") do |cn, phr|
+    gl.emit({"about" => "GET"})
+
     mab = Markaby::Builder.new
     mab.html5 "lang" => "en" do
       mab.head do
