@@ -27,17 +27,19 @@ MRuby::CrossBuild.new('heavy') do |conf|
   conf.gem :core => "mruby-string-ext"
   conf.gem :core => "mruby-eval"
   conf.gem :core => "mruby-pack"
+  conf.gem :core => "mruby-set"
   #conf.gem :core => "mruby-time"
   #conf.gem :core => "mruby-io"
 
   # community provided gems
   conf.gem :github => "Asmod4n/mruby-b64", :branch => "master"
-  conf.gem :github => "yui-knk/mruby-set", :branch => "master"
+  #conf.gem :github => "yui-knk/mruby-set", :branch => "master"
   conf.gem :github => "iij/mruby-zlib", :branch => "master"
   conf.gem :github => "katzer/mruby-r3", :branch => "master"
   conf.gem :github => "diclophis/mruby-wslay", :branch => "fix-intended-return-of-exceptions-1.0" #TODO: get this merged with upstream https://github.com/tatsuhiro-t/wslay
   conf.gem :github => "Asmod4n/mruby-phr", :branch => "master"
-  conf.gem :github => "Asmod4n/mruby-simplemsgpack", :branch => "master" #, :branch => "v2.0"
+  #conf.gem :github => "Asmod4n/mruby-simplemsgpack", :branch => "master" #, :branch => "v2.0"
+  conf.gem :github => "Asmod4n/mruby-simplemsgpack", :branch => "d7e9142afe9d5d53855c1611d2c35b5b71f02fa9"
   conf.gem :github => "mattn/mruby-json", :branch => "master"
 
   ##Desktop specific
