@@ -1,14 +1,13 @@
 #!/usr/bin/env ruby
 
 require 'base64'
-require 'zlib'
 
 def mkstatic(input_static_files, name_of_export)
   input_data = ""
   input_static_files.each do |input_static_file|
     input_data += File.read(input_static_file)
   end
-  return "#{name_of_export.upcase} = Zlib.inflate(B64.decode(<<EOBLOB))\n" + Base64.encode64(Zlib::Deflate.deflate(input_data)) + "\nEOBLOB\n"
+  return "#{name_of_export.upcase} = B64.decode(<<EOBLOB)\n" + Base64.encode64(input_data) + "\nEOBLOB\n"
 end
 
 ##?#?#?#?#?#

@@ -48,7 +48,7 @@ MRuby::CrossBuild.new('emscripten') do |conf|
   conf.gem :core => "mruby-pack"
   conf.gem :core => "mruby-set"
 
-  conf.gem :github => "Asmod4n/mruby-simplemsgpack", :branch => "d7e9142afe9d5d53855c1611d2c35b5b71f02fa9"
+  conf.gem :github => "Asmod4n/mruby-simplemsgpack", :branch => "master"
 
   conf.cc.command = "/root/emsdk/upstream/emscripten/emcc"
   conf.linker.command = "/root/emsdk/upstream/emscripten/emcc"
