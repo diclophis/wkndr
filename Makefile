@@ -22,7 +22,9 @@ desktop_heavy_mruby_config = config/heavy.rb
 wasm_mruby_static_lib = mruby/build/emscripten/lib/libmruby.a
 wasm_mruby_config = config/emscripten.rb
 
-raylib_static_lib_deps=$(shell find raylib -type f 2> /dev/null)
+#raylib_static_lib_deps=$(shell find raylib/src -type f 2> /dev/null)
+raylib_static_lib_deps += $(wildcard raylib/src/*.c)
+raylib_static_lib_deps += $(wildcard raylib/src/*.h)
 desktop_heavy_raylib_static_lib=$(build)/desktop-heavy/libraylib.a
 desktop_heavy_x11_raylib_static_lib=$(build)/desktop-heavy-x11/libraylib.a
 wasm_raylib_static_lib=$(build)/wasm/libraylib.a
@@ -95,7 +97,8 @@ wasm_objects += $(wasm_raylib_static_lib)
 LDFLAGS=-lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lGLESv2 -lEGL -lpthread -lrt -lm -lgbm -ldrm -ldl -latomic
 LDFLAGS_X11=-lpthread -lssl -lcrypto -lutil -lz $(shell pkg-config --libs libuv) -lGLESv2 -lEGL -lpthread -lrt -lm -ldl -latomic -lX11 -lxcb -lXau -lXdmcp
 
-CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include -D_POSIX_C_SOURCE=200112
+CFLAGS=$(OPTIM) -std=gnu99 -Wcast-align -Iode/include -Iinclude -Imruby/include -I$(build) -Iraylib/src -Imruby/build/repos/heavy/mruby-b64/include -Iraylib/src/external/glfw/include
+#-D_POSIX_C_SOURCE=200112
 CFLAGS += -std=gnu99 -DEGL_NO_X11
 CFLAGS += -I/usr/include/libdrm
 
@@ -182,7 +185,7 @@ $(desktop_heavy_raylib_static_lib): $(raylib_static_lib_deps)
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
 
 $(desktop_heavy_x11_raylib_static_lib): $(raylib_static_lib_deps)
-	echo foo-x11
+	echo foo-x11 $(desktop_heavy_x11_raylib_static_lib) $(raylib_static_lib_deps)
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy-x11 PLATFORM=$(RAYLIB_PLATFORM_HEAVY_X11) $(MAKE) -B -e
 
 $(wasm_raylib_static_lib): $(raylib_static_lib_deps)

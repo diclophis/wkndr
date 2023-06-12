@@ -71,9 +71,11 @@
 static Font the_font;
 
 typedef struct {
-  float debounce_time;
   float debounce_timer;
+  int keydown;
+} keyset;
 
+typedef struct {
   int ctrl_key_pressed;
   int tab_key_pressed;
   int tilde_key_pressed;
@@ -85,9 +87,13 @@ typedef struct {
   int enter_key_pressed;
   int del_key_pressed;
   int shift_key_pressed;
-} keyset;
+  keyset *keydowns[512];
+} keydownset;
 
-static keyset foop;
+static keydownset faap;
+
+static int keydowns = 0;
+static float debounce_time = 0.25;
 
 //#if defined(PLATFORM_DESKTOP)
 //    #define GLSL_VERSION            330
@@ -177,6 +183,7 @@ for (int i=0; i<95; i++) {
 //the_font = LoadFont("resources/unifont-14.0.02.ttf");
 //the_font = LoadFontEx("resources/unifont-14.0.02.ttf", 32, fontChars, 95);
 the_font = LoadFontEx("resources/freemono.ttf", 32, fontChars, 95);
+
 
 
     //Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
@@ -388,20 +395,26 @@ static mrb_value game_loop_initialize(mrb_state* mrb, mrb_value self)
   
   fovy = 5.0;
 
-  foop.debounce_timer = 0;
-  foop.debounce_time = 0.25;
+  keydowns = 0;
+  faap.ctrl_key_pressed = 0;
+  faap.tab_key_pressed = 0;
+  faap.tilde_key_pressed = 0;
+  faap.shift_key_pressed = 0;
+  faap.arrow_right_key_pressed = 0;
+  faap.arrow_left_key_pressed = 0;
+  faap.arrow_up_key_pressed = 0;
+  faap.arrow_down_key_pressed = 0;
+  faap.backspace_key_pressed = 0;
+  faap.enter_key_pressed = 0;
+  faap.del_key_pressed = 0;
 
-  foop.ctrl_key_pressed = 0;
-  foop.tab_key_pressed = 0;
-  foop.tilde_key_pressed = 0;
-  foop.shift_key_pressed = 0;
-  foop.arrow_right_key_pressed = 0;
-  foop.arrow_left_key_pressed = 0;
-  foop.arrow_up_key_pressed = 0;
-  foop.arrow_down_key_pressed = 0;
-  foop.backspace_key_pressed = 0;
-  foop.enter_key_pressed = 0;
-  foop.del_key_pressed = 0;
+  //faap.keydowns = malloc(256 * sizeof(keyset));
+
+  for (int fkd = 0; fkd < 512; fkd++) {
+    faap.keydowns[fkd] = (keyset *) malloc(sizeof(keyset));
+    keyset *foop = faap.keydowns[fkd];
+    foop->keydown = 0;
+  }
 
   //p_data->camera.type = CAMERA_PERSPECTIVE;
   //// Define the camera to look into our 3d world
@@ -439,23 +452,34 @@ static void code_fetch_hook_timeout(struct mrb_state* mrb, const struct mrb_irep
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
-  foop.debounce_timer -= 1.0 / 24.0;
-
+  int key = -1;
+  //char chey = -1;
   int keyCount = 0;
-
-  int key = 99;
-  char chey = 0;
 
   //// Check if more characters have been pressed on the same frame
   while (key = GetKeyPressed()) {
+    fprintf(stderr, "Key: %d\n", key);
+
     keyCount += 1;
 
-    chey = key;
-    fprintf(stderr, "Key: %d\n", key);
+    faap.keydowns[key]->debounce_timer = debounce_time;
+    faap.keydowns[key]->keydown = key;
+
+    keydowns += 1;
+
+    //chey = key;
+
+    fprintf(stderr, "twiceB\n");
+    if ((key >= 32) && (key <= 125) && (key != 96)) // NOTE: Only allow keys in range [32..125]
+    {
+      if (showEditor > 0) {
+        editorProcessKeypress((char)key+32);
+      }
+    }
 
     //76  ctrl-l
     if (key == 89) { // ctrl-y
-      if (foop.ctrl_key_pressed) {
+      if (faap.ctrl_key_pressed) {
         fprintf(stderr, "Exec Code!!!!!!\n");
 
         // run Wkndrfile
@@ -497,30 +521,31 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
         }
       }
     } else if (key == 96) {
-      foop.tilde_key_pressed = 1;
+      faap.tilde_key_pressed = 1;
+      showEditor = showEditor * -1;
     } else if (key == 258) {
-      foop.tab_key_pressed = 1;
+      faap.tab_key_pressed = 1;
     } else if (key == 344) {
-      foop.shift_key_pressed = 1;
+      faap.shift_key_pressed = 1;
     } else if (key == 341) {
-      foop.ctrl_key_pressed = 1;
+      faap.ctrl_key_pressed = 1;
     } else if (key == 256) {
       CloseWindow();
       exit(0);
     } else if (key == 261) {
-      foop.del_key_pressed = 1;
+      faap.del_key_pressed = 1;
     } else if (key == 257) {
-      foop.enter_key_pressed = 1;
+      faap.enter_key_pressed = 1;
     } else if (key == 259) {
-      foop.backspace_key_pressed = 1;
+      faap.backspace_key_pressed = 1;
     } else if (key == 263) {
-      foop.arrow_left_key_pressed = 1;
+      faap.arrow_left_key_pressed = 1;
     } else if (key == 264) {
-      foop.arrow_down_key_pressed = 1;
+      faap.arrow_down_key_pressed = 1;
     } else if (key == 265) {
-      foop.arrow_up_key_pressed = 1;
+      faap.arrow_up_key_pressed = 1;
     } else if (key == 262) {
-      foop.arrow_right_key_pressed = 1;
+      faap.arrow_right_key_pressed = 1;
     } else {
       //if (foop.shift_key_pressed) {
       //  editorProcessKeypress(key);
@@ -528,76 +553,122 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       //  editorProcessKeypress(key + 32);
       //}
     }
-
-    foop.debounce_timer = 0.0;
   
-    fprintf(stderr, "twiceB\n");
   }
 
-  if (foop.debounce_timer <= 0.0) {
-    //fprintf(stderr, "twiceA\n");
+  for (int fkd = 0; fkd < 512; fkd++) {
+    
+    keyset *foop = faap.keydowns[fkd];
 
-    foop.debounce_timer = foop.debounce_time;
+    if (foop->keydown > 0) {
 
-    if (foop.del_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(ARROW_RIGHT);
-      editorProcessKeypress(BACKSPACE);
-      foop.del_key_pressed = 0;
+      int key = foop->keydown;
+
+      //fprintf(stderr, "twiceX %f\n", foop.debounce_timer);
+
+      foop->debounce_timer = foop->debounce_timer - (1.0 / 24.0);
+
+      //fprintf(stderr, "twiceA %d %d %f\n", foop.keydown, fkd, foop.debounce_timer);
+
+      if (foop->debounce_timer <= 0.0) {
+        fprintf(stderr, "twiceBGH\n");
+
+        foop->debounce_timer = debounce_time;
+
+
+        //if (foop.del_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(ARROW_RIGHT);
+        //  editorProcessKeypress(BACKSPACE);
+        //  foop.del_key_pressed = 0;
+        //}
+
+        //if (foop.tab_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(TAB);
+        //  //fprintf(stderr, "sentTab\n");
+        //  foop.tab_key_pressed = 0;
+        //}
+
+        //if (foop.tilde_key_pressed) {
+
+        //  keyCount += 1;
+        //  showEditor = showEditor * -1;
+
+        //  foop.tilde_key_pressed = 0;
+        //  fprintf(stderr, "tilde_key_pressed: %d\n", showEditor);
+        //}
+
+        //if (foop.enter_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(ENTER);
+        //  foop.enter_key_pressed = 0;
+        //}
+
+        //if (foop.backspace_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(BACKSPACE);
+        //  foop.backspace_key_pressed = 0;
+        //}
+
+        //if (foop.arrow_right_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(ARROW_RIGHT);
+        //  foop.arrow_right_key_pressed = 0;
+        //}
+
+        //if (foop.arrow_left_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(ARROW_LEFT);
+        //  foop.arrow_left_key_pressed = 0;
+        //}
+
+        //if (foop.arrow_up_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(ARROW_UP);
+        //  foop.arrow_up_key_pressed = 0;
+        //}
+
+        //if (foop.arrow_down_key_pressed) {
+        //  keyCount += 1;
+        //  editorProcessKeypress(ARROW_DOWN);
+        //  foop.arrow_down_key_pressed = 0;
+        //}
+      }
+
+      if (IsKeyReleased(foop->keydown)) {
+        fprintf(stderr, "KeyUp %d\n", foop->keydown);
+
+    if (key == 96) {
+      faap.tilde_key_pressed = 0;
+    } else if (key == 258) {
+      faap.tab_key_pressed = 0;
+    } else if (key == 344) {
+      faap.shift_key_pressed = 0;
+    } else if (key == 341) {
+      faap.ctrl_key_pressed = 0;
+    } else if (key == 256) {
+      //CloseWindow();
+      //exit(0);
+    } else if (key == 261) {
+      faap.del_key_pressed = 0;
+    } else if (key == 257) {
+      faap.enter_key_pressed = 0;
+    } else if (key == 259) {
+      faap.backspace_key_pressed = 0;
+    } else if (key == 263) {
+      faap.arrow_left_key_pressed = 0;
+    } else if (key == 264) {
+      faap.arrow_down_key_pressed = 0;
+    } else if (key == 265) {
+      faap.arrow_up_key_pressed = 0;
+    } else if (key == 262) {
+      faap.arrow_right_key_pressed = 0;
     }
 
-    if (foop.tab_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(TAB);
-      //fprintf(stderr, "sentTab\n");
-      foop.tab_key_pressed = 0;
-    }
+        foop->keydown = 0;
 
-    if (foop.tilde_key_pressed) {
-
-      keyCount += 1;
-      showEditor = showEditor * -1;
-
-
-
-      foop.tilde_key_pressed = 0;
-      fprintf(stderr, "tilde_key_pressed: %d\n", showEditor);
-    }
-
-    if (foop.enter_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(ENTER);
-      foop.enter_key_pressed = 0;
-    }
-
-    if (foop.backspace_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(BACKSPACE);
-      foop.backspace_key_pressed = 0;
-    }
-
-    if (foop.arrow_right_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(ARROW_RIGHT);
-      foop.arrow_right_key_pressed = 0;
-    }
-
-    if (foop.arrow_left_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(ARROW_LEFT);
-      foop.arrow_left_key_pressed = 0;
-    }
-
-    if (foop.arrow_up_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(ARROW_UP);
-      foop.arrow_up_key_pressed = 0;
-    }
-
-    if (foop.arrow_down_key_pressed) {
-      keyCount += 1;
-      editorProcessKeypress(ARROW_DOWN);
-      foop.arrow_down_key_pressed = 0;
+      }
     }
   }
 
@@ -725,17 +796,6 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     EndDrawing();
 
-    //TODO??
-    //SwapScreenBuffer();                  // Copy back buffer to front buffer (screen)
-
-    //// Frame time control system
-    //CORE.Time.current = GetTime();
-    //CORE.Time.draw = CORE.Time.current - CORE.Time.previous;
-    //CORE.Time.previous = CORE.Time.current;
-
-    //CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
-
-    //PollInputEvents();      // Poll user events (before next frame update)
   }
 
   return mrb_nil_value();
@@ -770,6 +830,15 @@ static mrb_value game_loop_twod(mrb_state* mrb, mrb_value self)
   ////Vector2 ballPosition = { (float)512/2, (float)512/2 };
   ////DrawCircleV(ballPosition, 50, MAROON);
   //////fprintf(stderr, "wtf\n");
+
+  float screenWidth = 128.0;
+  float rotation = 0.0;
+
+  //bool CheckCollisionPointCircle(Vector2 point, Vector2 center, float radius);      
+
+  DrawPoly((Vector2){ screenWidth/4.0f*3, 330 }, 6, 80, rotation, BROWN);
+  DrawPolyLines((Vector2){ screenWidth/4.0f*3, 330 }, 6, 90, rotation, BROWN);
+  DrawPolyLinesEx((Vector2){ screenWidth/4.0f*3, 330 }, 6, 85, rotation, 6, BEIGE);
   
   EndMode2D();
 
@@ -1110,6 +1179,8 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     //if (lights[3].enabled) { DrawSphereEx(lights[3].position, 2.0f, 8, 8, BLUE); }
     //DrawGrid(10, 1.0f);
     DrawGrid(100, 1.0); 
+
+
 
   EndMode3D();
 
