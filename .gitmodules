@@ -7,3 +7,6 @@
 [submodule "qu3e"]
 	path = qu3e
 	url = git@github.com:RandyGaul/qu3e.git
+[submodule "ode"]
+	path = ode
+	url = https://bitbucket.org/odedevs/ode.git
