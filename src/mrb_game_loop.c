@@ -93,7 +93,7 @@ typedef struct {
 static keydownset faap;
 
 static int keydowns = 0;
-static float debounce_time = 0.25;
+static float debounce_time = 1.00;
 
 //#if defined(PLATFORM_DESKTOP)
 //    #define GLSL_VERSION            330
@@ -458,7 +458,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   //// Check if more characters have been pressed on the same frame
   while (key = GetKeyPressed()) {
-    fprintf(stderr, "Key: %d\n", key);
+    //fprintf(stderr, "Key: %d\n", key);
 
     keyCount += 1;
 
@@ -469,90 +469,54 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     //chey = key;
 
-    fprintf(stderr, "twiceB\n");
-    if ((key >= 32) && (key <= 125) && (key != 96)) // NOTE: Only allow keys in range [32..125]
-    {
-      if (showEditor > 0) {
-        editorProcessKeypress((char)key+32);
-      }
-    }
-
     //76  ctrl-l
-    if (key == 89) { // ctrl-y
-      if (faap.ctrl_key_pressed) {
-        fprintf(stderr, "Exec Code!!!!!!\n");
-
-        // run Wkndrfile
-        mrb_value empty_string = mrb_str_new_lit(mrb, "");
-
-        int codelen;
-        char *codebuf = editorRowsToString(&codelen);
-
-        mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, codebuf, codelen);
-
-        //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, "", 0);
-
-  opcode_counter = 0;
-  //mrb->code_fetch_hook = code_fetch_hook_timeout;
-
-        mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
-
-  //mrb->code_fetch_hook = NULL;
-
-        fprintf(stderr, "AFTER!!!! Exec Code!!!!!!\n");
-
-  opcode_counter = 0;
-
-        if (mrb->exc) {
-          mrb_print_error(mrb);
-          mrb_print_backtrace(mrb);
-          //mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
-          mrb_value mesg = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
-          editorSetStatusMessage(RSTRING_PTR(mesg));
-          //"XXX %.*s\n", (int)RSTRING_LEN(mesg), RSTRING_PTR(mesg));
-        } else {
-          if (!mrb_nil_p(editr_eval)) {
-            mrb_value rezstr = mrb_funcall(mrb, editr_eval, "to_s", 0);
-
-            const char *foo = mrb_string_value_ptr(mrb, rezstr);
-            int len = mrb_string_value_len(mrb, rezstr);
-            editorSetStatusMessage(foo, len);
-          }
-        }
-      }
-    } else if (key == 96) {
+    //if (key == 89) { // ctrl-y
+    
+    if (key == KEY_GRAVE) {
       faap.tilde_key_pressed = 1;
       showEditor = showEditor * -1;
     } else if (key == 258) {
       faap.tab_key_pressed = 1;
-    } else if (key == 344) {
+    } else if (key == KEY_LEFT_SHIFT || key == KEY_RIGHT_SHIFT) {
       faap.shift_key_pressed = 1;
-    } else if (key == 341) {
+    } else if (key == KEY_LEFT_CONTROL || key == KEY_RIGHT_CONTROL) {
       faap.ctrl_key_pressed = 1;
     } else if (key == 256) {
       CloseWindow();
       exit(0);
     } else if (key == 261) {
       faap.del_key_pressed = 1;
-    } else if (key == 257) {
-      faap.enter_key_pressed = 1;
-    } else if (key == 259) {
-      faap.backspace_key_pressed = 1;
-    } else if (key == 263) {
-      faap.arrow_left_key_pressed = 1;
-    } else if (key == 264) {
-      faap.arrow_down_key_pressed = 1;
-    } else if (key == 265) {
-      faap.arrow_up_key_pressed = 1;
-    } else if (key == 262) {
-      faap.arrow_right_key_pressed = 1;
-    } else {
+    //} else if (key == 257) {
+    //  faap.enter_key_pressed = 1;
+    }
+
+    //else if (key == 259) {
+    //  faap.backspace_key_pressed = 1;
+    //} else if (key == 263) {
+    //  faap.arrow_left_key_pressed = 1;
+    //} else if (key == 264) {
+    //  faap.arrow_down_key_pressed = 1;
+    //} else if (key == 265) {
+    //  faap.arrow_up_key_pressed = 1;
+    //} else if (key == 262) {
+    //  faap.arrow_right_key_pressed = 1;
+    //} else {
       //if (foop.shift_key_pressed) {
       //  editorProcessKeypress(key);
       //} else {
       //  editorProcessKeypress(key + 32);
       //}
-    }
+    //}
+
+    //KEY_LEFT_SHIFT      = 340,      // Key: Shift left
+    //KEY_LEFT_CONTROL    = 341,      // Key: Control left
+    //KEY_LEFT_ALT        = 342,      // Key: Alt left
+    //KEY_LEFT_SUPER      = 343,      // Key: Super left
+    //KEY_RIGHT_SHIFT     = 344,      // Key: Shift right
+    //KEY_RIGHT_CONTROL   = 345,      // Key: Control right
+    //KEY_RIGHT_ALT       = 346,      // Key: Alt right
+    //KEY_RIGHT_SUPER     = 347,      // Key: Super right
+    //KEY_KB_MENU         = 348,      // Key: KB menu
   
   }
 
@@ -565,193 +529,159 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       int key = foop->keydown;
 
       //fprintf(stderr, "twiceX %f\n", foop.debounce_timer);
-
-      foop->debounce_timer = foop->debounce_timer - (1.0 / 24.0);
-
       //fprintf(stderr, "twiceA %d %d %f\n", foop.keydown, fkd, foop.debounce_timer);
 
       if (foop->debounce_timer <= 0.0) {
-        fprintf(stderr, "twiceBGH\n");
+        //fprintf(stderr, "twiceBGH\n");
 
         foop->debounce_timer = debounce_time;
+        keyCount += 1;
+      }
 
+      if (foop->debounce_timer == debounce_time) {
+        int key = fkd;
+        
+        //fprintf(stderr, "twiceB %d\n", key);
 
-        //if (foop.del_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(ARROW_RIGHT);
-        //  editorProcessKeypress(BACKSPACE);
-        //  foop.del_key_pressed = 0;
-        //}
+        if (key == KEY_ENTER) {
+          if (faap.ctrl_key_pressed) {
+            fprintf(stderr, "Exec Code!!!!!!\n");
 
-        //if (foop.tab_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(TAB);
-        //  //fprintf(stderr, "sentTab\n");
-        //  foop.tab_key_pressed = 0;
-        //}
+            // run Wkndrfile
+            mrb_value empty_string = mrb_str_new_lit(mrb, "");
 
-        //if (foop.tilde_key_pressed) {
+            int codelen;
+            char *codebuf = editorRowsToString(&codelen);
 
-        //  keyCount += 1;
-        //  showEditor = showEditor * -1;
+            mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, codebuf, codelen);
 
-        //  foop.tilde_key_pressed = 0;
-        //  fprintf(stderr, "tilde_key_pressed: %d\n", showEditor);
-        //}
+            //mrb_value clikestr_as_string = mrb_str_cat(mrb, empty_string, "", 0);
 
-        //if (foop.enter_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(ENTER);
-        //  foop.enter_key_pressed = 0;
-        //}
+            opcode_counter = 0;
+            //mrb->code_fetch_hook = code_fetch_hook_timeout;
 
-        //if (foop.backspace_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(BACKSPACE);
-        //  foop.backspace_key_pressed = 0;
-        //}
+            mrb_value editr_eval = mrb_funcall(mrb, mrb_obj_value(mrb_class_get(mrb, "Wkndr")), "wkndr_client_eval", 1, clikestr_as_string);
 
-        //if (foop.arrow_right_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(ARROW_RIGHT);
-        //  foop.arrow_right_key_pressed = 0;
-        //}
+            //mrb->code_fetch_hook = NULL;
 
-        //if (foop.arrow_left_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(ARROW_LEFT);
-        //  foop.arrow_left_key_pressed = 0;
-        //}
+            fprintf(stderr, "AFTER!!!! Exec Code!!!!!!\n");
 
-        //if (foop.arrow_up_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(ARROW_UP);
-        //  foop.arrow_up_key_pressed = 0;
-        //}
+            opcode_counter = 0;
 
-        //if (foop.arrow_down_key_pressed) {
-        //  keyCount += 1;
-        //  editorProcessKeypress(ARROW_DOWN);
-        //  foop.arrow_down_key_pressed = 0;
-        //}
+            if (mrb->exc) {
+              mrb_print_error(mrb);
+              mrb_print_backtrace(mrb);
+              //mrb_value mesg = mrb_exc_inspect(mrb, mrb_obj_value(mrb->exc));
+              mrb_value mesg = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
+              editorSetStatusMessage(RSTRING_PTR(mesg));
+              //"XXX %.*s\n", (int)RSTRING_LEN(mesg), RSTRING_PTR(mesg));
+            } else {
+              if (!mrb_nil_p(editr_eval)) {
+                mrb_value rezstr = mrb_funcall(mrb, editr_eval, "to_s", 0);
+
+                const char *foo = mrb_string_value_ptr(mrb, rezstr);
+                int len = mrb_string_value_len(mrb, rezstr);
+                editorSetStatusMessage(foo, len);
+              }
+            }
+          } else {
+            editorProcessKeypress(ENTER);
+          }
+        } else if (key == KEY_BACKSPACE) {
+          editorProcessKeypress(BACKSPACE);
+        } else if (key == KEY_LEFT) {
+          editorProcessKeypress(ARROW_LEFT);
+        } else if (key == KEY_RIGHT) {
+          editorProcessKeypress(ARROW_RIGHT);
+        } else if (key == KEY_UP) {
+          editorProcessKeypress(ARROW_UP);
+        } else if (key == KEY_DOWN) {
+          editorProcessKeypress(ARROW_DOWN);
+        } else if ((key >= 32) && (key <= 125) && (key != KEY_GRAVE)) // NOTE: Only allow keys in range [32..125]
+        {
+          if (showEditor > 0) {
+            int modShift = 0;
+
+            if (key >= KEY_ZERO && key <= KEY_NINE) {
+            } else if (key >= KEY_A && key <= KEY_Z) {
+              if (faap.shift_key_pressed) {
+              } else {
+                modShift = 32;
+              }
+            } else if (key >= KEY_LEFT_BRACKET && key <= KEY_RIGHT_BRACKET) {
+              if (faap.shift_key_pressed) {
+                modShift = 32;
+              } else {
+              }
+            } else if (key == KEY_SEMICOLON) {
+              if (faap.shift_key_pressed) {
+                modShift = -1;
+              } else {
+              }
+            } else if (key == KEY_APOSTROPHE) {
+              if (faap.shift_key_pressed) {
+                modShift = -5;
+              } else {
+              }
+            } else if (key == KEY_EQUAL) {
+              if (faap.shift_key_pressed) {
+                modShift = -18;
+              } else {
+              }
+            }
+
+            //if (key >= 65 && key <= 90) {
+            //  if (faap.shift_key_pressed) {
+            //    modShift = -16;
+            //  } else {
+            //    modShift = +32;
+            //  }
+            //}
+
+            editorProcessKeypress((char)key+modShift);
+          }
+        }
       }
 
       if (IsKeyReleased(foop->keydown)) {
-        fprintf(stderr, "KeyUp %d\n", foop->keydown);
+        //fprintf(stderr, "KeyUp %d\n", foop->keydown);
 
-    if (key == 96) {
-      faap.tilde_key_pressed = 0;
-    } else if (key == 258) {
-      faap.tab_key_pressed = 0;
-    } else if (key == 344) {
-      faap.shift_key_pressed = 0;
-    } else if (key == 341) {
-      faap.ctrl_key_pressed = 0;
-    } else if (key == 256) {
-      //CloseWindow();
-      //exit(0);
-    } else if (key == 261) {
-      faap.del_key_pressed = 0;
-    } else if (key == 257) {
-      faap.enter_key_pressed = 0;
-    } else if (key == 259) {
-      faap.backspace_key_pressed = 0;
-    } else if (key == 263) {
-      faap.arrow_left_key_pressed = 0;
-    } else if (key == 264) {
-      faap.arrow_down_key_pressed = 0;
-    } else if (key == 265) {
-      faap.arrow_up_key_pressed = 0;
-    } else if (key == 262) {
-      faap.arrow_right_key_pressed = 0;
-    }
+        if (key == KEY_GRAVE) {
+          faap.tilde_key_pressed = 0;
+        } else if (key == 258) {
+          faap.tab_key_pressed = 0;
+        } else if (key == KEY_LEFT_SHIFT || key == KEY_RIGHT_SHIFT) {
+          faap.shift_key_pressed = 0;
+        } else if (key == KEY_LEFT_CONTROL || key == KEY_RIGHT_CONTROL) {
+          faap.ctrl_key_pressed = 0;
+        } else if (key == 256) {
+          //CloseWindow();
+          //exit(0);
+        } else if (key == 261) {
+          faap.del_key_pressed = 0;
+        //} else if (key == 257) {
+        //  faap.enter_key_pressed = 0;
+        }
+
+        //} else if (key == 259) {
+        //  faap.backspace_key_pressed = 0;
+        //} else if (key == 263) {
+        //  faap.arrow_left_key_pressed = 0;
+        //} else if (key == 264) {
+        //  faap.arrow_down_key_pressed = 0;
+        //} else if (key == 265) {
+        //  faap.arrow_up_key_pressed = 0;
+        //} else if (key == 262) {
+        //  faap.arrow_right_key_pressed = 0;
+        //}
 
         foop->keydown = 0;
 
       }
+
+      foop->debounce_timer = foop->debounce_timer - (1.0 / 24.0); //TODO
     }
   }
-
-  //if (IsKeyReleased(96)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.tilde_key_pressed = 0;
-  //  fprintf(stderr, "tildereleased \n");
-  //}
-
-  //if (IsKeyReleased(261)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.del_key_pressed = 0;
-  //  //fprintf(stderr, "del enter\n");
-  //}
-
-  //if (IsKeyReleased(257)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.enter_key_pressed = 0;
-  //  //fprintf(stderr, "done enter\n");
-  //}
-
-  //if (IsKeyReleased(258)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.tab_key_pressed = 0;
-  //  //fprintf(stderr, "done tab\n");
-  //}
-
-  //if (IsKeyReleased(344)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.shift_key_pressed = 0;
-  //  //fprintf(stderr, "done shift\n");
-  //}
-
-//Key: 265 U
-//Key: 262 R
-//Key: 264 D
-//Key: 263 L
-
-  //if (IsKeyReleased(265)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.arrow_up_key_pressed = 0;
-  //  //fprintf(stderr, "done up arrow\n");
-  //}
-
-  //if (IsKeyReleased(262)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.arrow_right_key_pressed = 0;
-  //  //fprintf(stderr, "done right arrow\n");
-  //}
-
-  //if (IsKeyReleased(263)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.arrow_left_key_pressed = 0;
-  //  //fprintf(stderr, "done left arrow\n");
-  //}
-
-  //if (IsKeyReleased(264)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.arrow_down_key_pressed = 0;
-  //  //fprintf(stderr, "done down arrow\n");
-  //}
-
-  //if (IsKeyReleased(341)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.ctrl_key_pressed = 0;
-  //  //fprintf(stderr, "done ctrl\n");
-  //}
-
-  //if (IsKeyReleased(259)) {
-  //  foop.debounce_timer = 0.0;
-  //  foop.backspace_key_pressed = 0;
-  //  //fprintf(stderr, "done backspace\n");
-  //}
-
-  //while (key = GetCharPressed()) {
-  //  fprintf(stderr, "Char: %d\n", key);
-  //  if ((key >= 32) && (key <= 125)) // NOTE: Only allow keys in range [32..125]
-  //  {
-  //      keyCount += 1;
-  //      editorProcessKeypress((char)key);
-  //  }
-  //  foop.debounce_timer = 0.0;
-  //}
 
   if (keyCount > 0) {
     struct abuf *ab2 = malloc(sizeof(struct abuf));
