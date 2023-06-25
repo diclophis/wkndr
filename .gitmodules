@@ -3,10 +3,10 @@
 	url = https://github.com/mruby/mruby
 [submodule "raylib"]
 	path = raylib
-	url = git@github.com:raysan5/raylib.git
+	url = https://github.com/raysan5/raylib.git
 [submodule "qu3e"]
 	path = qu3e
-	url = git@github.com:RandyGaul/qu3e.git
+	url = https://github.com/RandyGaul/qu3e.git
 [submodule "ode"]
 	path = ode
 	url = https://bitbucket.org/odedevs/ode.git
