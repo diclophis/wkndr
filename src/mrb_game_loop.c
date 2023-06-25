@@ -93,7 +93,7 @@ typedef struct {
 static keydownset faap;
 
 static int keydowns = 0;
-static float debounce_time = 1.00;
+static float debounce_time = 0.33;
 
 //#if defined(PLATFORM_DESKTOP)
 //    #define GLSL_VERSION            330
@@ -541,7 +541,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       if (foop->debounce_timer == debounce_time) {
         int key = fkd;
         
-        //fprintf(stderr, "twiceB %d\n", key);
+        fprintf(stderr, "twiceB %d\n", key);
 
         if (key == KEY_ENTER) {
           if (faap.ctrl_key_pressed) {
@@ -603,6 +603,10 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
             int modShift = 0;
 
             if (key >= KEY_ZERO && key <= KEY_NINE) {
+              if (faap.shift_key_pressed) {
+                modShift = -16;
+              } else {
+              }
             } else if (key >= KEY_A && key <= KEY_Z) {
               if (faap.shift_key_pressed) {
               } else {

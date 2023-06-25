@@ -995,6 +995,6 @@ void initEditor(void) {
     E.rawmode = 1;
     E.dirty = 0;
     E.filename = "Wkndrfile";
-    editorSelectSyntaxHighlight(".c");
+    //editorSelectSyntaxHighlight(".c");
 }
 
