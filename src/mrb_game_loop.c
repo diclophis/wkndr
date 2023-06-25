@@ -936,12 +936,12 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
     case 0:
       //p_data->camera.type = CAMERA_ORTHOGRAPHIC;
       //SetCameraMode(p_data->camera, CAMERA_ORBITAL);
-      SetCameraMode(p_data->camera, CAMERA_ORTHOGRAPHIC);
+      //SetCameraMode(p_data->camera, CAMERA_ORTHOGRAPHIC);
       break;
     case 1:
       //p_data->camera.type = CAMERA_PERSPECTIVE;
       //SetCameraMode(p_data->camera, CAMERA_ORBITAL);
-      SetCameraMode(p_data->camera, CAMERA_PERSPECTIVE);
+      //SetCameraMode(p_data->camera, CAMERA_PERSPECTIVE);
       break;
   }
 
@@ -958,7 +958,9 @@ static mrb_value game_loop_lookat(mrb_state* mrb, mrb_value self)
   p_data->cameraTwo.rotation = 0.0f;
   p_data->cameraTwo.zoom = 1.0f;
 
-  UpdateCamera(&p_data->camera);
+  //UpdateCamera(&p_data->camera, CAMERA_ORTHOGRAPHIC);
+
+  //UpdateCameraPro(Camera *camera, Vector3 movement, Vector3 rotation, float zoom);
 
   //TODO
   ////SetShaderValue(standardShader, standardShader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
