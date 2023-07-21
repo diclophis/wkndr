@@ -541,7 +541,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       if (foop->debounce_timer == debounce_time) {
         int key = fkd;
         
-        fprintf(stderr, "twiceB %d\n", key);
+        //fprintf(stderr, "twiceB %d\n", key);
 
         if (key == KEY_ENTER) {
           if (faap.ctrl_key_pressed) {

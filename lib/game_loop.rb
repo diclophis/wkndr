@@ -32,7 +32,7 @@ class GameLoop
     else
       #if @event_proc
       self.event_procs.each { |cli_inner, event_proc|
-        Wkndr.log! [:FOOOO, cli, cli_inner, channel, msg, event_proc, block]
+        #Wkndr.log! [:FOOOO, cli, cli_inner, channel, msg, event_proc, block]
 
 #[:FOOOO, "mkmaze", 1, nil, #<Proc:0x55caab044bf0>, nil]                                                               
 
@@ -78,7 +78,7 @@ class GameLoop
     }
 
     self.emit { |msg|
-      Wkndr.log! [:sending, msg]
+      #TODO: log levels Wkndr.log! [:sending, msg]
       socket_stream.write(msg)
     }
 

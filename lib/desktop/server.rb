@@ -17,20 +17,20 @@ class ProtocolServer
     @handlers = {}
 
     upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
-      Wkndr.log! [:cn, cn]
+      #Wkndr.log! [:cn, cn]
 
       cn.upgrade_to_websocket! { |cn, channel, msg|
-        Wkndr.log! [:server_side_cn_hold_gl, cn, cn.class, channel, msg]
+        #Wkndr.log! [:server_side_cn_hold_gl, cn, cn.class, channel, msg]
 
         cn.client_to_server(channel, msg)
 
-        Wkndr.log! [:wtf_foop, @all_connections.length, channel]
+        #Wkndr.log! [:wtf_foop, @all_connections.length, channel]
 
         unless channel == "party"
           @all_connections.each { |client|
             # worlds cheapest public broadcast system
 
-            Wkndr.log! [:to_message_client, client, cn, channel, msg]
+            #Wkndr.log! [:to_message_client, client, cn, channel, msg]
 
             if (client.object_id != cn.object_id)
               #TODO: localhost de-dup log!(:DUP, msg, client.object_id, cn.object_id)
@@ -46,15 +46,15 @@ class ProtocolServer
 
     upgrade_to_websocket_handler = Proc.new { |cn, phr, mab|
 
-      Wkndr.log! [:wtf_twice, cn.class]
+      #Wkndr.log! [:wtf_twice, cn.class]
 
       cn.upgrade_to_websocket! { |cn, msg|
         live_msg = JSON.load(msg)
 
-        Wkndr.log! [:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg]
+        #Wkndr.log! [:WTFUPGRADEBITSSADASDASDASDASD, cn, phr, msg]
 
         live_msg.each { |k, v|
-          Wkndr.log! [:k, k, :v, v]
+          #Wkndr.log! [:k, k, :v, v]
 
           case k
             when "party"
@@ -204,7 +204,8 @@ class ProtocolServer
       @idents -= 1
 
       http = Connection.new(@gl, @server.accept) #NOTE: this is where the server-side connection is created
-      Wkndr.log! [:match_cn, http, self.class]
+      
+      #Wkndr.log! [:match_cn, http, self.class]
       # connection hold gl... ???
 
       @all_connections << http

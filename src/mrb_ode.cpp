@@ -797,3 +797,10 @@
 //          return 0;
 //      }
 //      
+
+
+
+
+// level 1
+
+//dGeomSetBody (dGeomID geom, dBodyID body);
