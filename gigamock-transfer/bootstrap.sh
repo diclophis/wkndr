@@ -11,7 +11,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update \
   && apt-get upgrade --no-install-recommends -y \
   && apt-get install --no-install-recommends -y \
-       git ca-certificates automake autotools-dev build-essential cmake libtool make libssl-dev zlib1g-dev libuv1 libuv1-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgles-dev libgles1 libgles2 libgbm-dev libgbm1 \
+       git ca-certificates automake autotools-dev build-essential cmake libtool rake make libssl-dev zlib1g-dev libuv1 libuv1-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgles-dev libgles1 libgles2 libgbm-dev libgbm1 \
        bash-static \
        busybox-static \
        clang clang-tools \
