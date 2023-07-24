@@ -1114,7 +1114,9 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     //if (lights[2].enabled) { DrawSphereEx(lights[2].position, 2.0f, 8, 8, GREEN); }
     //if (lights[3].enabled) { DrawSphereEx(lights[3].position, 2.0f, 8, 8, BLUE); }
     //DrawGrid(10, 1.0f);
-    DrawGrid(100, 1.0); 
+    
+
+    //DrawGrid(100, 1.0); 
 
 
 
