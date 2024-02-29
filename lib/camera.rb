@@ -63,8 +63,22 @@ class GameCamera
   end
 
   def lookat(gl, player_position, fov = 60.0)
+    @last_fov = fov
     gl.lookat(1, *@camera_position, *@camera_target, fov)
   end
+
+  def last_fov
+    @last_fov
+  end
+
+  def target_fov=(v)
+    @target_fov = v
+  end
+
+  def target_fov
+    @target_fov
+  end
+
 
   def angle
     Math.atan2((@camera_target[2] - @camera_position[2]), (@camera_target[0] - @camera_position[0])) * (180.0 / 3.1457)
