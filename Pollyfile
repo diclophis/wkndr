@@ -1,0 +1,14 @@
+container_image("Dockerfile")
+
+@plain_workflow = plan {
+  job("primary",
+    [
+      {"run"=>{"name"=>"deploy","command"=>"polly help"}},
+      {"run"=>{"name"=>"deploy","command"=>"sleep 300"}},
+    ], {}, "/home/app/polly"
+  )
+}
+
+@gitch_pipeline = continuous {
+  test @plain_workflow
+}

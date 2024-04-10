@@ -1,5 +1,0 @@
-#!/usr/bin/env ruby
-
-
-@plain_workflow = Plan.new
-@plain_workflow.add_circleci_job("bootstrap", [{"image"=>"polly:latest"}], [{"run"=>{"name"=>"bootstrap", "command"=>"/home/app/polly/bin/polly build Dockerfile"}}], {"BUNDLE_PATH" => "~/vendor/bundle"}, "/home/app/wkndr")
