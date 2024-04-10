@@ -28,8 +28,7 @@ spec:
         - /var/lib/wkndr/release/wkndr.mruby.x11
         - --server=/var/lib/wkndr/public
         - --no-client
-        #image: wkndr:latest
-        image: polly-registry:23443/polly-registry/wkndr:wkndr-1c9a28ffbfca8c5784107eab0e33a3a0518153f8
+        image: wkndr:latest
         imagePullPolicy: IfNotPresent
         name: wkndr
         ports:
