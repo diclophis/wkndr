@@ -25,7 +25,7 @@ RUN cd /var/lib/wkndr && \
     git clone https://github.com/raysan5/raylib.git && \
     cd raylib && \
     git fetch && \
-    git checkout fec96137e8d10ee6c88914fbe5e5429c13ee1dac
+    git checkout 5.5
     
 RUN cd /root/emsdk && \
     . ./emsdk_env.sh && \
