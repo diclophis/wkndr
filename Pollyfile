@@ -1,4 +1,4 @@
-#container_image("Dockerfile")
+container_image("Dockerfile")
 
 @plain_workflow = plan {
   job("primary",
