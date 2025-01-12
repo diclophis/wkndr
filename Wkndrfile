@@ -10,74 +10,75 @@ Wkndr.nonce("main") {
 
 $speed = 0.1
 $task_count = 1
+$spin = 0.0
 
 class CubeModel < Cube
 end
 
-#class FrameModel < Model
-#end
-#
-#class CoreModel < Model
-#end
-#
-#class BaseBatchingSystem
-#  def initialize(store, mesh, instances)
-#    @mesh = mesh
-#    @selector = store.watch(mesh.class, PositionComponent)
-#  end
-#
-#  def at(gl, i)
-#    @mesh
-#  end
-#
-#  def draw(instances)
-#  end
-#
-#  def process(gt, dt)
-#    @selector.each { |entity, mesh, position|
-#      mesh.deltap(position.x, position.y, position.z)
-#      mesh.deltar(
-#        0, 0, 1, gt * 100.0
-#      )
-#      mesh.deltas(1.0, 1.0, 1.0)
-#      mesh.draw(false)
-#    }
-#  end
-#
-#  def each
-#    @selector.each { |entity, mesh, position|
-#      yield entity, mesh, position
-#    }
-#  end
-#end
-#
-#class FrameBatchingSystem
-#  def initialize(store, mesh, instances)
-#    @mesh = mesh
-#    @selector = store.watch(mesh.class, PositionComponent)
-#  end
-#
-#  def at(gl, i)
-#    @mesh
-#  end
-#
-#  def draw(instances)
-#  end
-#
-#  def process(gt, dt)
-#    @selector.each { |entity, mesh, position|
-#      mesh.deltap(position.x, position.y, position.z)
-#      mesh.deltas(1.0, 1.0, 1.0)
-#      mesh.draw(false)
-#    }
-#  end
-#
-#  def each
-#    @selector.each { |entity, mesh, position|
-#      yield entity, mesh, position
-#    }
-#  end
-#end
+class FrameModel < Model
+end
+
+class CoreModel < Model
+end
+
+class BaseBatchingSystem
+  def initialize(store, mesh, instances)
+    @mesh = mesh
+    @selector = store.watch(mesh.class, PositionComponent)
+  end
+
+  def at(gl, i)
+    @mesh
+  end
+
+  def draw(instances)
+  end
+
+  def process(gt, dt)
+    @selector.each { |entity, mesh, position|
+      mesh.deltap(position.x, position.y, position.z)
+      mesh.deltar(
+        0, 0, 1, gt * 100.0
+      )
+      mesh.deltas(1.0, 1.0, 1.0)
+      mesh.draw(false)
+    }
+  end
+
+  def each
+    @selector.each { |entity, mesh, position|
+      yield entity, mesh, position
+    }
+  end
+end
+
+class FrameBatchingSystem
+  def initialize(store, mesh, instances)
+    @mesh = mesh
+    @selector = store.watch(mesh.class, PositionComponent)
+  end
+
+  def at(gl, i)
+    @mesh
+  end
+
+  def draw(instances)
+  end
+
+  def process(gt, dt)
+    @selector.each { |entity, mesh, position|
+      mesh.deltap(position.x, position.y, position.z)
+      mesh.deltas(1.0, 1.0, 1.0)
+      mesh.draw(false)
+    }
+  end
+
+  def each
+    @selector.each { |entity, mesh, position|
+      yield entity, mesh, position
+    }
+  end
+end
 #
 ##$foo = Fiber.new { |in_boot| loop { Wkndr.log! [in_boot]; in_boot = Fiber.yield(in_boot) } }
 #
@@ -86,65 +87,67 @@ Wkndr.client_side("main") { |gl|
     Wkndr.log! [:wkndrfile, {channel => msg}]
   }
 
-#  cs = 1.0
-#  a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
-#
-#  xs = ys = zs = 2
-#  instances = xs * ys * zs
-#  i = 0
-#
-#  store = StorageManager.new
-#  batcher = FrameBatchingSystem.new(store, a, instances)
-#
-#    frame_model = FrameModel.new(gl, "resources/cpu_frame.obj", 1.0)
-#    spinner_model = CoreModel.new(gl, "resources/cpu_core.obj", 1.0)
-#
-#    #spinner_batcher = CubicBatchingSystem.new(store, spinner_model, 32)
-#
-#    spinner_batcher = BaseBatchingSystem.new(store, spinner_model, 1)
-#    frame_batcher = FrameBatchingSystem.new(store, frame_model, 1)
-#
-#        sf = spinner_batcher.at(gl, 0)
-#        sp = PositionComponent.new(0, 0, 0)
-#        store.add(
-#          sf,
-#          sp
-#        )
-#
-#        ff = frame_batcher.at(gl, 0)
-#        fp = PositionComponent.new(0, 0, 0)
-#        store.add(
-#          ff,
-#          fp
-#        )
-#
-#  all_positions = []
-#
-#  xs.times { |xd|
-#    ys.times { |yd|
-#      zs.times { |zd|
-#        ix = xd.to_f + (0.5 * cs)
-#        iy = yd.to_f + (0.5 * cs)
-#        iz = zd.to_f + (0.5 * cs)
-#        f = batcher.at(gl, i)
-#        p = PositionComponent.new(ix, iy, iz)
-#        all_positions << p
-#        store.add(
-#          f,
-#          p
-#        )
-#        i += 1
-#      }
-#    }
-#  }
-#
-#  mx = my = l = 0.0
-#  nmx = nmy = l = 0.0
-#
-#  frame_count = 0
-#  running_average = 0.0
-#
+  cs = 1.0
+  a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
+
+  #xs = ys = zs = 32
+  #instances = xs * ys * zs
+  #i = 0
+
+  #store = StorageManager.new
+  #batcher = FrameBatchingSystem.new(store, a, instances)
+
+    #frame_model = FrameModel.new(gl, "resources/cpu_frame.obj", 1.0)
+    #spinner_model = CoreModel.new(gl, "resources/cpu_core.obj", 1.0)
+
+    #spinner_batcher = CubicBatchingSystem.new(store, spinner_model, 32)
+
+    #spinner_batcher = BaseBatchingSystem.new(store, a, 1)
+
+    #frame_batcher = FrameBatchingSystem.new(store, frame_model, 1)
+
+        #sf = spinner_batcher.at(gl, 0)
+        #sp = PositionComponent.new(0, 0, 0)
+        #store.add(
+        #  sf,
+        #  sp
+        #)
+
+        #ff = frame_batcher.at(gl, 0)
+        #fp = PositionComponent.new(0, 0, 0)
+        #store.add(
+        #  ff,
+        #  fp
+        #)
+
+  #all_positions = []
+
+  #xs.times { |xd|
+  #  ys.times { |yd|
+  #    zs.times { |zd|
+  #      ix = xd.to_f + (0.5 * cs)
+  #      iy = yd.to_f + (0.5 * cs)
+  #      iz = zd.to_f + (0.5 * cs)
+  #      f = batcher.at(gl, i)
+  #      p = PositionComponent.new(ix, iy, iz)
+  #      all_positions << p
+  #      store.add(
+  #        f,
+  #        p
+  #      )
+  #      i += 1
+  #    }
+  #  }
+  #}
+
+  #mx = my = l = 0.0
+  #nmx = nmy = l = 0.0
+
+  #frame_count = 0
+  #running_average = 0.0
+
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
+
 #    #if global_time > 3.0
 #    #  log! [:call, global_time, $foo.resume(global_time)]
 #    #else
@@ -182,25 +185,32 @@ Wkndr.client_side("main") { |gl|
 #    gl.mousep { |xyl|
 #      nmx, nmy, l = *xyl
 #    }
-#
-#    mx -= (mx - nmx) * 0.579 * 33.0 * delta_time
-#    my -= (my - nmy) * 0.579 * 33.0 * delta_time
-#
-#    hsw = (sw * 0.5).to_f
-#    hsh = (sh * 0.5).to_f
-#
+
+    #mx -= (mx - nmx) * 0.579 * 33.0 * delta_time
+    #my -= (my - nmy) * 0.579 * 33.0 * delta_time
+
+    #hsw = (sw * 0.5).to_f
+    #hsh = (sh * 0.5).to_f
+
     gl.drawmode {
 #    #  #fiberz(global_time)
       gl.threed {
-        gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 0.01, 33.0)
-#    #    batcher.process(global_time, delta_time)
-#    #    spinner_batcher.process(global_time, delta_time)
-#    #    frame_batcher.process(global_time, delta_time)
-        #a.deltap(0.0, 0.0, 0.0)
-        #a.deltas(1.0, 1.0, 1.0)
-        #a.draw(false)
+        #gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 1.01, 3000.0)
+        gl.lookat(1, 7.0, 11.0, 9.0, 0.0, 0.1, 0.0, 60.0)
+
+    #batcher.process(global_time, delta_time)
+    #batcher.draw(0)
+    #spinner_batcher.process(global_time, delta_time)
+    #frame_batcher.process(global_time, delta_time)
+    $spin = ((global_time % 1.0) / 1.0) * (360.0)  * 0.5 #delta_time * 200.0
+
+        a.deltar(0.0, 1.0, 0.0, $spin)
+        a.deltap(0.0, 0.0, 0.0)
+        #a.deltas(global_time, global_time, global_time)
+        a.draw(true)
       }
       gl.twod {
+        gl.label(50.0, 50.0, "%3.3f %3f" % [delta_time, 1.0 / delta_time])
 #    #    frame_count += 1
 #    #    #running_average += delta_time
 #    #    #fps = (1.0 / (running_average / frame_count.to_f))
