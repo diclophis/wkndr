@@ -1,7 +1,7 @@
 ---
 mruby:
-  version: 3.2.0
-  release_no: 30200
+  version: 3.3.0
+  release_no: 30300
 builds:
   heavy:
     https://github.com/Asmod4n/mruby-b64.git:

@@ -28,6 +28,7 @@ class StackBlocker
   end
 
   def did_connect(&block)
+    #Wkndr.log! [:wtf]
     if block
       @did_connect_proc = block
     else
@@ -47,6 +48,14 @@ class StackBlocker
 
   #TODO: this could be in C maybe???
   def update(cli = 0, gt = 0, dt = 0, sw = 0, sh = 0, touchpoints = nil)
-    @stack.each { |srb| srb.update(cli, gt, dt, sw, sh, touchpoints) }
+    srb_rr = nil
+
+    @stack.each { |srb|
+      srb_r = srb.update(cli, gt, dt, sw, sh, touchpoints)
+      srb_rr = srb_rr || srb_r
+      #Wkndr.log! [:srb_r, srb_r, cli, self.object_id, :srb_rr, srb_rr]
+    }
+
+    srb_rr
   end
 end

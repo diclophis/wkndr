@@ -29,6 +29,8 @@ static double latestTime = -1;
 
 //NOTE: this is the client side per every frame, double C-hop possibly???
 mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
+  mrb_value signal_return = mrb_nil_value();
+
   double time = 0.0;
   double dt = 0.0;
 
@@ -71,7 +73,7 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
       mrb_ary_set(mrb, touchpoints, i, touchxy);
     }
   
-    mrb_funcall(mrb, self, "update", 6, mrb_false_value(), mrb_float_value(mrb, currentTime - startTime), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh), touchpoints);
+    signal_return = mrb_funcall(mrb, self, "update", 6, mrb_false_value(), mrb_float_value(mrb, currentTime - startTime), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh), touchpoints);
   
   #if defined(__EMSCRIPTEN__)
     latestTime = (double)(emscripten_get_now() / 1000.0);
@@ -88,7 +90,8 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
     }
   }
 
-  return mrb_true_value();
+  //return mrb_true_value();
+  return signal_return;
 }
 
 
@@ -97,9 +100,11 @@ mrb_value platform_bits_server(mrb_state* mrb, mrb_value self) {
   double dt;
   int sw,sh;
 
+  mrb_value platformBitsServerResult = mrb_nil_value();
+
   sw = sh = time = dt = -22;
 
-  mrb_funcall(mrb, self, "update", 6, mrb_false_value(), mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh), mrb_nil_value());
+  platformBitsServerResult = mrb_funcall(mrb, self, "update", 6, mrb_false_value(), mrb_float_value(mrb, time), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh), mrb_nil_value());
   if (mrb->exc) {
     fprintf(stderr, "Exception in SERVER_UPDATE_BITS");
     mrb_print_error(mrb);
@@ -107,5 +112,5 @@ mrb_value platform_bits_server(mrb_state* mrb, mrb_value self) {
     return mrb_nil_value();
   }
 
-  return mrb_true_value();
+  return platformBitsServerResult;
 }

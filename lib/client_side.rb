@@ -3,30 +3,48 @@
 class ClientSide < Wkndr
   #NOTE: some duplication, base-abstract class...
   def self.process_stacks!
+    r = nil
+
     if @stacks_to_care_about
       running_stacks = @stacks_to_care_about.find_all { |rlb| rlb.running }
+      #Wkndr.log! [:running_stacks_length, running_stacks.length]
+
       if running_stacks.length > 0
-        bb_ret = true
-        running_stacks.each { |rlb| bb_ret = (bb_ret && rlb.signal) }
-        bb_ret
+        #bb_ret = true
+        #running_stacks.each { |rlb| bb_ret = (bb_ret && rlb.signal) }
+        #r = bb_ret
+
+        running_stacks.each { |rlb|
+          #bb_ret = (bb_ret && rlb.signal) }
+          bb_ret = rlb.signal
+          r = r || bb_ret
+          #Wkndr.log! [:bb_ret, :true_for_exit, rlb.class, :bb_ret, bb_ret, :r, r]
+        }
       else
-        return true
+        #Wkndr.log! [:short_circ_one]
+        #return nil
       end
     else
-      return true
+      #Wkndr.log! [:short_circ_two]
+      #return nil
     end
+
+    #Wkndr.log! [:client_side_process_stacks, self, :should_be_true_for__exit, r]
+
+    r
   end
 
   def self.startup_clientside(args)
-    #log!([:client_side, self, Object.object_id, args])
+    #Wkndr.log! [:client_side, self, Object.object_id, args]
 
     if args.empty?
+      #Wkndr.log! [:short_circuit_client_empty]
       #NOTE: default case includes client
     elsif (args.include?("--no-client"))
-      #log!([:short_circuit_client_aaa])
+      #Wkndr.log! [:short_circuit_client_aaa]
       return
     elsif (!args.include?("--and-client") && !args.include?("--no-server"))
-      #log!([:short_circuit_client_bbb])
+      #Wkndr.log! [:short_circuit_client_bbb]
       return
     end
 
@@ -65,12 +83,12 @@ class ClientSide < Wkndr
     last_gl = gl = GameLoop.new
     stack.up(gl)
 
-    #log!([:WkndrfileFetchAAAAA, wps, client_args])
+    #Wkndr.log! [:WkndrfileFetchAAAAA, wps, client_args]
 
     wps.each_with_index { |wp, i|
       mca = whs[i] || whs[0]
 
-      #log!([:WkndrfileFetch, wp, mca])
+      #Wkndr.log! [:WkndrfileFetch, wp, mca]
 
       socket_stream = gl.connect_window!(mca[0].to_i, mca[1].to_i, wp)
       raise "unknown socket stream: TODO: fix this abstraction" unless socket_stream

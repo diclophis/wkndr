@@ -96,6 +96,7 @@ class ProtocolServer
     #  Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
     #}
 
+    #Wkndr.log! [:install_rool_handlers]
     install_root_handlers!
 
     rebuild_tree!
@@ -122,6 +123,8 @@ class ProtocolServer
   end
 
   def update(cli = nil, gt = nil, dt = nil, sw = 0, sh = 0, touchpoints = nil)
+    server_side_update_rez = nil
+
     @gt = gt
 
     connections_to_drop = []
@@ -153,6 +156,9 @@ class ProtocolServer
           response = match_dispatch(cn, request)
 
           case response
+            when :shutdown
+              server_side_update_rez = true
+
             when String
               wrote = cn.write_response(response)
               #log!(:LENGTH, response.length, wrote)
@@ -172,6 +178,8 @@ class ProtocolServer
     connections_to_drop.each { |dcn|
       @all_connections.delete(dcn)
     }
+
+    server_side_update_rez
   end
 
   def shutdown
@@ -351,7 +359,7 @@ class ProtocolServer
 
       if ids_from_path && handler
         resp_from_handler = handler.call(cn, ids_from_path)
-        return (resp_from_handler)
+        return resp_from_handler
       else
         requested_path = "#{@required_prefix}#{pathpath}"
 

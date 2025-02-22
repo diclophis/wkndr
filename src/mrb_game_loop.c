@@ -94,6 +94,7 @@ static keydownset faap;
 
 static int keydowns = 0;
 static float debounce_time = 0.33;
+static int windowClosed = 0;
 
 //#if defined(PLATFORM_DESKTOP)
 //    #define GLSL_VERSION            330
@@ -149,11 +150,13 @@ static mrb_value platform_bits_open(mrb_state* mrb, mrb_value self)
 
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE |FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
+  //SetConfigFlags(FLAG_WINDOW_RESIZABLE |FLAG_INTERLACED_HINT); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_INTERLACED_HINT | FLAG_WINDOW_MAXIMIZED); // | FLAG_WINDOW_TRANSPARENT | FLAG_WINDOW_UNDECORATED);
   //SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 
-//fprintf(stderr, "WTFOPENPLATFORMBITS!???\n");
+//SetExitKey(0);
+
+fprintf(stderr, "WTFOPENPLATFORMBITS!??? %ld %ld %s\n", screenWidth,screenHeight, c_game_name);
 //mrb_raise(mrb, E_ARGUMENT_ERROR, "uninitialized rational");
 //return mrb_nil_value();
 
@@ -182,7 +185,7 @@ for (int i=0; i<95; i++) {
 
 //the_font = LoadFont("resources/unifont-14.0.02.ttf");
 //the_font = LoadFontEx("resources/unifont-14.0.02.ttf", 32, fontChars, 95);
-the_font = LoadFontEx("resources/freemono.ttf", 32, fontChars, 95);
+//the_font = LoadFontEx("resources/freemono.ttf", 32, fontChars, 95);
 
 
 
@@ -349,14 +352,15 @@ lights[3].intensity = 0.125;
 //
 //  //lights[0] = CreateLight(LIGHT_POINT, (Vector3){ 2, 2, 2 }, Vector3Zero(), WHITE, standardShader);
 //
-//  SetExitKey(0);
 //
+*/
+  //SetTargetFPS(60.0);
+
 //#ifdef TARGET_HEAVY
 //  //SetWindowPosition((GetMonitorWidth() - GetScreenWidth())/2, ((GetMonitorHeight() - GetScreenHeight())/2)+1);
 //  //SetWindowMonitor(0);
-//  SetTargetFPS(screenFps);
+//  //SetTargetFPS(screenFps);
 //#endif
-*/
 
   
   initEditor();
@@ -452,13 +456,27 @@ static void code_fetch_hook_timeout(struct mrb_state* mrb, const struct mrb_irep
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
+  bool xxx = WindowShouldClose();
+  if (xxx) {
+    fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
+
+    //UnloadFont(the_font);
+    if (windowClosed == 0) {
+      fprintf(stderr, "sending ????????????????? close\n");
+      CloseWindow();
+      windowClosed = 1;
+    }
+
+    return mrb_true_value();
+  }
+
   int key = -1;
   //char chey = -1;
   int keyCount = 0;
 
   //// Check if more characters have been pressed on the same frame
   while (key = GetKeyPressed()) {
-    //fprintf(stderr, "Key: %d\n", key);
+    fprintf(stderr, "Key: %d\n", key);
 
     keyCount += 1;
 
@@ -482,8 +500,12 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     } else if (key == KEY_LEFT_CONTROL || key == KEY_RIGHT_CONTROL) {
       faap.ctrl_key_pressed = 1;
     } else if (key == 256) {
+      //CloseWindow();
+      //exit(0);
+      fprintf(stderr, "sending keypressmapping close\n");
       CloseWindow();
-      exit(0);
+      windowClosed = 1;
+      return mrb_true_value();
     } else if (key == 261) {
       faap.del_key_pressed = 1;
     //} else if (key == 257) {
@@ -585,7 +607,10 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
               }
             }
           } else {
-            editorProcessKeypress(ENTER);
+            if (showEditor > 0) {
+              fprintf(stderr, "ENTER_KEYPRESS_MAPPING\n");
+              editorProcessKeypress(ENTER);
+            }
           }
         } else if (key == KEY_BACKSPACE) {
           editorProcessKeypress(BACKSPACE);
@@ -699,29 +724,41 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     free(ab2);
   }
 
-  mrb_value block;
-  mrb_get_args(mrb, "&", &block);
+/*
+    struct abuf *ab2 = malloc(sizeof(struct abuf));
+    ab2->b = NULL;
+    ab2->len = 0;
+
+    editorRefreshScreen(ab2);
+    terminalRender(ab2->len, ab2->b);
+
+    free(ab2->b);
+    free(ab2);
+*/
+
+   mrb_value block;
+   mrb_get_args(mrb, "&", &block);
+
+   // Check if screen is resized
+   if (IsWindowResized())
+   {
+       int screenWidth = GetScreenWidth();
+       int screenHeight = GetScreenHeight();
+       //TODO TODO TODO
+       //float resolution[2] = { (float)screenWidth, (float)screenHeight };
+       //SetShaderValue(shader, resolutionLoc, resolution, SHADER_UNIFORM_VEC2);
+       //todo tty resize!
+   }
 
 
-
-        // Check if screen is resized
-        if (IsWindowResized())
-        {
-            int screenWidth = GetScreenWidth();
-            int screenHeight = GetScreenHeight();
-            //TODO TODO TODO
-            //float resolution[2] = { (float)screenWidth, (float)screenHeight };
-            //SetShaderValue(shader, resolutionLoc, resolution, SHADER_UNIFORM_VEC2);
-            //todo tty resize!
-        }
-
+  mrb_value drawmodeExitCapture = mrb_nil_value();
 
   {
     BeginDrawing();
     ClearBackground((Color){0.0, 11.0, 33.0, 57.0});
 
     {
-      mrb_yield_argv(mrb, block, 0, NULL);
+      drawmodeExitCapture = mrb_yield_argv(mrb, block, 0, NULL);
     }
 
     if (showEditor > 0) {
@@ -732,7 +769,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   }
 
-  return mrb_nil_value();
+  return drawmodeExitCapture;
 }
 
 

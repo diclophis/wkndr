@@ -7,17 +7,23 @@ class GameLoop
 
   def update(cli, gt = 0, dt = 0, sw = 0, sh = 0, touchpoints = nil, &block)
     # being called from c
+    rez = nil
+
     if cli && block 
-      self.play_procs[cli] = block
       #Wkndr.log! ["installed #{cli}: #{block.object_id}"]
+      self.play_procs[cli] = block
     else
       if cli == false && self.play_procs
         self.play_procs.each { |cli, play_proc|
           #Wkndr.log! [:bipp, cli, play_proc.object_id]
-          rez = play_proc.call(gt, dt, sw, sh, touchpoints)
+          rezzy = play_proc.call(gt, dt, sw, sh, touchpoints)
+          rez = rez || rezzy
+          #Wkndr.log! [:inner_rez, rez]
         }
       end
     end
+
+    rez
   end
 
   def event(cli, channel = nil, msg = nil, &block)
@@ -85,8 +91,8 @@ class GameLoop
     socket_stream
   end
 
-  def open_default_view!(fps = 0)
-    #log!("open_def_wkndr_win", self.width, self.height, 0) # screenSize and FPS
+  def open_default_view!(fps = 60)
+    #Wkndr.log! ["open_def_wkndr_win", self.width, self.height, fps] # screenSize and FPS
 
     #TODO: make this more modular ???
     self.open("wkndr", self.width.to_i, self.height.to_i, fps) # screenSize and FPS

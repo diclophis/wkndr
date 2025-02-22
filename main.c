@@ -331,6 +331,9 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   }
 */
 
+    mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+
+/*
   struct mrb_jmpbuf *prev_jmp = loop_data->mrb_pointer->jmp;
   struct mrb_jmpbuf c_jmp;
   int err = 1;
@@ -360,6 +363,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   } MRB_END_EXC(&c_jmp);
 
   loop_data->mrb_pointer->jmp = prev_jmp;
+*/
 
 
   //if (loop_data->mrb_pointer->exc) {
@@ -380,7 +384,8 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   //}
 
 
-  return mrb_true_value();
+  return wiz_return_halt;
+  //return mrb_nil_value();
 }
 
 
@@ -663,6 +668,8 @@ void platform_bits_update_void(void* arg) {
   mrb_state* mrb = loop_data->mrb_pointer;
   struct RObject* self = loop_data->self_pointer;
   mrb_value selfV = mrb_obj_value(self);
+
+  fprintf(stderr, "void platform_bits_update_void\n");
 
   platform_bits_signal(mrb, selfV);
 }

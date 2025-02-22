@@ -1,343 +1,52 @@
 # vi:syntax=ruby
 
-Wkndr.nonce("main") {
-#  $ticks = 0
-#
+Wkndr.nonce("main") { #NOTE: Wkndr.nonce is used when you want a block eval'd exactly once per session, regardless of Wkndrfile reloading
   Wkndr.client_side("main") { |gl|
     gl.open_default_view!
   }
 }
 
-$speed = 0.1
-$task_count = 1
-$spin = 0.0
-
-class CubeModel < Cube
-end
-
-class FrameModel < Model
-end
-
-class CoreModel < Model
-end
-
-class BaseBatchingSystem
-  def initialize(store, mesh, instances)
-    @mesh = mesh
-    @selector = store.watch(mesh.class, PositionComponent)
-  end
-
-  def at(gl, i)
-    @mesh
-  end
-
-  def draw(instances)
-  end
-
-  def process(gt, dt)
-    @selector.each { |entity, mesh, position|
-      mesh.deltap(position.x, position.y, position.z)
-      mesh.deltar(
-        0, 0, 1, gt * 100.0
-      )
-      mesh.deltas(1.0, 1.0, 1.0)
-      mesh.draw(false)
-    }
-  end
-
-  def each
-    @selector.each { |entity, mesh, position|
-      yield entity, mesh, position
-    }
-  end
-end
-
-class FrameBatchingSystem
-  def initialize(store, mesh, instances)
-    @mesh = mesh
-    @selector = store.watch(mesh.class, PositionComponent)
-  end
-
-  def at(gl, i)
-    @mesh
-  end
-
-  def draw(instances)
-  end
-
-  def process(gt, dt)
-    @selector.each { |entity, mesh, position|
-      mesh.deltap(position.x, position.y, position.z)
-      mesh.deltas(1.0, 1.0, 1.0)
-      mesh.draw(false)
-    }
-  end
-
-  def each
-    @selector.each { |entity, mesh, position|
-      yield entity, mesh, position
-    }
-  end
-end
-#
-##$foo = Fiber.new { |in_boot| loop { Wkndr.log! [in_boot]; in_boot = Fiber.yield(in_boot) } }
-#
 Wkndr.client_side("main") { |gl|
   gl.event("main") { |channel, msg|
-    Wkndr.log! [:wkndrfile, {channel => msg}]
+    Wkndr.log! [:from_wkndr_msg, {channel => msg}]
   }
 
-  cs = 1.0
-  a = CubeModel.new(gl, 1.0, 1.0, 1.0, 1.0)
-
-  #xs = ys = zs = 32
-  #instances = xs * ys * zs
-  #i = 0
-
-  #store = StorageManager.new
-  #batcher = FrameBatchingSystem.new(store, a, instances)
-
-    #frame_model = FrameModel.new(gl, "resources/cpu_frame.obj", 1.0)
-    #spinner_model = CoreModel.new(gl, "resources/cpu_core.obj", 1.0)
-
-    #spinner_batcher = CubicBatchingSystem.new(store, spinner_model, 32)
-
-    #spinner_batcher = BaseBatchingSystem.new(store, a, 1)
-
-    #frame_batcher = FrameBatchingSystem.new(store, frame_model, 1)
-
-        #sf = spinner_batcher.at(gl, 0)
-        #sp = PositionComponent.new(0, 0, 0)
-        #store.add(
-        #  sf,
-        #  sp
-        #)
-
-        #ff = frame_batcher.at(gl, 0)
-        #fp = PositionComponent.new(0, 0, 0)
-        #store.add(
-        #  ff,
-        #  fp
-        #)
-
-  #all_positions = []
-
-  #xs.times { |xd|
-  #  ys.times { |yd|
-  #    zs.times { |zd|
-  #      ix = xd.to_f + (0.5 * cs)
-  #      iy = yd.to_f + (0.5 * cs)
-  #      iz = zd.to_f + (0.5 * cs)
-  #      f = batcher.at(gl, i)
-  #      p = PositionComponent.new(ix, iy, iz)
-  #      all_positions << p
-  #      store.add(
-  #        f,
-  #        p
-  #      )
-  #      i += 1
-  #    }
-  #  }
-  #}
-
-  #mx = my = l = 0.0
-  #nmx = nmy = l = 0.0
-
-  #frame_count = 0
-  #running_average = 0.0
-
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
+#    #Wkndr.log! [:gl_update]
+##    #  #fiberz(global_time)
+#        #gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 1.01, 3000.0)
 
-#    #if global_time > 3.0
-#    #  log! [:call, global_time, $foo.resume(global_time)]
-#    #else
-#    #  log! [:fade, $foo, global_time]
-#    #end
-#
-#    #$foo.resume(global_time)
-#
-#    ##def fiberz
-#    #  fibers_by_name.collect do |name, details|
-#    #    log! [:begin, name, details]
-#
-#    #    details[:fiber] ||= Fiber.new do |recycle_msg|
-#    #      log! [:while_true]
-#    #      #while true
-#    #        #recycle_msg = details[:block].call(recycle_msg)
-#    #        recycle_msg = true
-#    #        log! [:yield, name, details]
-#    #        Fiber.yield(recycle_msg)
-#    #      #end
-#    #    end
-#
-#    #    #Fiber.new {
-#    #    #  Fiber.yield
-#    #    #}.resume
-#
-#    #    log! [:resume, name, details]
-#    #    recycle_msg = details[:fiber].resume(details[:recycle_msg])
-#    #    details[:recycle_msg] = recycle_msg
-#    #  end
-#
-#    #  log! [:fiberz_done]
-#    ##end
-#
-#    gl.mousep { |xyl|
-#      nmx, nmy, l = *xyl
-#    }
-
-    #mx -= (mx - nmx) * 0.579 * 33.0 * delta_time
-    #my -= (my - nmy) * 0.579 * 33.0 * delta_time
-
-    #hsw = (sw * 0.5).to_f
-    #hsh = (sh * 0.5).to_f
-
-    gl.drawmode {
-#    #  #fiberz(global_time)
+    gl.drawmode { #NOTE: return true from drawmode block to force exit!!!
       gl.threed {
-        #gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 1.01, 3000.0)
         gl.lookat(1, 7.0, 11.0, 9.0, 0.0, 0.1, 0.0, 60.0)
-
-    #batcher.process(global_time, delta_time)
-    #batcher.draw(0)
-    #spinner_batcher.process(global_time, delta_time)
-    #frame_batcher.process(global_time, delta_time)
-    $spin = ((global_time % 1.0) / 1.0) * (360.0)  * 0.5 #delta_time * 200.0
-
-        a.deltar(0.0, 1.0, 0.0, $spin)
-        a.deltap(0.0, 0.0, 0.0)
-        #a.deltas(global_time, global_time, global_time)
-        a.draw(true)
       }
+
       gl.twod {
-        gl.label(50.0, 50.0, "%3.3f %3f" % [delta_time, 1.0 / delta_time])
-#    #    frame_count += 1
-#    #    #running_average += delta_time
-#    #    #fps = (1.0 / (running_average / frame_count.to_f))
-#    #    if all_positions.length > 0
-#    #      center_of_boxes = Polygon.centroid(all_positions)
-#    #      batcher.each { |e, m, position|
-#    #        #pos_a = [position.x, position.y, position.z]
-#    #        #sx, sy = gl.screenat(*pos_a)
-#    #        #gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-#    #        #gl.label(sx, sy, "%3.3f %3.3f %3.3f" % pos_a)
-#    #      }
-#    #      sx, sy = gl.screenat(*center_of_boxes)
-#    #      if sx && sy
-#    #        gl.draw_circle(5.0, sx, sy, 0.0, 255.0, 128.0, 64.0, 255.0)
-#    #        gl.label(sx, sy, "%3.3f %3.3f %3.3f" % center_of_boxes)
-#    #      end
-#    #    end
       }
     }
   }
 }
 
-#Wkndr.server_side("main") { |gl, server|
-#  server.raw("/about") do |cn, phr|
+Wkndr.server_side("main") { |gl, server|
+  server.raw("/about") { |cn, phr|
+    mab = Markaby::Builder.new
+    mab.html5 "lang" => "en" do
+      mab.head do
+        mab.title "about"
+      end
 
-#Wkndr.server_side("main") { |gl, server|
-#  gl.event("main") { |channel, msg|
-#    Wkndr.log! [:WkndrServerFile, channel, msg]
-#
-#    # msg _is params_ ... !
-#    # republish_subscribed_html(/#{channel}, msg
-#    # msg is streaming params
-#    # how does rendering multi-agent html subscriptions look like
-#    # read-write-through cache, publish from event, and single-take http params
-#    # # url based on event, tsdb?
-#    # # route to pre-archive pattern match from channel/msg
-#  }
-#
-#  server.raw("/about") do |cn, phr|
-#    gl.emit({"about" => "GET"})
-#
-#    mab = Markaby::Builder.new
-#    mab.html5 "lang" => "en" do
-#      mab.head do
-#        mab.title "about"
-#      end
-#
-#      mab.body do
-#        mab.h1 "what is wkndr"
-#        mab.p "it is a new hypertext application platform"
-#        mab.a "href" => "/" do
-#          "//////"
-#        end
-#      end
-#    end
-#    Protocol.ok(mab.to_s)
-#  end
-#
-#  server.live("/todos", "todos") do |cn, phr, mab|
-#    mab.h1 "stuff todo w/ name"
-#
-#    mab.input "type" => "text"
-#
-#    mab.ul do
-#      $task_count.times do |i|
-#        mab.li do
-#          mab.label do
-#            mab.input "type" => "checkbox"
-#            mab.text "task #{i+1}"
-#          end
-#        end
-#      end
-#    end
-#  end
-#}
-#
-#    #@one_position[0] -= (@one_position[0] - @one_target[0]) * 0.999 * 25.0 * delta_time
-#    #@one_position[1] -= (@one_position[1] - @one_target[1]) * 0.999 * 25.0 * delta_time
-#
-#    #@two_position[0] -= (@two_position[0] - @two_target[0]) * 0.999 * 25.0 * delta_time
-#    #@two_position[1] -= (@two_position[1] - @two_target[1]) * 0.999 * 25.0 * delta_time
-#
-#    #@three_position[0] -= (@three_position[0] - @three_target[0]) * 0.999 * 25.0 * delta_time
-#    #@three_position[1] -= (@three_position[1] - @three_target[1]) * 0.999 * 25.0 * delta_time
-#
-#    #a.deltap(@one_position[0], @one_position[1], 0.0)
-#    #b.deltap(@two_position[0], @two_position[1], 0.0)
-#    #c.deltap(@three_position[0], @three_position[1], 0.0)
-#
-#        ##if touchpoints.length > 0
-#        ##  touchpoints.each { |tx, ty|
-#        ##    gl.draw_circle(100.0, tx, ty, 0.0, 32.0, 32.0, 255.0, 255.0)
-#        ##  }
-#        ##  center_of_touches = Polygon.centroid(touchpoints)
-#        ##  gl.draw_circle(20.0, center_of_touches[0], center_of_touches[1], 0.0, 128.0, 32.0, 192.0, 255.0)
-#        ##end
-#        ##gl.draw_circle(50.0, mx, my, 0.0, 32.0, 128.0, 128.0, 255.0)
-#        #gl.label(sx, sy, "%d %3.3f %3.3f %3.0f" % [frame_count, global_time, delta_time, fps])
-#
-##@one_position = [0.0, 1.0, 0.0]
-##@two_position = [-5.0, -5.0, 0.0]
-##@three_position = [5.0, 5.0, 0.0]
-##
-##@one_target = [0.0, 0.0, 0.0]
-##@two_target = [0.0, 0.0, 0.0]
-##@three_target = [0.0, 0.0, 0.0]
-##
-##xloop(:a) { |recycle_msg|
-##  d = 10.0
-##  hd = d * 0.5
-##  case recycle_msg[:msg]
-##    when :restart
-##      @one_target[0] = (rand * d) - hd
-##      @one_target[1] = (rand * d) - hd
-##      xleap :idle, 1.1
-##
-##      @two_target[0] = (rand * d) - hd
-##      @two_target[1] = (rand * d) - hd
-##      xleap :idle, 1.1
-##
-##      @three_target[0] = (rand * d) - hd
-##      @three_target[1] = (rand * d) - hd
-##      xleap :restart, 1.1
-##
-##  end
-##}
-#
-##xloop :a do
-##  $speed += 0.1
-##end
+      mab.body do
+        mab.h1 "what is wkndr"
+        mab.p "it is a new hypertext application platform"
+        mab.a "href" => "/" do
+          "//////"
+        end
+      end
+    end
+    Protocol.ok(mab.to_s)
+  }
+
+  server.raw("/shutdown") { |cn, phr|
+    :shutdown
+  }
+}
