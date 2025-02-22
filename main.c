@@ -331,9 +331,10 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   }
 */
 
-    mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+  mrb_value wiz_return_halt = mrb_nil_value();
 
-/*
+    //TODO: !!!! wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+
   struct mrb_jmpbuf *prev_jmp = loop_data->mrb_pointer->jmp;
   struct mrb_jmpbuf c_jmp;
   int err = 1;
@@ -343,7 +344,7 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
 
     //body(loop_data->mrb_pointer, opaque);
 
-    mrb_value wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+    wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
 
     //mrb_value wiz_return_halt2 = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "fiberz", 0, 0);
 
@@ -363,7 +364,6 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   } MRB_END_EXC(&c_jmp);
 
   loop_data->mrb_pointer->jmp = prev_jmp;
-*/
 
 
   //if (loop_data->mrb_pointer->exc) {
