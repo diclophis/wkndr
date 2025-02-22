@@ -29,7 +29,9 @@ spec:
         - --server=/var/lib/wkndr/public
         - --no-client
         image: wkndr:latest
-        imagePullPolicy: IfNotPresent
+        #image: polly-registry:23443/polly-registry/wkndr:latest
+        #imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: wkndr
         ports:
         - containerPort: 8000

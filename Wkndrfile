@@ -8,7 +8,7 @@ Wkndr.nonce("main") { #NOTE: Wkndr.nonce is used when you want a block eval'd ex
 
 Wkndr.client_side("main") { |gl|
   gl.event("main") { |channel, msg|
-    Wkndr.log! [:from_wkndr_msg, {channel => msg}]
+    #Wkndr.log! [:from_wkndr_msg, {channel => msg}]
   }
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|

@@ -669,7 +669,7 @@ void platform_bits_update_void(void* arg) {
   struct RObject* self = loop_data->self_pointer;
   mrb_value selfV = mrb_obj_value(self);
 
-  fprintf(stderr, "void platform_bits_update_void\n");
+  fprintf(stderr, "void platform_bits_update_void 222\n");
 
   platform_bits_signal(mrb, selfV);
 }
