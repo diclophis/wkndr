@@ -778,7 +778,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   }
 
-  PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
+  //PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
 
   return drawmodeExitCapture;
 }
