@@ -26,9 +26,14 @@ RUN cd /var/lib/wkndr && \
     cd raylib && \
     git fetch && \
     git checkout 5.5
-    
+
+ENV RAYLIB_CACHE_SINCE 2025-02-22
+
+COPY raylib-config.h /var/tmp/raylib-config.h
+
 RUN cd /root/emsdk && \
     . ./emsdk_env.sh && \
+    cp /var/tmp/raylib-config.h /var/lib/wkndr/raylib/src && \
     cd /var/lib/wkndr/raylib/src && \
     mkdir -p ../../release/wasm ../../release/desktop-heavy ../../release/desktop-heavy-x11 && \
     RAYLIB_RELEASE_PATH=../../release/desktop-heavy PLATFORM=PLATFORM_DRM make -B -e && \
