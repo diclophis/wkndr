@@ -456,8 +456,6 @@ static void code_fetch_hook_timeout(struct mrb_state* mrb, const struct mrb_irep
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
-  PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
-
 #ifdef PLATFORM_DESKTOP
   bool xxx = WindowShouldClose();
   if (xxx) {
@@ -775,6 +773,9 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     EndDrawing();
 
     SwapScreenBuffer(); // Flip the back buffer to screen (front buffer)
+  
+    PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
+
   }
 
   return drawmodeExitCapture;

@@ -14,7 +14,7 @@ desktop_heavy_x11_target=$(build)/$(desktop_heavy_x11_product)
 wasm_product=wkndr.html
 wasm_target=$(build)/$(wasm_product)
 
-$(shell mkdir -p $(build) $(build)/desktop-heavy $(build)/wasm)
+$(shell mkdir -p $(build) $(build)/desktop-heavy $(build)/desktop-heavy-x11 $(build)/desktop $(build)/desktop/src $(build)/desktop/src/desktop $(build)/wasm)
 
 desktop_heavy_mruby_static_lib = mruby/build/heavy/lib/libmruby.a
 desktop_heavy_mruby_config = config/heavy.rb
