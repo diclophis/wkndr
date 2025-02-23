@@ -88,7 +88,7 @@ class Connection
     header = Protocol.chunked_header(file_size, filename)
 
     self.socket.write(header) {
-      max_chunk = 10240
+      max_chunk = self.socket.send_buffer_size #  / 8 #1 #02400
       sending = false
 
       send_proc = Proc.new {
