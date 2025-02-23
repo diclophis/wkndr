@@ -20,7 +20,7 @@ Wkndr.client_side("main") { |gl|
 
     gl.drawmode { #NOTE: return true from drawmode block to force exit!!!
       gl.threed {
-        gl.lookat(1, 7.0, 11.0, 9.0, 0.0, 0.1, 0.0, 60.0)
+        gl.lookat(1, 7.0, 11.0, 9.0 + Math.sin(global_time), 0.0, 0.1, 0.0, 60.0)
       }
 
     #  gl.twod {
