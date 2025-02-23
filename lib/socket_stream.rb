@@ -61,11 +61,11 @@ class SocketStream
               did_parse = Wkndr.wkndr_client_eval(wkndrfile_cstr)
               #log!(:WTF3, did_parse, cmsg.length)
             rescue => e
-              Wkndr.log! [e.backtrace]
-              Wkndr.log! [:cmsg_bad, e]
+              #Wkndr.log! [e.backtrace]
+              #Wkndr.log! [:cmsg_bad, e]
             rescue Exception => e
-              Wkndr.log! [e.backtrace]
-              Wkndr.log! [:cmsg_bad, e]
+              #Wkndr.log! [e.backtrace]
+              #Wkndr.log! [:cmsg_bad, e]
               #raise
             end
         else
@@ -94,7 +94,7 @@ class SocketStream
     if bytes && bytes.length
       #Wkndr.log!(:bytes, bytes.inspect)
 
-      begin
+      #begin
         @left_over_bits += bytes
 
         #log!(:bytes_2)
@@ -121,10 +121,10 @@ class SocketStream
         #log!(:unpacked, unpacked_length, unpacked_typed.inspect)
 
         unpacked_typed
-      rescue => e
-        Wkndr.log! [:err, e.inspect]
-        []
-      end
+      #rescue => e
+      #  Wkndr.log! [:err, e.inspect]
+      #  []
+      #end
     end
   end
 
@@ -140,8 +140,8 @@ class SocketStream
     #TODO: merge this with other bits
     #TODO: this is client side asking for file
     tt = write_typed({"party" => wkndrfile_path})
-    Wkndr.log! ["did_connect", tt]
-    true
+    #Wkndr.log! ["did_connect", tt]
+    tt
   end
 
   def write_typed(*msg_typed)

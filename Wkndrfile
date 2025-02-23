@@ -10,27 +10,28 @@ Wkndr.nonce("main") { #NOTE: Wkndr.nonce is used when you want a block eval'd ex
 
 Wkndr.client_side("main") { |gl|
   gl.event("main") { |channel, msg|
-    Wkndr.log! [:from_wkndr_msg, {channel => msg}]
+    #Wkndr.log! [:from_wkndr_msg, {channel => msg}]
   }
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
     if (global_time > 5.0)
       raise "exception in eval'ing wkndrfile bytes"
     end
-#    #Wkndr.log! [:gl_update]
-##    #  #fiberz(global_time)
-#        #gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 1.01, 3000.0)
 
     gl.drawmode { #NOTE: return true from drawmode block to force exit!!!
       gl.threed {
         gl.lookat(1, 7.0, 11.0, 9.0, 0.0, 0.1, 0.0, 60.0)
       }
 
-      gl.twod {
-      }
+    #  gl.twod {
+    #  }
     }
   }
 }
+
+#    #Wkndr.log! [:gl_update]
+##    #  #fiberz(global_time)
+#        #gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 1.01, 3000.0)
 
 Wkndr.server_side("main") { |gl, server|
   server.raw("/about") { |cn, phr|

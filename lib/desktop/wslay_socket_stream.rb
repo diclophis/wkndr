@@ -101,7 +101,7 @@ class WslaySocketStream < SocketStream
             @socket.read_start(&on_read_start)
 
             #TODO:
-            Wkndr.log! ["CLIENT OR SERVER??? connection started"]
+            #Wkndr.log! ["CLIENT OR SERVER??? connection started"]
 
             did_connect(wp) #NOTE: this is where client reqs new Wkndrfile
           #rescue => e
@@ -166,12 +166,12 @@ class WslaySocketStream < SocketStream
   end
 
   def write_ws_request!
-    Wkndr.log! [:write_ws_request]
+    #Wkndr.log! [:write_ws_request]
 
     path = "/ws-msgpack"
     key = B64.encode(Sysrandom.buf(16)).chomp!
     @socket.write("GET #{path} HTTP/1.1\r\nHost: #{@host}:#{@port}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: #{key}\r\n\r\n") {
-      Wkndr.log! [:write_ws_request_done_done]
+      #Wkndr.log! [:write_ws_request_done_done]
       yield
     }
   end
