@@ -73,7 +73,8 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
       mrb_ary_set(mrb, touchpoints, i, touchxy);
     }
  
-    fprintf(stderr, "before_signal_return\n");
+    //fprintf(stderr, "before_signal_return\n");
+
     signal_return = mrb_funcall(mrb, self, "update", 6, mrb_false_value(), mrb_float_value(mrb, currentTime - startTime), mrb_float_value(mrb, dt), mrb_int_value(mrb, sw), mrb_int_value(mrb, sh), touchpoints);
     if (mrb->exc) {
       fprintf(stderr, "Exception in CLIENT_FOO_CLIENT_BITS");
@@ -82,7 +83,7 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
       return mrb_nil_value();
     }
 
-    fprintf(stderr, "after_signal_return\n");
+    //fprintf(stderr, "after_signal_return\n");
   
   #if defined(__EMSCRIPTEN__)
     latestTime = (double)(emscripten_get_now() / 1000.0);
@@ -93,9 +94,8 @@ mrb_value platform_bits_signal(mrb_state* mrb, mrb_value self) {
   
   }
 
-  return mrb_true_value();
-  //return signal_return;
-  
+  //return mrb_true_value();
+  return signal_return;
 }
 
 

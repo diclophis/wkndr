@@ -182,14 +182,17 @@ $(desktop_heavy_mruby_static_lib): config/vanilla.rb ${desktop_heavy_mruby_confi
 
 $(desktop_heavy_raylib_static_lib): $(raylib_static_lib_deps)
 	echo foo
+	cp raylib-config.h raylib/src/config.h
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
 
 $(desktop_heavy_x11_raylib_static_lib): $(raylib_static_lib_deps)
 	echo foo-x11 $(desktop_heavy_x11_raylib_static_lib) $(raylib_static_lib_deps)
+	cp raylib-config.h raylib/src/config.h
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy-x11 PLATFORM=$(RAYLIB_PLATFORM_HEAVY_X11) $(MAKE) -B -e
 
 $(wasm_raylib_static_lib): $(raylib_static_lib_deps)
 	echo five
+	cp raylib-config.h raylib/src/config.h
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/wasm PLATFORM=PLATFORM_WEB $(MAKE) -B -e
 
 #TODO: finish phsycs engine integration!

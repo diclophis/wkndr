@@ -57,8 +57,8 @@ class StackBlocker
       srb_r = srb.update(cli, gt, dt, sw, sh, touchpoints)
       srb_rr = srb_rr || srb_r
       rescue => e
+        Wkndr.log! [:srb_r, srb_r, cli, self.object_id, :srb_rr, srb_rr, e]
       end
-      #Wkndr.log! [:srb_r, srb_r, cli, self.object_id, :srb_rr, srb_rr]
     }
 
     srb_rr

@@ -456,19 +456,23 @@ static void code_fetch_hook_timeout(struct mrb_state* mrb, const struct mrb_irep
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
-  //bool xxx = WindowShouldClose();
-  //if (xxx) {
-  //  fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
+  PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
 
-  //  //UnloadFont(the_font);
-  //  if (windowClosed == 0) {
-  //    fprintf(stderr, "sending ????????????????? close\n");
-  //    CloseWindow();
-  //    windowClosed = 1;
-  //  }
+#ifdef PLATFORM_DESKTOP
+  bool xxx = WindowShouldClose();
+  if (xxx) {
+    fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
 
-  //  return mrb_true_value();
-  //}
+    //UnloadFont(the_font);
+    if (windowClosed == 0) {
+      fprintf(stderr, "sending ????????????????? close\n");
+      CloseWindow();
+      windowClosed = 1;
+    }
+
+    return mrb_true_value();
+  }
+#endif
 
   int key = -1;
   //char chey = -1;
@@ -548,20 +552,20 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     if (foop->keydown > 0) {
 
-      int key = foop->keydown;
+      key = foop->keydown;
 
       //fprintf(stderr, "twiceX %f\n", foop.debounce_timer);
       //fprintf(stderr, "twiceA %d %d %f\n", foop.keydown, fkd, foop.debounce_timer);
 
-      if (foop->debounce_timer <= 0.0) {
-        //fprintf(stderr, "twiceBGH\n");
+      //if (foop->debounce_timer <= 0.0) {
+      //  //fprintf(stderr, "twiceBGH\n");
 
-        foop->debounce_timer = debounce_time;
+      //  foop->debounce_timer = debounce_time;
         keyCount += 1;
-      }
+      //}
 
-      if (foop->debounce_timer == debounce_time) {
-        int key = fkd;
+      //if (foop->debounce_timer == debounce_time) {
+        key = fkd;
         
         //fprintf(stderr, "twiceB %d\n", key);
 
@@ -670,7 +674,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
             editorProcessKeypress((char)key+modShift);
           }
         }
-      }
+      //}
 
       if (IsKeyReleased(foop->keydown)) {
         //fprintf(stderr, "KeyUp %d\n", foop->keydown);
@@ -708,7 +712,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
       }
 
-      foop->debounce_timer = foop->debounce_timer - (1.0 / 24.0); //TODO
+      //foop->debounce_timer = foop->debounce_timer - (1.0 / 24.0); //TODO
     }
   }
 
@@ -759,9 +763,9 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     ClearBackground((Color){0.0, 11.0, 33.0, 57.0});
 
     {
-      fprintf(stderr, "before\n");
+      //fprintf(stderr, "before\n");
       drawmodeExitCapture = mrb_yield_argv(mrb, block, 0, NULL);
-      fprintf(stderr, "after\n");
+      //fprintf(stderr, "after\n");
     }
 
     if (showEditor > 0) {
@@ -770,6 +774,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     EndDrawing();
 
+    SwapScreenBuffer(); // Flip the back buffer to screen (front buffer)
   }
 
   return drawmodeExitCapture;
