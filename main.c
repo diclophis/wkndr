@@ -3924,6 +3924,8 @@ int main(int argc, char** argv) {
 
   mrb_value retret_stack = eval_static_libs(mrb_client, client_side, NULL);
 
+  fprintf(stderr, "going for client_side startup\n");
+
   mrb_funcall(mrb_client, mrb_obj_value(client_side_top_most_thor), "startup_clientside", 1, args);
   if (mrb_client->exc) {
     fprintf(stderr, "Exception in CLIENTSTARTUP\n");
@@ -3933,6 +3935,7 @@ int main(int argc, char** argv) {
 
 #ifdef TARGET_HEAVY
 
+  fprintf(stderr, "going for server_side startup\n");
   mrb_funcall(mrb, mrb_obj_value(server_side_top_most_thor), "block!", 0, 0);
   if (mrb->exc) {
     //THIS IS EXCEPTION ON SERVER SIDE!!!
@@ -3952,6 +3955,8 @@ int main(int argc, char** argv) {
   }
 
 #endif
+
+  fprintf(stderr, "going for mrb_close, serverside and clientside\n");
 
   mrb_close(mrb);
   mrb_close(mrb_client);

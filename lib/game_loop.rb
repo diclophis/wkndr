@@ -15,10 +15,13 @@ class GameLoop
     else
       if cli == false && self.play_procs
         self.play_procs.each { |cli, play_proc|
-          #Wkndr.log! [:bipp, cli, play_proc.object_id]
-          rezzy = play_proc.call(gt, dt, sw, sh, touchpoints)
-          rez = rez || rezzy
-          #Wkndr.log! [:inner_rez, rez]
+          begin
+            rezzy = play_proc.call(gt, dt, sw, sh, touchpoints)
+            rez = rez || rezzy
+          rescue => e
+            Wkndr.log! [:inner_exc, e, e.backtrace]
+            raise e
+          end
         }
       end
     end

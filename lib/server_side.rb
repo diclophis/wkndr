@@ -72,20 +72,21 @@ class ServerSide < Wkndr
     #Wkndr.log! [:foop_trap]
     
     @trap.start(UV::Signal::SIGINT) do
-      #Wkndr.log! [:foop_caught]
+      Wkndr.log! [:foop_caught]
       @keep_running = false
     end
 
       if @run_clientside_fps
         @timer = UV::Timer.new
-        fps = 1000.0000/60.00001
-        #fps = 1000.0000
+        #fps = 1000.0000/60.00001
+        fps = 1000.0000
         @timer.start(fps, fps) do
           rez = self.server_side_tick!
 
-          #Wkndr.log! [:rez_should_be_true_to_exit, rez]
 
           if rez
+            Wkndr.log! [:rez_should_be_true_to_exit, rez]
+
             @keep_running = false
             @timer.stop
             @trap.stop
@@ -108,6 +109,8 @@ class ServerSide < Wkndr
 
     install_trap!
 
+    Wkndr.log! [:going_for_ev_loop_start]
+
     while @keep_running
       #Wkndr.log! [:keep, @run_clientside_fps]
 
@@ -117,9 +120,9 @@ class ServerSide < Wkndr
       #unless @run_clientside_fps
         xyr = self.process_stacks!
 
-        #Wkndr.log! [:xyr, xyr]
-
           if xyr
+            Wkndr.log! [:xyr, xyr]
+
             @keep_running = false
             @timer.stop if @timer
             @trap.stop if @trap
@@ -140,6 +143,8 @@ class ServerSide < Wkndr
 
       UV.run(run_mode)
     end
+
+    Wkndr.log! [:going_for_ev_loop_stop, @keep_running]
 
     UV.default_loop.stop
   end

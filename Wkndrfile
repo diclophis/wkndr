@@ -1,7 +1,9 @@
 # vi:syntax=ruby
 
+
 Wkndr.nonce("main") { #NOTE: Wkndr.nonce is used when you want a block eval'd exactly once per session, regardless of Wkndrfile reloading
   Wkndr.client_side("main") { |gl|
+
     gl.open_default_view!
   }
 }
@@ -12,6 +14,9 @@ Wkndr.client_side("main") { |gl|
   }
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
+    if (global_time > 5.0)
+      raise "exception in eval'ing wkndrfile bytes"
+    end
 #    #Wkndr.log! [:gl_update]
 ##    #  #fiberz(global_time)
 #        #gl.lookat(1, Math.cos(global_time * $speed) * 12.0, 10.0, Math.sin(global_time * $speed) * 12.0, 0.0, 0.0, 1.01, 3000.0)
