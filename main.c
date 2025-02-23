@@ -291,10 +291,7 @@ mrb_value wkndr_log(mrb_state* mrb, mrb_value self) {
 mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
   loop_data_s *loop_data = NULL;
 
-  //TODO fprintf(stderr, "CHEESE_CROSS flip_pointer process_stacks! on the fps timer\n");
-
   mrb_value data_value = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@flip_pointer"));
-
   Data_Get_Struct(mrb, data_value, &crisscross_data_type, loop_data);
   if (!loop_data) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Could not access @flip_pointer");
@@ -333,8 +330,10 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
 
   mrb_value wiz_return_halt = mrb_nil_value();
 
-    //TODO: !!!! wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+  //TODO: !!!! wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
+  wiz_return_halt = mrb_funcall(loop_data->mrb_pointer, mrb_obj_value(loop_data->self_pointer), "process_stacks!", 0, 0);
 
+/*
   struct mrb_jmpbuf *prev_jmp = loop_data->mrb_pointer->jmp;
   struct mrb_jmpbuf c_jmp;
   int err = 1;
@@ -353,18 +352,17 @@ mrb_value cheese_cross(mrb_state* mrb, mrb_value self) {
     if (loop_data->mrb_pointer->exc) {
 
       //mrb_print_error(mrb);
-    fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
-    mrb_print_error_XXX(loop_data->mrb_pointer);
+      fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS!\n");
+      mrb_print_error_XXX(loop_data->mrb_pointer);
 
       loop_data->mrb_pointer->exc = NULL;
-    }
-    else {
+    } else {
       //TODO
     }
   } MRB_END_EXC(&c_jmp);
 
   loop_data->mrb_pointer->jmp = prev_jmp;
-
+*/
 
   //if (loop_data->mrb_pointer->exc) {
   //  fprintf(stderr, "Exception in SERVER_SIDE_TRY_CRISS_CROSS_PROCESS_STACKS_FIBERZ!\n");
