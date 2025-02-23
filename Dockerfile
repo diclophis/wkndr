@@ -66,6 +66,11 @@ RUN cd /var/lib/wkndr && \
     git checkout 92362ac1e6cf3a12343493f67807780505253e1c && \
 	  ./bootstrap && ./configure && make
 
+RUN cd /root/emsdk && \
+    . ./emsdk_env.sh && \
+    cd /var/lib/wkndr/ode && \
+	  emmake make
+
 ##COPY rlgl.h.patch /var/lib/wkndr/
 ##RUN cd /var/lib/wkndr/raylib && \
 ##    cat ../rlgl.h.patch | git apply
@@ -87,6 +92,13 @@ COPY gigamock-transfer/mkstatic-mruby-module.rb /var/lib/wkndr/gigamock-transfer
 #RUN cd /var/lib/wkndr && \
 #    make release/libraylib.a
 #
+RUN cd /root/emsdk && \
+    . ./emsdk_env.sh && \
+    cd /var/lib/wkndr && \
+    mkdir -p release/desktop/src/desktop && \
+    mkdir -p release/src/desktop && \
+    emmake make ode/ode/src/.libs/libode.a mruby/build/emscripten/lib/libmruby.a mruby/build/emscripten/mrbgems/mruby-simplemsgpack/lib/libmsgpackc.a release/wasm/libraylib.a
+
 COPY main.c /var/lib/wkndr/
 COPY glyph /var/lib/wkndr/glyph
 COPY src /var/lib/wkndr/src

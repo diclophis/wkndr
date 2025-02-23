@@ -52,7 +52,7 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 1
       volumes:
       - hostPath:
           path: /var/tmp/chroot-home

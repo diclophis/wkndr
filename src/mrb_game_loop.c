@@ -456,19 +456,19 @@ static void code_fetch_hook_timeout(struct mrb_state* mrb, const struct mrb_irep
 
 static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 {
-  bool xxx = WindowShouldClose();
-  if (xxx) {
-    fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
+  //bool xxx = WindowShouldClose();
+  //if (xxx) {
+  //  fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
 
-    //UnloadFont(the_font);
-    if (windowClosed == 0) {
-      fprintf(stderr, "sending ????????????????? close\n");
-      CloseWindow();
-      windowClosed = 1;
-    }
+  //  //UnloadFont(the_font);
+  //  if (windowClosed == 0) {
+  //    fprintf(stderr, "sending ????????????????? close\n");
+  //    CloseWindow();
+  //    windowClosed = 1;
+  //  }
 
-    return mrb_true_value();
-  }
+  //  return mrb_true_value();
+  //}
 
   int key = -1;
   //char chey = -1;
@@ -724,6 +724,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     free(ab2);
   }
 
+
 /*
     struct abuf *ab2 = malloc(sizeof(struct abuf));
     ab2->b = NULL;
@@ -758,7 +759,9 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
     ClearBackground((Color){0.0, 11.0, 33.0, 57.0});
 
     {
+      fprintf(stderr, "before\n");
       drawmodeExitCapture = mrb_yield_argv(mrb, block, 0, NULL);
+      fprintf(stderr, "after\n");
     }
 
     if (showEditor > 0) {
@@ -1154,6 +1157,8 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
     
 
     //DrawGrid(100, 1.0); 
+
+    DrawGrid(100, 0.5);
 
 
 
