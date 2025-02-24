@@ -149,13 +149,20 @@ class Wkndr
         gl.drawmode {
           gl.threed {
             klass.draw_threed(gl)
+            nil
           }
           gl.twod {
             klass.draw_twod(gl)
+
+            nil
           }
+
+          nil
         }
 
         klass.process_time(gl, global_time, delta_time)
+
+        nil
       }
     }
   end

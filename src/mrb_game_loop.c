@@ -472,6 +472,8 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   }
 #endif
 
+  PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
+
   int key = -1;
   //char chey = -1;
   int keyCount = 0;
@@ -715,15 +717,17 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
   }
 
   if (keyCount > 0) {
-    struct abuf *ab2 = malloc(sizeof(struct abuf));
-    ab2->b = NULL;
-    ab2->len = 0;
+    if (showEditor > 0) {
+      struct abuf *ab2 = malloc(sizeof(struct abuf));
+      ab2->b = NULL;
+      ab2->len = 0;
 
-    editorRefreshScreen(ab2);
-    terminalRender(ab2->len, ab2->b);
+      editorRefreshScreen(ab2);
+      terminalRender(ab2->len, ab2->b);
 
-    free(ab2->b);
-    free(ab2);
+      free(ab2->b);
+      free(ab2);
+    }
   }
 
 
@@ -774,7 +778,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     SwapScreenBuffer(); // Flip the back buffer to screen (front buffer)
   
-    PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
+    //PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
 
   }
 

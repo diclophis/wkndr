@@ -148,6 +148,7 @@ class SocketStream
     if connected
       msg = MessagePack.pack(*msg_typed)
       write_packed(msg)
+      nil
     end
   end
 
