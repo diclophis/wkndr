@@ -94,6 +94,7 @@ static keydownset faap;
 
 static int keydowns = 0;
 static float debounce_time = 0.33;
+static float debounce_time_dec = 0.1;
 static int windowClosed = 0;
 
 //#if defined(PLATFORM_DESKTOP)
@@ -557,14 +558,14 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
       //fprintf(stderr, "twiceX %f\n", foop.debounce_timer);
       //fprintf(stderr, "twiceA %d %d %f\n", foop.keydown, fkd, foop.debounce_timer);
 
-      //if (foop->debounce_timer <= 0.0) {
-      //  //fprintf(stderr, "twiceBGH\n");
+      if (foop->debounce_timer <= 0.0) {
+        //fprintf(stderr, "twiceBGH\n");
+        foop->debounce_timer = debounce_time;
+      }
 
-      //  foop->debounce_timer = debounce_time;
-        keyCount += 1;
-      //}
+      keyCount += 1;
 
-      //if (foop->debounce_timer == debounce_time) {
+      if (foop->debounce_timer == debounce_time) {
         key = fkd;
         
         //fprintf(stderr, "twiceB %d\n", key);
@@ -674,7 +675,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
             editorProcessKeypress((char)key+modShift);
           }
         }
-      //}
+      }
 
       if (IsKeyReleased(foop->keydown)) {
         //fprintf(stderr, "KeyUp %d\n", foop->keydown);
@@ -712,7 +713,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
       }
 
-      //foop->debounce_timer = foop->debounce_timer - (1.0 / 24.0); //TODO
+      foop->debounce_timer = foop->debounce_timer - debounce_time_dec; //TODO
     }
   }
 
