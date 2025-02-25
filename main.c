@@ -3878,6 +3878,9 @@ int main(int argc, char** argv) {
   mrb_mruby_model_gem_init(mrb);
   mrb_mruby_model_gem_init(mrb_client);
 
+  mrb_define_class_method(mrb, thor_class, "log!", wkndr_log, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb_client, thor_class_client, "log!", wkndr_log, MRB_ARGS_REQ(1));
+
 #ifdef TARGET_HEAVY
 
   // libuv stuff
@@ -3905,9 +3908,6 @@ int main(int argc, char** argv) {
           Data_Wrap_Struct(mrb, mrb->object_class, &crisscross_data_type, loop_data)));
 
   mrb_define_class_method(mrb, thor_class, "server_side_tick!", cheese_cross, MRB_ARGS_REQ(0));
-
-  mrb_define_class_method(mrb, thor_class, "log!", wkndr_log, MRB_ARGS_REQ(1));
-  mrb_define_class_method(mrb_client, thor_class_client, "log!", wkndr_log, MRB_ARGS_REQ(1));
 
   mrb_value retret_stack_server = eval_static_libs(mrb, server_side, NULL);
 
