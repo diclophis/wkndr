@@ -9,7 +9,8 @@ cd /root/emsdk
 
 #./emsdk activate sdk-1.38.36-64bit
 
-./emsdk install latest
+#./emsdk install latest --override-repository emscripten-main-64bit@https://github.com/diclophis/emscripten/tree/main-with-custom-keytrap
+./emsdk install --shallow --override-repository emscripten-main-64bit@https://github.com/diclophis/emscripten/tree/main-with-custom-keytrap latest
 ./emsdk activate latest
 
 #./emsdk activate 1.39.19

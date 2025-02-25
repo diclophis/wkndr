@@ -15,7 +15,8 @@ Wkndr.client_side("main") { |gl|
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
     if (global_time > 5.0)
-      raise "exception in eval'ing wkndrfile bytes"
+      #Wkndr.log! [:wtf]
+      #raise "exception in eval'ing wkndrfile bytes"
     end
 
     gl.drawmode { #NOTE: return true from drawmode block to force exit!!!

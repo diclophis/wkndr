@@ -2,7 +2,7 @@
 #FROM static-vim-dockerfile:latest
 
 # layer 1 is linux-box stuff
-FROM ubuntu:focal-20201008 as wkndr
+FROM ubuntu:noble-20250127 as wkndr
 
 ENV LC_ALL C.UTF-8
 ENV LANG en_US.UTF-8
@@ -55,8 +55,9 @@ RUN cd /root/emsdk && \
 RUN cd /root/emsdk && \
     . ./emsdk_env.sh && \
     cd /var/lib/wkndr/mruby && \
-    cp /root/emsdk/upstream/emscripten/cmake/Modules/TestBigEndian.cmake /usr/share/cmake-3.16/Modules/TestBigEndian.cmake && \
+    cp /root/emsdk/upstream/emscripten/cmake/Modules/TestBigEndian.cmake /usr/share/cmake-3.28/Modules/TestBigEndian.cmake && \
     MRUBY_CONFIG=../config/emscripten.rb emmake make
+    #cp /root/emsdk/upstream/emscripten/cmake/Modules/TestBigEndian.cmake /usr/share/cmake-3.16/Modules/TestBigEndian.cmake && \
 
 #RUN cd /var/lib/wkndr && \
 #    git clone https://github.com/RandyGaul/qu3e.git && \

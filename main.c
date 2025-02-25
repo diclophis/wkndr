@@ -281,7 +281,7 @@ mrb_value wkndr_log(mrb_state* mrb, mrb_value self) {
   mrb_get_args(mrb, "o", &msg);
   mrb_value msg_inspected = mrb_funcall(mrb, msg, "inspect", 0);
 
-  fprintf(stdout, "%s\n", RSTRING_PTR(msg_inspected));
+  fprintf(stderr, "%s\n", RSTRING_PTR(msg_inspected));
 
   return mrb_true_value();
 }

@@ -5,7 +5,7 @@ set -x
 
 cd /root
 
-git clone https://github.com/juj/emsdk.git
+git clone https://github.com/emscripten-core/emsdk.git
 
 cd emsdk
 
@@ -13,4 +13,4 @@ cd emsdk
 
 ./emsdk list
 
-./emsdk install latest
+./emsdk install --shallow --override-repository sdk-main-64bit@https://github.com/diclophis/emscripten/tree/main-with-custom-keytrap sdk-main-64bit
