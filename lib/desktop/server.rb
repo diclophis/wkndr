@@ -6,6 +6,7 @@ class ProtocolServer
     @required_prefix = safety_dir
 
     @all_connections = []
+    @all_ws_connections = []
     @clients_to_notify = {}
     @subscriptions = {}
     @reduxi = {}
@@ -19,6 +20,8 @@ class ProtocolServer
     upgrade_to_binary_websocket_handler = Proc.new { |cn, phr, mab|
       #Wkndr.log! [:cn, cn]
 
+      @all_ws_connections << cn
+
       cn.upgrade_to_websocket! { |cn, channel, msg|
         #Wkndr.log! [:server_side_cn_hold_gl, cn, cn.class, channel, msg]
 
@@ -30,13 +33,13 @@ class ProtocolServer
           @all_connections.each { |client|
             # worlds cheapest public broadcast system
 
-            #Wkndr.log! [:to_message_client, client, cn, channel, msg]
+            Wkndr.log! [:to_message_client, client, cn, channel, msg]
 
             if (client.object_id != cn.object_id)
               #TODO: localhost de-dup log!(:DUP, msg, client.object_id, cn.object_id)
+              #!!!!!!!!!!!!
               client.write_typed({channel => msg})
             end
-
           }
         end
       }
@@ -66,12 +69,15 @@ class ProtocolServer
         }
       }
 
-      #{ |cn, channel, msg|
-      #  #TODO ????
-      #  #@all_connections.each { |client|
-      #  #  #client.write_typed({channel => msg}) if (client.object_id != cn.object_id)
-      #  #}
-      #}
+
+    }
+
+    gl.emit { |msg|
+      #Wkndr.log! [:serverside, :emit, msg, @all_ws_connections]
+      #protocol_server.broadcast(msg)
+      @all_ws_connections.each { |client|
+        client.write_typed(msg)
+      }
     }
 
     @handlers["/ws-html"] = upgrade_to_websocket_handler
@@ -96,7 +102,6 @@ class ProtocolServer
     #  Protocol.ok(GIGAMOCK_TRANSFER_STATIC_FAVICON_ICO)
     #}
 
-    #Wkndr.log! [:install_rool_handlers]
     install_root_handlers!
 
     rebuild_tree!
@@ -499,5 +504,9 @@ end
 
   def all_connections
     @all_connections
+  end
+
+  def all_ws_connections
+    @all_ws_connections
   end
 end
