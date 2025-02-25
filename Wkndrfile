@@ -10,7 +10,7 @@ Wkndr.nonce("main") { #NOTE: Wkndr.nonce is used when you want a block eval'd ex
 
 Wkndr.client_side("main") { |gl|
   gl.event("main") { |channel, msg|
-    #Wkndr.log! [:from_wkndr_msg, {channel => msg}]
+    Wkndr.log! [:from_wkndr_msg_other_wkndr_client_broadcase, {channel => msg}]
   }
 
   gl.update("main") { |global_time, delta_time, sw, sh, touchpoints|
@@ -49,6 +49,7 @@ Wkndr.server_side("main") { |gl, server|
         end
       end
     end
+    gl.emit("main" => "bar")
     Protocol.ok(mab.to_s)
   }
 

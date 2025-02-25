@@ -460,11 +460,11 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 #ifdef PLATFORM_DESKTOP
   bool xxx = WindowShouldClose();
   if (xxx) {
-    fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
-
+    //fprintf(stderr, "!!!!!!!!!!!S!??? xyzzzzzz \n");
+    //TODO: unloading all raylib memory...!!!
     //UnloadFont(the_font);
     if (windowClosed == 0) {
-      fprintf(stderr, "sending ????????????????? close\n");
+      //fprintf(stderr, "sending ????????????????? close\n");
       CloseWindow();
       windowClosed = 1;
     }
