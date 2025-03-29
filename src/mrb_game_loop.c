@@ -1171,13 +1171,22 @@ static mrb_value game_loop_threed(mrb_state* mrb, mrb_value self)
 
     //DrawGrid(100, 1.0); 
 
-    DrawGrid(100, 0.5);
+    //DrawGrid(100, 0.5);
 
 
 
   EndMode3D();
 
   return mrb_nil_value();
+}
+
+
+static mrb_value model_drawgrid(mrb_state* mrb, mrb_value self)
+{
+  mrb_float x,y;
+  mrb_get_args(mrb, "ff", &x, &y);
+
+  DrawGrid(x, y);
 }
 
 
@@ -1229,6 +1238,7 @@ struct RClass *mrb_define_game_loop(mrb_state *mrb) {
   mrb_define_method(mrb, game_class, "draw_circle", game_loop_draw_circle, MRB_ARGS_REQ(8));
   mrb_define_method(mrb, game_class, "mousep", game_loop_mousep, MRB_ARGS_BLOCK());
   mrb_define_method(mrb, game_class, "label", model_label, MRB_ARGS_REQ(3));
+  mrb_define_method(mrb, game_class, "drawgrid", model_drawgrid, MRB_ARGS_REQ(2));
   mrb_define_method(mrb, game_class, "keyspressed", game_loop_keyspressed, MRB_ARGS_ANY());
   mrb_define_method(mrb, game_class, "draw_texture", game_loop_draw_texture, MRB_ARGS_REQ(8));
 

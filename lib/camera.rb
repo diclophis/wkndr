@@ -34,12 +34,15 @@
 
 
 class GameCamera
-  def initialize(follow_speed, look_speed)
+  def initialize(follow_speed, look_speed, position)
     @follow_speed = follow_speed
     @look_speed = look_speed
 
     @camera_target = [0, 0, 0]
-    @camera_position = [-0.0, 0, -3.0]
+    #@camera_position = [-3.0, 0, -3.0]
+    #@camera_position = [0.0, 0, -3.0]
+    #@camera_position = [0.0, 0, -0.1]
+    @camera_position = position
   end
 
   def update(gl, global_time, delta_time, distance, height, player_position)
@@ -78,7 +81,6 @@ class GameCamera
   def target_fov
     @target_fov
   end
-
 
   def angle
     Math.atan2((@camera_target[2] - @camera_position[2]), (@camera_target[0] - @camera_position[0])) * (180.0 / 3.1457)
