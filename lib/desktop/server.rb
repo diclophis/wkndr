@@ -33,7 +33,7 @@ class ProtocolServer
           @all_connections.each { |client|
             # worlds cheapest public broadcast system
 
-            Wkndr.log! [:to_message_client, client, cn, channel, msg]
+            #Wkndr.log! [:to_message_client, client, cn, channel, msg]
 
             if (client.object_id != cn.object_id)
               #TODO: localhost de-dup log!(:DUP, msg, client.object_id, cn.object_id)
