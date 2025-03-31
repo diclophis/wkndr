@@ -154,34 +154,27 @@ clean:
 	mkdir -p $(build)/desktop-heavy-x11
 
 $(build)/desktop/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
-	echo one
 	$(CC) $(CFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
 
 $(build)/wasm/main.o: main.c $(static_ruby_headers) $(desktop_heavy_static_ruby_headers)
-	echo two
 	$(CC) $(CFLAGS) -DPLATFORM_WEB -c $< -o $@
 
 $(build)/desktop/%.o: %.c
-	echo three
 	$(CC) $(CFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
 
 $(build)/desktop/%.o: %.cpp
-	echo seven
 	$(CXX) $(CXXFLAGS) -DTARGET_HEAVY -DPLATFORM_DESKTOP=1 -c $< -o $@
 
 $(build)/wasm/%.o: %.c
-	echo four
 	$(CC) $(CFLAGS) -DPLATFORM_WEB -c $< -o $@
 
 $(build)/wasm/%.o: %.cpp
-	echo six
 	$(CXX) $(CXXFLAGS) -DPLATFORM_WEB -c $< -o $@
 
 $(desktop_heavy_mruby_static_lib): config/vanilla.rb ${desktop_heavy_mruby_config}
 	cd mruby && MRUBY_CONFIG=../$(desktop_heavy_mruby_config) $(MAKE)
 
 $(desktop_heavy_raylib_static_lib): $(raylib_static_lib_deps)
-	echo foo
 	cp raylib-config.h raylib/src/config.h
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy PLATFORM=$(RAYLIB_PLATFORM_HEAVY) $(MAKE) -B -e
 
@@ -191,13 +184,11 @@ $(desktop_heavy_x11_raylib_static_lib): $(raylib_static_lib_deps)
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/desktop-heavy-x11 PLATFORM=$(RAYLIB_PLATFORM_HEAVY_X11) $(MAKE) -B -e
 
 $(wasm_raylib_static_lib): $(raylib_static_lib_deps)
-	echo five
 	cp raylib-config.h raylib/src/config.h
 	cd raylib/src && RAYLIB_RELEASE_PATH=../../$(build)/wasm PLATFORM=PLATFORM_WEB $(MAKE) -B -e
 
 #TODO: finish phsycs engine integration!
 $(ode_static_lib): $(ode_static_lib_deps)
-	echo barsdsd
 	cd ode && ./bootstrap && ./configure && $(MAKE)
 
 $(mrbc): $(desktop_heavy_mruby_static_lib)

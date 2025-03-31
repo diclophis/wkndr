@@ -563,6 +563,8 @@ fixcursor:
 
 /* Delete the char at the current prompt position. */
 void editorDelChar() {
+        printf("AAA!!!!\n");
+
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
@@ -570,23 +572,49 @@ void editorDelChar() {
     if (!row || (filecol == 0 && filerow == 0)) return;
 
     if (filecol == 0) {
+        printf("BBB!!!!\n");
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
         filecol = E.row[filerow-1].size;
         editorRowAppendString(&E.row[filerow-1],row->chars,row->size);
         editorDelRow(filerow);
         row = NULL;
+
         if (E.cy == 0)
             E.rowoff--;
         else
             E.cy--;
+
         E.cx = filecol;
+
+        printf("CCC!!!! %d %d\n", E.cx, E.screencols);
+        // CCC!!!! 9 4
+
         if (E.cx >= E.screencols) {
-            int shift = (E.screencols-E.cx)+1;
-            E.cx -= shift;
-            E.coloff += shift;
+        printf("WTFAAA!!!! %d %d\n", E.screencols, E.cx);
+            int shift = (E.screencols-E.cx);
+        printf("WTF!!!! filecol=%d shift=%d scols=%d cx=%d\n", filecol, shift, E.screencols, E.cx);
+
+
+        //WTF!!!! filecol=9 shift=-1 scols=8 cx=9
+        //ECXXXXX!!!! 8 6 4
+        //8 6 3
+
+            //E.cx -= shift;
+            //E.coloff += shift+2;
+            E.cx = (E.screencols)-2;
+            E.coloff = (filecol - E.screencols)+2;
+
+        printf("ECXXXXX!!!! %d %d %d\n", E.screencols, E.cx, E.coloff);
+
+        // 4 2 4
+        // screencols  cx  coloff
+
+        // -2 screencols=4 cx 6
         }
+        editorUpdateRow(&E.row[filerow-1]);
     } else {
+        printf("EEE!!!!\n");
         editorRowDelChar(row,filecol-1);
         if (E.cx == 0 && E.coloff)
             E.coloff--;
@@ -873,6 +901,8 @@ void editorMoveCursor(int key) {
             E.cx = 0;
         }
     }
+
+        printf("ECX!!!! %d %d %d\n", E.screencols, E.cx, E.coloff);
 }
 
 
@@ -958,6 +988,8 @@ int editorFileWasModified(void) {
     return E.dirty;
 }
 
+
+//TODO: handle resize!!!!
 void updateWindowSize(int r, int c) {
     //if (getWindowSize(STDIN_FILENO,STDOUT_FILENO,
     //                  &E.screenrows,&E.screencols) == -1) {
@@ -971,6 +1003,7 @@ void updateWindowSize(int r, int c) {
     E.screenrows -= 2; /* Get room for status bar. */
 }
 
+//TODO handle resize!!!
 void handleSigWinCh(int unused __attribute__((unused))) {
     //updateWindowSize();
     //if (E.cy > E.screenrows) E.cy = E.screenrows - 1;

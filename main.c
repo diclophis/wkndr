@@ -83,6 +83,7 @@
 #include "camera.h"
 #include "aabb.h"
 #include "polygon.h"
+#include "shape_proxy.h"
 
 
 //server stuff
@@ -577,7 +578,7 @@ size_t resize_tty(mrb_state* mrb, struct RObject* selfP, int w, int h, int r, in
     SetWindowSize(w, h);
   }
 
-  updateWindowSize(r, c);
+  updateWindowSize(r, c); //TODO: window resize!!!
 
   mrb_value data_value;
   data_value = mrb_iv_get(mrb, mrb_obj_value(selfP), mrb_intern_lit(mrb, "@client"));
@@ -701,8 +702,8 @@ mrb_value global_show(mrb_state* mrb, mrb_value self) {
 
 
 enum {
-	TERM_WIDTH  = 640,
-	TERM_HEIGHT = 384,
+	//TERM_WIDTH  = 640,
+	//TERM_HEIGHT = 384,
 	TERM_COLS   = 80,
 	TERM_ROWS   = 24,
 	INPUT_SIZE  = 1,
@@ -3849,6 +3850,7 @@ int main(int argc, char** argv) {
   eval_static_libs(mrb_client, camera, NULL);
   eval_static_libs(mrb_client, aabb, NULL);
   eval_static_libs(mrb_client, polygon, NULL);
+  eval_static_libs(mrb_client, shape_proxy, NULL);
 
   struct RClass *thor_class = mrb_define_class(mrb, "Wkndr", mrb->object_class);
   struct RClass *thor_class_client = mrb_define_class(mrb_client, "Wkndr", mrb_client->object_class);

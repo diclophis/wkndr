@@ -471,9 +471,10 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     return mrb_true_value();
   }
+
+  PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
 #endif
 
-  //PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
 
   int key = -1;
   //char chey = -1;
@@ -777,7 +778,9 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
     EndDrawing();
 
-    //SwapScreenBuffer(); // Flip the back buffer to screen (front buffer)
+#ifdef PLATFORM_DESKTOP
+    SwapScreenBuffer(); // Flip the back buffer to screen (front buffer)
+#endif
   
     //PollInputEvents(); // Poll input events (SUPPORT_CUSTOM_FRAME_CONTROL)
 
