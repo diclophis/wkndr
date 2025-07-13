@@ -482,7 +482,7 @@ static mrb_value game_loop_drawmode(mrb_state* mrb, mrb_value self)
 
   //// Check if more characters have been pressed on the same frame
   while (key = GetKeyPressed()) {
-    fprintf(stderr, "Key: %d\n", key);
+    //fprintf(stderr, "Key: %d\n", key);
 
     keyCount += 1;
 

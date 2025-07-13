@@ -45,9 +45,10 @@ class GameCamera
     @camera_position = position
   end
 
-  def update(gl, global_time, delta_time, distance, height, player_position)
-    @camera_target[0] += (player_position[0] - @camera_target[0]) * (1.0 * (player_position[0] - @camera_target[0]).abs) * @look_speed * delta_time
-    @camera_target[2] += (player_position[2] - @camera_target[2]) * (1.0 * (player_position[2] - @camera_target[2]).abs) * @look_speed * delta_time
+  def set(player_position, camera_position)
+    @camera_target[0] = player_position[0]
+    @camera_target[1] = player_position[1]
+    @camera_target[2] = player_position[2]
     
     #@camera_target[0] = player_position[0]
     #@camera_target[2] = player_position[2]
@@ -58,12 +59,32 @@ class GameCamera
     #fx = Math.sin(f) * 10.5 * delta_time
     #fy = Math.cos(f) * 10.5 * delta_time
 
-    @camera_position[0] += (((@camera_target[0]) - @camera_position[0]) * @follow_speed * delta_time)
-    #@camera_position[0] = (@camera_target[0] - 0.0)
-    @camera_position[1] = height
-    @camera_position[2] += (((@camera_target[2]) - distance - @camera_position[2]) * @follow_speed * delta_time)
+    @camera_position[0] = camera_position[0]
+    @camera_position[1] = camera_position[1]
+    @camera_position[2] = camera_position[2]
+
     #@camera_position[2] = (@camera_target[2] - distance)
   end
+
+  #def update(gl, global_time, delta_time, distance, height, player_position)
+  #  @camera_target[0] += (player_position[0] - @camera_target[0]) * (1.0 * (player_position[0] - @camera_target[0]).abs) * @look_speed * delta_time
+  #  @camera_target[2] += (player_position[2] - @camera_target[2]) * (1.0 * (player_position[2] - @camera_target[2]).abs) * @look_speed * delta_time
+  #  
+  #  #@camera_target[0] = player_position[0]
+  #  #@camera_target[2] = player_position[2]
+
+  #  #a = Math.atan2((@camera_position[2]) - @camera_target[2], (@camera_position[0]) - @camera_target[0])
+  #  #deg = (a * (180.0 / 3.1457))
+  #  #f = self.angle - a
+  #  #fx = Math.sin(f) * 10.5 * delta_time
+  #  #fy = Math.cos(f) * 10.5 * delta_time
+
+  #  @camera_position[0] += (((@camera_target[0]) - @camera_position[0]) * @follow_speed * delta_time)
+  #  #@camera_position[0] = (@camera_target[0] - 0.0)
+  #  @camera_position[1] = height
+  #  @camera_position[2] += (((@camera_target[2]) - distance - @camera_position[2]) * @follow_speed * delta_time)
+  #  #@camera_position[2] = (@camera_target[2] - distance)
+  #end
 
   def lookat(gl, player_position, fov = 60.0)
     @last_fov = fov
