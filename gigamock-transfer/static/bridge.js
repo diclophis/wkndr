@@ -108,7 +108,7 @@ window.startConnection = function(mrbPointer, callbackPointer) {
     };
 
     window.conn.onmessage = function (event) {
-      console.log("FOOO got message from server", event);
+      //console.log("FOOO got message from server", event);
 
       var origData = event.data;
 
